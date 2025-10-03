@@ -1,110 +1,3 @@
-<template>
-  <div class="admin-container">
-    <h1 class="page-title">Admin Dashboard</h1>
-    
-    <!-- Login Form -->
-    <div v-if="!isAuthenticated" class="login-section">
-      <h2>Admin Login</h2>
-      <form @submit.prevent="handleLogin" class="login-form">
-        <input
-          v-model="loginForm.username"
-          type="text"
-          placeholder="Username"
-          required
-        />
-        <input
-          v-model="loginForm.password"
-          type="password"
-          placeholder="Password"
-          required
-        />
-        <button type="submit">Login</button>
-        <div v-if="loginError" class="error">{{ loginError }}</div>
-      </form>
-    </div>
-    
-    <!-- Dashboard -->
-    <div v-else class="dashboard">
-      <!-- Current Question -->
-      <section class="current-question">
-        <h2>Current Active Question</h2>
-        <div v-if="activeQuestion" class="question-display">
-          <p class="question-text">{{ activeQuestion.question_text }}</p>
-          <ul class="answer-list">
-            <li v-for="(option, index) in activeQuestion.answer_options" :key="index">
-              {{ option }}
-            </li>
-          </ul>
-          <div class="question-status">
-            <span>Status: {{ activeQuestion.is_locked ? 'Locked' : 'Unlocked' }}</span>
-            <button @click="toggleLock">
-              {{ activeQuestion.is_locked ? 'Unlock' : 'Lock' }} Question
-            </button>
-          </div>
-        </div>
-        <div v-else class="no-question">
-          No active question
-        </div>
-      </section>
-      
-      <!-- New Question Form -->
-      <section class="new-question">
-        <h2>Prepare Next Question</h2>
-        <form @submit.prevent="handleCreateQuestion" class="question-form">
-          <textarea
-            v-model="newQuestion.question_text"
-            placeholder="Enter question text"
-            required
-          ></textarea>
-          
-          <div class="answer-options">
-            <h3>Answer Options</h3>
-            <div v-for="(option, index) in newQuestion.answer_options" :key="index" class="option-input">
-              <input
-                v-model="newQuestion.answer_options[index]"
-                type="text"
-                :placeholder="`Option ${index + 1}`"
-                required
-              />
-              <button
-                v-if="newQuestion.answer_options.length > 2"
-                type="button"
-                @click="removeOption(index)"
-                class="remove-btn"
-              >
-                Remove
-              </button>
-            </div>
-            <button type="button" @click="addOption" class="add-option">
-              Add Option
-            </button>
-          </div>
-          
-          <button type="submit" class="submit-btn">Create Question</button>
-        </form>
-      </section>
-      
-      <!-- Prepared Questions -->
-      <section v-if="preparedQuestions.length > 0" class="prepared-questions">
-        <h2>Prepared Questions</h2>
-        <div v-for="question in preparedQuestions" :key="question.id" class="prepared-question">
-          <p>{{ question.question_text }}</p>
-          <ul>
-            <li v-for="(option, index) in question.answer_options" :key="index">
-              {{ option }}
-            </li>
-          </ul>
-          <button @click="publishQuestion(question.id)" class="publish-btn">
-            Publish This Question
-          </button>
-        </div>
-      </section>
-      
-      <button @click="handleLogout" class="logout-btn">Logout</button>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { ref, onMounted } from 'vue'
 
@@ -253,6 +146,113 @@ function removeOption(index) {
   newQuestion.value.answer_options.splice(index, 1)
 }
 </script>
+
+<template>
+  <div class="admin-container">
+    <h1 class="page-title">Admin Dashboard</h1>
+    
+    <!-- Login Form -->
+    <div v-if="!isAuthenticated" class="login-section">
+      <h2>Admin Login</h2>
+      <form @submit.prevent="handleLogin" class="login-form">
+        <input
+          v-model="loginForm.username"
+          type="text"
+          placeholder="Username"
+          required
+        />
+        <input
+          v-model="loginForm.password"
+          type="password"
+          placeholder="Password"
+          required
+        />
+        <button type="submit">Login</button>
+        <div v-if="loginError" class="error">{{ loginError }}</div>
+      </form>
+    </div>
+    
+    <!-- Dashboard -->
+    <div v-else class="dashboard">
+      <!-- Current Question -->
+      <section class="current-question">
+        <h2>Current Active Question</h2>
+        <div v-if="activeQuestion" class="question-display">
+          <p class="question-text">{{ activeQuestion.question_text }}</p>
+          <ul class="answer-list">
+            <li v-for="(option, index) in activeQuestion.answer_options" :key="index">
+              {{ option }}
+            </li>
+          </ul>
+          <div class="question-status">
+            <span>Status: {{ activeQuestion.is_locked ? 'Locked' : 'Unlocked' }}</span>
+            <button @click="toggleLock">
+              {{ activeQuestion.is_locked ? 'Unlock' : 'Lock' }} Question
+            </button>
+          </div>
+        </div>
+        <div v-else class="no-question">
+          No active question
+        </div>
+      </section>
+      
+      <!-- New Question Form -->
+      <section class="new-question">
+        <h2>Prepare Next Question</h2>
+        <form @submit.prevent="handleCreateQuestion" class="question-form">
+          <textarea
+            v-model="newQuestion.question_text"
+            placeholder="Enter question text"
+            required
+          ></textarea>
+          
+          <div class="answer-options">
+            <h3>Answer Options</h3>
+            <div v-for="(option, index) in newQuestion.answer_options" :key="index" class="option-input">
+              <input
+                v-model="newQuestion.answer_options[index]"
+                type="text"
+                :placeholder="`Option ${index + 1}`"
+                required
+              />
+              <button
+                v-if="newQuestion.answer_options.length > 2"
+                type="button"
+                @click="removeOption(index)"
+                class="remove-btn"
+              >
+                Remove
+              </button>
+            </div>
+            <button type="button" @click="addOption" class="add-option">
+              Add Option
+            </button>
+          </div>
+          
+          <button type="submit" class="submit-btn">Create Question</button>
+        </form>
+      </section>
+      
+      <!-- Prepared Questions -->
+      <section v-if="preparedQuestions.length > 0" class="prepared-questions">
+        <h2>Prepared Questions</h2>
+        <div v-for="question in preparedQuestions" :key="question.id" class="prepared-question">
+          <p>{{ question.question_text }}</p>
+          <ul>
+            <li v-for="(option, index) in question.answer_options" :key="index">
+              {{ option }}
+            </li>
+          </ul>
+          <button @click="publishQuestion(question.id)" class="publish-btn">
+            Publish This Question
+          </button>
+        </div>
+      </section>
+      
+      <button @click="handleLogout" class="logout-btn">Logout</button>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .admin-container {

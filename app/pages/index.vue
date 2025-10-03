@@ -1,85 +1,3 @@
-<template>
-  <div class="quiz-container">
-    <h1 class="page-title">Quiz Time</h1>
-    
-    <!-- Nickname Prompt -->
-    <div v-if="!userNickname" class="nickname-section">
-      <h2>Welcome!</h2>
-      <p>Please enter your nickname to participate</p>
-      <form @submit.prevent="setNickname" class="nickname-form">
-        <input
-          v-model="nicknameInput"
-          type="text"
-          placeholder="Enter your nickname"
-          required
-        />
-        <button type="submit">Join Quiz</button>
-      </form>
-    </div>
-    
-    <!-- Quiz Section -->
-    <div v-else class="quiz-section">
-      <div class="user-info">
-        <span>Playing as: <strong>{{ userNickname }}</strong></span>
-        <button @click="changeNickname" class="change-btn">Change</button>
-      </div>
-      
-      <!-- Active Question -->
-      <div v-if="activeQuestion" class="question-container">
-        <div class="question-header">
-          <h2>{{ activeQuestion.question_text }}</h2>
-          <div v-if="activeQuestion.is_locked" class="lock-indicator">
-            🔒 Answers Locked
-          </div>
-        </div>
-        
-        <div class="answer-options">
-          <label
-            v-for="(option, index) in activeQuestion.answer_options"
-            :key="index"
-            class="answer-option"
-            :class="{ selected: selectedAnswer === option, disabled: activeQuestion.is_locked }"
-          >
-            <input
-              type="radio"
-              :value="option"
-              v-model="selectedAnswer"
-              :disabled="activeQuestion.is_locked"
-              @change="submitAnswer"
-            />
-            <span>{{ option }}</span>
-          </label>
-        </div>
-        
-        <div v-if="selectedAnswer && !activeQuestion.is_locked" class="status-message">
-          ✓ Your answer has been submitted. You can change it until the question is locked.
-        </div>
-        
-        <div v-if="selectedAnswer && activeQuestion.is_locked" class="status-message">
-          Your answer: <strong>{{ selectedAnswer }}</strong>
-        </div>
-      </div>
-      
-      <!-- No Active Question -->
-      <div v-else class="no-question">
-        <h2>Waiting for Question</h2>
-        <p>The presenter will start a question soon...</p>
-        <div class="waiting-animation">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </div>
-      
-      <div class="navigation">
-        <NuxtLink to="/results" class="view-results-btn">
-          View Live Results →
-        </NuxtLink>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
@@ -225,6 +143,88 @@ function setupWebSocket() {
   }, 30000)
 }
 </script>
+
+<template>
+  <div class="quiz-container">
+    <h1 class="page-title">Quiz Time</h1>
+    
+    <!-- Nickname Prompt -->
+    <div v-if="!userNickname" class="nickname-section">
+      <h2>Welcome!</h2>
+      <p>Please enter your nickname to participate</p>
+      <form @submit.prevent="setNickname" class="nickname-form">
+        <input
+          v-model="nicknameInput"
+          type="text"
+          placeholder="Enter your nickname"
+          required
+        />
+        <button type="submit">Join Quiz</button>
+      </form>
+    </div>
+    
+    <!-- Quiz Section -->
+    <div v-else class="quiz-section">
+      <div class="user-info">
+        <span>Playing as: <strong>{{ userNickname }}</strong></span>
+        <button @click="changeNickname" class="change-btn">Change</button>
+      </div>
+      
+      <!-- Active Question -->
+      <div v-if="activeQuestion" class="question-container">
+        <div class="question-header">
+          <h2>{{ activeQuestion.question_text }}</h2>
+          <div v-if="activeQuestion.is_locked" class="lock-indicator">
+            🔒 Answers Locked
+          </div>
+        </div>
+        
+        <div class="answer-options">
+          <label
+            v-for="(option, index) in activeQuestion.answer_options"
+            :key="index"
+            class="answer-option"
+            :class="{ selected: selectedAnswer === option, disabled: activeQuestion.is_locked }"
+          >
+            <input
+              type="radio"
+              :value="option"
+              v-model="selectedAnswer"
+              :disabled="activeQuestion.is_locked"
+              @change="submitAnswer"
+            />
+            <span>{{ option }}</span>
+          </label>
+        </div>
+        
+        <div v-if="selectedAnswer && !activeQuestion.is_locked" class="status-message">
+          ✓ Your answer has been submitted. You can change it until the question is locked.
+        </div>
+        
+        <div v-if="selectedAnswer && activeQuestion.is_locked" class="status-message">
+          Your answer: <strong>{{ selectedAnswer }}</strong>
+        </div>
+      </div>
+      
+      <!-- No Active Question -->
+      <div v-else class="no-question">
+        <h2>Waiting for Question</h2>
+        <p>The presenter will start a question soon...</p>
+        <div class="waiting-animation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      
+      <div class="navigation">
+        <NuxtLink to="/results" class="view-results-btn">
+          View Live Results →
+        </NuxtLink>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .quiz-container {

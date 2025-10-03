@@ -1,67 +1,3 @@
-<template>
-  <div class="results-container">
-    <h1 class="page-title">Live Results</h1>
-    
-    <div v-if="results" class="results-section">
-      <!-- Question Display -->
-      <div class="question-display">
-        <h2>{{ results.question.question_text }}</h2>
-        <div class="question-meta">
-          <span class="total-votes">Total Votes: {{ results.totalVotes }}</span>
-          <span class="lock-status" :class="{ locked: results.question.is_locked }">
-            {{ results.question.is_locked ? '🔒 Locked' : '🔓 Open' }}
-          </span>
-        </div>
-      </div>
-      
-      <!-- Results Chart -->
-      <div class="results-chart">
-        <div
-          v-for="(count, option) in results.results"
-          :key="option"
-          class="result-bar-container"
-        >
-          <div class="result-label">
-            <span class="option-text">{{ option }}</span>
-            <span class="vote-count">{{ count }} votes</span>
-          </div>
-          <div class="result-bar-wrapper">
-            <div
-              class="result-bar"
-              :style="{
-                width: getBarWidth(count) + '%'
-              }"
-            >
-              <span class="percentage">{{ getPercentage(count) }}%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- No Active Question -->
-    <div v-else class="no-results">
-      <h2>No Active Question</h2>
-      <p>Waiting for a question to be published...</p>
-      <div class="waiting-animation">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-    </div>
-    
-    <!-- Navigation -->
-    <div class="navigation">
-      <NuxtLink to="/" class="back-btn">
-        ← Back to Quiz
-      </NuxtLink>
-      <button @click="refreshResults" class="refresh-btn">
-        Refresh Results
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 
@@ -180,6 +116,70 @@ function setupWebSocket() {
   }, 30000)
 }
 </script>
+
+<template>
+  <div class="results-container">
+    <h1 class="page-title">Live Results</h1>
+    
+    <div v-if="results" class="results-section">
+      <!-- Question Display -->
+      <div class="question-display">
+        <h2>{{ results.question.question_text }}</h2>
+        <div class="question-meta">
+          <span class="total-votes">Total Votes: {{ results.totalVotes }}</span>
+          <span class="lock-status" :class="{ locked: results.question.is_locked }">
+            {{ results.question.is_locked ? '🔒 Locked' : '🔓 Open' }}
+          </span>
+        </div>
+      </div>
+      
+      <!-- Results Chart -->
+      <div class="results-chart">
+        <div
+          v-for="(count, option) in results.results"
+          :key="option"
+          class="result-bar-container"
+        >
+          <div class="result-label">
+            <span class="option-text">{{ option }}</span>
+            <span class="vote-count">{{ count }} votes</span>
+          </div>
+          <div class="result-bar-wrapper">
+            <div
+              class="result-bar"
+              :style="{
+                width: getBarWidth(count) + '%'
+              }"
+            >
+              <span class="percentage">{{ getPercentage(count) }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- No Active Question -->
+    <div v-else class="no-results">
+      <h2>No Active Question</h2>
+      <p>Waiting for a question to be published...</p>
+      <div class="waiting-animation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+    
+    <!-- Navigation -->
+    <div class="navigation">
+      <NuxtLink to="/" class="back-btn">
+        ← Back to Quiz
+      </NuxtLink>
+      <button @click="refreshResults" class="refresh-btn">
+        Refresh Results
+      </button>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .results-container {
