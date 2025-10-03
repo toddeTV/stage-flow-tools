@@ -1,0 +1,61 @@
+{
+  "name": "@todde.tv/stage-flow-tools",
+  "type": "module",
+  "version": "1.0.0-rc.0",
+  "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad",
+  "description": "Real-time quiz and interaction tool for live presentations. Features include admin-controlled quiz flow, live results, and instant audience participation. Boost engagement on stage - at conferences, sessions, and workshops.",
+  "author": "Thorsten Seyschab <business@todde.tv> (https://todde.tv/)",
+  "contributors": [
+    {
+      "name": "Thorsten Seyschab",
+      "email": "business@todde.tv",
+      "url": "https://todde.tv/"
+    }
+  ],
+  "license": "SEE LICENSE IN LICENSE.md",
+  "homepage": "https://todde.tv/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/toddeTV/stage-flow-tools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/toddeTV/stage-flow-tools/issues"
+  },
+  "keywords": [
+    "quiz",
+    "live-interaction",
+    "audience-participation",
+    "presentation-tool",
+    "conference-tool",
+    "workshop",
+    "web-app",
+    "voting",
+    "results-display",
+    "engagement",
+    "educational",
+    "stage-flow",
+    "presenter",
+    "interactive"
+  ],
+  "engines": {
+    "node": "~22",
+    "pnpm": "~10"
+  },
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "nuxt": "~4.1.2"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "~9.0.10",
+    "crossws": "~0.4.1",
+    "jsonwebtoken": "~9.0.2",
+    "vue": "~3.5.22",
+    "vue-router": "~4.5.1"
+  }
+}
