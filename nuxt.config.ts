@@ -25,7 +25,7 @@ export default defineNuxtConfig({
     // Private keys (only available server-side)
     adminUsername: 'admin',
     adminPassword: '123',
-    jwtSecret: '2ZNmOJVKLXg6Gr2ckr4T166FU0IFzVQpYu7eYwmSw5TUQmnzuhTbkHUW9pGvepx4',
+    jwtSecret: 'tryUJ0zQbstPbTOrezme+Fv+KndzDNRx5lmSeelr2ial2/2yV8HqLeQ2felJafqf',
     
     // Public keys (available on both client and server)
     public: {
