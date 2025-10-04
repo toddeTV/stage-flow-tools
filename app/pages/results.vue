@@ -3,17 +3,15 @@ import type { Results } from '~/types'
 
 const results = ref<Results | null>(null)
 let ws: WebSocket | null = null
-let refreshInterval: NodeJS.Timeout | null = null
+let pingInterval: NodeJS.Timeout | null = null
+let reconnectTimeout: NodeJS.Timeout | null = null
+let retryCount = 0
+const maxRetries = 5
 
 // Load results on mount
 onMounted(async () => {
   await loadResults()
   setupWebSocket()
-
-  // Auto-refresh every 5 seconds as backup
-  refreshInterval = setInterval(() => {
-    loadResults()
-  }, 5000)
 })
 
 // Cleanup on unmount
@@ -21,8 +19,11 @@ onUnmounted(() => {
   if (ws) {
     ws.close()
   }
-  if (refreshInterval) {
-    clearInterval(refreshInterval)
+  if (pingInterval) {
+    clearInterval(pingInterval)
+  }
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout)
   }
 })
 
@@ -81,6 +82,23 @@ function setupWebSocket() {
 
   ws = new WebSocket(wsEndpoint)
 
+  ws.onopen = () => {
+    console.log('WebSocket connection established')
+    retryCount = 0 // Reset retry count on successful connection
+
+    // Clear any existing ping interval before starting a new one
+    if (pingInterval) {
+      clearInterval(pingInterval)
+    }
+
+    // Send ping every 30 seconds to keep connection alive
+    pingInterval = setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send('ping')
+      }
+    }, 30000)
+  }
+
   ws.onmessage = (event: MessageEvent) => {
     try {
       const data = JSON.parse(event.data)
@@ -106,18 +124,23 @@ function setupWebSocket() {
   }
 
   ws.onclose = () => {
-    // Attempt to reconnect after 3 seconds
-    setTimeout(() => {
-      setupWebSocket()
-    }, 3000)
-  }
-
-  // Send ping every 30 seconds to keep connection alive
-  setInterval(() => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send('ping')
+    console.log('WebSocket connection closed. Attempting to reconnect...')
+    if (pingInterval) {
+      clearInterval(pingInterval)
     }
-  }, 30000)
+
+    if (retryCount < maxRetries) {
+      // Exponential backoff for reconnection
+      const delay = Math.min(1000 * (2 ** retryCount), 30000) // Cap delay at 30s
+      reconnectTimeout = setTimeout(() => {
+        setupWebSocket()
+        retryCount++
+      }, delay)
+    }
+    else {
+      console.error('WebSocket reconnection failed after maximum retries.')
+    }
+  }
 }
 </script>
 
