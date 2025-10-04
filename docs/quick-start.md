@@ -12,7 +12,7 @@ Get the quiz application running in minutes.
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd quiz
+   cd stage-flow-tools
    ```
 
 2. **Install dependencies**

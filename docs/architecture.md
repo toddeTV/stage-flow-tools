@@ -19,7 +19,7 @@ System design and technical architecture of the quiz application.
 
 ## Application Structure
 
-```
+```text
 quiz/
 ├── app/           # Frontend application
 │   ├── pages/     # Route components

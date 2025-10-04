@@ -20,7 +20,7 @@ Complete guide for setting up the quiz application locally.
 2. **Clone and install**
    ```bash
    git clone <repository-url>
-   cd quiz
+   cd stage-flow-tools
    pnpm install
    ```
 
