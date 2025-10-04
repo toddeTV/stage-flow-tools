@@ -35,6 +35,13 @@ export default defineEventHandler(async (event) => {
 
   const question = await toggleQuestionLock(questionId)
 
+  if (!question) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Question not found'
+    })
+  }
+
   // Broadcast lock status change
   if (question) {
     broadcast('lock-status', { questionId, is_locked: question.is_locked })

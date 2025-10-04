@@ -35,6 +35,13 @@ export default defineEventHandler(async (event) => {
 
   const question = await publishQuestion(questionId)
 
+  if (!question) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Question not found'
+    })
+  }
+
   // Broadcast new question to all connected clients
   broadcast('new-question', question)
 
