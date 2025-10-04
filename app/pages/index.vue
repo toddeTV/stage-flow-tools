@@ -6,6 +6,8 @@ const nicknameInput = ref('')
 const activeQuestion = ref<Question | null>(null)
 const selectedAnswer = ref('')
 let ws: WebSocket | null = null
+let pingInterval: NodeJS.Timeout | null = null
+let reconnectTimeout: NodeJS.Timeout | null = null
 
 // Load nickname from localStorage
 onMounted(async () => {
@@ -25,6 +27,12 @@ onMounted(async () => {
 onUnmounted(() => {
   if (ws) {
     ws.close()
+  }
+  if (pingInterval) {
+    clearInterval(pingInterval)
+  }
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout)
   }
 })
 
@@ -96,6 +104,23 @@ async function submitAnswer() {
 
 // Setup WebSocket
 function setupWebSocket() {
+  // Short-circuit if a fresh open ws already exists
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    return
+  }
+
+  // Clear any existing interval and timeout
+  if (pingInterval) {
+    clearInterval(pingInterval)
+  }
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout)
+  }
+  // Close any existing ws
+  if (ws) {
+    ws.close()
+  }
+
   const config = useRuntimeConfig()
 
   // Use the public WebSocket URL if provided, otherwise use the current host
@@ -135,13 +160,13 @@ function setupWebSocket() {
 
   ws.onclose = () => {
     // Attempt to reconnect after 3 seconds
-    setTimeout(() => {
+    reconnectTimeout = setTimeout(() => {
       setupWebSocket()
     }, 3000)
   }
 
   // Send ping every 30 seconds to keep connection alive
-  setInterval(() => {
+  pingInterval = setInterval(() => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send('ping')
     }
