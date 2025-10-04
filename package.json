@@ -46,7 +46,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test:types": "nuxi typecheck"
   },
   "dependencies": {
     "nuxt": "~4.1.2"
@@ -57,8 +58,11 @@
     "@types/proper-lockfile": "~4.1.4",
     "crossws": "~0.4.1",
     "jsonwebtoken": "~9.0.2",
+    "nuxi": "~3.28.0",
     "proper-lockfile": "~4.1.2",
+    "typescript": "~5.9.3",
     "vue": "~3.5.22",
-    "vue-router": "~4.5.1"
+    "vue-router": "~4.5.1",
+    "vue-tsc": "~3.1.0"
   }
 }
