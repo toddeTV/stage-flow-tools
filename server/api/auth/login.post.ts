@@ -1,10 +1,9 @@
-import { validateAdmin } from '../../utils/storage'
 import jwt from 'jsonwebtoken'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
   const body = await readBody(event)
-  const { username, password } = body
+  const { username, password } = body as { username?: string, password?: string }
   
   if (!username || !password) {
     throw createError({

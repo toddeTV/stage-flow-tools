@@ -1,11 +1,11 @@
-<script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+<script setup lang="ts">
+import type { Question } from '~/types'
 
 const userNickname = ref('')
 const nicknameInput = ref('')
-const activeQuestion = ref(null)
+const activeQuestion = ref<Question | null>(null)
 const selectedAnswer = ref('')
-let ws = null
+let ws: WebSocket | null = null
 
 // Load nickname from localStorage
 onMounted(async () => {
@@ -13,10 +13,10 @@ onMounted(async () => {
   if (saved) {
     userNickname.value = saved
   }
-  
+
   // Load active question
   await loadQuestion()
-  
+
   // Setup WebSocket connection
   setupWebSocket()
 })
@@ -47,20 +47,22 @@ function changeNickname() {
 // Load active question
 async function loadQuestion() {
   try {
-    const question = await $fetch('/api/questions')
-    if (question && !question.message) {
+    const question = await $fetch<Question>('/api/questions')
+    if (question && !(question as any).message) {
       activeQuestion.value = question
-      
+
       // Check if user has already answered
       const savedAnswer = sessionStorage.getItem(`answer-${question.id}`)
       if (savedAnswer) {
         selectedAnswer.value = savedAnswer
       }
-    } else {
+    }
+    else {
       activeQuestion.value = null
       selectedAnswer.value = ''
     }
-  } catch (error) {
+  }
+  catch (error: unknown) {
     console.error('Failed to load question:', error)
   }
 }
@@ -70,7 +72,7 @@ async function submitAnswer() {
   if (!selectedAnswer.value || !activeQuestion.value || activeQuestion.value.is_locked) {
     return
   }
-  
+
   try {
     await $fetch('/api/answers/submit', {
       method: 'POST',
@@ -79,10 +81,11 @@ async function submitAnswer() {
         selected_answer: selectedAnswer.value
       }
     })
-    
+
     // Save answer in sessionStorage
     sessionStorage.setItem(`answer-${activeQuestion.value.id}`, selectedAnswer.value)
-  } catch (error) {
+  }
+  catch (error: any) {
     console.error('Failed to submit answer:', error)
     // If locked, reload question
     if (error.statusCode === 403) {
@@ -94,50 +97,52 @@ async function submitAnswer() {
 // Setup WebSocket
 function setupWebSocket() {
   const config = useRuntimeConfig()
-  
+
   // Use the public WebSocket URL if provided, otherwise use the current host
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = config.public.wsUrl || window.location.host
-  
+
   // Ensure we have the correct format - if wsUrl is provided, use it directly
   const wsEndpoint = config.public.wsUrl ? `${config.public.wsUrl}/_ws` : `${protocol}//${host}/_ws`
-  
+
   ws = new WebSocket(wsEndpoint)
-  
-  ws.onmessage = (event) => {
+
+  ws.onmessage = (event: MessageEvent) => {
     try {
       const data = JSON.parse(event.data)
-      
+
       if (data.event === 'new-question') {
         // New question published
         activeQuestion.value = data.data
         selectedAnswer.value = ''
         sessionStorage.removeItem(`answer-${data.data.id}`)
-      } else if (data.event === 'lock-status') {
+      }
+      else if (data.event === 'lock-status') {
         // Lock status changed
         if (activeQuestion.value && activeQuestion.value.id === data.data.questionId) {
           activeQuestion.value.is_locked = data.data.is_locked
         }
       }
-    } catch (error) {
+    }
+    catch (error: unknown) {
       console.error('WebSocket message error:', error)
     }
   }
-  
-  ws.onerror = (error) => {
+
+  ws.onerror = (error: Event) => {
     console.error('WebSocket error:', error)
   }
-  
+
   ws.onclose = () => {
     // Attempt to reconnect after 3 seconds
     setTimeout(() => {
       setupWebSocket()
     }, 3000)
   }
-  
+
   // Send ping every 30 seconds to keep connection alive
   setInterval(() => {
-    if (ws.readyState === WebSocket.OPEN) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send('ping')
     }
   }, 30000)

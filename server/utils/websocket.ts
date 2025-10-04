@@ -1,31 +1,35 @@
-const peers = new Set<any>()
+import type { Peer } from 'crossws'
+import type { Results } from '~/types'
 
-export function addPeer(peer: any) {
+const peers = new Set<Peer>()
+
+export function addPeer(peer: Peer) {
   peers.add(peer)
 }
 
-export function removePeer(peer: any) {
+export function removePeer(peer: Peer) {
   peers.delete(peer)
 }
 
-export function broadcast(event: string, data: any) {
+export function broadcast(event: string, data: unknown) {
   const message = JSON.stringify({ event, data })
-  peers.forEach(peer => {
+  peers.forEach((peer) => {
     try {
       peer.send(message)
-    } catch (error) {
+    }
+    catch (error: unknown) {
       console.error('Broadcast error:', error)
     }
   })
 }
 
 // Bundled results update
-let resultsBuffer: any[] = []
-let resultsTimeout: any | null = null
+let resultsBuffer: Results[] = []
+let resultsTimeout: NodeJS.Timeout | null = null
 
-export function scheduleResultsUpdate(data: any) {
+export function scheduleResultsUpdate(data: Results) {
   resultsBuffer.push(data)
-  
+
   if (!resultsTimeout) {
     resultsTimeout = setTimeout(() => {
       if (resultsBuffer.length > 0) {

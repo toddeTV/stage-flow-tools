@@ -1,15 +1,15 @@
-<script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+<script setup lang="ts">
+import type { Results } from '~/types'
 
-const results = ref(null)
-let ws = null
-let refreshInterval = null
+const results = ref<Results | null>(null)
+let ws: WebSocket | null = null
+let refreshInterval: NodeJS.Timeout | null = null
 
 // Load results on mount
 onMounted(async () => {
   await loadResults()
   setupWebSocket()
-  
+
   // Auto-refresh every 5 seconds as backup
   refreshInterval = setInterval(() => {
     loadResults()
@@ -29,13 +29,15 @@ onUnmounted(() => {
 // Load current results
 async function loadResults() {
   try {
-    const data = await $fetch('/api/results/current')
-    if (data && !data.message) {
+    const data = await $fetch<Results>('/api/results/current')
+    if (data && !(data as any).message) {
       results.value = data
-    } else {
+    }
+    else {
       results.value = null
     }
-  } catch (error) {
+  }
+  catch (error: unknown) {
     console.error('Failed to load results:', error)
   }
 }
@@ -46,20 +48,20 @@ async function refreshResults() {
 }
 
 // Calculate bar width
-function getBarWidth(count) {
+function getBarWidth(count: number) {
   if (!results.value || results.value.totalVotes === 0) {
     return 0
   }
-  
+
   const maxVotes = Math.max(...Object.values(results.value.results))
   if (maxVotes === 0) return 0
-  
+
   // Scale to max 90% width for best visual
   return (count / maxVotes) * 90
 }
 
 // Calculate percentage
-function getPercentage(count) {
+function getPercentage(count: number) {
   if (!results.value || results.value.totalVotes === 0) {
     return 0
   }
@@ -69,48 +71,50 @@ function getPercentage(count) {
 // Setup WebSocket for real-time updates
 function setupWebSocket() {
   const config = useRuntimeConfig()
-  
+
   // Use the public WebSocket URL if provided, otherwise use the current host
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = config.public.wsUrl || window.location.host
-  
+
   // Ensure we have the correct format - if wsUrl is provided, use it directly
   const wsEndpoint = config.public.wsUrl ? `${config.public.wsUrl}/_ws` : `${protocol}//${host}/_ws`
-  
+
   ws = new WebSocket(wsEndpoint)
-  
-  ws.onmessage = (event) => {
+
+  ws.onmessage = (event: MessageEvent) => {
     try {
       const data = JSON.parse(event.data)
-      
+
       if (data.event === 'results-update') {
         // Update results
         results.value = data.data
-      } else if (data.event === 'new-question') {
+      }
+      else if (data.event === 'new-question') {
         // New question, reset results
         results.value = null
         // Load new results
         setTimeout(loadResults, 500)
       }
-    } catch (error) {
+    }
+    catch (error: unknown) {
       console.error('WebSocket message error:', error)
     }
   }
-  
-  ws.onerror = (error) => {
+
+  ws.onerror = (error: Event) => {
     console.error('WebSocket error:', error)
   }
-  
+
   ws.onclose = () => {
     // Attempt to reconnect after 3 seconds
     setTimeout(() => {
       setupWebSocket()
     }, 3000)
   }
-  
+
   // Send ping every 30 seconds to keep connection alive
   setInterval(() => {
-    if (ws.readyState === WebSocket.OPEN) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send('ping')
     }
   }, 30000)

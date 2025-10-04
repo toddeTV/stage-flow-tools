@@ -1,11 +1,11 @@
-<script setup>
-import { ref, onMounted } from 'vue'
+<script setup lang="ts">
+import type { Question } from '~/types'
 
 const isAuthenticated = ref(false)
 const loginForm = ref({ username: '', password: '' })
 const loginError = ref('')
-const activeQuestion = ref(null)
-const preparedQuestions = ref([])
+const activeQuestion = ref<Question | null>(null)
+const preparedQuestions = ref<Question[]>([])
 const newQuestion = ref({
   question_text: '',
   answer_options: ['', '']
@@ -19,7 +19,8 @@ onMounted(async () => {
       await $fetch('/api/auth/verify')
       isAuthenticated.value = true
       await loadQuestions()
-    } catch {
+    }
+    catch (error: unknown) {
       isAuthenticated.value = false
     }
   }
@@ -29,15 +30,12 @@ onMounted(async () => {
 async function loadQuestions() {
   try {
     // Get active question
-    const active = await $fetch('/api/questions')
-    if (active && !active.message) {
+    const active = await $fetch<Question>('/api/questions')
+    if (active && !(active as any).message) {
       activeQuestion.value = active
     }
-    
-    // Load all questions and filter prepared ones
-    // For now, we'll just show non-active questions
-    // In a production app, you'd have a separate endpoint for this
-  } catch (error) {
+  }
+  catch (error: unknown) {
     console.error('Failed to load questions:', error)
   }
 }
@@ -46,18 +44,19 @@ async function loadQuestions() {
 async function handleLogin() {
   try {
     loginError.value = ''
-    const { token } = await $fetch('/api/auth/login', {
+    const { token } = await $fetch<{ token: string }>('/api/auth/login', {
       method: 'POST',
       body: loginForm.value
     })
-    
+
     // Set cookie
     const cookie = useCookie('admin-token')
     cookie.value = token
-    
+
     isAuthenticated.value = true
     await loadQuestions()
-  } catch (error) {
+  }
+  catch (error: any) {
     loginError.value = error.data?.statusMessage || 'Login failed'
   }
 }
@@ -75,47 +74,49 @@ async function handleCreateQuestion() {
   try {
     // Filter out empty options
     const filteredOptions = newQuestion.value.answer_options.filter(opt => opt.trim())
-    
+
     if (filteredOptions.length < 2) {
       alert('At least 2 answer options required')
       return
     }
-    
-    const question = await $fetch('/api/questions/create', {
+
+    const question = await $fetch<Question>('/api/questions/create', {
       method: 'POST',
       body: {
         question_text: newQuestion.value.question_text,
         answer_options: filteredOptions
       }
     })
-    
+
     preparedQuestions.value.push(question)
-    
+
     // Reset form
     newQuestion.value = {
       question_text: '',
       answer_options: ['', '']
     }
-    
+
     alert('Question created successfully')
-  } catch (error) {
+  }
+  catch (error: unknown) {
     alert('Failed to create question')
   }
 }
 
 // Publish question
-async function publishQuestion(questionId) {
+async function publishQuestion(questionId: string) {
   try {
-    const question = await $fetch('/api/questions/publish', {
+    const question = await $fetch<Question>('/api/questions/publish', {
       method: 'POST',
       body: { questionId }
     })
-    
+
     activeQuestion.value = question
-    preparedQuestions.value = preparedQuestions.value.filter(q => q.id !== questionId)
-    
+    preparedQuestions.value = preparedQuestions.value.filter((q: Question) => q.id !== questionId)
+
     alert('Question published successfully')
-  } catch (error) {
+  }
+  catch (error: unknown) {
     alert('Failed to publish question')
   }
 }
@@ -123,15 +124,16 @@ async function publishQuestion(questionId) {
 // Toggle lock
 async function toggleLock() {
   if (!activeQuestion.value) return
-  
+
   try {
-    const question = await $fetch('/api/questions/toggle-lock', {
+    const question = await $fetch<Question>('/api/questions/toggle-lock', {
       method: 'POST',
       body: { questionId: activeQuestion.value.id }
     })
-    
+
     activeQuestion.value = question
-  } catch (error) {
+  }
+  catch (error: unknown) {
     alert('Failed to toggle lock status')
   }
 }
@@ -142,7 +144,7 @@ function addOption() {
 }
 
 // Remove option
-function removeOption(index) {
+function removeOption(index: number) {
   newQuestion.value.answer_options.splice(index, 1)
 }
 </script>

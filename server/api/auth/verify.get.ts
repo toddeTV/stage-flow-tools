@@ -14,7 +14,8 @@ export default defineEventHandler(async (event) => {
   try {
     const decoded = jwt.verify(token, config.jwtSecret)
     return { valid: true, user: decoded }
-  } catch {
+  }
+  catch (error: unknown) {
     throw createError({
       statusCode: 401,
       statusMessage: 'Invalid token'

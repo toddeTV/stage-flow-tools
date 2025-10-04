@@ -1,5 +1,3 @@
-import { toggleQuestionLock } from '../../utils/storage'
-import { broadcast } from '../../utils/websocket'
 import jwt from 'jsonwebtoken'
 
 export default defineEventHandler(async (event) => {
@@ -17,27 +15,30 @@ export default defineEventHandler(async (event) => {
   
   try {
     jwt.verify(token, config.jwtSecret)
-  } catch {
+  }
+  catch (error: unknown) {
     throw createError({
       statusCode: 401,
       statusMessage: 'Invalid token'
     })
   }
-  
-  const body = await readBody(event)
+
+  const body = await readBody(event) as { questionId?: string }
   const { questionId } = body
-  
+
   if (!questionId) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Question ID required'
     })
   }
-  
+
   const question = await toggleQuestionLock(questionId)
-  
+
   // Broadcast lock status change
-  broadcast('lock-status', { questionId, is_locked: question.is_locked })
-  
+  if (question) {
+    broadcast('lock-status', { questionId, is_locked: question.is_locked })
+  }
+
   return question
 })

@@ -1,6 +1,6 @@
-import { getCurrentResults } from '../../utils/storage'
+import type { Results } from '~/types'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (): Promise<Results | { message: string }> => {
   const results = await getCurrentResults()
   return results || { message: 'No active question' }
 })
