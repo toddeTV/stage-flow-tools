@@ -28,12 +28,14 @@ export default defineEventHandler(async (event) => {
     { expiresIn: '24h' }
   )
   
-  setCookie(event, 'admin-token', token, {
+  setCookie(event, 'auth_token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 60 * 60 * 24 // 1 day
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 // 24 hours
   })
 
-  return { success: true }
+  return {
+    success: true
+  }
 })
