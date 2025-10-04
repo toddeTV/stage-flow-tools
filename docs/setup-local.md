@@ -40,13 +40,6 @@ openssl rand -base64 48
 
 Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
 
-Available variables:
-- `NUXT_ADMIN_USERNAME` - Admin login username (default: admin)
-- `NUXT_ADMIN_PASSWORD` - Admin login password (default: 123)
-- `NUXT_JWT_SECRET` - Secret for JWT tokens (generate using command above)
-- `NUXT_PUBLIC_HOST` - Server host (default: 0.0.0.0)
-- `NUXT_PUBLIC_PORT` - Server port (default: 3000)
-
 ## Development Commands
 
 - `pnpm dev` - Start development server

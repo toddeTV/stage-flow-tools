@@ -59,16 +59,7 @@ CMD ["node", ".output/server/index.mjs"]
 openssl rand -base64 48
 ```
 
-Store the generated secret in your environment management system or secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault, Kubernetes Secrets, or your platform's environment variable manager).
-
-```bash
-NODE_ENV=production
-NUXT_ADMIN_USERNAME=<secure-username>
-NUXT_ADMIN_PASSWORD=<secure-password>
-NUXT_JWT_SECRET=<generated-secret-from-command-above>
-NUXT_PUBLIC_HOST=0.0.0.0
-NUXT_PUBLIC_PORT=3000
-```
+Store the generated secret in your environment management system or secrets manager to fill `NUXT_JWT_SECRET` in production (e.g., AWS Secrets Manager, HashiCorp Vault, Kubernetes Secrets, or your platform's environment variable manager).
 
 ### Security Considerations
 
