@@ -29,7 +29,7 @@ Verify authentication token.
 
 **Headers:**
 - `Authorization: Bearer <token>`
-- Or cookie: `admin-token`
+- Or cookie: `admin_token`
 
 **Response:**
 ```json

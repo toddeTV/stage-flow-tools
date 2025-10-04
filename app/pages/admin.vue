@@ -56,7 +56,7 @@ async function handleLogin() {
 
 // Logout handler
 function handleLogout() {
-  useCookie('admin-token').value = null
+  useCookie('admin_token').value = null
   isAuthenticated.value = false
   navigateTo('/')
 }
