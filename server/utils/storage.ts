@@ -1,15 +1,7 @@
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import type { H3Event } from 'h3'
-import type { Question, Results } from '~/types'
-
-interface Answer {
-  id: string
-  question_id: string
-  user_nickname: string
-  selected_answer: string
-  timestamp: string
-}
+import type { Question, Results, Answer } from '~/types'
 
 const DATA_DIR = join(process.cwd(), 'data')
 const QUESTIONS_FILE = join(DATA_DIR, 'questions.json')
