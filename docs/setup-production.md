@@ -54,19 +54,27 @@ CMD ["node", ".output/server/index.mjs"]
 
 ### Production Variables
 
+**Generate a strong JWT secret:**
+```bash
+openssl rand -base64 48
+```
+
+Store the generated secret in your environment management system or secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault, Kubernetes Secrets, or your platform's environment variable manager).
+
 ```bash
 NODE_ENV=production
-ADMIN_USERNAME=<secure-username>
-ADMIN_PASSWORD=<secure-password>
-JWT_SECRET=<strong-secret-key>
-HOST=0.0.0.0
-PORT=3000
+NUXT_ADMIN_USERNAME=<secure-username>
+NUXT_ADMIN_PASSWORD=<secure-password>
+NUXT_JWT_SECRET=<generated-secret-from-command-above>
+NUXT_PUBLIC_HOST=0.0.0.0
+NUXT_PUBLIC_PORT=3000
 ```
 
 ### Security Considerations
 
 - **Strong Passwords**: Use complex admin credentials
-- **JWT Secret**: Generate secure random string
+- **JWT Secret**: Generate secure random string using `openssl rand -base64 48` and store it securely
+- **Secret Management**: Never commit secrets to source control; use environment management or a secrets manager
 - **HTTPS**: Always use SSL in production
 - **Firewall**: Configure appropriate rules
 
