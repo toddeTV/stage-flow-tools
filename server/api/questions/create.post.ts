@@ -25,12 +25,33 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event) as Omit<Question, 'id' | 'is_locked'>
-  const { question_text, answer_options } = body
+  const { question_text: raw_question_text, answer_options: raw_answer_options } = body
 
-  if (!question_text || !answer_options || answer_options.length < 2) {
+  // Validate and sanitize question_text
+  const question_text = typeof raw_question_text === 'string' ? raw_question_text.trim() : ''
+  if (!question_text) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Question text and at least 2 answer options required'
+      statusMessage: 'Question text is required'
+    })
+  }
+
+  // Validate and sanitize answer_options
+  if (!Array.isArray(raw_answer_options)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Answer options must be an array'
+    })
+  }
+
+  const answer_options = raw_answer_options
+    .map(option => typeof option === 'string' ? option.trim() : '')
+    .filter(option => option)
+
+  if (answer_options.length < 2) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'At least 2 non-empty answer options are required'
     })
   }
 
