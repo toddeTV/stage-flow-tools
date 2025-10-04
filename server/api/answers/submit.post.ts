@@ -27,6 +27,17 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Normalize and validate answer
+  const anwserOptions = activeQuestion.answer_options.map(opt => opt.toLowerCase())
+  const selectedAnswerNormalized = selected_answer.toLowerCase()
+
+  if (!anwserOptions.includes(selectedAnswerNormalized)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Invalid answer'
+    })
+  }
+
   // Submit answer
   await submitAnswer({
     question_id: activeQuestion.id,
