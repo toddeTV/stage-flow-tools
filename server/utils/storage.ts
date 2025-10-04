@@ -154,6 +154,17 @@ export async function saveAnswers(answers: Answer[]): Promise<void> {
 }
 
 export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>): Promise<Answer[]> {
+  const questions = await getQuestions()
+  const question = questions.find(q => q.id === answerData.question_id)
+
+  if (!question) {
+    throw new Error('Question not found')
+  }
+
+  if (!question.answer_options.includes(answerData.selected_answer)) {
+    throw new Error('Invalid answer option')
+  }
+
   const answers = await getAnswers()
 
   // Check if user already answered this question
