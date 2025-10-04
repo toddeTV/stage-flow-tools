@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  crossws: 0.4.1
+
 importers:
 
   .:
@@ -22,7 +25,7 @@ importers:
         specifier: ~4.1.4
         version: 4.1.4
       crossws:
-        specifier: ~0.4.1
+        specifier: 0.4.1
         version: 0.4.1
       jsonwebtoken:
         specifier: ~9.0.2
@@ -1404,9 +1407,6 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
-
-  crossws@0.3.5:
-    resolution: {integrity: sha512-ojKiDvcmByhwa8YYqbQI/hg7MEU0NC03+pSdEq4ZUnZR9xXpwk7E43SMNGkn+JxJGPFtNvQ48+vV2p+P1ml5PA==}
 
   crossws@0.4.1:
     resolution: {integrity: sha512-E7WKBcHVhAVrY6JYD5kteNqVq1GSZxqGrdSiwXR9at+XHi43HJoCQKXcCczR5LBnBquFZPsB3o7HklulKoBU5w==}
@@ -3539,6 +3539,7 @@ snapshots:
       youch: 4.1.0-beta.11
     transitivePeerDependencies:
       - magicast
+      - srvx
 
   '@nuxt/devalue@2.0.2': {}
 
@@ -3729,6 +3730,7 @@ snapshots:
       - rollup
       - sass
       - sass-embedded
+      - srvx
       - stylelint
       - stylus
       - sugarss
@@ -4566,10 +4568,6 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
-  crossws@0.3.5:
-    dependencies:
-      uncrypto: 0.1.3
-
   crossws@0.4.1: {}
 
   css-declaration-sorter@7.3.0(postcss@8.5.6):
@@ -4903,7 +4901,7 @@ snapshots:
   h3@1.15.4:
     dependencies:
       cookie-es: 1.2.2
-      crossws: 0.3.5
+      crossws: 0.4.1
       defu: 6.1.4
       destr: 2.0.5
       iron-webcrypto: 1.2.1
@@ -4911,6 +4909,8 @@ snapshots:
       radix3: 1.1.2
       ufo: 1.6.1
       uncrypto: 0.1.3
+    transitivePeerDependencies:
+      - srvx
 
   hasown@2.0.2:
     dependencies:
@@ -5102,7 +5102,7 @@ snapshots:
       citty: 0.1.6
       clipboardy: 4.0.0
       consola: 3.4.2
-      crossws: 0.3.5
+      crossws: 0.4.1
       defu: 6.1.4
       get-port-please: 3.2.0
       h3: 1.15.4
@@ -5115,6 +5115,8 @@ snapshots:
       ufo: 1.6.1
       untun: 0.1.3
       uqr: 0.1.2
+    transitivePeerDependencies:
+      - srvx
 
   local-pkg@1.1.2:
     dependencies:
@@ -5258,7 +5260,7 @@ snapshots:
       consola: 3.4.2
       cookie-es: 2.0.0
       croner: 9.1.0
-      crossws: 0.3.5
+      crossws: 0.4.1
       db0: 0.3.4
       defu: 6.1.4
       destr: 2.0.5
@@ -5336,6 +5338,7 @@ snapshots:
       - react-native-b4a
       - rolldown
       - sqlite3
+      - srvx
       - supports-color
       - uploadthing
 
@@ -5486,6 +5489,7 @@ snapshots:
       - sass
       - sass-embedded
       - sqlite3
+      - srvx
       - stylelint
       - stylus
       - sugarss
@@ -6275,6 +6279,8 @@ snapshots:
     optionalDependencies:
       db0: 0.3.4
       ioredis: 5.8.0
+    transitivePeerDependencies:
+      - srvx
 
   untun@0.1.3:
     dependencies:

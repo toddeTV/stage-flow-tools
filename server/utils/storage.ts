@@ -175,10 +175,13 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
 
   if (existingIndex >= 0) {
     // Update existing answer
-    answers[existingIndex] = {
-      ...answers[existingIndex],
-      selected_answer: answerData.selected_answer,
-      timestamp: new Date().toISOString()
+    const existingAnswer = answers[existingIndex]
+    if (existingAnswer) {
+      answers[existingIndex] = {
+        ...existingAnswer,
+        selected_answer: answerData.selected_answer,
+        timestamp: new Date().toISOString()
+      }
     }
   }
   else {
@@ -224,7 +227,10 @@ export async function getCurrentResults(): Promise<Results | null> {
 
   answers.forEach((answer) => {
     if (Object.prototype.hasOwnProperty.call(results, answer.selected_answer)) {
-      results[answer.selected_answer]++
+      const currentCount = results[answer.selected_answer]
+      if (typeof currentCount === 'number') {
+        results[answer.selected_answer] = currentCount + 1
+      }
     }
   })
 
