@@ -1,5 +1,7 @@
 import { promises as fs } from 'fs'
 import { join } from 'path'
+import { createId } from '@paralleldrive/cuid2'
+import { lock } from 'proper-lockfile'
 import type { H3Event } from 'h3'
 import type { Question, Results, Answer } from '~/types'
 
@@ -56,13 +58,25 @@ async function initStorage(event?: H3Event) {
 // Question operations
 export async function getQuestions(): Promise<Question[]> {
   await initStorage()
-  const data = await fs.readFile(QUESTIONS_FILE, 'utf-8')
-  return JSON.parse(data)
+  const release = await lock(QUESTIONS_FILE)
+  try {
+    const data = await fs.readFile(QUESTIONS_FILE, 'utf-8')
+    return JSON.parse(data)
+  }
+  finally {
+    await release()
+  }
 }
 
 export async function saveQuestions(questions: Question[]): Promise<void> {
   await initStorage()
-  await fs.writeFile(QUESTIONS_FILE, JSON.stringify(questions, null, 2))
+  const release = await lock(QUESTIONS_FILE)
+  try {
+    await fs.writeFile(QUESTIONS_FILE, JSON.stringify(questions, null, 2))
+  }
+  finally {
+    await release()
+  }
 }
 
 export async function getActiveQuestion(): Promise<Question | undefined> {
@@ -73,7 +87,7 @@ export async function getActiveQuestion(): Promise<Question | undefined> {
 export async function createQuestion(questionData: Omit<Question, 'id' | 'is_locked'>): Promise<Question> {
   const questions = await getQuestions()
   const newQuestion: Question = {
-    id: Date.now().toString(),
+    id: createId(),
     ...questionData,
     is_locked: false
   }
@@ -118,13 +132,25 @@ export async function toggleQuestionLock(questionId: string): Promise<Question |
 // Answer operations
 export async function getAnswers(): Promise<Answer[]> {
   await initStorage()
-  const data = await fs.readFile(ANSWERS_FILE, 'utf-8')
-  return JSON.parse(data)
+  const release = await lock(ANSWERS_FILE)
+  try {
+    const data = await fs.readFile(ANSWERS_FILE, 'utf-8')
+    return JSON.parse(data)
+  }
+  finally {
+    await release()
+  }
 }
 
 export async function saveAnswers(answers: Answer[]): Promise<void> {
   await initStorage()
-  await fs.writeFile(ANSWERS_FILE, JSON.stringify(answers, null, 2))
+  const release = await lock(ANSWERS_FILE)
+  try {
+    await fs.writeFile(ANSWERS_FILE, JSON.stringify(answers, null, 2))
+  }
+  finally {
+    await release()
+  }
 }
 
 export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>): Promise<Answer[]> {
@@ -147,7 +173,7 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
   else {
     // Add new answer
     const newAnswer: Answer = {
-      id: Date.now().toString(),
+      id: createId(),
       ...answerData,
       timestamp: new Date().toISOString()
     }
