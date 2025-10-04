@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   }
   
   try {
-    const decoded = jwt.verify(token, config.jwtSecret)
+    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] })
     return { valid: true, user: decoded }
   }
   catch (error: unknown) {
