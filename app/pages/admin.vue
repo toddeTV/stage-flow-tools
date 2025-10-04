@@ -13,16 +13,13 @@ const newQuestion = ref({
 
 // Check authentication status
 onMounted(async () => {
-  const token = useCookie('admin-token').value
-  if (token) {
-    try {
-      await $fetch('/api/auth/verify')
-      isAuthenticated.value = true
-      await loadQuestions()
-    }
-    catch (error: unknown) {
-      isAuthenticated.value = false
-    }
+  try {
+    await $fetch('/api/auth/verify')
+    isAuthenticated.value = true
+    await loadQuestions()
+  }
+  catch (error: unknown) {
+    isAuthenticated.value = false
   }
 })
 
@@ -44,14 +41,10 @@ async function loadQuestions() {
 async function handleLogin() {
   try {
     loginError.value = ''
-    const { token } = await $fetch<{ token: string }>('/api/auth/login', {
+    await $fetch('/api/auth/login', {
       method: 'POST',
       body: loginForm.value
     })
-
-    // Set cookie
-    const cookie = useCookie('admin-token')
-    cookie.value = token
 
     isAuthenticated.value = true
     await loadQuestions()
@@ -63,8 +56,7 @@ async function handleLogin() {
 
 // Logout handler
 function handleLogout() {
-  const cookie = useCookie('admin-token')
-  cookie.value = null
+  useCookie('admin-token').value = null
   isAuthenticated.value = false
   navigateTo('/')
 }
