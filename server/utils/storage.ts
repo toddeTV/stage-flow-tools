@@ -199,7 +199,7 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
     // Check if user already answered this question
     const existingIndex = answers.findIndex(
       a => a.question_id === answerData.question_id
-        && a.user_nickname === answerData.user_nickname
+        && a.user_id === answerData.user_id
     )
 
     if (existingIndex >= 0) {
@@ -234,6 +234,25 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
 export async function getAnswersForQuestion(questionId: string): Promise<Answer[]> {
   const answers = await getAnswers()
   return answers.filter(a => a.question_id === questionId)
+}
+
+export async function retractAnswer(userId: string, questionId: string): Promise<Answer[]> {
+  await initStorage()
+  const release = await lock(ANSWERS_FILE)
+  try {
+    const data = await fs.readFile(ANSWERS_FILE, 'utf-8')
+    const answers: Answer[] = JSON.parse(data)
+
+    const updatedAnswers = answers.filter(
+      a => !(a.user_id === userId && a.question_id === questionId)
+    )
+
+    await fs.writeFile(ANSWERS_FILE, JSON.stringify(updatedAnswers, null, 2))
+    return updatedAnswers
+  }
+  finally {
+    await release()
+  }
 }
 
 // Admin operations

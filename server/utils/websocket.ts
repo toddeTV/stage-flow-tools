@@ -4,14 +4,16 @@ import { Results } from '~/types'
 interface PeerInfo {
   id: string
   url: string
+  userId?: string
 }
 
 const storage = useStorage('ws')
 const peers = new Map<string, Peer>()
 
-export async function addPeer(peer: Peer, url: string) {
+export async function addPeer(peer: Peer, url: string, userId?: string) {
+  ;(peer as any).userId = userId
   peers.set(peer.id, peer)
-  const peerInfo: PeerInfo = { id: peer.id, url }
+  const peerInfo: PeerInfo = { id: peer.id, url, userId }
   const storedPeers = await storage.getItem<PeerInfo[]>('peers') || []
   await storage.setItem('peers', [...storedPeers, peerInfo])
   console.dir(await getPeers())

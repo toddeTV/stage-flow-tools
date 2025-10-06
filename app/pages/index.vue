@@ -25,7 +25,24 @@ function setNickname() {
 }
 
 // Change nickname
-function changeNickname() {
+async function changeNickname() {
+  if (activeQuestion.value) {
+    const userId = localStorage.getItem('quiz-user-id')
+    if (userId) {
+      try {
+        await $fetch('/api/answers/retract', {
+          method: 'POST',
+          body: {
+            user_id: userId,
+            question_id: activeQuestion.value.id
+          }
+        })
+      }
+      catch (error) {
+        console.error('Failed to retract answer:', error)
+      }
+    }
+  }
   userNickname.value = ''
   nicknameInput.value = ''
   selectedAnswer.value = ''
@@ -62,9 +79,16 @@ async function submitAnswer() {
   }
 
   try {
+    const userId = localStorage.getItem('quiz-user-id')
+    if (!userId) {
+      // This should not happen, but as a fallback
+      console.error('User ID not found')
+      return
+    }
     await $fetch('/api/answers/submit', {
       method: 'POST',
       body: {
+        user_id: userId,
         user_nickname: userNickname.value,
         selected_answer: selectedAnswer.value
       }

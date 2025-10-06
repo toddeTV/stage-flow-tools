@@ -8,6 +8,7 @@ export interface Question {
 export interface Answer {
   id: string
   question_id: string
+  user_id: string
   user_nickname: string
   selected_answer: string
   timestamp: string

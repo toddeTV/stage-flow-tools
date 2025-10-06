@@ -1,12 +1,16 @@
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { user_nickname, selected_answer } = body as { user_nickname: string, selected_answer: string }
+  const { user_id, user_nickname, selected_answer } = body as { 
+    user_id: string,
+    user_nickname: string,
+    selected_answer: string
+  }
 
-  if (!user_nickname || !selected_answer) {
+  if (!user_id || !user_nickname || !selected_answer) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Nickname and answer required'
+      statusMessage: 'User ID, nickname and answer required'
     })
   }
 
@@ -41,6 +45,7 @@ export default defineEventHandler(async (event) => {
   // Submit answer
   await submitAnswer({
     question_id: activeQuestion.id,
+    user_id,
     user_nickname,
     selected_answer
   })

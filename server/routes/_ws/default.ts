@@ -4,7 +4,8 @@ export default defineWebSocketHandler({
   open(peer: Peer) {
     console.log('WebSocket connection opened')
     const url = (peer as any).h3Event?.path || '/'
-    addPeer(peer, url)
+    const userId = getQuery((peer as any).h3Event)?.userId as string | undefined
+    addPeer(peer, url, userId)
   },
   
   close(peer: Peer) {
