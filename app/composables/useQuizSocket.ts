@@ -33,6 +33,9 @@ export const useQuizSocket = () => {
   })
 
   watch(data, (newMessage) => {
+    if (newMessage === 'pong')
+      return
+
     try {
       const parsed = JSON.parse(newMessage)
 
