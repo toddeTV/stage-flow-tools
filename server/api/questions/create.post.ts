@@ -1,28 +1,7 @@
-import jwt from 'jsonwebtoken'
 import type { Question } from '~/types'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig(event)
-
-  // Verify admin token
-  const token = getCookie(event, 'admin_token') || getHeader(event, 'authorization')?.replace('Bearer ', '')
-
-  if (!token) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized'
-    })
-  }
-
-  try {
-    jwt.verify(token, config.jwtSecret)
-  }
-  catch (error: unknown) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Invalid token'
-    })
-  }
+  verifyAdmin(event)
 
   const body = await readBody(event) as Omit<Question, 'id' | 'is_locked'>
   const { question_text: raw_question_text, answer_options: raw_answer_options } = body
