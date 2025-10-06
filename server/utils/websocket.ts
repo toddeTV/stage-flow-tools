@@ -13,9 +13,13 @@ const peers = new Map<string, Peer>()
 export async function addPeer(peer: Peer, url: string, userId?: string) {
   ;(peer as any).userId = userId
   peers.set(peer.id, peer)
-  const peerInfo: PeerInfo = { id: peer.id, url, userId }
+
   const storedPeers = await storage.getItem<PeerInfo[]>('peers') || []
-  await storage.setItem('peers', [...storedPeers, peerInfo])
+  
+  // Deduplicate by ID before appending
+  const filtered = storedPeers.filter((p: PeerInfo) => p.id !== peer.id)
+  const peerInfo: PeerInfo = { id: peer.id, url, userId }
+  await storage.setItem('peers', [...filtered, peerInfo])
 }
 
 export async function removePeer(peer: Peer) {
