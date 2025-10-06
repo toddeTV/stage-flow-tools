@@ -27,7 +27,8 @@ export function verifyAdmin(event: H3Event) {
   }
 
   try {
-    jwt.verify(token, config.jwtSecret)
+    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] })
+    return decoded
   }
   catch (error: unknown) {
     throw createError({
