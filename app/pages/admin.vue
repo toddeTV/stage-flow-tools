@@ -65,7 +65,7 @@ async function handleLogout() {
 async function handleCreateQuestion() {
   try {
     // Filter out empty options
-    const filteredOptions = newQuestion.value.answer_options.filter(opt => opt.trim())
+    const filteredOptions = newQuestion.value.answer_options.filter((opt: string) => opt.trim())
 
     if (filteredOptions.length < 2) {
       alert('At least 2 answer options required')
@@ -170,7 +170,10 @@ function removeOption(index: number) {
     <div v-else class="dashboard">
       <!-- Current Question -->
       <section class="current-question">
-        <h2>Current Active Question</h2>
+        <div class="current-question-header">
+          <h2>Current Active Question</h2>
+          <button @click="loadQuestions" class="refresh-btn">Refresh</button>
+        </div>
         <div v-if="activeQuestion" class="question-display">
           <p class="question-text">{{ activeQuestion.question_text }}</p>
           <ul class="answer-list">
@@ -331,6 +334,27 @@ h2 {
 }
 
 /* Current Question */
+.current-question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.refresh-btn {
+  padding: 8px 16px;
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.refresh-btn:hover {
+  background: #000;
+  color: #fff;
+}
+
 .question-display {
   background: #f5f5f5;
   border: 2px solid #000;
