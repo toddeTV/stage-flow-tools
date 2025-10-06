@@ -8,6 +8,11 @@ export default defineNuxtConfig({
   
   modules: [
     '@vueuse/nuxt',
+    '@nuxtjs/tailwindcss',
+  ],
+
+  css: [
+    '~/assets/css/tailwind.css'
   ],
 
   ssr: false,
@@ -38,5 +43,8 @@ export default defineNuxtConfig({
         showWebsockets: false
       }
     }
+  },
+
+  tailwindcss: { // for Nuxt module `@nuxtjs/tailwindcss`
   }
 })
