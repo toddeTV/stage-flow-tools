@@ -85,48 +85,73 @@ export async function getActiveQuestion(): Promise<Question | undefined> {
 }
 
 export async function createQuestion(questionData: Omit<Question, 'id' | 'is_locked'>): Promise<Question> {
-  const questions = await getQuestions()
-  const newQuestion: Question = {
-    id: createId(),
-    ...questionData,
-    is_locked: false
+  await initStorage()
+  const release = await lock(QUESTIONS_FILE)
+  try {
+    const data = await fs.readFile(QUESTIONS_FILE, 'utf-8')
+    const questions: Question[] = JSON.parse(data)
+    const newQuestion: Question = {
+      id: createId(),
+      ...questionData,
+      is_locked: false
+    }
+    questions.push(newQuestion)
+    await fs.writeFile(QUESTIONS_FILE, JSON.stringify(questions, null, 2))
+    return newQuestion
   }
-  questions.push(newQuestion)
-  await saveQuestions(questions)
-  return newQuestion
+  finally {
+    await release()
+  }
 }
 
 export async function publishQuestion(questionId: string): Promise<Question | undefined> {
-  const questions = await getQuestions()
+  await initStorage()
+  const releaseQuestions = await lock(QUESTIONS_FILE)
+  const releaseAnswers = await lock(ANSWERS_FILE)
+  try {
+    const data = await fs.readFile(QUESTIONS_FILE, 'utf-8')
+    const questions: Question[] = JSON.parse(data)
 
-  // Deactivate all questions
-  questions.forEach((q) => {
-    ;(q as any).is_active = false
-  })
+    // Deactivate all questions
+    questions.forEach((q) => {
+      ;(q as any).is_active = false
+    })
 
-  // Activate the new question
-  const question = questions.find(q => q.id === questionId)
-  if (question) {
-    ;(question as any).is_active = true
-    await saveQuestions(questions)
+    // Activate the new question
+    const question = questions.find(q => q.id === questionId)
+    if (question) {
+      ;(question as any).is_active = true
+      await fs.writeFile(QUESTIONS_FILE, JSON.stringify(questions, null, 2))
 
-    // Clear all answers when publishing new question
-    await saveAnswers([])
+      // Clear all answers when publishing new question
+      await fs.writeFile(ANSWERS_FILE, JSON.stringify([]))
+    }
+    return question
   }
-
-  return question
+  finally {
+    await releaseAnswers()
+    await releaseQuestions()
+  }
 }
 
 export async function toggleQuestionLock(questionId: string): Promise<Question | undefined> {
-  const questions = await getQuestions()
-  const question = questions.find(q => q.id === questionId)
+  await initStorage()
+  const release = await lock(QUESTIONS_FILE)
+  try {
+    const data = await fs.readFile(QUESTIONS_FILE, 'utf-8')
+    const questions: Question[] = JSON.parse(data)
+    const question = questions.find(q => q.id === questionId)
 
-  if (question) {
-    question.is_locked = !question.is_locked
-    await saveQuestions(questions)
+    if (question) {
+      question.is_locked = !question.is_locked
+      await fs.writeFile(QUESTIONS_FILE, JSON.stringify(questions, null, 2))
+    }
+
+    return question
   }
-
-  return question
+  finally {
+    await release()
+  }
 }
 
 // Answer operations
@@ -154,48 +179,56 @@ export async function saveAnswers(answers: Answer[]): Promise<void> {
 }
 
 export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>): Promise<Answer[]> {
-  const questions = await getQuestions()
-  const question = questions.find(q => q.id === answerData.question_id)
+  await initStorage()
+  const release = await lock(ANSWERS_FILE)
+  try {
+    const questions = await getQuestions()
+    const question = questions.find(q => q.id === answerData.question_id)
 
-  if (!question) {
-    throw new Error('Question not found')
-  }
+    if (!question) {
+      throw new Error('Question not found')
+    }
 
-  if (!question.answer_options.includes(answerData.selected_answer)) {
-    throw new Error('Invalid answer option')
-  }
+    if (!question.answer_options.includes(answerData.selected_answer)) {
+      throw new Error('Invalid answer option')
+    }
 
-  const answers = await getAnswers()
+    const data = await fs.readFile(ANSWERS_FILE, 'utf-8')
+    const answers: Answer[] = JSON.parse(data)
 
-  // Check if user already answered this question
-  const existingIndex = answers.findIndex(
-    a => a.question_id === answerData.question_id
-      && a.user_nickname === answerData.user_nickname
-  )
+    // Check if user already answered this question
+    const existingIndex = answers.findIndex(
+      a => a.question_id === answerData.question_id
+        && a.user_nickname === answerData.user_nickname
+    )
 
-  if (existingIndex >= 0) {
-    // Update existing answer
-    const existingAnswer = answers[existingIndex]
-    if (existingAnswer) {
-      answers[existingIndex] = {
-        ...existingAnswer,
-        selected_answer: answerData.selected_answer,
-        timestamp: new Date().toISOString()
+    if (existingIndex >= 0) {
+      // Update existing answer
+      const existingAnswer = answers[existingIndex]
+      if (existingAnswer) {
+        answers[existingIndex] = {
+          ...existingAnswer,
+          selected_answer: answerData.selected_answer,
+          timestamp: new Date().toISOString()
+        }
       }
     }
-  }
-  else {
-    // Add new answer
-    const newAnswer: Answer = {
-      id: createId(),
-      ...answerData,
-      timestamp: new Date().toISOString()
+    else {
+      // Add new answer
+      const newAnswer: Answer = {
+        id: createId(),
+        ...answerData,
+        timestamp: new Date().toISOString()
+      }
+      answers.push(newAnswer)
     }
-    answers.push(newAnswer)
-  }
 
-  await saveAnswers(answers)
-  return answers
+    await fs.writeFile(ANSWERS_FILE, JSON.stringify(answers, null, 2))
+    return answers
+  }
+  finally {
+    await release()
+  }
 }
 
 export async function getAnswersForQuestion(questionId: string): Promise<Answer[]> {
