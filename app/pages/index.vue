@@ -147,7 +147,7 @@ async function submitAnswer() {
           <label
             v-for="(option, index) in activeQuestion.answer_options"
             :key="index"
-            class="flex items-center p-5 border-[3px] border-black bg-white cursor-pointer transition-all duration-200 relative"
+            class="flex items-center p-5 border-[3px] border-black cursor-pointer transition-all duration-200 relative"
             :class="{
               'bg-black text-white': selectedAnswer === option,
               'opacity-60 cursor-not-allowed': activeQuestion.is_locked,
