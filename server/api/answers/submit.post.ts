@@ -32,22 +32,25 @@ export default defineEventHandler(async (event) => {
   }
 
   // Normalize and validate answer
-  const anwserOptions = activeQuestion.answer_options.map(opt => opt.toLowerCase())
+  const answerOptions = activeQuestion.answer_options.map(opt => opt.toLowerCase())
   const selectedAnswerNormalized = selected_answer.toLowerCase()
 
-  if (!anwserOptions.includes(selectedAnswerNormalized)) {
+  if (!answerOptions.includes(selectedAnswerNormalized)) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Invalid answer'
     })
   }
 
+  // Find the original-cased answer option
+  const originalAnswer = activeQuestion.answer_options.find(opt => opt.toLowerCase() === selectedAnswerNormalized)
+
   // Submit answer
   await submitAnswer({
     question_id: activeQuestion.id,
     user_id,
     user_nickname,
-    selected_answer
+    selected_answer: originalAnswer || selected_answer
   })
 
   // Schedule bundled results update
