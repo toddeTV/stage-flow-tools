@@ -198,7 +198,7 @@ function removeOption(index: number) {
             <h3 class="mb-2.5 text-lg">Answer Options</h3>
             <div v-for="(option, index) in newQuestion.answer_options" :key="index" class="flex gap-2.5 mb-2.5">
               <UiInput
-                v-model="newQuestion.answer_options[index]"
+                v-model="newQuestion.answer_options[index]!"
                 :placeholder="`Option ${index + 1}`"
                 required
                 class="flex-1"
