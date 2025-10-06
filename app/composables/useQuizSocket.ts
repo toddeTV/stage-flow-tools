@@ -10,16 +10,18 @@ export const useQuizSocket = () => {
   const results = ref<Results | null>(null)
   const userId = useLocalStorage<string | null>('quiz-user-id', null)
 
-  let wsEndpoint = ''
-  onMounted(() => {
-    if (!userId.value)
-      userId.value = createId()
+  const wsEndpoint = computed(() => {
+    if (import.meta.client) {
+      if (!userId.value)
+        userId.value = createId()
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = config.public.wsUrl || window.location.host
-    wsEndpoint = config.public.wsUrl
-      ? `${config.public.wsUrl}/_ws/default?userId=${userId.value}`
-      : `${protocol}//${host}/_ws/default?userId=${userId.value}`
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const host = config.public.wsUrl || window.location.host
+      return config.public.wsUrl
+        ? `${config.public.wsUrl}/_ws/default?userId=${userId.value}`
+        : `${protocol}//${host}/_ws/default?userId=${userId.value}`
+    }
+    return ''
   })
 
   const { status, data, send, open, close } = useWebSocket(wsEndpoint, {

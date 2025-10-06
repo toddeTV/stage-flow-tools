@@ -16,7 +16,6 @@ export async function addPeer(peer: Peer, url: string, userId?: string) {
   const peerInfo: PeerInfo = { id: peer.id, url, userId }
   const storedPeers = await storage.getItem<PeerInfo[]>('peers') || []
   await storage.setItem('peers', [...storedPeers, peerInfo])
-  console.dir(await getPeers())
 }
 
 export async function removePeer(peer: Peer) {
