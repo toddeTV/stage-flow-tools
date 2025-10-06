@@ -55,8 +55,8 @@ async function handleLogin() {
 }
 
 // Logout handler
-function handleLogout() {
-  useCookie('admin_token').value = null
+async function handleLogout() {
+  await $fetch('/api/auth/logout', { method: 'POST' })
   isAuthenticated.value = false
   navigateTo('/')
 }
