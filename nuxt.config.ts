@@ -32,7 +32,10 @@ export default defineNuxtConfig({
       wsUrl: '',
       apiUrl: '',
       host: '0.0.0.0',
-      port: '3000'
+      port: '3000',
+      debug: {
+        showWebsockets: false
+      }
     }
   }
 })

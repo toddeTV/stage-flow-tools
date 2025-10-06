@@ -1,21 +1,22 @@
-import { addPeer, removePeer } from '../utils/websocket'
+import { Peer, Message } from 'crossws'
 
 export default defineWebSocketHandler({
-  open(peer) {
+  open(peer: Peer) {
     console.log('WebSocket connection opened')
-    addPeer(peer)
+    const url = (peer as any).h3Event?.path || '/'
+    addPeer(peer, url)
   },
   
-  close(peer) {
+  close(peer: Peer) {
     console.log('WebSocket connection closed')
     removePeer(peer)
   },
   
-  error(peer, error) {
+  error(peer: Peer, error: Error) {
     console.error('WebSocket error:', error)
   },
   
-  message(peer, message) {
+  message(peer: Peer, message: Message) {
     // Handle ping/pong for connection keepalive
     if (message.text() === 'ping') {
       peer.send('pong')
