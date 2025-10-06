@@ -110,21 +110,20 @@ async function submitAnswer() {
 
 <template>
   <div class="max-w-3xl mx-auto p-5 min-h-screen">
-    <h1 class="text-center text-5xl mb-10 uppercase tracking-widest border-b-5 border-black pb-5">Quiz Time</h1>
+    <UiPageTitle>Quiz Time</UiPageTitle>
 
     <!-- Nickname Prompt -->
     <div v-if="!userNickname" class="max-w-lg mx-auto bg-white border-[4px] border-black p-10 text-center">
       <h2 class="text-3xl mb-4">Welcome!</h2>
       <p class="mb-8 text-lg">Please enter your nickname to participate</p>
       <form @submit.prevent="setNickname" class="flex flex-col gap-5">
-        <input
+        <UiInput
           v-model="nicknameInput"
-          type="text"
           placeholder="Enter your nickname"
           required
-          class="p-4 border-[3px] border-black text-xl text-center bg-white"
+          class="text-xl text-center"
         />
-        <button type="submit" class="p-4 bg-black text-white border-none text-xl uppercase cursor-pointer transition-all duration-300 hover:bg-white hover:text-black hover:shadow-inner-black-lg">Join Quiz</button>
+        <UiButton type="submit">Join Quiz</UiButton>
       </form>
     </div>
 
@@ -132,7 +131,7 @@ async function submitAnswer() {
     <div v-else class="flex flex-col gap-8">
       <div class="flex justify-between items-center p-4 bg-white border-[3px] border-black">
         <span>Playing as: <strong class="text-lg">{{ userNickname }}</strong></span>
-        <button @click="changeNickname" class="py-2 px-4 bg-black text-white border-none cursor-pointer uppercase hover:bg-white hover:text-black hover:shadow-inner-black">Change</button>
+        <UiButton @click="changeNickname">Change</UiButton>
       </div>
 
       <!-- Active Question -->
@@ -189,11 +188,13 @@ async function submitAnswer() {
       </div>
 
       <div class="flex justify-center gap-5 mt-8">
-        <button @click="loadQuestion" class="inline-block py-4 px-8 bg-white text-black border-[3px] border-black no-underline uppercase text-lg transition-all duration-300 cursor-pointer hover:bg-black hover:text-white hover:-translate-y-1 hover:shadow-[0_5px_0_#000]">
+        <UiButton @click="loadQuestion" variant="link">
           Refresh
-        </button>
-        <NuxtLink to="/results" class="inline-block py-4 px-8 bg-white text-black border-[3px] border-black no-underline uppercase text-lg transition-all duration-300 cursor-pointer hover:bg-black hover:text-white hover:-translate-y-1 hover:shadow-[0_5px_0_#000]">
-          View Live Results →
+        </UiButton>
+        <NuxtLink to="/results">
+          <UiButton variant="link">
+            View Live Results →
+          </UiButton>
         </NuxtLink>
       </div>
     </div>

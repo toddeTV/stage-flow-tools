@@ -143,27 +143,15 @@ function removeOption(index: number) {
 
 <template>
   <div class="max-w-6xl mx-auto p-5">
-    <h1 class="text-center text-4xl mb-10 uppercase tracking-wider">Admin Dashboard</h1>
+    <UiPageTitle>Admin Dashboard</UiPageTitle>
 
     <!-- Login Form -->
     <div v-if="!isAuthenticated" class="max-w-md mx-auto bg-white border-[3px] border-black p-8">
       <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Admin Login</h2>
       <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
-        <input
-          v-model="loginForm.username"
-          type="text"
-          placeholder="Username"
-          required
-          class="p-3 border-2 border-black text-base bg-white"
-        />
-        <input
-          v-model="loginForm.password"
-          type="password"
-          placeholder="Password"
-          required
-          class="p-3 border-2 border-black text-base bg-white"
-        />
-        <button type="submit" class="p-3 bg-black text-white border-none text-base uppercase cursor-pointer transition-all duration-300 hover:bg-white hover:text-black hover:shadow-inner-black">Login</button>
+        <UiInput v-model="loginForm.username" placeholder="Username" required />
+        <UiInput v-model="loginForm.password" type="password" placeholder="Password" required />
+        <UiButton type="submit">Login</UiButton>
         <div v-if="loginError" class="text-black bg-white border-2 border-black p-2.5 text-center">{{ loginError }}</div>
       </form>
     </div>
@@ -171,10 +159,10 @@ function removeOption(index: number) {
     <!-- Dashboard -->
     <div v-else class="grid gap-8">
       <!-- Current Question -->
-      <section class="bg-white border-[3px] border-black p-8">
+      <UiSection>
         <div class="flex justify-between items-center mb-5">
           <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Current Active Question</h2>
-          <button @click="loadQuestions" class="py-2 px-4 bg-white text-black border-2 border-black cursor-pointer uppercase hover:bg-black hover:text-white">Refresh</button>
+          <UiButton variant="secondary" @click="loadQuestions">Refresh</UiButton>
         </div>
         <div v-if="activeQuestion" class="bg-gray-100 border-2 border-black p-5">
           <p class="text-lg mb-4 font-bold">{{ activeQuestion.question_text }}</p>
@@ -185,18 +173,18 @@ function removeOption(index: number) {
           </ul>
           <div class="flex justify-between items-center">
             <span>Status: {{ activeQuestion.is_locked ? 'Locked' : 'Unlocked' }}</span>
-            <button @click="toggleLock" class="py-2 px-4 bg-black text-white border-none cursor-pointer uppercase hover:bg-white hover:text-black hover:shadow-inner-black">
+            <UiButton @click="toggleLock">
               {{ activeQuestion.is_locked ? 'Unlock' : 'Lock' }} Question
-            </button>
+            </UiButton>
           </div>
         </div>
         <div v-else class="p-10 text-center bg-gray-100 border-2 border-dashed border-black">
           No active question
         </div>
-      </section>
+      </UiSection>
 
       <!-- New Question Form -->
-      <section class="bg-white border-[3px] border-black p-8">
+      <UiSection>
         <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Prepare Next Question</h2>
         <form @submit.prevent="handleCreateQuestion" class="flex flex-col gap-5">
           <textarea
@@ -209,33 +197,31 @@ function removeOption(index: number) {
           <div>
             <h3 class="mb-2.5 text-lg">Answer Options</h3>
             <div v-for="(option, index) in newQuestion.answer_options" :key="index" class="flex gap-2.5 mb-2.5">
-              <input
+              <UiInput
                 v-model="newQuestion.answer_options[index]"
-                type="text"
                 :placeholder="`Option ${index + 1}`"
                 required
-                class="flex-1 p-2.5 border-2 border-black bg-white text-base"
+                class="flex-1"
               />
-              <button
+              <UiButton
                 v-if="newQuestion.answer_options.length > 2"
-                type="button"
+                variant="danger"
                 @click="removeOption(index)"
-                class="py-2.5 px-5 bg-black text-white border-none cursor-pointer uppercase hover:bg-white hover:text-black hover:shadow-inner-black"
               >
                 Remove
-              </button>
+              </UiButton>
             </div>
-            <button type="button" @click="addOption" class="py-2.5 px-5 bg-white text-black border-2 border-black cursor-pointer uppercase self-start hover:bg-black hover:text-white">
+            <UiButton variant="secondary" @click="addOption">
               Add Option
-            </button>
+            </UiButton>
           </div>
 
-          <button type="submit" class="p-4 bg-black text-white border-none text-lg uppercase cursor-pointer transition-all duration-300 hover:bg-white hover:text-black hover:shadow-inner-black-lg">Create Question</button>
+          <UiButton type="submit">Create Question</UiButton>
         </form>
-      </section>
+      </UiSection>
 
       <!-- Prepared Questions -->
-      <section v-if="preparedQuestions.length > 0" class="bg-white border-[3px] border-black p-8">
+      <UiSection v-if="preparedQuestions.length > 0">
         <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Prepared Questions</h2>
         <div v-for="question in preparedQuestions" :key="question.id" class="bg-gray-100 border-2 border-black p-5 mb-4">
           <p class="font-bold mb-2.5">{{ question.question_text }}</p>
@@ -244,13 +230,13 @@ function removeOption(index: number) {
               {{ option }}
             </li>
           </ul>
-          <button @click="publishQuestion(question.id)" class="py-2.5 px-5 bg-black text-white border-none cursor-pointer uppercase hover:bg-white hover:text-black hover:shadow-inner-black">
+          <UiButton @click="publishQuestion(question.id)">
             Publish This Question
-          </button>
+          </UiButton>
         </div>
-      </section>
+      </UiSection>
 
-      <button @click="handleLogout" class="py-3 px-8 bg-white text-black border-[3px] border-black cursor-pointer uppercase text-base transition-all duration-300 hover:bg-black hover:text-white">Logout</button>
+      <UiButton @click="handleLogout" variant="secondary">Logout</UiButton>
     </div>
   </div>
 </template>

@@ -54,9 +54,9 @@ function getPercentage(count: number) {
 
 <template>
   <div class="max-w-4xl mx-auto p-5 min-h-screen">
-    <h1 class="text-center text-5xl mb-10 uppercase tracking-widest border-b-[5px] border-black pb-5 relative page-title">Live Results</h1>
+    <UiPageTitle class="relative page-title">Live Results</UiPageTitle>
 
-    <div v-if="results" class="bg-white border-[5px] border-black p-8 mb-8">
+    <UiSection v-if="results" class="border-[5px]">
       <!-- Question Display -->
       <div class="mb-10 border-b-[3px] border-black pb-5">
         <h2 class="text-3xl mb-4 leading-tight">{{ results.question.question_text }}</h2>
@@ -92,10 +92,10 @@ function getPercentage(count: number) {
           </div>
         </div>
       </div>
-    </div>
+    </UiSection>
 
     <!-- No Active Question -->
-    <div v-else class="bg-white border-[5px] border-black py-20 px-8 text-center mb-8">
+    <UiSection v-else class="border-[5px] py-20 px-8 text-center">
       <h2 class="text-3xl mb-4">No Active Question</h2>
       <p class="text-xl mb-8">Waiting for a question to be published...</p>
       <div class="flex justify-center gap-2.5">
@@ -103,16 +103,18 @@ function getPercentage(count: number) {
         <span class="w-5 h-5 bg-black animate-bounce [animation-delay:0.2s]"></span>
         <span class="w-5 h-5 bg-black animate-bounce [animation-delay:0.4s]"></span>
       </div>
-    </div>
+    </UiSection>
 
     <!-- Navigation -->
-    <div class="flex justify-center gap-5">
-      <NuxtLink to="/" class="inline-block py-4 px-8 bg-white text-black border-[3px] border-black no-underline uppercase text-lg cursor-pointer transition-all duration-300 hover:bg-black hover:text-white hover:-translate-y-1 hover:shadow-[0_5px_0_#000]">
-        ← Back to Quiz
+    <div class="flex justify-center gap-5 mt-8">
+      <NuxtLink to="/">
+        <UiButton variant="link">
+          ← Back to Quiz
+        </UiButton>
       </NuxtLink>
-      <button @click="refreshResults" class="inline-block py-4 px-8 bg-white text-black border-[3px] border-black no-underline uppercase text-lg cursor-pointer transition-all duration-300 hover:bg-black hover:text-white hover:-translate-y-1 hover:shadow-[0_5px_0_#000]">
+      <UiButton @click="refreshResults" variant="link">
         Refresh Results
-      </button>
+      </UiButton>
     </div>
   </div>
 </template>
