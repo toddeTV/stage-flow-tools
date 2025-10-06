@@ -1,4 +1,4 @@
-import { useWebSocket } from '@vueuse/core'
+import { useWebSocket, useLocalStorage } from '@vueuse/core'
 import { createId } from '@paralleldrive/cuid2'
 import type { Question, Results } from '~/types'
 
@@ -8,19 +8,19 @@ export const useQuizSocket = () => {
   const activeQuestion = ref<Question | null>(null)
   const selectedAnswer = ref('')
   const results = ref<Results | null>(null)
+  const userId = useLocalStorage<string | null>('quiz-user-id', null)
 
-  // Generate or retrieve a unique user ID
-  let userId = localStorage.getItem('quiz-user-id')
-  if (!userId) {
-    userId = createId()
-    localStorage.setItem('quiz-user-id', userId)
-  }
+  let wsEndpoint = ''
+  onMounted(() => {
+    if (!userId.value)
+      userId.value = createId()
 
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const host = config.public.wsUrl || window.location.host
-  const wsEndpoint = config.public.wsUrl
-    ? `${config.public.wsUrl}/_ws/default?userId=${userId}`
-    : `${protocol}//${host}/_ws/default?userId=${userId}`
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const host = config.public.wsUrl || window.location.host
+    wsEndpoint = config.public.wsUrl
+      ? `${config.public.wsUrl}/_ws/default?userId=${userId.value}`
+      : `${protocol}//${host}/_ws/default?userId=${userId.value}`
+  })
 
   const { status, data, send, open, close } = useWebSocket(wsEndpoint, {
     autoReconnect: true,
