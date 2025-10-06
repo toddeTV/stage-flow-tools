@@ -3,11 +3,7 @@ import type { Question } from '~/types'
 
 const userNickname = ref('')
 const nicknameInput = ref('')
-const activeQuestion = ref<Question | null>(null)
-const selectedAnswer = ref('')
-let ws: WebSocket | null = null
-let pingInterval: NodeJS.Timeout | null = null
-let reconnectTimeout: NodeJS.Timeout | null = null
+const { activeQuestion, selectedAnswer } = useQuizSocket()
 
 // Load nickname from localStorage
 onMounted(async () => {
@@ -18,22 +14,6 @@ onMounted(async () => {
 
   // Load active question
   await loadQuestion()
-
-  // Setup WebSocket connection
-  setupWebSocket()
-})
-
-// Cleanup WebSocket on unmount
-onUnmounted(() => {
-  if (ws) {
-    ws.close()
-  }
-  if (pingInterval) {
-    clearInterval(pingInterval)
-  }
-  if (reconnectTimeout) {
-    clearTimeout(reconnectTimeout)
-  }
 })
 
 // Set nickname
@@ -102,76 +82,6 @@ async function submitAnswer() {
   }
 }
 
-// Setup WebSocket
-function setupWebSocket() {
-  // Short-circuit if a fresh open ws already exists
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    return
-  }
-
-  // Clear any existing interval and timeout
-  if (pingInterval) {
-    clearInterval(pingInterval)
-  }
-  if (reconnectTimeout) {
-    clearTimeout(reconnectTimeout)
-  }
-  // Close any existing ws
-  if (ws) {
-    ws.close()
-  }
-
-  const config = useRuntimeConfig()
-
-  // Use the public WebSocket URL if provided, otherwise use the current host
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const host = config.public.wsUrl || window.location.host
-
-  // Ensure we have the correct format - if wsUrl is provided, use it directly
-  const wsEndpoint = config.public.wsUrl ? `${config.public.wsUrl}/_ws` : `${protocol}//${host}/_ws`
-
-  ws = new WebSocket(wsEndpoint)
-
-  ws.onmessage = (event: MessageEvent) => {
-    try {
-      const data = JSON.parse(event.data)
-
-      if (data.event === 'new-question') {
-        // New question published
-        activeQuestion.value = data.data
-        selectedAnswer.value = ''
-        sessionStorage.removeItem(`answer-${data.data.id}`)
-      }
-      else if (data.event === 'lock-status') {
-        // Lock status changed
-        if (activeQuestion.value && activeQuestion.value.id === data.data.questionId) {
-          activeQuestion.value.is_locked = data.data.is_locked
-        }
-      }
-    }
-    catch (error: unknown) {
-      console.error('WebSocket message error:', error)
-    }
-  }
-
-  ws.onerror = (error: Event) => {
-    console.error('WebSocket error:', error)
-  }
-
-  ws.onclose = () => {
-    // Attempt to reconnect after 3 seconds
-    reconnectTimeout = setTimeout(() => {
-      setupWebSocket()
-    }, 3000)
-  }
-
-  // Send ping every 30 seconds to keep connection alive
-  pingInterval = setInterval(() => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send('ping')
-    }
-  }, 30000)
-}
 </script>
 
 <template>
@@ -248,6 +158,9 @@ function setupWebSocket() {
       </div>
       
       <div class="navigation">
+        <button @click="loadQuestion" class="refresh-btn">
+          Refresh
+        </button>
         <NuxtLink to="/results" class="view-results-btn">
           View Live Results →
         </NuxtLink>
@@ -509,10 +422,14 @@ function setupWebSocket() {
 
 /* Navigation */
 .navigation {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 30px;
 }
 
-.view-results-btn {
+.view-results-btn,
+.refresh-btn {
   display: inline-block;
   padding: 15px 30px;
   background: #fff;
@@ -522,9 +439,11 @@ function setupWebSocket() {
   text-transform: uppercase;
   font-size: 1.1rem;
   transition: all 0.3s;
+  cursor: pointer;
 }
 
-.view-results-btn:hover {
+.view-results-btn:hover,
+.refresh-btn:hover {
   background: #000;
   color: #fff;
   transform: translateY(-3px);
