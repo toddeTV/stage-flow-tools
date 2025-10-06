@@ -1,30 +1,11 @@
 <script setup lang="ts">
 import type { Results } from '~/types'
 
-const results = ref<Results | null>(null)
-let ws: WebSocket | null = null
-let pingInterval: NodeJS.Timeout | null = null
-let reconnectTimeout: NodeJS.Timeout | null = null
-let retryCount = 0
-const maxRetries = 5
+const { results } = useQuizSocket()
 
 // Load results on mount
 onMounted(async () => {
   await loadResults()
-  setupWebSocket()
-})
-
-// Cleanup on unmount
-onUnmounted(() => {
-  if (ws) {
-    ws.close()
-  }
-  if (pingInterval) {
-    clearInterval(pingInterval)
-  }
-  if (reconnectTimeout) {
-    clearTimeout(reconnectTimeout)
-  }
 })
 
 // Load current results
@@ -69,79 +50,6 @@ function getPercentage(count: number) {
   return Math.round((count / results.value.totalVotes) * 100)
 }
 
-// Setup WebSocket for real-time updates
-function setupWebSocket() {
-  const config = useRuntimeConfig()
-
-  // Use the public WebSocket URL if provided, otherwise use the current host
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const host = config.public.wsUrl || window.location.host
-
-  // Ensure we have the correct format - if wsUrl is provided, use it directly
-  const wsEndpoint = config.public.wsUrl ? `${config.public.wsUrl}/_ws` : `${protocol}//${host}/_ws`
-
-  ws = new WebSocket(wsEndpoint)
-
-  ws.onopen = () => {
-    console.log('WebSocket connection established')
-    retryCount = 0 // Reset retry count on successful connection
-
-    // Clear any existing ping interval before starting a new one
-    if (pingInterval) {
-      clearInterval(pingInterval)
-    }
-
-    // Send ping every 30 seconds to keep connection alive
-    pingInterval = setInterval(() => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send('ping')
-      }
-    }, 30000)
-  }
-
-  ws.onmessage = (event: MessageEvent) => {
-    try {
-      const data = JSON.parse(event.data)
-
-      if (data.event === 'results-update') {
-        // Update results
-        results.value = data.data
-      }
-      else if (data.event === 'new-question') {
-        // New question, reset results
-        results.value = null
-        // Load new results
-        setTimeout(loadResults, 500)
-      }
-    }
-    catch (error: unknown) {
-      console.error('WebSocket message error:', error)
-    }
-  }
-
-  ws.onerror = (error: Event) => {
-    console.error('WebSocket error:', error)
-  }
-
-  ws.onclose = () => {
-    console.log('WebSocket connection closed. Attempting to reconnect...')
-    if (pingInterval) {
-      clearInterval(pingInterval)
-    }
-
-    if (retryCount < maxRetries) {
-      // Exponential backoff for reconnection
-      const delay = Math.min(1000 * (2 ** retryCount), 30000) // Cap delay at 30s
-      reconnectTimeout = setTimeout(() => {
-        setupWebSocket()
-        retryCount++
-      }, delay)
-    }
-    else {
-      console.error('WebSocket reconnection failed after maximum retries.')
-    }
-  }
-}
 </script>
 
 <template>

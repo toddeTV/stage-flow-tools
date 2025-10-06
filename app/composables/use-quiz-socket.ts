@@ -1,11 +1,12 @@
 import { useWebSocket } from '@vueuse/core'
-import type { Question } from '~/types'
+import type { Question, Results } from '~/types'
 
 export const useQuizSocket = () => {
   const config = useRuntimeConfig()
 
   const activeQuestion = ref<Question | null>(null)
   const selectedAnswer = ref('')
+  const results = ref<Results | null>(null)
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = config.public.wsUrl || window.location.host
@@ -33,6 +34,9 @@ export const useQuizSocket = () => {
           activeQuestion.value.is_locked = parsed.data.is_locked
         }
       }
+      else if (parsed.event === 'results-update') {
+        results.value = parsed.data
+      }
     }
     catch (error: unknown) {
       console.error('WebSocket message error:', error)
@@ -43,6 +47,7 @@ export const useQuizSocket = () => {
     status,
     activeQuestion,
     selectedAnswer,
+    results,
     send,
     open,
     close,
