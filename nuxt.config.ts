@@ -42,6 +42,7 @@ export default defineNuxtConfig({
       port: '3000',
       debug: {
         showWebsocketConnectionsInFrontend: false,
+        showConsoleOutputs: false
       }
     }
   },
