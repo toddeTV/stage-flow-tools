@@ -387,6 +387,7 @@ export async function getResultsForQuestion(questionId: string, allQuestions?: Q
     question,
     results,
     totalVotes: answers.length,
+    totalConnections: (await getPeers()).length
   }))
 }
 

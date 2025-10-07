@@ -31,4 +31,5 @@ export interface Results {
   question: Question
   results: Record<string, { count: number, emoji?: string }>
   totalVotes: number
+  totalConnections: number
 }

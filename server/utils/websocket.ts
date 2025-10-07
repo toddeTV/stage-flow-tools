@@ -20,12 +20,14 @@ export async function addPeer(peer: Peer, url: string, userId?: string) {
   const filtered = storedPeers.filter((p: PeerInfo) => p.id !== peer.id)
   const peerInfo: PeerInfo = { id: peer.id, url, userId }
   await storage.setItem('peers', [...filtered, peerInfo])
+  await broadcastConnections()
 }
 
 export async function removePeer(peer: Peer) {
   peers.delete(peer.id)
   const storedPeers = await storage.getItem<PeerInfo[]>('peers') || []
   await storage.setItem('peers', storedPeers.filter((p: PeerInfo) => p.id !== peer.id))
+  await broadcastConnections()
 }
 
 export async function getPeers() {
@@ -42,6 +44,11 @@ export function broadcast(event: string, data: unknown) {
       logger_error('Broadcast error:', error)
     }
   }
+}
+
+export async function broadcastConnections() {
+  const peers = await getPeers()
+  broadcast('connections-update', { totalConnections: peers.length })
 }
 
 // Bundled results update
