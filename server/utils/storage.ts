@@ -285,7 +285,7 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
       throw new Error('Question not found')
     }
 
-    if (!question.answer_options.includes(answerData.selected_answer)) {
+    if (!question.answer_options.some(option => option.text === answerData.selected_answer)) {
       throw new Error('Invalid answer option')
     }
 
@@ -369,25 +369,25 @@ export async function getResultsForQuestion(questionId: string): Promise<Results
   const answers = await getAnswersForQuestion(question.id)
 
   // Count votes for each option
-  const results: Record<string, number> = {}
+  const results: Record<string, { count: number, emoji?: string }> = {}
   question.answer_options.forEach((option) => {
-    results[option] = 0
+    results[option.text] = { count: 0, emoji: option.emoji }
   })
 
   answers.forEach((answer) => {
     if (Object.prototype.hasOwnProperty.call(results, answer.selected_answer)) {
-      const currentCount = results[answer.selected_answer]
-      if (typeof currentCount === 'number') {
-        results[answer.selected_answer] = currentCount + 1
+      const result = results[answer.selected_answer]
+      if (result) {
+        result.count++
       }
     }
   })
 
-  return {
+  return JSON.parse(JSON.stringify({
     question,
     results,
     totalVotes: answers.length
-  }
+  }))
 }
 
 export async function getCurrentResults(): Promise<Results | null> {
