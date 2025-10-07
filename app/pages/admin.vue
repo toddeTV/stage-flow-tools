@@ -190,8 +190,8 @@ function removeOption(index: number) {
                 :model-value="option.emoji || ''"
                 placeholder="Emoji"
                 class="w-24"
-                maxlength="2"
-                @update:model-value="option.emoji = String($event || '') || undefined"
+                maxlength="10"
+                @update:model-value="option.emoji = String($event || '').trim() || undefined"
               />
               <UiButton
                 v-if="newQuestion.answer_options.length > 2"
