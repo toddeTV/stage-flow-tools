@@ -41,5 +41,5 @@ export function logger(data: unknown, options?: unknown): void {
  * ```
  */
 export function logger_error(data: unknown, ...optionalParams: any[]): void {
-  global_logger_error(data, optionalParams)
+  global_logger_error(data, ...optionalParams)
 }
