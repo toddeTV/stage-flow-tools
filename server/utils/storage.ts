@@ -217,6 +217,10 @@ export async function publishQuestion(questionId: string): Promise<Question | un
 
       // Clear all answers when publishing new question
       await fs.writeFile(ANSWERS_FILE, JSON.stringify([]))
+
+      // Broadcast the new question as a results update
+      const results = await getResultsForQuestion(question.id)
+      broadcast('results-update', results)
     }
     return question
   }
