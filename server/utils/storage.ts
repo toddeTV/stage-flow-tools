@@ -265,15 +265,16 @@ export async function validateAdmin(username: string, password: string, event?: 
 }
 
 // Get results for current question
-export async function getCurrentResults(): Promise<Results | null> {
-  const activeQuestion = await getActiveQuestion()
-  if (!activeQuestion) return null
+export async function getResultsForQuestion(questionId: string): Promise<Results | null> {
+  const questions = await getQuestions()
+  const question = questions.find(q => q.id === questionId)
+  if (!question) return null
 
-  const answers = await getAnswersForQuestion(activeQuestion.id)
+  const answers = await getAnswersForQuestion(question.id)
 
   // Count votes for each option
   const results: Record<string, number> = {}
-  activeQuestion.answer_options.forEach((option) => {
+  question.answer_options.forEach((option) => {
     results[option] = 0
   })
 
@@ -287,8 +288,14 @@ export async function getCurrentResults(): Promise<Results | null> {
   })
 
   return {
-    question: activeQuestion,
+    question,
     results,
     totalVotes: answers.length
   }
+}
+
+export async function getCurrentResults(): Promise<Results | null> {
+  const activeQuestion = await getActiveQuestion()
+  if (!activeQuestion) return null
+  return getResultsForQuestion(activeQuestion.id)
 }
