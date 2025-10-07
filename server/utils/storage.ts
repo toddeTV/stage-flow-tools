@@ -3,12 +3,13 @@ import { join } from 'path'
 import { createId } from '@paralleldrive/cuid2'
 import { lock } from 'proper-lockfile'
 import type { H3Event } from 'h3'
-import type { Question, Results, Answer } from '~/types'
+import type { Question, Results, Answer, InputQuestion } from '~/types'
 
 const DATA_DIR = join(process.cwd(), 'data')
 const QUESTIONS_FILE = join(DATA_DIR, 'questions.json')
 const ANSWERS_FILE = join(DATA_DIR, 'answers.json')
 const ADMIN_FILE = join(DATA_DIR, 'admin.json')
+const PREDEFINED_QUESTIONS_FILE = join(DATA_DIR, 'predefined-questions.json')
 
 // Initialize storage with runtime config
 async function initStorage(event?: H3Event) {
@@ -21,6 +22,29 @@ async function initStorage(event?: H3Event) {
     }
     catch (error: unknown) {
       await fs.writeFile(QUESTIONS_FILE, JSON.stringify([]))
+    }
+
+    // Process predefined questions
+    try {
+      await fs.access(PREDEFINED_QUESTIONS_FILE)
+      const predefinedData = await fs.readFile(PREDEFINED_QUESTIONS_FILE, 'utf-8')
+      const predefinedQuestions: InputQuestion[] = JSON.parse(predefinedData)
+
+      if (predefinedQuestions.length > 0) {
+        const existingQuestions = await getQuestions()
+        const newQuestions: Question[] = predefinedQuestions.map(q => ({
+          ...q,
+          id: createId(),
+          is_locked: false
+        }))
+
+        await saveQuestions([...existingQuestions, ...newQuestions])
+        await fs.unlink(PREDEFINED_QUESTIONS_FILE)
+        logger('Predefined questions loaded and file removed.')
+      }
+    }
+    catch (error: unknown) {
+      // Predefined questions file doesn't exist or is invalid, which is fine.
     }
 
     // Initialize answers file
