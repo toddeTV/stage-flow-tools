@@ -219,7 +219,7 @@ export async function publishQuestion(questionId: string): Promise<Question | un
       await fs.writeFile(ANSWERS_FILE, JSON.stringify([]))
 
       // Broadcast the new question as a results update
-      const results = await getResultsForQuestion(question.id)
+      const results = await getResultsForQuestion(question.id, questions)
       broadcast('results-update', results)
     }
     return question
@@ -361,8 +361,8 @@ export async function validateAdmin(username: string, password: string, event?: 
 }
 
 // Get results for current question
-export async function getResultsForQuestion(questionId: string): Promise<Results | null> {
-  const questions = await getQuestions()
+export async function getResultsForQuestion(questionId: string, allQuestions?: Question[]): Promise<Results | null> {
+  const questions = allQuestions || await getQuestions()
   const question = questions.find(q => q.id === questionId)
   if (!question) return null
 
@@ -386,7 +386,7 @@ export async function getResultsForQuestion(questionId: string): Promise<Results
   return JSON.parse(JSON.stringify({
     question,
     results,
-    totalVotes: answers.length
+    totalVotes: answers.length,
   }))
 }
 
