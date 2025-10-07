@@ -14,12 +14,25 @@ This command builds the image and tags it as `stage-flow-tools`.
 
 ## 2. Run the Container
 
-To test the built image, run the following command:
+### Prerequisites
+
+Before running the container, make sure you have a `.env` file in your project root. If you don't have one, create it by copying the example file:
+
+```bash
+cp .env.example .env
+```
+
+Ensure the `NUXT_JWT_SECRET` and other variables are set correctly in this file.
+
+### Command
+
+To test the built image, run the following command. It mounts the local `.env` file and the `data` directory into the container.
 
 ```bash
 docker run --rm -it \
   -p 3000:3000 \
-  -e NUXT_JWT_SECRET="a-random-secret-for-local-testing" \
+  --env-file ./.env \
+  -v "$(pwd)/data:/app/data" \
   --name test-stage-flow \
   stage-flow-tools
 ```
