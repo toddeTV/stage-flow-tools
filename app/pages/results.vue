@@ -7,6 +7,16 @@ definePageMeta({
 
 const { results } = useQuizSocket()
 
+const route = useRoute()
+const isCoreView = computed(() => route.query.core !== undefined)
+
+// Add body class for core view
+useHead({
+  bodyAttrs: {
+    class: isCoreView.value ? 'core-view-body' : ''
+  }
+})
+
 // Fetch initial results
 const { data: fetchedResults, refresh: refreshResults } = await useFetch<Results>('/api/results/current')
 
@@ -45,10 +55,10 @@ function getPercentage(count: number) {
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto p-5 min-h-screen">
-    <UiPageTitle class="relative page-title">Live Results</UiPageTitle>
+  <div :class="{ 'max-w-4xl mx-auto p-5 min-h-screen': !isCoreView }">
+    <UiPageTitle v-if="!isCoreView" class="relative page-title">Live Results</UiPageTitle>
 
-    <UiSection v-if="results" class="border-[5px]">
+    <UiSection v-if="results" :bare="isCoreView">
       <!-- Question Display -->
       <div class="mb-10 border-b-[3px] border-black pb-5">
         <h2 class="text-3xl mb-4 leading-tight">{{ results.question.question_text }}</h2>
@@ -87,7 +97,7 @@ function getPercentage(count: number) {
     </UiSection>
 
     <!-- No Active Question -->
-    <UiSection v-else class="border-[5px] py-20 px-8 text-center">
+    <UiSection v-else :bare="isCoreView" :class="{ 'py-20 px-8 text-center': !isCoreView }">
       <h2 class="text-3xl mb-4">No Active Question</h2>
       <p class="text-xl mb-8">Waiting for a question to be published...</p>
       <div class="flex justify-center gap-2.5">
@@ -98,7 +108,7 @@ function getPercentage(count: number) {
     </UiSection>
 
     <!-- Navigation -->
-    <div class="flex justify-center gap-5 mt-8">
+    <div v-if="!isCoreView" class="flex justify-center gap-5 mt-8">
       <UiButton @click="refreshResults" variant="link">
         Refresh
       </UiButton>
@@ -107,9 +117,24 @@ function getPercentage(count: number) {
           ← Back to Quiz
         </UiButton>
       </NuxtLink>
+      <NuxtLink to="/results?core">
+        <UiButton variant="link">
+          Core View
+        </UiButton>
+      </NuxtLink>
     </div>
   </div>
 </template>
+
+<style>
+  .core-view-body {
+    @apply bg-white;
+  }
+
+  .core-view-body::before {
+    content: none;
+  }
+</style>
 
 <style scoped>
 .page-title::after {
