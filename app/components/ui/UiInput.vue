@@ -29,7 +29,13 @@ const emit = defineEmits<{
 function onInput(event: Event) {
   const target = event.target as HTMLInputElement
   if (props.type === 'number') {
-    emit('update:modelValue', target.valueAsNumber)
+    const num = target.valueAsNumber
+    if (Number.isNaN(num)) {
+      emit('update:modelValue', target.value)
+    }
+    else {
+      emit('update:modelValue', num)
+    }
   }
   else {
     emit('update:modelValue', target.value)
