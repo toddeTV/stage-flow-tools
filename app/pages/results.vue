@@ -7,6 +7,43 @@ definePageMeta({
 
 const { results } = useQuizSocket()
 
+const route = useRoute()
+const isCoreView = computed(() => route.query.core !== undefined)
+
+// State for core view parameters
+const padding = ref(route.query.padding ? Number(route.query.padding) : 0)
+const scale = ref(route.query.scale ? Number(route.query.scale) : 1)
+const hideResults = ref(route.query.hideResults !== undefined)
+
+// Add body class for core view
+useHead({
+  bodyAttrs: {
+    class: isCoreView.value ? 'core-view-body' : ''
+  }
+})
+
+// Dynamic styles for core view
+const coreViewStyles = computed(() => {
+  if (!isCoreView.value) {
+    return {}
+  }
+  return {
+    padding: `${padding.value}px`,
+    transform: `scale(${scale.value})`
+  }
+})
+
+// Function to navigate to core view with parameters
+async function goToCoreView() {
+  const query = {
+    core: '',
+    padding: padding.value,
+    scale: scale.value,
+    hideResults: hideResults.value ? '' : undefined
+  }
+  await navigateTo({ path: '/results', query })
+}
+
 // Fetch initial results
 const { data: fetchedResults, refresh: refreshResults } = await useFetch<Results>('/api/results/current')
 
@@ -45,10 +82,11 @@ function getPercentage(count: number) {
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto p-5 min-h-screen">
-    <UiPageTitle class="relative page-title">Live Results</UiPageTitle>
+  <div :class="{ 'max-w-4xl mx-auto p-5 min-h-screen': !isCoreView }">
+    <div :style="coreViewStyles">
+      <UiPageTitle v-if="!isCoreView" class="relative page-title">Live Results</UiPageTitle>
 
-    <UiSection v-if="results" class="border-[5px]">
+      <UiSection v-if="results" :bare="isCoreView">
       <!-- Question Display -->
       <div class="mb-10 border-b-[3px] border-black pb-5">
         <h2 class="text-3xl mb-4 leading-tight">{{ results.question.question_text }}</h2>
@@ -72,10 +110,18 @@ function getPercentage(count: number) {
         >
           <div class="flex justify-between items-center text-lg">
             <span class="font-bold">{{ option }}</span>
-            <span class="py-1 px-2.5 bg-gray-100 border-2 border-black text-sm">{{ count }} votes</span>
+            <span class="py-1 px-2.5 bg-gray-100 border-2 border-black text-sm">
+              <template v-if="hideResults">?</template>
+              <template v-else>{{ count }}</template>
+              votes
+            </span>
           </div>
           <div class="h-12 bg-gray-100 border-[3px] border-black relative overflow-hidden">
+            <div v-if="hideResults" class="flex items-center justify-center h-full">
+              <span class="text-2xl font-bold text-gray-400">?</span>
+            </div>
             <div
+              v-else
               class="h-full bg-black transition-width duration-500 ease-out flex items-center justify-end pr-2.5 min-w-[50px] relative result-bar"
               :style="{ width: getBarWidth(count) + '%' }"
             >
@@ -87,7 +133,7 @@ function getPercentage(count: number) {
     </UiSection>
 
     <!-- No Active Question -->
-    <UiSection v-else class="border-[5px] py-20 px-8 text-center">
+    <UiSection v-else :bare="isCoreView" :class="{ 'py-20 px-8 text-center': !isCoreView }">
       <h2 class="text-3xl mb-4">No Active Question</h2>
       <p class="text-xl mb-8">Waiting for a question to be published...</p>
       <div class="flex justify-center gap-2.5">
@@ -95,21 +141,56 @@ function getPercentage(count: number) {
         <span class="w-5 h-5 bg-black animate-bounce [animation-delay:0.2s]"></span>
         <span class="w-5 h-5 bg-black animate-bounce [animation-delay:0.4s]"></span>
       </div>
-    </UiSection>
+      </UiSection>
+    </div>
 
     <!-- Navigation -->
-    <div class="flex justify-center gap-5 mt-8">
-      <UiButton @click="refreshResults" variant="link">
-        Refresh
-      </UiButton>
-      <NuxtLink to="/">
-        <UiButton variant="link">
-          ← Back to Quiz
+    <div v-if="!isCoreView" class="flex flex-col items-center gap-5 mt-8">
+      <div class="flex justify-center gap-5">
+        <UiButton @click="refreshResults" variant="link">
+          Refresh
         </UiButton>
-      </NuxtLink>
+        <NuxtLink to="/">
+          <UiButton variant="link">
+            ← Back to Quiz
+          </UiButton>
+        </NuxtLink>
+      </div>
+
+      <!-- Core View Controls -->
+      <div class="mt-8 p-4 border-t-2 border-black w-full max-w-md flex flex-col items-center gap-4">
+        <h3 class="text-lg font-bold">Core View Generator</h3>
+        <div class="grid grid-cols-2 gap-4 w-full">
+          <div class="flex flex-col gap-1">
+            <label for="padding" class="text-sm font-bold">Padding (px)</label>
+            <UiInput id="padding" v-model="padding" type="number" placeholder="e.g., 20" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="scale" class="text-sm font-bold">Scale</label>
+            <UiInput id="scale" v-model="scale" type="number" step="0.1" placeholder="e.g., 1.0" />
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="hideResults" v-model="hideResults" type="checkbox" class="w-4 h-4">
+          <label for="hideResults" class="text-sm font-bold">Hide Results</label>
+        </div>
+        <UiButton @click="goToCoreView">
+          Generate Core View
+        </UiButton>
+      </div>
     </div>
   </div>
 </template>
+
+<style>
+  .core-view-body {
+    @apply bg-white;
+  }
+
+  .core-view-body::before {
+    content: none;
+  }
+</style>
 
 <style scoped>
 .page-title::after {
