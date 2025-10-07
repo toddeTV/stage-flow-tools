@@ -172,9 +172,16 @@ function removeOption(index: number) {
           </ul>
           <div class="flex justify-between items-center">
             <span>Status: {{ activeQuestion.is_locked ? 'Locked' : 'Unlocked' }}</span>
-            <UiButton @click="toggleLock">
-              {{ activeQuestion.is_locked ? 'Unlock' : 'Lock' }} Question
-            </UiButton>
+            <div class="flex gap-2.5">
+              <NuxtLink to="/results">
+                <UiButton variant="secondary">
+                  View Live Results →
+                </UiButton>
+              </NuxtLink>
+              <UiButton @click="toggleLock">
+                {{ activeQuestion.is_locked ? 'Unlock' : 'Lock' }} Question
+              </UiButton>
+            </div>
           </div>
         </div>
         <div v-else class="p-10 text-center bg-gray-100 border-2 border-dashed border-black">
