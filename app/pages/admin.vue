@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { Question } from '~/types'
 
-const isAuthenticated = ref(false)
-const loginForm = ref({ username: '', password: '' })
-const loginError = ref('')
+definePageMeta({
+  middleware: 'auth'
+})
+
 const activeQuestion = ref<Question | null>(null)
 const preparedQuestions = ref<Question[]>([])
 const newQuestion = ref({
@@ -11,14 +12,8 @@ const newQuestion = ref({
   answer_options: ['', '']
 })
 
-// Check authentication status
-const { error } = await useFetch('/api/auth/verify')
-isAuthenticated.value = !error.value
-
 // Load questions
-const { data: fetchedQuestions, error: fetchError, refresh: loadQuestions } = useFetch<Question>('/api/questions', {
-  immediate: isAuthenticated.value
-})
+const { data: fetchedQuestions, error: fetchError, refresh: loadQuestions } = useFetch<Question>('/api/questions')
 
 watch(fetchedQuestions, (newQuestions) => {
   if (newQuestions && !(newQuestions as any).message) {
@@ -36,28 +31,11 @@ watch(fetchError, (newError) => {
   }
 })
 
-// Login handler
-async function handleLogin() {
-  try {
-    loginError.value = ''
-    await $fetch('/api/auth/login', {
-      method: 'POST',
-      body: loginForm.value
-    })
-
-    isAuthenticated.value = true
-    await loadQuestions()
-  }
-  catch (error: any) {
-    loginError.value = error.data?.statusMessage || 'Login failed'
-  }
-}
 
 // Logout handler
 async function handleLogout() {
   await $fetch('/api/auth/logout', { method: 'POST' })
-  isAuthenticated.value = false
-  navigateTo('/')
+  navigateTo('/login')
 }
 
 // Create question
@@ -144,19 +122,8 @@ function removeOption(index: number) {
   <div class="max-w-6xl mx-auto p-5">
     <UiPageTitle>Admin Dashboard</UiPageTitle>
 
-    <!-- Login Form -->
-    <div v-if="!isAuthenticated" class="max-w-md mx-auto bg-white border-[3px] border-black p-8">
-      <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Admin Login</h2>
-      <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
-        <UiInput v-model="loginForm.username" placeholder="Username" required />
-        <UiInput v-model="loginForm.password" type="password" placeholder="Password" required />
-        <UiButton type="submit">Login</UiButton>
-        <div v-if="loginError" class="text-black bg-white border-2 border-black p-2.5 text-center">{{ loginError }}</div>
-      </form>
-    </div>
-
     <!-- Dashboard -->
-    <div v-else class="grid gap-8">
+    <div class="grid gap-8">
       <!-- Current Question -->
       <UiSection>
         <div class="flex justify-between items-center mb-5">
@@ -172,9 +139,16 @@ function removeOption(index: number) {
           </ul>
           <div class="flex justify-between items-center">
             <span>Status: {{ activeQuestion.is_locked ? 'Locked' : 'Unlocked' }}</span>
-            <UiButton @click="toggleLock">
-              {{ activeQuestion.is_locked ? 'Unlock' : 'Lock' }} Question
-            </UiButton>
+            <div class="flex gap-2.5">
+              <NuxtLink to="/results">
+                <UiButton variant="secondary">
+                  View Live Results →
+                </UiButton>
+              </NuxtLink>
+              <UiButton @click="toggleLock">
+                {{ activeQuestion.is_locked ? 'Unlock' : 'Lock' }} Question
+              </UiButton>
+            </div>
           </div>
         </div>
         <div v-else class="p-10 text-center bg-gray-100 border-2 border-dashed border-black">
