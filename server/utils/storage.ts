@@ -31,7 +31,32 @@ async function initStorage(event?: H3Event) {
     // Process predefined questions
     try {
       const predefinedData = await fs.readFile(PREDEFINED_QUESTIONS_FILE, 'utf-8')
-      const predefinedQuestions: InputQuestion[] = JSON.parse(predefinedData)
+      let predefinedQuestions: InputQuestion[]
+
+      try {
+        predefinedQuestions = JSON.parse(predefinedData)
+      }
+      catch (parseError: unknown) {
+        logger_error('Malformed JSON in predefined-questions.json:', parseError)
+        return // Stop processing if JSON is invalid
+      }
+
+      if (!Array.isArray(predefinedQuestions)) {
+        logger_error('Predefined questions file must contain a JSON array.')
+        return
+      }
+
+      // Validate each question object
+      for (const q of predefinedQuestions) {
+        if (typeof q.question_text !== 'string' || q.question_text.trim() === '') {
+          logger_error('Invalid question_text in predefined question:', q)
+          return // Stop processing
+        }
+        if (!Array.isArray(q.answer_options) || q.answer_options.length === 0) {
+          logger_error('Invalid answer_options in predefined question:', q)
+          return // Stop processing
+        }
+      }
 
       if (predefinedQuestions.length > 0) {
         const existingQuestions = await getQuestions()
