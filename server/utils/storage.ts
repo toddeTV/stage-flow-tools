@@ -63,17 +63,34 @@ async function initStorage(event?: H3Event) {
         }
       }
 
-      // Step 3: Save the new questions.
+      // Step 3: Atomically update the questions file.
       if (predefinedQuestions.length > 0) {
-        const existingQuestions = await getQuestions()
-        const newQuestions: Question[] = predefinedQuestions.map(q => ({
-          ...q,
-          id: createId(),
-          is_locked: false
-        }))
+        const release = await lock(QUESTIONS_FILE)
+        try {
+          const questionsData = await fs.readFile(QUESTIONS_FILE, 'utf-8')
+          const existingQuestions: Question[] = JSON.parse(questionsData)
+          const existingQuestionTexts = new Set(existingQuestions.map(q => q.question_text))
 
-        await saveQuestions([...existingQuestions, ...newQuestions])
-        logger('Predefined questions loaded successfully.')
+          const newQuestions: Question[] = predefinedQuestions
+            .filter(q => !existingQuestionTexts.has(q.question_text))
+            .map(q => ({
+              ...q,
+              id: createId(),
+              is_locked: false
+            }))
+
+          if (newQuestions.length > 0) {
+            const allQuestions = [...existingQuestions, ...newQuestions]
+            await fs.writeFile(QUESTIONS_FILE, JSON.stringify(allQuestions, null, 2))
+            logger(`${newQuestions.length} new predefined questions loaded successfully.`)
+          }
+          else {
+            logger('No new predefined questions to load.')
+          }
+        }
+        finally {
+          await release()
+        }
       }
 
       // Step 4: Remove the processing file on success.
