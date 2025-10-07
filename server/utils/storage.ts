@@ -3,13 +3,19 @@ import { join } from 'path'
 import { createId } from '@paralleldrive/cuid2'
 import { lock } from 'proper-lockfile'
 import type { H3Event } from 'h3'
-import type { Question, Results, Answer } from '~/types'
+import type { Question, Results, Answer, InputQuestion } from '~/types'
 
 const DATA_DIR = join(process.cwd(), 'data')
 const QUESTIONS_FILE = join(DATA_DIR, 'questions.json')
 const ANSWERS_FILE = join(DATA_DIR, 'answers.json')
 const ADMIN_FILE = join(DATA_DIR, 'admin.json')
+const PREDEFINED_QUESTIONS_FILE = join(DATA_DIR, 'predefined-questions.json')
+const PROCESSING_FILE = `${PREDEFINED_QUESTIONS_FILE}.processing`
 
+// Type guard to check for Node.js errors
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error
+}
 // Initialize storage with runtime config
 async function initStorage(event?: H3Event) {
   try {
@@ -21,6 +27,87 @@ async function initStorage(event?: H3Event) {
     }
     catch (error: unknown) {
       await fs.writeFile(QUESTIONS_FILE, JSON.stringify([]))
+    }
+
+    // Process predefined questions atomically
+    try {
+      // Step 1: Rename the file to mark it as being processed.
+      await fs.rename(PREDEFINED_QUESTIONS_FILE, PROCESSING_FILE)
+
+      // Step 2: Read and validate the processing file.
+      const predefinedData = await fs.readFile(PROCESSING_FILE, 'utf-8')
+      let predefinedQuestions: InputQuestion[]
+
+      try {
+        predefinedQuestions = JSON.parse(predefinedData)
+      }
+      catch (parseError: unknown) {
+        logger_error('Malformed JSON in processing file:', parseError)
+        // Leave the .processing file for manual inspection.
+        return
+      }
+
+      if (!Array.isArray(predefinedQuestions)) {
+        logger_error('Processing file must contain a JSON array.')
+        return
+      }
+
+      for (const q of predefinedQuestions) {
+        if (typeof q.question_text !== 'string' || q.question_text.trim() === '') {
+          logger_error('Invalid question_text in processing file:', q)
+          return
+        }
+        if (!Array.isArray(q.answer_options) || q.answer_options.length === 0) {
+          logger_error('Invalid answer_options in processing file:', q)
+          return
+        }
+      }
+
+      // Step 3: Atomically update the questions file.
+      if (predefinedQuestions.length > 0) {
+        const release = await lock(QUESTIONS_FILE)
+        try {
+          const questionsData = await fs.readFile(QUESTIONS_FILE, 'utf-8')
+          const existingQuestions: Question[] = JSON.parse(questionsData)
+          const existingQuestionTexts = new Set(existingQuestions.map(q => q.question_text))
+
+          const newQuestions: Question[] = []
+          for (const q of predefinedQuestions) {
+            if (!existingQuestionTexts.has(q.question_text)) {
+              existingQuestionTexts.add(q.question_text) // Add to set to prevent duplicates within the batch
+              newQuestions.push({
+                ...q,
+                id: createId(),
+                is_locked: false
+              })
+            }
+          }
+
+          if (newQuestions.length > 0) {
+            const allQuestions = [...existingQuestions, ...newQuestions]
+            await fs.writeFile(QUESTIONS_FILE, JSON.stringify(allQuestions, null, 2))
+            logger(`${newQuestions.length} new predefined questions loaded successfully.`)
+          }
+          else {
+            logger('No new predefined questions to load.')
+          }
+        }
+        finally {
+          await release()
+        }
+      }
+
+      // Step 4: Remove the processing file on success.
+      await fs.unlink(PROCESSING_FILE)
+    }
+    catch (error: unknown) {
+      if (isNodeError(error) && error.code === 'ENOENT') {
+        // This is fine, no predefined questions file to process.
+      }
+      else {
+        logger_error('Error processing predefined questions:', error)
+        // If an error occurred, the .processing file is left for manual review.
+      }
     }
 
     // Initialize answers file
