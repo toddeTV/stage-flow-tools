@@ -5,6 +5,8 @@ export interface Question {
   is_locked: boolean
 }
 
+export type InputQuestion = Omit<Question, 'id' | 'is_locked'>
+
 export interface Answer {
   id: string
   question_id: string
