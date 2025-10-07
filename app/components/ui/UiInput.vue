@@ -1,12 +1,16 @@
 <script setup lang="ts">
-defineProps({
+const props = defineProps({
   modelValue: {
-    type: String,
+    type: [String, Number],
     required: true
   },
   type: {
     type: String,
     default: 'text'
+  },
+  step: {
+    type: [String, Number],
+    default: '1'
   },
   placeholder: {
     type: String,
@@ -19,17 +23,24 @@ defineProps({
 })
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
+  'update:modelValue': [value: string | number]
 }>()
 
 function onInput(event: Event) {
-  emit('update:modelValue', (event.target as HTMLInputElement).value)
+  const target = event.target as HTMLInputElement
+  if (props.type === 'number') {
+    emit('update:modelValue', target.valueAsNumber)
+  }
+  else {
+    emit('update:modelValue', target.value)
+  }
 }
 </script>
 
 <template>
   <input
     :type="type"
+    :step="step"
     :placeholder="placeholder"
     :value="modelValue"
     :required="required"
