@@ -12,8 +12,20 @@ async function handleLogin() {
 
     const router = useRouter()
     const route = useRoute()
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/admin'
-    router.push(redirect)
+    const redirect = route.query.redirect
+    let redirectPath = '/admin' // Default redirect path
+
+    if (typeof redirect === 'string') {
+      // Validate the redirect path to prevent open redirects
+      // - Must start with '/'
+      // - Must not start with '//'
+      // - Must not contain '://'
+      if (redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.includes('://')) {
+        redirectPath = redirect
+      }
+    }
+
+    router.push(redirectPath)
   }
   catch (error: any) {
     loginError.value = error.data?.statusMessage || 'Login failed'
