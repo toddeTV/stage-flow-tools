@@ -5,7 +5,7 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const { results } = useQuizSocket()
+const { results, totalConnections } = useQuizSocket()
 
 const route = useRoute()
 const isCoreView = computed(() => route.query.core !== undefined)
@@ -91,7 +91,7 @@ function getPercentage(count: number) {
       <div class="mb-10 border-b-[3px] border-black pb-5">
         <h2 class="text-3xl mb-4 leading-tight">{{ results.question.question_text }}</h2>
         <div class="flex justify-between items-center text-lg">
-          <span class="font-bold py-2 px-4 bg-gray-100 border-2 border-black">Total Votes: {{ results.totalVotes }}</span>
+          <span class="font-bold py-2 px-4 bg-gray-100 border-2 border-black">Total Votes: {{ results.totalVotes }} ({{ totalConnections > 0 ? Math.round((results.totalVotes / totalConnections) * 100) : 0 }}%)</span>
           <div class="flex items-center gap-4">
             <UiButton @click="refreshResults" variant="secondary" size="small">
               🔄 Refresh

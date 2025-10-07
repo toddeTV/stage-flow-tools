@@ -8,6 +8,7 @@ export const useQuizSocket = () => {
   const activeQuestion = ref<Question | null>(null)
   const selectedAnswer = ref('')
   const results = ref<Results | null>(null)
+  const totalConnections = ref(0)
   const userId = useLocalStorage<string | null>('quiz-user-id', null)
 
   const wsEndpoint = computed(() => {
@@ -52,6 +53,9 @@ export const useQuizSocket = () => {
       else if (parsed.event === 'results-update') {
         results.value = parsed.data
       }
+      else if (parsed.event === 'connections-update') {
+        totalConnections.value = parsed.data.totalConnections
+      }
     }
     catch (error: unknown) {
       logger_error('WebSocket message error:', error)
@@ -63,6 +67,7 @@ export const useQuizSocket = () => {
     activeQuestion,
     selectedAnswer,
     results,
+    totalConnections,
     send,
     open,
     close,
