@@ -1,0 +1,32 @@
+# project specific
+data
+
+# Git
+.git
+.github
+.gitignore
+
+# Node
+node_modules
+
+# Build output
+.output
+.nuxt
+
+# IDE
+.vscode
+
+# Docs
+docs
+
+# Local files
+.env
+
+# Log files
+pnpm-debug.log*
+
+# Docker
+Dockerfile
+docker-compose.yml
+docker-build.sh
+.dockerignore
