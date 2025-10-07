@@ -16,23 +16,25 @@ const { error } = await useFetch('/api/auth/verify')
 isAuthenticated.value = !error.value
 
 // Load questions
-async function loadQuestions() {
-  const { data: active, error: fetchError } = await useFetch<Question>('/api/questions')
-  if (fetchError.value) {
-    logger_error('Failed to load questions:', fetchError.value)
-    activeQuestion.value = null
-  }
-  else if (active.value && !(active.value as any).message) {
-    activeQuestion.value = active.value
+const { data: fetchedQuestions, error: fetchError, refresh: loadQuestions } = useFetch<Question>('/api/questions', {
+  immediate: isAuthenticated.value
+})
+
+watch(fetchedQuestions, (newQuestions) => {
+  if (newQuestions && !(newQuestions as any).message) {
+    activeQuestion.value = newQuestions
   }
   else {
     activeQuestion.value = null
   }
-}
+})
 
-if (isAuthenticated.value) {
-  await loadQuestions()
-}
+watch(fetchError, (newError) => {
+  if (newError) {
+    logger_error('Failed to load questions:', newError)
+    activeQuestion.value = null
+  }
+})
 
 // Login handler
 async function handleLogin() {
