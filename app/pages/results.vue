@@ -3,16 +3,11 @@ import type { Results } from '~/types'
 
 const { results } = useQuizSocket()
 
-// Load results on mount
-onMounted(async () => {
-  await loadResults()
-})
-
-// Load current results
-async function loadResults() {
+// Fetch initial results
+async function refreshResults() {
   try {
     const data = await $fetch<Results>('/api/results/current')
-    if (data && !(data as any).message) {
+    if (data && data.question) {
       results.value = data
     }
     else {
@@ -21,12 +16,8 @@ async function loadResults() {
   }
   catch (error: unknown) {
     console.error('Failed to load results:', error)
+    results.value = null
   }
-}
-
-// Refresh results manually
-async function refreshResults() {
-  await loadResults()
 }
 
 // Calculate bar width
@@ -36,7 +27,9 @@ function getBarWidth(count: number) {
   }
 
   const maxVotes = Math.max(...Object.values(results.value.results))
-  if (maxVotes === 0) return 0
+  if (maxVotes === 0) {
+    return 0
+  }
 
   // Scale to max 90% width for best visual
   return (count / maxVotes) * 90
@@ -50,6 +43,8 @@ function getPercentage(count: number) {
   return Math.round((count / results.value.totalVotes) * 100)
 }
 
+// Lifecycle hooks
+onMounted(refreshResults)
 </script>
 
 <template>
@@ -107,14 +102,14 @@ function getPercentage(count: number) {
 
     <!-- Navigation -->
     <div class="flex justify-center gap-5 mt-8">
+      <UiButton @click="refreshResults" variant="link">
+        Refresh
+      </UiButton>
       <NuxtLink to="/">
         <UiButton variant="link">
           ← Back to Quiz
         </UiButton>
       </NuxtLink>
-      <UiButton @click="refreshResults" variant="link">
-        Refresh Results
-      </UiButton>
     </div>
   </div>
 </template>

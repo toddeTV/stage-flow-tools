@@ -23,5 +23,11 @@ export default defineEventHandler(async (event) => {
   // Broadcast new question to all connected clients
   broadcast('new-question', question)
 
+  // Also broadcast an empty results update to clear previous results
+  const results = await getResultsForQuestion(questionId)
+  if (results) {
+    scheduleResultsUpdate(results)
+  }
+
   return question
 })
