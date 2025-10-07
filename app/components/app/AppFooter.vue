@@ -1,4 +1,7 @@
 <script setup lang="ts">
+const config = useRuntimeConfig()
+const appVersion = config.public.version
+
 const yearStart = 2025
 const yearCurrent = new Date().getFullYear()
 const yearSpan = yearStart === yearCurrent ? yearStart : `${yearStart} - ${yearCurrent}`
@@ -12,7 +15,8 @@ const yearSpan = yearStart === yearCurrent ? yearStart : `${yearStart} - ${yearC
         Thorsten Seyschab</NuxtLink>.
       All rights reserved.
     </div>
-    <div>
+    <div class="flex items-center space-x-4">
+      <span>v{{ appVersion }}</span>
       <NuxtLink aria-label="Source Code on GitHub" target="_blank" to="https://github.com/toddeTV/stage-flow-tools/" class="flex items-center space-x-2 underline">
         <span>Source Code on</span>
         <svg
