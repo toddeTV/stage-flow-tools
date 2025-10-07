@@ -142,410 +142,101 @@ function removeOption(index: number) {
 </script>
 
 <template>
-  <div class="admin-container">
-    <h1 class="page-title">Admin Dashboard</h1>
-    
+  <div class="max-w-6xl mx-auto p-5">
+    <UiPageTitle>Admin Dashboard</UiPageTitle>
+
     <!-- Login Form -->
-    <div v-if="!isAuthenticated" class="login-section">
-      <h2>Admin Login</h2>
-      <form @submit.prevent="handleLogin" class="login-form">
-        <input
-          v-model="loginForm.username"
-          type="text"
-          placeholder="Username"
-          required
-        />
-        <input
-          v-model="loginForm.password"
-          type="password"
-          placeholder="Password"
-          required
-        />
-        <button type="submit">Login</button>
-        <div v-if="loginError" class="error">{{ loginError }}</div>
+    <div v-if="!isAuthenticated" class="max-w-md mx-auto bg-white border-[3px] border-black p-8">
+      <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Admin Login</h2>
+      <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
+        <UiInput v-model="loginForm.username" placeholder="Username" required />
+        <UiInput v-model="loginForm.password" type="password" placeholder="Password" required />
+        <UiButton type="submit">Login</UiButton>
+        <div v-if="loginError" class="text-black bg-white border-2 border-black p-2.5 text-center">{{ loginError }}</div>
       </form>
     </div>
-    
+
     <!-- Dashboard -->
-    <div v-else class="dashboard">
+    <div v-else class="grid gap-8">
       <!-- Current Question -->
-      <section class="current-question">
-        <div class="current-question-header">
-          <h2>Current Active Question</h2>
-          <button @click="loadQuestions" class="refresh-btn">Refresh</button>
+      <UiSection>
+        <div class="flex justify-between items-center mb-5">
+          <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Current Active Question</h2>
+          <UiButton variant="secondary" @click="loadQuestions">Refresh</UiButton>
         </div>
-        <div v-if="activeQuestion" class="question-display">
-          <p class="question-text">{{ activeQuestion.question_text }}</p>
-          <ul class="answer-list">
-            <li v-for="(option, index) in activeQuestion.answer_options" :key="index">
+        <div v-if="activeQuestion" class="bg-gray-100 border-2 border-black p-5">
+          <p class="text-lg mb-4 font-bold">{{ activeQuestion.question_text }}</p>
+          <ul class="list-none p-0 mb-5">
+            <li v-for="(option, index) in activeQuestion.answer_options" :key="index" class="p-2.5 bg-white border border-black mb-1.5">
               {{ option }}
             </li>
           </ul>
-          <div class="question-status">
+          <div class="flex justify-between items-center">
             <span>Status: {{ activeQuestion.is_locked ? 'Locked' : 'Unlocked' }}</span>
-            <button @click="toggleLock">
+            <UiButton @click="toggleLock">
               {{ activeQuestion.is_locked ? 'Unlock' : 'Lock' }} Question
-            </button>
+            </UiButton>
           </div>
         </div>
-        <div v-else class="no-question">
+        <div v-else class="p-10 text-center bg-gray-100 border-2 border-dashed border-black">
           No active question
         </div>
-      </section>
-      
+      </UiSection>
+
       <!-- New Question Form -->
-      <section class="new-question">
-        <h2>Prepare Next Question</h2>
-        <form @submit.prevent="handleCreateQuestion" class="question-form">
+      <UiSection>
+        <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Prepare Next Question</h2>
+        <form @submit.prevent="handleCreateQuestion" class="flex flex-col gap-5">
           <textarea
             v-model="newQuestion.question_text"
             placeholder="Enter question text"
             required
+            class="p-3 border-2 border-black text-base min-h-[100px] resize-y bg-white font-sans"
           ></textarea>
-          
-          <div class="answer-options">
-            <h3>Answer Options</h3>
-            <div v-for="(option, index) in newQuestion.answer_options" :key="index" class="option-input">
-              <input
-                v-model="newQuestion.answer_options[index]"
-                type="text"
+
+          <div>
+            <h3 class="mb-2.5 text-lg">Answer Options</h3>
+            <div v-for="(option, index) in newQuestion.answer_options" :key="index" class="flex gap-2.5 mb-2.5">
+              <UiInput
+                v-model="newQuestion.answer_options[index]!"
                 :placeholder="`Option ${index + 1}`"
                 required
+                class="flex-1"
               />
-              <button
+              <UiButton
                 v-if="newQuestion.answer_options.length > 2"
-                type="button"
+                variant="danger"
                 @click="removeOption(index)"
-                class="remove-btn"
               >
                 Remove
-              </button>
+              </UiButton>
             </div>
-            <button type="button" @click="addOption" class="add-option">
+            <UiButton variant="secondary" @click="addOption">
               Add Option
-            </button>
+            </UiButton>
           </div>
-          
-          <button type="submit" class="submit-btn">Create Question</button>
+
+          <UiButton type="submit">Create Question</UiButton>
         </form>
-      </section>
-      
+      </UiSection>
+
       <!-- Prepared Questions -->
-      <section v-if="preparedQuestions.length > 0" class="prepared-questions">
-        <h2>Prepared Questions</h2>
-        <div v-for="question in preparedQuestions" :key="question.id" class="prepared-question">
-          <p>{{ question.question_text }}</p>
-          <ul>
-            <li v-for="(option, index) in question.answer_options" :key="index">
+      <UiSection v-if="preparedQuestions.length > 0">
+        <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Prepared Questions</h2>
+        <div v-for="question in preparedQuestions" :key="question.id" class="bg-gray-100 border-2 border-black p-5 mb-4">
+          <p class="font-bold mb-2.5">{{ question.question_text }}</p>
+          <ul class="list-none p-0 mb-4">
+            <li v-for="(option, index) in question.answer_options" :key="index" class="p-2 bg-white border border-black mb-1.5">
               {{ option }}
             </li>
           </ul>
-          <button @click="publishQuestion(question.id)" class="publish-btn">
+          <UiButton @click="publishQuestion(question.id)">
             Publish This Question
-          </button>
+          </UiButton>
         </div>
-      </section>
-      
-      <button @click="handleLogout" class="logout-btn">Logout</button>
+      </UiSection>
+
+      <UiButton @click="handleLogout" variant="secondary">Logout</UiButton>
     </div>
   </div>
 </template>
-
-<style scoped>
-.admin-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.page-title {
-  text-align: center;
-  font-size: 2.5rem;
-  margin-bottom: 40px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-/* Login Section */
-.login-section {
-  max-width: 400px;
-  margin: 0 auto;
-  background: #fff;
-  border: 3px solid #000;
-  padding: 30px;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.login-form input {
-  padding: 12px;
-  border: 2px solid #000;
-  font-size: 1rem;
-  background: #fff;
-}
-
-.login-form button {
-  padding: 12px;
-  background: #000;
-  color: #fff;
-  border: none;
-  font-size: 1rem;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.login-form button:hover {
-  background: #fff;
-  color: #000;
-  box-shadow: inset 0 0 0 2px #000;
-}
-
-.error {
-  color: #000;
-  background: #fff;
-  border: 2px solid #000;
-  padding: 10px;
-  text-align: center;
-}
-
-/* Dashboard */
-.dashboard {
-  display: grid;
-  gap: 30px;
-}
-
-section {
-  background: #fff;
-  border: 3px solid #000;
-  padding: 30px;
-}
-
-h2 {
-  margin-bottom: 20px;
-  font-size: 1.8rem;
-  text-transform: uppercase;
-  border-bottom: 3px solid #000;
-  padding-bottom: 10px;
-}
-
-/* Current Question */
-.current-question-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.refresh-btn {
-  padding: 8px 16px;
-  background: #fff;
-  color: #000;
-  border: 2px solid #000;
-  cursor: pointer;
-  text-transform: uppercase;
-}
-
-.refresh-btn:hover {
-  background: #000;
-  color: #fff;
-}
-
-.question-display {
-  background: #f5f5f5;
-  border: 2px solid #000;
-  padding: 20px;
-}
-
-.question-text {
-  font-size: 1.2rem;
-  margin-bottom: 15px;
-  font-weight: bold;
-}
-
-.answer-list {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 20px;
-}
-
-.answer-list li {
-  padding: 10px;
-  background: #fff;
-  border: 1px solid #000;
-  margin-bottom: 5px;
-}
-
-.question-status {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.question-status button {
-  padding: 8px 16px;
-  background: #000;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  text-transform: uppercase;
-}
-
-.question-status button:hover {
-  background: #fff;
-  color: #000;
-  box-shadow: inset 0 0 0 2px #000;
-}
-
-.no-question {
-  padding: 40px;
-  text-align: center;
-  background: #f5f5f5;
-  border: 2px dashed #000;
-}
-
-/* Question Form */
-.question-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.question-form textarea {
-  padding: 12px;
-  border: 2px solid #000;
-  font-size: 1rem;
-  min-height: 100px;
-  resize: vertical;
-  background: #fff;
-  font-family: inherit;
-}
-
-.answer-options h3 {
-  margin-bottom: 10px;
-  font-size: 1.2rem;
-}
-
-.option-input {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.option-input input {
-  flex: 1;
-  padding: 10px;
-  border: 2px solid #000;
-  background: #fff;
-  font-size: 1rem;
-}
-
-.remove-btn {
-  padding: 10px 20px;
-  background: #000;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  text-transform: uppercase;
-}
-
-.remove-btn:hover {
-  background: #fff;
-  color: #000;
-  box-shadow: inset 0 0 0 2px #000;
-}
-
-.add-option {
-  padding: 10px 20px;
-  background: #fff;
-  color: #000;
-  border: 2px solid #000;
-  cursor: pointer;
-  text-transform: uppercase;
-  align-self: flex-start;
-}
-
-.add-option:hover {
-  background: #000;
-  color: #fff;
-}
-
-.submit-btn {
-  padding: 15px;
-  background: #000;
-  color: #fff;
-  border: none;
-  font-size: 1.1rem;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.submit-btn:hover {
-  background: #fff;
-  color: #000;
-  box-shadow: inset 0 0 0 3px #000;
-}
-
-/* Prepared Questions */
-.prepared-question {
-  background: #f5f5f5;
-  border: 2px solid #000;
-  padding: 20px;
-  margin-bottom: 15px;
-}
-
-.prepared-question p {
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-.prepared-question ul {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 15px;
-}
-
-.prepared-question li {
-  padding: 8px;
-  background: #fff;
-  border: 1px solid #000;
-  margin-bottom: 5px;
-}
-
-.publish-btn {
-  padding: 10px 20px;
-  background: #000;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  text-transform: uppercase;
-}
-
-.publish-btn:hover {
-  background: #fff;
-  color: #000;
-  box-shadow: inset 0 0 0 2px #000;
-}
-
-/* Logout */
-.logout-btn {
-  padding: 12px 30px;
-  background: #fff;
-  color: #000;
-  border: 3px solid #000;
-  cursor: pointer;
-  text-transform: uppercase;
-  font-size: 1rem;
-  transition: all 0.3s;
-}
-
-.logout-btn:hover {
-  background: #000;
-  color: #fff;
-}
-</style>

@@ -7,7 +7,7 @@ System design and technical architecture of the quiz application.
 ### Frontend
 - **Nuxt 3** - Vue meta-framework
 - **Vue 3** - Composition API
-- **Pure CSS** - Sharp, No Rounded Corners, design system
+- **Tailwind CSS** - Utility-first CSS framework
 
 ### Backend
 - **Nitro** - Nuxt server engine
@@ -66,7 +66,7 @@ quiz/
 - **Distinctive** - Sharp, professional appearance
 - **Minimalist** - Focus on content
 - **High Contrast** - Black and white clarity
-- **No Dependencies** - Pure CSS implementation
+- **Utility-First** - Tailwind CSS implementation
 
 ## Data Flow
 

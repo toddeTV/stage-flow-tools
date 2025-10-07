@@ -3,30 +3,16 @@ const { data: connections, refresh: refreshConnections } = useFetch('/api/websoc
 </script>
 
 <template>
-  <div class="debug-websockets">
-    <h3>Active WebSocket Connections</h3>
-    <button @click="() => refreshConnections()">Refresh</button>
-    <ul v-if="connections && connections.length > 0">
+  <div class="fixed bottom-0 left-0 right-0 p-4 bg-gray-100 border-t border-gray-300 max-h-52 overflow-y-auto">
+    <h3 class="font-bold mb-2">Active WebSocket Connections</h3>
+    <button @click="() => refreshConnections()" class="mb-2 px-2 py-1 bg-black text-white border-2 border-black hover:bg-white hover:text-black">Refresh</button>
+    <ul v-if="connections && connections.length > 0" class="text-sm">
       <li v-for="connection in connections" :key="connection.id">
-        <strong>ID:</strong> {{ connection.id }} | <strong>URL:</strong> {{ connection.url }}
+        <strong class="font-semibold">ID:</strong> {{ connection.id }} | <strong class="font-semibold">URL:</strong> {{ connection.url }}
       </li>
     </ul>
-    <div v-else>
+    <div v-else class="text-sm">
       No websockets.
     </div>
   </div>
 </template>
-
-<style scoped>
-.debug-websockets {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 1rem;
-  background: #f0f0f0;
-  border-top: 1px solid #ccc;
-  max-height: 200px;
-  overflow-y: auto;
-}
-</style>

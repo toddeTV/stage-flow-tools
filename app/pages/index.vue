@@ -109,46 +109,50 @@ async function submitAnswer() {
 </script>
 
 <template>
-  <div class="quiz-container">
-    <h1 class="page-title">Quiz Time</h1>
-    
+  <div class="max-w-3xl mx-auto p-5 min-h-screen">
+    <UiPageTitle>Quiz Time</UiPageTitle>
+
     <!-- Nickname Prompt -->
-    <div v-if="!userNickname" class="nickname-section">
-      <h2>Welcome!</h2>
-      <p>Please enter your nickname to participate</p>
-      <form @submit.prevent="setNickname" class="nickname-form">
-        <input
+    <div v-if="!userNickname" class="max-w-lg mx-auto bg-white border-[4px] border-black p-10 text-center">
+      <h2 class="text-3xl mb-4">Welcome!</h2>
+      <p class="mb-8 text-lg">Please enter your nickname to participate</p>
+      <form @submit.prevent="setNickname" class="flex flex-col gap-5">
+        <UiInput
           v-model="nicknameInput"
-          type="text"
           placeholder="Enter your nickname"
           required
+          class="text-xl text-center"
         />
-        <button type="submit">Join Quiz</button>
+        <UiButton type="submit">Join Quiz</UiButton>
       </form>
     </div>
-    
+
     <!-- Quiz Section -->
-    <div v-else class="quiz-section">
-      <div class="user-info">
-        <span>Playing as: <strong>{{ userNickname }}</strong></span>
-        <button @click="changeNickname" class="change-btn">Change</button>
+    <div v-else class="flex flex-col gap-8">
+      <div class="flex justify-between items-center p-4 bg-white border-[3px] border-black">
+        <span>Playing as: <strong class="text-lg">{{ userNickname }}</strong></span>
+        <UiButton @click="changeNickname">Change</UiButton>
       </div>
-      
+
       <!-- Active Question -->
-      <div v-if="activeQuestion" class="question-container">
-        <div class="question-header">
-          <h2>{{ activeQuestion.question_text }}</h2>
-          <div v-if="activeQuestion.is_locked" class="lock-indicator">
+      <div v-if="activeQuestion" class="bg-white border-[4px] border-black p-8">
+        <div class="flex justify-between items-start mb-8">
+          <h2 class="text-2xl leading-tight flex-1">{{ activeQuestion.question_text }}</h2>
+          <div v-if="activeQuestion.is_locked" class="py-2 px-4 bg-black text-white uppercase text-sm whitespace-nowrap">
             🔒 Answers Locked
           </div>
         </div>
-        
-        <div class="answer-options">
+
+        <div class="flex flex-col gap-4 mb-5">
           <label
             v-for="(option, index) in activeQuestion.answer_options"
             :key="index"
-            class="answer-option"
-            :class="{ selected: selectedAnswer === option, disabled: activeQuestion.is_locked }"
+            class="flex items-center p-5 border-[3px] border-black cursor-pointer transition-all duration-200 relative"
+            :class="{
+              'bg-black text-white': selectedAnswer === option,
+              'opacity-60 cursor-not-allowed': activeQuestion.is_locked,
+              'hover:translate-x-1 hover:shadow-[-5px_5px_0_#000]': !activeQuestion.is_locked
+            }"
           >
             <input
               type="radio"
@@ -156,37 +160,41 @@ async function submitAnswer() {
               v-model="selectedAnswer"
               :disabled="activeQuestion.is_locked"
               @change="submitAnswer"
+              class="w-5 h-5 mr-4"
+              :class="selectedAnswer === option ? 'accent-white' : 'accent-black'"
             />
-            <span>{{ option }}</span>
+            <span class="text-lg">{{ option }}</span>
           </label>
         </div>
-        
-        <div v-if="selectedAnswer && !activeQuestion.is_locked" class="status-message">
+
+        <div v-if="selectedAnswer && !activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
           ✓ Your answer has been submitted. You can change it until the question is locked.
         </div>
-        
-        <div v-if="selectedAnswer && activeQuestion.is_locked" class="status-message">
-          Your answer: <strong>{{ selectedAnswer }}</strong>
+
+        <div v-if="selectedAnswer && activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
+          Your answer: <strong class="font-bold">{{ selectedAnswer }}</strong>
         </div>
       </div>
-      
+
       <!-- No Active Question -->
-      <div v-else class="no-question">
-        <h2>Waiting for Question</h2>
-        <p>The presenter will start a question soon...</p>
-        <div class="waiting-animation">
-          <span></span>
-          <span></span>
-          <span></span>
+      <div v-else class="bg-white border-[4px] border-black py-16 px-8 text-center">
+        <h2 class="text-3xl mb-4">Waiting for Question</h2>
+        <p class="text-xl mb-8">The presenter will start a question soon...</p>
+        <div class="flex justify-center gap-2.5">
+          <span class="w-4 h-4 bg-black animate-pulse"></span>
+          <span class="w-4 h-4 bg-black animate-pulse [animation-delay:0.2s]"></span>
+          <span class="w-4 h-4 bg-black animate-pulse [animation-delay:0.4s]"></span>
         </div>
       </div>
-      
-      <div class="navigation">
-        <button @click="loadQuestion" class="refresh-btn">
+
+      <div class="flex justify-center gap-5 mt-8">
+        <UiButton @click="loadQuestion" variant="link">
           Refresh
-        </button>
-        <NuxtLink to="/results" class="view-results-btn">
-          View Live Results →
+        </UiButton>
+        <NuxtLink to="/results">
+          <UiButton variant="link">
+            View Live Results →
+          </UiButton>
         </NuxtLink>
       </div>
     </div>
@@ -194,245 +202,6 @@ async function submitAnswer() {
 </template>
 
 <style scoped>
-.quiz-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  min-height: 100vh;
-}
-
-.page-title {
-  text-align: center;
-  font-size: 3rem;
-  margin-bottom: 40px;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  border-bottom: 5px solid #000;
-  padding-bottom: 20px;
-}
-
-/* Nickname Section */
-.nickname-section {
-  max-width: 500px;
-  margin: 0 auto;
-  background: #fff;
-  border: 4px solid #000;
-  padding: 40px;
-  text-align: center;
-}
-
-.nickname-section h2 {
-  font-size: 2rem;
-  margin-bottom: 15px;
-}
-
-.nickname-section p {
-  margin-bottom: 30px;
-  font-size: 1.1rem;
-}
-
-.nickname-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.nickname-form input {
-  padding: 15px;
-  border: 3px solid #000;
-  font-size: 1.2rem;
-  text-align: center;
-  background: #fff;
-}
-
-.nickname-form button {
-  padding: 15px;
-  background: #000;
-  color: #fff;
-  border: none;
-  font-size: 1.2rem;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.nickname-form button:hover {
-  background: #fff;
-  color: #000;
-  box-shadow: inset 0 0 0 3px #000;
-}
-
-/* Quiz Section */
-.quiz-section {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-}
-
-.user-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  background: #fff;
-  border: 3px solid #000;
-}
-
-.user-info strong {
-  font-size: 1.2rem;
-}
-
-.change-btn {
-  padding: 8px 16px;
-  background: #000;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  text-transform: uppercase;
-}
-
-.change-btn:hover {
-  background: #fff;
-  color: #000;
-  box-shadow: inset 0 0 0 2px #000;
-}
-
-/* Question Container */
-.question-container {
-  background: #fff;
-  border: 4px solid #000;
-  padding: 30px;
-}
-
-.question-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 30px;
-}
-
-.question-header h2 {
-  font-size: 1.5rem;
-  line-height: 1.4;
-  flex: 1;
-}
-
-.lock-indicator {
-  padding: 8px 16px;
-  background: #000;
-  color: #fff;
-  text-transform: uppercase;
-  font-size: 0.9rem;
-  white-space: nowrap;
-}
-
-/* Answer Options */
-.answer-options {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.answer-option {
-  display: flex;
-  align-items: center;
-  padding: 20px;
-  border: 3px solid #000;
-  background: #fff;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-}
-
-.answer-option:hover:not(.disabled) {
-  transform: translateX(5px);
-  box-shadow: -5px 5px 0 #000;
-}
-
-.answer-option.selected {
-  background: #000;
-  color: #fff;
-}
-
-.answer-option.disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.answer-option.disabled:hover {
-  transform: none;
-  box-shadow: none;
-}
-
-.answer-option input[type="radio"] {
-  width: 20px;
-  height: 20px;
-  margin-right: 15px;
-  accent-color: #000;
-}
-
-.answer-option.selected input[type="radio"] {
-  accent-color: #fff;
-}
-
-.answer-option span {
-  font-size: 1.1rem;
-}
-
-/* Status Message */
-.status-message {
-  padding: 15px;
-  background: #f5f5f5;
-  border: 2px solid #000;
-  text-align: center;
-  font-size: 1rem;
-}
-
-.status-message strong {
-  font-weight: bold;
-}
-
-/* No Question */
-.no-question {
-  background: #fff;
-  border: 4px solid #000;
-  padding: 60px 30px;
-  text-align: center;
-}
-
-.no-question h2 {
-  font-size: 2rem;
-  margin-bottom: 15px;
-}
-
-.no-question p {
-  font-size: 1.2rem;
-  margin-bottom: 30px;
-}
-
-/* Waiting Animation */
-.waiting-animation {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-
-.waiting-animation span {
-  width: 15px;
-  height: 15px;
-  background: #000;
-  animation: pulse 1.4s ease-in-out infinite;
-}
-
-.waiting-animation span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.waiting-animation span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
 @keyframes pulse {
   0%, 80%, 100% {
     transform: scale(1);
@@ -444,33 +213,7 @@ async function submitAnswer() {
   }
 }
 
-/* Navigation */
-.navigation {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 30px;
-}
-
-.view-results-btn,
-.refresh-btn {
-  display: inline-block;
-  padding: 15px 30px;
-  background: #fff;
-  color: #000;
-  border: 3px solid #000;
-  text-decoration: none;
-  text-transform: uppercase;
-  font-size: 1.1rem;
-  transition: all 0.3s;
-  cursor: pointer;
-}
-
-.view-results-btn:hover,
-.refresh-btn:hover {
-  background: #000;
-  color: #fff;
-  transform: translateY(-3px);
-  box-shadow: 0 5px 0 #000;
+.animate-pulse {
+  animation: pulse 1.4s ease-in-out infinite;
 }
 </style>

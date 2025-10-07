@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-100 text-black min-h-screen relative;
+  }
+
+  ::selection {
+    @apply bg-black text-white;
+  }
+
+  /* Sharp Design - No Rounded Corners */
+  input,
+  button,
+  textarea,
+  select,
+  div,
+  section,
+  article,
+  header,
+  footer,
+  nav {
+    border-radius: 0;
+  }
+
+  /* Focus Styles */
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus {
+    outline: 3px solid #000;
+    outline-offset: 2px;
+  }
+}
+
+/* Background Pattern */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 50px,
+      rgba(0, 0, 0, 0.03) 50px,
+      rgba(0, 0, 0, 0.03) 100px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 50px,
+      rgba(0, 0, 0, 0.03) 50px,
+      rgba(0, 0, 0, 0.03) 100px
+    );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 border border-black;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-black border border-gray-100;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #333;
+}

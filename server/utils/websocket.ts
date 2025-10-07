@@ -1,5 +1,5 @@
 import type { Peer } from 'crossws'
-import { Results } from '~/types'
+import type { Results } from '~/types'
 
 interface PeerInfo {
   id: string
