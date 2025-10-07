@@ -38,7 +38,7 @@ jobs:
 
   publish-docker-image:
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
