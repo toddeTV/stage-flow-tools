@@ -114,7 +114,7 @@ function getPercentage(count: number) {
           class="flex flex-col gap-2.5"
         >
           <div class="flex justify-between items-center text-lg">
-            <span class="font-bold">{{ option }} <span v-if="result.emoji" class="ml-2">{{ result.emoji }}</span></span>
+            <span class="font-bold">{{ option }} <span v-if="result.emoji && !hideResults" class="ml-2">{{ result.emoji }}</span></span>
             <span class="py-1 px-2.5 bg-gray-100 border-2 border-black text-sm">
               <template v-if="hideResults">?</template>
               <template v-else>{{ result.count }}</template>
