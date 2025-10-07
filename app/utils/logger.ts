@@ -1,5 +1,5 @@
 /**
- * Server-side logger that wraps the global logger with runtime config awareness.
+ * Client-side logger that wraps the global logger with runtime config awareness.
  * Logs messages or objects to the console if enabled in the runtime configuration.
  * This function automatically retrieves the `showConsoleOutputs` setting from the
  * Nuxt runtime config and passes it to the global logger.
@@ -10,10 +10,10 @@
  * @example
  * ```typescript
  * // Simple logging
- * logger('Server started')
+ * logger('Component mounted')
  *
  * // Logging with options for deep object inspection
- * logger(complexObject, { depth: null })
+ * logger(reactiveState, { depth: null })
  * ```
  */
 export function logger(data: unknown, options?: unknown): void {
@@ -23,7 +23,7 @@ export function logger(data: unknown, options?: unknown): void {
 }
 
 /**
- * Server-side error logger that wraps the global error logger.
+ * Client-side error logger that wraps the global error logger.
  * Logs error messages or objects to the console using `console.error`.
  * Unlike the `logger` function, this always outputs to the console regardless
  * of the `showConsoleOutputs` setting, ensuring critical errors are never silenced.
@@ -34,10 +34,10 @@ export function logger(data: unknown, options?: unknown): void {
  * @example
  * ```typescript
  * // Log a simple error message
- * logger_error('Database connection failed')
+ * logger_error('Failed to fetch data')
  *
  * // Log an Error object with additional context
- * logger_error(error, 'Failed to process request', { userId: 123 })
+ * logger_error(error, 'API call failed', { endpoint: '/api/data' })
  * ```
  */
 export function logger_error(data: unknown, ...optionalParams: any[]): void {
