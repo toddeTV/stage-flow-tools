@@ -92,12 +92,17 @@ function getPercentage(count: number) {
         <h2 class="text-3xl mb-4 leading-tight">{{ results.question.question_text }}</h2>
         <div class="flex justify-between items-center text-lg">
           <span class="font-bold py-2 px-4 bg-gray-100 border-2 border-black">Total Votes: {{ results.totalVotes }}</span>
-          <span
-            class="py-2 px-4 border-2 border-black uppercase font-bold"
-            :class="results.question.is_locked ? 'bg-black text-white' : 'bg-white text-black'"
-          >
-            {{ results.question.is_locked ? '🔒 Locked' : '🔓 Open' }}
-          </span>
+          <div class="flex items-center gap-4">
+            <UiButton @click="refreshResults" variant="secondary" size="small">
+              🔄 Refresh
+            </UiButton>
+            <span
+              class="py-2 px-4 border-2 border-black uppercase font-bold"
+              :class="results.question.is_locked ? 'bg-black text-white' : 'bg-white text-black'"
+            >
+              {{ results.question.is_locked ? '🔒 Locked' : '🔓 Open' }}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -147,18 +152,10 @@ function getPercentage(count: number) {
     <!-- Navigation -->
     <div v-if="!isCoreView" class="flex flex-col items-center gap-5 mt-8">
       <div class="flex justify-center gap-5">
-        <UiButton @click="refreshResults" variant="link">
-          Refresh
-        </UiButton>
-        <NuxtLink to="/">
-          <UiButton variant="link">
-            ← Back to Quiz
-          </UiButton>
-        </NuxtLink>
       </div>
 
       <!-- Core View Controls -->
-      <div class="mt-8 p-4 border-t-2 border-black w-full max-w-md flex flex-col items-center gap-4">
+      <div class="p-4 w-full max-w-md flex flex-col items-center gap-4">
         <h3 class="text-lg font-bold">Core View Generator</h3>
         <div class="grid grid-cols-2 gap-4 w-full">
           <div class="flex flex-col gap-1">

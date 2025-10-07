@@ -134,11 +134,16 @@ async function submitAnswer() {
 
       <!-- Active Question -->
       <div v-if="activeQuestion" class="bg-white border-[4px] border-black p-8">
-        <div class="flex justify-between items-start mb-8">
-          <h2 class="text-2xl leading-tight flex-1">{{ activeQuestion.question_text }}</h2>
+        <div class="flex justify-between items-center mb-4">
+          <UiButton @click="refreshQuestion" variant="secondary" size="small">
+            🔄 Refresh
+          </UiButton>
           <div v-if="activeQuestion.is_locked" class="py-2 px-4 bg-black text-white uppercase text-sm whitespace-nowrap">
             🔒 Answers Locked
           </div>
+        </div>
+        <div class="flex justify-between items-start">
+          <h2 class="text-2xl leading-tight flex-1">{{ activeQuestion.question_text }}</h2>
         </div>
 
         <div class="flex flex-col gap-4 mb-5">
@@ -185,11 +190,6 @@ async function submitAnswer() {
         </div>
       </div>
 
-      <div class="flex justify-center gap-5 mt-8">
-        <UiButton @click="refreshQuestion" variant="link">
-          Refresh
-        </UiButton>
-      </div>
     </div>
   </div>
 </template>
