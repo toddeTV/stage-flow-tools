@@ -6,9 +6,10 @@ export default defineNuxtConfig({
     enabled: true
   },
   
-  modules: [
-    '@vueuse/nuxt',
+  modules: [ // try stick to alphabetically sorted
     '@nuxtjs/tailwindcss',
+    '@vueuse/nuxt',
+    'nuxt-mcp',
   ],
 
   css: [
