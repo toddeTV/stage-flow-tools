@@ -22,4 +22,5 @@ export interface Results {
   question: Question
   results: Record<string, number>
   totalVotes: number
+  totalConnections: number
 }

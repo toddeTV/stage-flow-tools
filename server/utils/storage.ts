@@ -386,7 +386,8 @@ export async function getResultsForQuestion(questionId: string): Promise<Results
   return {
     question,
     results,
-    totalVotes: answers.length
+    totalVotes: answers.length,
+    totalConnections: (await getPeers()).length
   }
 }
 
