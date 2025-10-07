@@ -5,16 +5,17 @@ const userNickname = ref('')
 const nicknameInput = ref('')
 const { activeQuestion, selectedAnswer } = useQuizSocket()
 
-// Load nickname from localStorage
-onMounted(async () => {
-  const saved = localStorage.getItem('quiz-nickname')
-  if (saved) {
-    userNickname.value = saved
+// Load initial data
+async function loadInitialData() {
+  // Load nickname from localStorage
+  const savedNickname = localStorage.getItem('quiz-nickname')
+  if (savedNickname) {
+    userNickname.value = savedNickname
   }
 
   // Load active question
-  await loadQuestion()
-})
+  await refreshQuestion()
+}
 
 // Set nickname
 function setNickname() {
@@ -34,8 +35,8 @@ async function changeNickname() {
           method: 'POST',
           body: {
             user_id: userId,
-            question_id: activeQuestion.value.id
-          }
+            question_id: activeQuestion.value.id,
+          },
         })
       }
       catch (error) {
@@ -49,8 +50,8 @@ async function changeNickname() {
   localStorage.removeItem('quiz-nickname')
 }
 
-// Load active question
-async function loadQuestion() {
+// Refresh active question
+async function refreshQuestion() {
   try {
     const question = await $fetch<Question>('/api/questions')
     if (question && !(question as any).message) {
@@ -101,11 +102,13 @@ async function submitAnswer() {
     console.error('Failed to submit answer:', error)
     // If locked, reload question
     if (error.statusCode === 403) {
-      await loadQuestion()
+      await refreshQuestion()
     }
   }
 }
 
+// Lifecycle hooks
+onMounted(loadInitialData)
 </script>
 
 <template>
@@ -188,7 +191,7 @@ async function submitAnswer() {
       </div>
 
       <div class="flex justify-center gap-5 mt-8">
-        <UiButton @click="loadQuestion" variant="link">
+        <UiButton @click="refreshQuestion" variant="link">
           Refresh
         </UiButton>
         <NuxtLink to="/results">
