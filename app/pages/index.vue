@@ -104,14 +104,6 @@ async function submitAnswer() {
   }
 }
 
-const normalizedAnswerOptions = computed(() => {
-  if (!activeQuestion.value) return []
-  // The check for the first element is enough to determine the type
-  if (activeQuestion.value.answer_options.length > 0 && typeof activeQuestion.value.answer_options === 'string') {
-    return activeQuestion.value.answer_options as string[]
-  }
-  return (activeQuestion.value.answer_options as { text: string }[]).map(opt => opt.text)
-})
 
 </script>
 
@@ -157,25 +149,25 @@ const normalizedAnswerOptions = computed(() => {
 
         <div class="flex flex-col gap-4 mb-5">
           <label
-            v-for="(option, index) in normalizedAnswerOptions"
+            v-for="(option, index) in activeQuestion.answer_options"
             :key="index"
             class="flex items-center p-5 border-[3px] border-black cursor-pointer transition-all duration-200 relative"
             :class="{
-              'bg-black text-white': selectedAnswer === option,
+              'bg-black text-white': selectedAnswer === (typeof option === 'string' ? option : option.text),
               'opacity-60 cursor-not-allowed': activeQuestion.is_locked,
               'hover:translate-x-1 hover:shadow-[-5px_5px_0_#000]': !activeQuestion.is_locked
             }"
           >
             <input
               type="radio"
-              :value="option"
+              :value="typeof option === 'string' ? option : option.text"
               v-model="selectedAnswer"
               :disabled="activeQuestion.is_locked"
               @change="submitAnswer"
               class="w-5 h-5 mr-4"
-              :class="selectedAnswer === option ? 'accent-white' : 'accent-black'"
+              :class="selectedAnswer === (typeof option === 'string' ? option : option.text) ? 'accent-white' : 'accent-black'"
             />
-            <span class="text-lg">{{ option }}</span>
+            <span class="text-lg">{{ typeof option === 'string' ? option : option.text }}</span>
           </label>
         </div>
 
