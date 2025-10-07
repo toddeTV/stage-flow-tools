@@ -4,21 +4,16 @@ import type { Results } from '~/types'
 const { results } = useQuizSocket()
 
 // Fetch initial results
-async function refreshResults() {
-  try {
-    const data = await $fetch<Results>('/api/results/current')
-    if (data && data.question) {
-      results.value = data
-    }
-    else {
-      results.value = null
-    }
+const { data: fetchedResults, refresh: refreshResults } = await useFetch<Results>('/api/results/current')
+
+watch(fetchedResults, (newResults) => {
+  if (newResults && newResults.question) {
+    results.value = newResults
   }
-  catch (error: unknown) {
-    logger_error('Failed to load results:', error)
+  else {
     results.value = null
   }
-}
+}, { immediate: true })
 
 // Calculate bar width
 function getBarWidth(count: number) {
@@ -43,8 +38,6 @@ function getPercentage(count: number) {
   return Math.round((count / results.value.totalVotes) * 100)
 }
 
-// Lifecycle hooks
-onMounted(refreshResults)
 </script>
 
 <template>

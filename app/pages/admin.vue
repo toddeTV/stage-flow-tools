@@ -12,30 +12,29 @@ const newQuestion = ref({
 })
 
 // Check authentication status
-onMounted(async () => {
-  try {
-    await $fetch('/api/auth/verify')
-    isAuthenticated.value = true
-    await loadQuestions()
+const { error } = await useFetch('/api/auth/verify')
+isAuthenticated.value = !error.value
+
+// Load questions
+const { data: fetchedQuestions, error: fetchError, refresh: loadQuestions } = useFetch<Question>('/api/questions', {
+  immediate: isAuthenticated.value
+})
+
+watch(fetchedQuestions, (newQuestions) => {
+  if (newQuestions && !(newQuestions as any).message) {
+    activeQuestion.value = newQuestions
   }
-  catch (error: unknown) {
-    isAuthenticated.value = false
+  else {
+    activeQuestion.value = null
   }
 })
 
-// Load questions
-async function loadQuestions() {
-  try {
-    // Get active question
-    const active = await $fetch<Question>('/api/questions')
-    if (active && !(active as any).message) {
-      activeQuestion.value = active
-    }
+watch(fetchError, (newError) => {
+  if (newError) {
+    logger_error('Failed to load questions:', newError)
+    activeQuestion.value = null
   }
-  catch (error: unknown) {
-    logger_error('Failed to load questions:', error)
-  }
-}
+})
 
 // Login handler
 async function handleLogin() {
