@@ -71,13 +71,17 @@ async function initStorage(event?: H3Event) {
           const existingQuestions: Question[] = JSON.parse(questionsData)
           const existingQuestionTexts = new Set(existingQuestions.map(q => q.question_text))
 
-          const newQuestions: Question[] = predefinedQuestions
-            .filter(q => !existingQuestionTexts.has(q.question_text))
-            .map(q => ({
-              ...q,
-              id: createId(),
-              is_locked: false
-            }))
+          const newQuestions: Question[] = []
+          for (const q of predefinedQuestions) {
+            if (!existingQuestionTexts.has(q.question_text)) {
+              existingQuestionTexts.add(q.question_text) // Add to set to prevent duplicates within the batch
+              newQuestions.push({
+                ...q,
+                id: createId(),
+                is_locked: false
+              })
+            }
+          }
 
           if (newQuestions.length > 0) {
             const allQuestions = [...existingQuestions, ...newQuestions]
