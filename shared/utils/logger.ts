@@ -50,5 +50,5 @@ export function global_logger(data: unknown, showConsoleOutputs: boolean, option
  * ```
  */
 export function global_logger_error(data: unknown, ...optionalParams: any[]): void {
-  console.error(data, optionalParams)
+  console.error(data, ...optionalParams)
 }
