@@ -10,6 +10,10 @@ const QUESTIONS_FILE = join(DATA_DIR, 'questions.json')
 const ANSWERS_FILE = join(DATA_DIR, 'answers.json')
 const ADMIN_FILE = join(DATA_DIR, 'admin.json')
 const PREDEFINED_QUESTIONS_FILE = join(DATA_DIR, 'predefined-questions.json')
+// Type guard to check for Node.js errors
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error
+}
 
 // Initialize storage with runtime config
 async function initStorage(event?: H3Event) {
@@ -26,7 +30,6 @@ async function initStorage(event?: H3Event) {
 
     // Process predefined questions
     try {
-      await fs.access(PREDEFINED_QUESTIONS_FILE)
       const predefinedData = await fs.readFile(PREDEFINED_QUESTIONS_FILE, 'utf-8')
       const predefinedQuestions: InputQuestion[] = JSON.parse(predefinedData)
 
@@ -44,7 +47,13 @@ async function initStorage(event?: H3Event) {
       }
     }
     catch (error: unknown) {
-      // Predefined questions file doesn't exist or is invalid, which is fine.
+      if (isNodeError(error) && error.code === 'ENOENT') {
+        // File not found, which is a normal case, so we do nothing.
+      }
+      else {
+        // For any other errors, log them to the console.
+        logger_error('Error processing predefined questions file:', error)
+      }
     }
 
     // Initialize answers file
