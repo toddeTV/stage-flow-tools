@@ -9,8 +9,8 @@ export default defineNuxtConfig({
   modules: [ // try stick to alphabetically sorted
     '@nuxtjs/tailwindcss',
     '@vueuse/nuxt',
-    'nuxt-mcp',
-  ],
+    process.env.NODE_ENV === 'development' ? 'nuxt-mcp' : null
+  ].filter(Boolean),
 
   css: [
     '~/../assets/css/tailwind.css'
