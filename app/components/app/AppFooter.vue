@@ -5,15 +5,15 @@ const yearSpan = yearStart === yearCurrent ? yearStart : `${yearStart} - ${yearC
 </script>
 
 <template>
-  <footer class="p-4 flex justify-between items-center text-sm">
-    <div>
+  <footer class="p-4 flex flex-col md:flex-row justify-between items-center text-sm gap-4 md:gap-0">
+    <div class="text-center md:text-left">
       Copyright © {{ yearSpan }},
       <NuxtLink aria-label="Website of Thorsten Seyschab" target="_blank" to="https://todde.tv/" class="underline">
         Thorsten Seyschab</NuxtLink>.
       All rights reserved.
     </div>
     <div>
-      <NuxtLink aria-label="Source Code on GitHub" target="_blank" to="https://github.com/toddeTV/stage-flow-tools/" class="flex items-center space-x-2">
+      <NuxtLink aria-label="Source Code on GitHub" target="_blank" to="https://github.com/toddeTV/stage-flow-tools/" class="flex items-center space-x-2 underline">
         <span>Source Code on</span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
