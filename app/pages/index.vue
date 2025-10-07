@@ -103,8 +103,6 @@ async function submitAnswer() {
     }
   }
 }
-
-
 </script>
 
 <template>

@@ -10,9 +10,11 @@ const allQuestions = ref<Question[]>([])
 const newQuestion = ref<{
   question_text: string
   answer_options: AnswerOption[]
+  note?: string
 }>({
   question_text: '',
-  answer_options: [{ text: '' }, { text: '' }]
+  answer_options: [{ text: '' }, { text: '' }],
+  note: ''
 })
 
 // Load questions
@@ -63,7 +65,8 @@ async function handleCreateQuestion() {
       method: 'POST',
       body: {
         question_text: newQuestion.value.question_text,
-        answer_options: filteredOptions
+        answer_options: filteredOptions,
+        note: newQuestion.value.note
       }
     })
 
@@ -72,7 +75,8 @@ async function handleCreateQuestion() {
     // Reset form
     newQuestion.value = {
       question_text: '',
-      answer_options: [{ text: '' }, { text: '' }]
+      answer_options: [{ text: '' }, { text: '' }],
+      note: ''
     }
 
     // alert('Question created successfully')
@@ -177,6 +181,12 @@ function removeOption(index: number) {
             class="p-3 border-2 border-black text-base min-h-[100px] resize-y bg-white font-sans"
           ></textarea>
 
+          <textarea
+            v-model="newQuestion.note"
+            placeholder="Enter a note for the question (optional, only for admins)"
+            class="p-3 border-2 border-black text-base min-h-[70px] resize-y bg-white font-sans"
+          ></textarea>
+
           <div>
             <h3 class="mb-2.5 text-lg">Answer Options</h3>
             <div v-for="(option, index) in newQuestion.answer_options" :key="index" class="flex gap-2.5 mb-2.5">
@@ -221,6 +231,7 @@ function removeOption(index: number) {
             :class="{ 'opacity-50': question.alreadyPublished }"
           >
             <p class="font-bold mb-2.5">{{ question.question_text }}</p>
+            <p v-if="question.note" class="text-sm text-gray-600 mb-2.5 p-2 bg-gray-200 border border-black">{{ question.note }}</p>
             <ul class="list-disc list-inside p-0 mb-4">
               <li v-for="(option, index) in question.answer_options" :key="index">
                 {{ option.text }} <span v-if="option.emoji">{{ option.emoji }}</span>
