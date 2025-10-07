@@ -13,6 +13,7 @@ const isCoreView = computed(() => route.query.core !== undefined)
 // State for core view parameters
 const padding = ref(route.query.padding ? Number(route.query.padding) : 0)
 const scale = ref(route.query.scale ? Number(route.query.scale) : 1)
+const hideResults = ref(route.query.hideResults !== undefined)
 
 // Add body class for core view
 useHead({
@@ -37,7 +38,8 @@ async function goToCoreView() {
   const query = {
     core: '',
     padding: padding.value,
-    scale: scale.value
+    scale: scale.value,
+    hideResults: hideResults.value ? '' : undefined
   }
   await navigateTo({ path: '/results', query })
 }
@@ -108,10 +110,18 @@ function getPercentage(count: number) {
         >
           <div class="flex justify-between items-center text-lg">
             <span class="font-bold">{{ option }}</span>
-            <span class="py-1 px-2.5 bg-gray-100 border-2 border-black text-sm">{{ count }} votes</span>
+            <span class="py-1 px-2.5 bg-gray-100 border-2 border-black text-sm">
+              <template v-if="hideResults">?</template>
+              <template v-else>{{ count }}</template>
+              votes
+            </span>
           </div>
           <div class="h-12 bg-gray-100 border-[3px] border-black relative overflow-hidden">
+            <div v-if="hideResults" class="flex items-center justify-center h-full">
+              <span class="text-2xl font-bold text-gray-400">?</span>
+            </div>
             <div
+              v-else
               class="h-full bg-black transition-width duration-500 ease-out flex items-center justify-end pr-2.5 min-w-[50px] relative result-bar"
               :style="{ width: getBarWidth(count) + '%' }"
             >
@@ -159,6 +169,10 @@ function getPercentage(count: number) {
             <label for="scale" class="text-sm font-bold">Scale</label>
             <UiInput id="scale" v-model="scale" type="number" step="0.1" placeholder="e.g., 1.0" />
           </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="hideResults" v-model="hideResults" type="checkbox" class="w-4 h-4">
+          <label for="hideResults" class="text-sm font-bold">Hide Results</label>
         </div>
         <UiButton @click="goToCoreView">
           Generate Core View
