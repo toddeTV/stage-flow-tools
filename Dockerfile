@@ -6,10 +6,9 @@ FROM node:22-alpine AS build
 # Set working directory
 WORKDIR /app
 
-# Install pnpm version 10
 # Enable corepack and activate pnpm
 RUN corepack enable
-RUN corepack prepare pnpm@10 --activate
+RUN corepack prepare pnpm@10.13.1 --activate
 
 # Copy package.json and pnpm-lock.yaml
 COPY package.json pnpm-lock.yaml ./
@@ -34,7 +33,7 @@ WORKDIR /app
 
 # Enable corepack and activate pnpm in production stage
 RUN corepack enable
-RUN corepack prepare pnpm@10 --activate
+RUN corepack prepare pnpm@10.13.1 --activate
 
 # Copy the built output from the build stage
 COPY --from=build /app/.output ./.output
