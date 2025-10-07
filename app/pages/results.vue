@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { Results } from '~/types'
 
+definePageMeta({
+  middleware: 'auth'
+})
+
 const { results } = useQuizSocket()
 
 // Fetch initial results
