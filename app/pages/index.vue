@@ -5,17 +5,13 @@ const userNickname = ref('')
 const nicknameInput = ref('')
 const { activeQuestion, selectedAnswer } = useQuizSocket()
 
-// Load initial data
-async function loadInitialData() {
-  // Load nickname from localStorage
+// Load nickname from localStorage
+onMounted(() => {
   const savedNickname = localStorage.getItem('quiz-nickname')
   if (savedNickname) {
     userNickname.value = savedNickname
   }
-
-  // Load active question
-  await refreshQuestion()
-}
+})
 
 // Set nickname
 function setNickname() {
@@ -50,15 +46,15 @@ async function changeNickname() {
   localStorage.removeItem('quiz-nickname')
 }
 
-// Refresh active question
-async function refreshQuestion() {
-  try {
-    const question = await $fetch<Question>('/api/questions')
-    if (question && !(question as any).message) {
-      activeQuestion.value = question
+// Fetch active question
+const { data: question, refresh: refreshQuestion } = await useFetch<Question>('/api/questions', {
+  onResponse({ response }) {
+    const questionData = response._data
+    if (questionData && !(questionData as any).message) {
+      activeQuestion.value = questionData
 
       // Check if user has already answered
-      const savedAnswer = sessionStorage.getItem(`answer-${question.id}`)
+      const savedAnswer = sessionStorage.getItem(`answer-${questionData.id}`)
       if (savedAnswer) {
         selectedAnswer.value = savedAnswer
       }
@@ -67,11 +63,12 @@ async function refreshQuestion() {
       activeQuestion.value = null
       selectedAnswer.value = ''
     }
+  },
+  onResponseError() {
+    activeQuestion.value = null
+    selectedAnswer.value = ''
   }
-  catch (error: unknown) {
-    logger_error('Failed to load question:', error)
-  }
-}
+})
 
 // Submit answer
 async function submitAnswer() {
@@ -107,8 +104,6 @@ async function submitAnswer() {
   }
 }
 
-// Lifecycle hooks
-onMounted(loadInitialData)
 </script>
 
 <template>
