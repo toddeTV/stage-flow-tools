@@ -62,7 +62,7 @@ function getBarWidth(count: number) {
     return 0
   }
 
-  const maxVotes = Math.max(...Object.values(results.value.results))
+  const maxVotes = Math.max(...Object.values(results.value.results).map(r => r.count))
   if (maxVotes === 0) {
     return 0
   }
@@ -109,15 +109,15 @@ function getPercentage(count: number) {
       <!-- Results Chart -->
       <div class="flex flex-col gap-6">
         <div
-          v-for="(count, option) in results.results"
+          v-for="(result, option) in results.results"
           :key="option"
           class="flex flex-col gap-2.5"
         >
           <div class="flex justify-between items-center text-lg">
-            <span class="font-bold">{{ option }}</span>
+            <span class="font-bold">{{ option }} <span v-if="result.emoji" class="ml-2">{{ result.emoji }}</span></span>
             <span class="py-1 px-2.5 bg-gray-100 border-2 border-black text-sm">
               <template v-if="hideResults">?</template>
-              <template v-else>{{ count }}</template>
+              <template v-else>{{ result.count }}</template>
               votes
             </span>
           </div>
@@ -128,9 +128,9 @@ function getPercentage(count: number) {
             <div
               v-else
               class="h-full bg-black transition-width duration-500 ease-out flex items-center justify-end pr-2.5 min-w-[50px] relative result-bar"
-              :style="{ width: getBarWidth(count) + '%' }"
+              :style="{ width: getBarWidth(result.count) + '%' }"
             >
-              <span class="text-white font-bold text-xl text-shadow-lg relative z-10">{{ getPercentage(count) }}%</span>
+              <span class="text-white font-bold text-xl text-shadow-lg relative z-10">{{ getPercentage(result.count) }}%</span>
             </div>
           </div>
         </div>

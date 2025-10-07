@@ -1,11 +1,11 @@
 import { useWebSocket, useLocalStorage } from '@vueuse/core'
 import { createId } from '@paralleldrive/cuid2'
-import type { Question, Results } from '~/types'
+import type { Question, Results, UserQuestion } from '~/types'
 
 export const useQuizSocket = () => {
   const config = useRuntimeConfig()
 
-  const activeQuestion = ref<Question | null>(null)
+  const activeQuestion = ref<UserQuestion | Question | null>(null)
   const selectedAnswer = ref('')
   const results = ref<Results | null>(null)
   const userId = useLocalStorage<string | null>('quiz-user-id', null)

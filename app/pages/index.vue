@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Question } from '~/types'
+import type { Question, UserQuestion } from '~/types'
 
 const userNickname = ref('')
 const nicknameInput = ref('')
@@ -47,7 +47,7 @@ async function changeNickname() {
 }
 
 // Fetch active question
-const { data: question, refresh: refreshQuestion } = await useFetch<Question>('/api/questions/active', {
+const { data: question, refresh: refreshQuestion } = await useFetch<UserQuestion>('/api/questions/active', {
   onResponse({ response }) {
     const questionData = response._data
     if (questionData && !(questionData as any).message) {
@@ -104,6 +104,15 @@ async function submitAnswer() {
   }
 }
 
+const normalizedAnswerOptions = computed(() => {
+  if (!activeQuestion.value) return []
+  // The check for the first element is enough to determine the type
+  if (activeQuestion.value.answer_options.length > 0 && typeof activeQuestion.value.answer_options === 'string') {
+    return activeQuestion.value.answer_options as string[]
+  }
+  return (activeQuestion.value.answer_options as { text: string }[]).map(opt => opt.text)
+})
+
 </script>
 
 <template>
@@ -148,7 +157,7 @@ async function submitAnswer() {
 
         <div class="flex flex-col gap-4 mb-5">
           <label
-            v-for="(option, index) in activeQuestion.answer_options"
+            v-for="(option, index) in normalizedAnswerOptions"
             :key="index"
             class="flex items-center p-5 border-[3px] border-black cursor-pointer transition-all duration-200 relative"
             :class="{
