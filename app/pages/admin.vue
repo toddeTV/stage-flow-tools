@@ -33,7 +33,7 @@ async function loadQuestions() {
     }
   }
   catch (error: unknown) {
-    console.error('Failed to load questions:', error)
+    logger_error('Failed to load questions:', error)
   }
 }
 

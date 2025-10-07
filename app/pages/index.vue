@@ -40,7 +40,7 @@ async function changeNickname() {
         })
       }
       catch (error) {
-        console.error('Failed to retract answer:', error)
+        logger_error('Failed to retract answer:', error)
       }
     }
   }
@@ -69,7 +69,7 @@ async function refreshQuestion() {
     }
   }
   catch (error: unknown) {
-    console.error('Failed to load question:', error)
+    logger_error('Failed to load question:', error)
   }
 }
 
@@ -83,7 +83,7 @@ async function submitAnswer() {
     const userId = localStorage.getItem('quiz-user-id')
     if (!userId) {
       // This should not happen, but as a fallback
-      console.error('User ID not found')
+      logger_error('User ID not found')
       return
     }
     await $fetch('/api/answers/submit', {
@@ -99,7 +99,7 @@ async function submitAnswer() {
     sessionStorage.setItem(`answer-${activeQuestion.value.id}`, selectedAnswer.value)
   }
   catch (error: any) {
-    console.error('Failed to submit answer:', error)
+    logger_error('Failed to submit answer:', error)
     // If locked, reload question
     if (error.statusCode === 403) {
       await refreshQuestion()

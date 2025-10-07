@@ -15,7 +15,7 @@ async function refreshResults() {
     }
   }
   catch (error: unknown) {
-    console.error('Failed to load results:', error)
+    logger_error('Failed to load results:', error)
     results.value = null
   }
 }

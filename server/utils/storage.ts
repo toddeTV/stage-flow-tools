@@ -51,7 +51,7 @@ async function initStorage(event?: H3Event) {
     }
   }
   catch (error: unknown) {
-    console.error('Storage initialization error:', error)
+    logger_error('Storage initialization error:', error)
   }
 }
 
