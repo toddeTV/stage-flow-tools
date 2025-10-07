@@ -135,6 +135,11 @@ function getPercentage(count: number) {
           </div>
         </div>
       </div>
+
+      <!-- Note Display -->
+      <div v-if="results.question.note && !hideResults" class="mt-8 p-4 bg-gray-100 border-2 border-black">
+        <p>{{ results.question.note }}</p>
+      </div>
     </UiSection>
 
     <!-- No Active Question -->
