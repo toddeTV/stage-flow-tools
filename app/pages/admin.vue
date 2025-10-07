@@ -88,7 +88,7 @@ async function handleCreateQuestion() {
       answer_options: ['', '']
     }
 
-    alert('Question created successfully')
+    // alert('Question created successfully')
   }
   catch (error: unknown) {
     alert('Failed to create question')
@@ -106,7 +106,7 @@ async function publishQuestion(questionId: string) {
     activeQuestion.value = question
     preparedQuestions.value = preparedQuestions.value.filter((q: Question) => q.id !== questionId)
 
-    alert('Question published successfully')
+    // alert('Question published successfully')
   }
   catch (error: unknown) {
     alert('Failed to publish question')
