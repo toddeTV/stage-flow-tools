@@ -10,6 +10,7 @@ export interface Question {
   is_locked: boolean
   createdAt: string
   alreadyPublished: boolean
+  note?: string
 }
 
 export type UserQuestion = Omit<Question, 'answer_options'> & {
