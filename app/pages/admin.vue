@@ -144,7 +144,7 @@ function removeOption(index: number) {
           <p class="text-lg mb-4 font-bold">{{ activeQuestion.question_text }}</p>
           <ul class="list-none p-0 mb-5">
             <li v-for="(option, index) in activeQuestion.answer_options" :key="index" class="p-2.5 bg-white border border-black mb-1.5">
-              {{ option.text }}
+              {{ option.text }} <span v-if="option.emoji">{{ option.emoji }}</span>
             </li>
           </ul>
           <div class="flex justify-between items-center">
