@@ -47,7 +47,7 @@ async function changeNickname() {
 }
 
 // Fetch active question
-const { data: question, refresh: refreshQuestion } = await useFetch<Question>('/api/questions', {
+const { data: question, refresh: refreshQuestion } = await useFetch<Question>('/api/questions/active', {
   onResponse({ response }) {
     const questionData = response._data
     if (questionData && !(questionData as any).message) {

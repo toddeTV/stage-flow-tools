@@ -3,9 +3,11 @@ export interface Question {
   question_text: string
   answer_options: string[]
   is_locked: boolean
+  createdAt: string
+  alreadyPublished: boolean
 }
 
-export type InputQuestion = Omit<Question, 'id' | 'is_locked'>
+export type InputQuestion = Omit<Question, 'id' | 'is_locked' | 'createdAt' | 'alreadyPublished'>
 
 export interface Answer {
   id: string
