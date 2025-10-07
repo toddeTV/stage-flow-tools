@@ -6,20 +6,22 @@ definePageMeta({
 })
 
 const activeQuestion = ref<Question | null>(null)
-const preparedQuestions = ref<Question[]>([])
+const allQuestions = ref<Question[]>([])
 const newQuestion = ref({
   question_text: '',
   answer_options: ['', '']
 })
 
 // Load questions
-const { data: fetchedQuestions, error: fetchError, refresh: loadQuestions } = useFetch<Question>('/api/questions')
+const { data: fetchedQuestions, error: fetchError, refresh: loadQuestions } = useFetch<Question[]>('/api/questions')
 
 watch(fetchedQuestions, (newQuestions) => {
-  if (newQuestions && !(newQuestions as any).message) {
-    activeQuestion.value = newQuestions
+  if (newQuestions && Array.isArray(newQuestions)) {
+    allQuestions.value = newQuestions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    activeQuestion.value = newQuestions.find(q => (q as any).is_active) || null
   }
   else {
+    allQuestions.value = []
     activeQuestion.value = null
   }
 })
@@ -57,7 +59,7 @@ async function handleCreateQuestion() {
       }
     })
 
-    preparedQuestions.value.push(question)
+    await loadQuestions()
 
     // Reset form
     newQuestion.value = {
@@ -81,7 +83,7 @@ async function publishQuestion(questionId: string) {
     })
 
     activeQuestion.value = question
-    preparedQuestions.value = preparedQuestions.value.filter((q: Question) => q.id !== questionId)
+    await loadQuestions()
 
     // alert('Question published successfully')
   }
@@ -193,19 +195,26 @@ function removeOption(index: number) {
         </form>
       </UiSection>
 
-      <!-- Prepared Questions -->
-      <UiSection v-if="preparedQuestions.length > 0">
-        <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Prepared Questions</h2>
-        <div v-for="question in preparedQuestions" :key="question.id" class="bg-gray-100 border-2 border-black p-5 mb-4">
-          <p class="font-bold mb-2.5">{{ question.question_text }}</p>
-          <ul class="list-none p-0 mb-4">
-            <li v-for="(option, index) in question.answer_options" :key="index" class="p-2 bg-white border border-black mb-1.5">
-              {{ option }}
-            </li>
-          </ul>
-          <UiButton @click="publishQuestion(question.id)">
-            Publish This Question
-          </UiButton>
+      <!-- All Questions -->
+      <UiSection>
+        <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">All Questions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            v-for="question in allQuestions"
+            :key="question.id"
+            class="bg-gray-100 border-2 border-black p-5"
+            :class="{ 'opacity-50': question.alreadyPublished }"
+          >
+            <p class="font-bold mb-2.5">{{ question.question_text }}</p>
+            <ul class="list-disc list-inside p-0 mb-4">
+              <li v-for="(option, index) in question.answer_options" :key="index">
+                {{ option }}
+              </li>
+            </ul>
+            <UiButton @click="publishQuestion(question.id)">
+              Publish This Question
+            </UiButton>
+          </div>
         </div>
       </UiSection>
 
