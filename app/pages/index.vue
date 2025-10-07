@@ -189,11 +189,6 @@ async function submitAnswer() {
         <UiButton @click="refreshQuestion" variant="link">
           Refresh
         </UiButton>
-        <NuxtLink to="/results">
-          <UiButton variant="link">
-            View Live Results →
-          </UiButton>
-        </NuxtLink>
       </div>
     </div>
   </div>
