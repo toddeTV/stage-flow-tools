@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   verifyAdmin(event)
 
   const body = await readBody(event) as Omit<Question, 'id' | 'is_locked'>
-  const { question_text: raw_question_text, answer_options: raw_answer_options } = body
+  const { question_text: raw_question_text, answer_options: raw_answer_options, note: raw_note } = body
 
   // Validate and sanitize question_text
   const question_text = typeof raw_question_text === 'string' ? raw_question_text.trim() : ''
@@ -37,9 +37,12 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const note = typeof raw_note === 'string' ? raw_note.trim() : undefined
+
   const question = await createQuestion({
     question_text,
-    answer_options
+    answer_options,
+    note
   })
 
   return question
