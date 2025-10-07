@@ -16,6 +16,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     }
   }
   catch (err) {
+    // Always clear the timeout to prevent it from firing after error handling
+    clearTimeout(timeoutId)
+
     // In case of any error (network, timeout, non-2xx), redirect to login
     // Validate and sanitize redirect path to prevent open redirect attacks
     let redirectPath = to.fullPath
