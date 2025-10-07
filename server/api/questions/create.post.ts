@@ -1,4 +1,4 @@
-import type { Question } from '~/types'
+import type { Question, AnswerOption } from '~/types'
 
 export default defineEventHandler(async (event) => {
   verifyAdmin(event)
@@ -24,8 +24,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const answer_options = raw_answer_options
-    .map(option => typeof option === 'string' ? option.trim() : '')
-    .filter(option => option)
+    .map((option: AnswerOption) => ({
+      text: typeof option.text === 'string' ? option.text.trim() : '',
+      emoji: typeof option.emoji === 'string' ? option.emoji.trim() : undefined
+    }))
+    .filter(option => option.text)
 
   if (answer_options.length < 2) {
     throw createError({

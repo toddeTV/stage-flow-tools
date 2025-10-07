@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Question } from '~/types'
+import type { Question, AnswerOption } from '~/types'
 
 definePageMeta({
   middleware: 'auth'
@@ -7,9 +7,12 @@ definePageMeta({
 
 const activeQuestion = ref<Question | null>(null)
 const allQuestions = ref<Question[]>([])
-const newQuestion = ref({
+const newQuestion = ref<{
+  question_text: string
+  answer_options: AnswerOption[]
+}>({
   question_text: '',
-  answer_options: ['', '']
+  answer_options: [{ text: '' }, { text: '' }]
 })
 
 // Load questions
@@ -44,7 +47,12 @@ async function handleLogout() {
 async function handleCreateQuestion() {
   try {
     // Filter out empty options
-    const filteredOptions = newQuestion.value.answer_options.filter((opt: string) => opt.trim())
+    const filteredOptions = newQuestion.value.answer_options
+      .map(opt => ({
+        text: opt.text.trim(),
+        emoji: opt.emoji?.trim() || undefined
+      }))
+      .filter(opt => opt.text)
 
     if (filteredOptions.length < 2) {
       alert('At least 2 answer options required')
@@ -64,7 +72,7 @@ async function handleCreateQuestion() {
     // Reset form
     newQuestion.value = {
       question_text: '',
-      answer_options: ['', '']
+      answer_options: [{ text: '' }, { text: '' }]
     }
 
     // alert('Question created successfully')
@@ -111,7 +119,7 @@ async function toggleLock() {
 
 // Add option
 function addOption() {
-  newQuestion.value.answer_options.push('')
+  newQuestion.value.answer_options.push({ text: '' })
 }
 
 // Remove option
@@ -136,7 +144,7 @@ function removeOption(index: number) {
           <p class="text-lg mb-4 font-bold">{{ activeQuestion.question_text }}</p>
           <ul class="list-none p-0 mb-5">
             <li v-for="(option, index) in activeQuestion.answer_options" :key="index" class="p-2.5 bg-white border border-black mb-1.5">
-              {{ option }}
+              {{ option.text }} <span v-if="option.emoji">{{ option.emoji }}</span>
             </li>
           </ul>
           <div class="flex justify-between items-center">
@@ -173,10 +181,17 @@ function removeOption(index: number) {
             <h3 class="mb-2.5 text-lg">Answer Options</h3>
             <div v-for="(option, index) in newQuestion.answer_options" :key="index" class="flex gap-2.5 mb-2.5">
               <UiInput
-                v-model="newQuestion.answer_options[index]!"
+                v-model="option.text"
                 :placeholder="`Option ${index + 1}`"
                 required
                 class="flex-1"
+              />
+              <UiInput
+                :model-value="option.emoji || ''"
+                placeholder="Emoji"
+                class="w-24"
+                maxlength="10"
+                @update:model-value="option.emoji = String($event || '').trim() || undefined"
               />
               <UiButton
                 v-if="newQuestion.answer_options.length > 2"
@@ -208,7 +223,7 @@ function removeOption(index: number) {
             <p class="font-bold mb-2.5">{{ question.question_text }}</p>
             <ul class="list-disc list-inside p-0 mb-4">
               <li v-for="(option, index) in question.answer_options" :key="index">
-                {{ option }}
+                {{ option.text }} <span v-if="option.emoji">{{ option.emoji }}</span>
               </li>
             </ul>
             <UiButton @click="publishQuestion(question.id)">

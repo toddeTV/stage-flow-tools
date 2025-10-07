@@ -1,10 +1,19 @@
+export interface AnswerOption {
+  text: string
+  emoji?: string
+}
+
 export interface Question {
   id: string
   question_text: string
-  answer_options: string[]
+  answer_options: AnswerOption[]
   is_locked: boolean
   createdAt: string
   alreadyPublished: boolean
+}
+
+export type UserQuestion = Omit<Question, 'answer_options'> & {
+  answer_options: string[]
 }
 
 export type InputQuestion = Omit<Question, 'id' | 'is_locked' | 'createdAt' | 'alreadyPublished'>
@@ -20,7 +29,7 @@ export interface Answer {
 
 export interface Results {
   question: Question
-  results: Record<string, number>
+  results: Record<string, { count: number, emoji?: string }>
   totalVotes: number
   totalConnections: number
 }
