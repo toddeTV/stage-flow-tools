@@ -10,11 +10,12 @@ const QUESTIONS_FILE = join(DATA_DIR, 'questions.json')
 const ANSWERS_FILE = join(DATA_DIR, 'answers.json')
 const ADMIN_FILE = join(DATA_DIR, 'admin.json')
 const PREDEFINED_QUESTIONS_FILE = join(DATA_DIR, 'predefined-questions.json')
+const PROCESSING_FILE = `${PREDEFINED_QUESTIONS_FILE}.processing`
+
 // Type guard to check for Node.js errors
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && 'code' in error
 }
-
 // Initialize storage with runtime config
 async function initStorage(event?: H3Event) {
   try {
@@ -28,36 +29,41 @@ async function initStorage(event?: H3Event) {
       await fs.writeFile(QUESTIONS_FILE, JSON.stringify([]))
     }
 
-    // Process predefined questions
+    // Process predefined questions atomically
     try {
-      const predefinedData = await fs.readFile(PREDEFINED_QUESTIONS_FILE, 'utf-8')
+      // Step 1: Rename the file to mark it as being processed.
+      await fs.rename(PREDEFINED_QUESTIONS_FILE, PROCESSING_FILE)
+
+      // Step 2: Read and validate the processing file.
+      const predefinedData = await fs.readFile(PROCESSING_FILE, 'utf-8')
       let predefinedQuestions: InputQuestion[]
 
       try {
         predefinedQuestions = JSON.parse(predefinedData)
       }
       catch (parseError: unknown) {
-        logger_error('Malformed JSON in predefined-questions.json:', parseError)
-        return // Stop processing if JSON is invalid
-      }
-
-      if (!Array.isArray(predefinedQuestions)) {
-        logger_error('Predefined questions file must contain a JSON array.')
+        logger_error('Malformed JSON in processing file:', parseError)
+        // Leave the .processing file for manual inspection.
         return
       }
 
-      // Validate each question object
+      if (!Array.isArray(predefinedQuestions)) {
+        logger_error('Processing file must contain a JSON array.')
+        return
+      }
+
       for (const q of predefinedQuestions) {
         if (typeof q.question_text !== 'string' || q.question_text.trim() === '') {
-          logger_error('Invalid question_text in predefined question:', q)
-          return // Stop processing
+          logger_error('Invalid question_text in processing file:', q)
+          return
         }
         if (!Array.isArray(q.answer_options) || q.answer_options.length === 0) {
-          logger_error('Invalid answer_options in predefined question:', q)
-          return // Stop processing
+          logger_error('Invalid answer_options in processing file:', q)
+          return
         }
       }
 
+      // Step 3: Save the new questions.
       if (predefinedQuestions.length > 0) {
         const existingQuestions = await getQuestions()
         const newQuestions: Question[] = predefinedQuestions.map(q => ({
@@ -67,17 +73,19 @@ async function initStorage(event?: H3Event) {
         }))
 
         await saveQuestions([...existingQuestions, ...newQuestions])
-        await fs.unlink(PREDEFINED_QUESTIONS_FILE)
-        logger('Predefined questions loaded and file removed.')
+        logger('Predefined questions loaded successfully.')
       }
+
+      // Step 4: Remove the processing file on success.
+      await fs.unlink(PROCESSING_FILE)
     }
     catch (error: unknown) {
       if (isNodeError(error) && error.code === 'ENOENT') {
-        // File not found, which is a normal case, so we do nothing.
+        // This is fine, no predefined questions file to process.
       }
       else {
-        // For any other errors, log them to the console.
-        logger_error('Error processing predefined questions file:', error)
+        logger_error('Error processing predefined questions:', error)
+        // If an error occurred, the .processing file is left for manual review.
       }
     }
 
