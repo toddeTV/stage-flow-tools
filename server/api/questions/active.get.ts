@@ -4,9 +4,10 @@ export default defineEventHandler(async (): Promise<UserQuestion | { message: st
   const question = await getActiveQuestion()
 
   if (question) {
-    // Strip emojis from answer options before sending to the client
+    // Strip emojis and notes from the question before sending to the client
+    const { note, ...questionForUser } = question
     return {
-      ...question,
+      ...questionForUser,
       answer_options: question.answer_options.map(option => option.text)
     }
   }
