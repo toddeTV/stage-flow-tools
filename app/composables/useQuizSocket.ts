@@ -54,7 +54,7 @@ export const useQuizSocket = () => {
       }
     }
     catch (error: unknown) {
-      console.error('WebSocket message error:', error)
+      logger_error('WebSocket message error:', error)
     }
   })
 

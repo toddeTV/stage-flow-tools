@@ -39,7 +39,7 @@ export function broadcast(event: string, data: unknown) {
       peer.send(message)
     }
     catch (error: unknown) {
-      console.error('Broadcast error:', error)
+      logger_error('Broadcast error:', error)
     }
   }
 }

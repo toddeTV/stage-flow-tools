@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const config = useRuntimeConfig()
-const websocketDebug = config.public.debug.showWebsockets
+const websocketDebug = config.public.debug.showWebsocketConnectionsInFrontend
 </script>
 
 <template>
