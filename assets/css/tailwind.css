@@ -79,19 +79,3 @@ body::before {
 ::-webkit-scrollbar-thumb:hover {
   background: #333;
 }
-
-/* Page Transitions */
-.page-enter-active,
-.page-leave-active {
-  transition: all 0.3s;
-}
-
-.page-enter-from {
-  opacity: 0;
-  transform: translateX(-20px);
-}
-
-.page-leave-to {
-  opacity: 0;
-  transform: translateX(20px);
-}
