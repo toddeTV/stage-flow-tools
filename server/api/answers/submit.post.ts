@@ -32,7 +32,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // Normalize and validate answer
-  const answerOptions = activeQuestion.answer_options.map(opt => opt.toLowerCase())
+  // Normalize and validate answer
+  const answerOptions = activeQuestion.answer_options.map(opt => opt.text.toLowerCase())
   const selectedAnswerNormalized = selected_answer.toLowerCase()
 
   if (!answerOptions.includes(selectedAnswerNormalized)) {
@@ -43,14 +44,14 @@ export default defineEventHandler(async (event) => {
   }
 
   // Find the original-cased answer option
-  const originalAnswer = activeQuestion.answer_options.find(opt => opt.toLowerCase() === selectedAnswerNormalized)
+  const originalAnswer = activeQuestion.answer_options.find(opt => opt.text.toLowerCase() === selectedAnswerNormalized)
 
   // Submit answer
   await submitAnswer({
     question_id: activeQuestion.id,
     user_id,
     user_nickname,
-    selected_answer: originalAnswer || selected_answer
+    selected_answer: originalAnswer ? originalAnswer.text : selected_answer
   })
 
   // Schedule bundled results update
