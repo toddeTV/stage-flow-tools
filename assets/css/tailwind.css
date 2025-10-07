@@ -22,7 +22,7 @@
   header,
   footer,
   nav {
-    border-radius: 0 !important;
+    border-radius: 0;
   }
 
   /* Focus Styles */
