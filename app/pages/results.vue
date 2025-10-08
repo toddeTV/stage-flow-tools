@@ -12,12 +12,6 @@ const { results } = useQuizSocket('results')
 const route = useRoute()
 const isCoreView = computed(() => route.query.core !== undefined)
 
-// State for core view parameters
-const padding = ref(route.query.padding ? Number(route.query.padding) : 0)
-const scale = ref(route.query.scale ? Number(route.query.scale) : 1)
-const hideResults = ref(route.query.hideResults !== undefined)
-
-// Add body class for core view
 
 // Dynamic styles for core view
 const coreViewStyles = computed(() => {
@@ -29,17 +23,6 @@ const coreViewStyles = computed(() => {
     transform: `scale(${scale.value})`
   }
 })
-
-// Function to navigate to core view with parameters
-async function goToCoreView() {
-  const query = {
-    core: '',
-    padding: padding.value,
-    scale: scale.value,
-    hideResults: hideResults.value ? '' : undefined
-  }
-  await navigateTo({ path: '/results', query })
-}
 
 // Fetch initial results
 const { data: fetchedResults, refresh: refreshResults } = await useFetch<Results>('/api/results/current')
@@ -175,33 +158,6 @@ async function pickRandomUser(option: string) {
       </UiSection>
     </div>
 
-    <!-- Navigation -->
-    <div v-if="!isCoreView" class="flex flex-col items-center gap-5 mt-8">
-      <div class="flex justify-center gap-5">
-      </div>
-
-      <!-- Core View Controls -->
-      <div class="p-4 w-full max-w-md flex flex-col items-center gap-4">
-        <h3 class="text-lg font-bold">Core View Generator</h3>
-        <div class="grid grid-cols-2 gap-4 w-full">
-          <div class="flex flex-col gap-1">
-            <label for="padding" class="text-sm font-bold">Padding (px)</label>
-            <UiInput id="padding" v-model="padding" type="number" placeholder="e.g., 20" />
-          </div>
-          <div class="flex flex-col gap-1">
-            <label for="scale" class="text-sm font-bold">Scale</label>
-            <UiInput id="scale" v-model="scale" type="number" step="0.1" placeholder="e.g., 1.0" />
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <input id="hideResults" v-model="hideResults" type="checkbox" class="w-4 h-4">
-          <label for="hideResults" class="text-sm font-bold">Hide Results</label>
-        </div>
-        <UiButton @click="goToCoreView">
-          Generate Core View
-        </UiButton>
-      </div>
-    </div>
   </div>
 </template>
 
