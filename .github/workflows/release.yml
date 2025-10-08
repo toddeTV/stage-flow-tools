@@ -21,6 +21,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
+          config-file: release-please-config.json
 
   publish-docker-image:
     needs: release-please
