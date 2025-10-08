@@ -4,39 +4,60 @@ import type { Results } from '~/types'
 interface PeerInfo {
   id: string
   url: string
+  channel: string
   userId?: string
 }
 
 const storage = useStorage('ws')
-const peers = new Map<string, Peer>()
+const peers = new Map<string, Map<string, Peer>>() // Channel -> Peer ID -> Peer
 
-export async function addPeer(peer: Peer, url: string, userId?: string) {
+function getChannelPeers(channel: string): Map<string, Peer> {
+  if (!peers.has(channel)) {
+    peers.set(channel, new Map<string, Peer>())
+  }
+  return peers.get(channel)!
+}
+
+export async function addPeer(peer: Peer, channel: string, url: string, userId?: string) {
   ;(peer as any).userId = userId
-  peers.set(peer.id, peer)
+  ;(peer as any).channel = channel
+  getChannelPeers(channel).set(peer.id, peer)
 
   const storedPeers = await storage.getItem<PeerInfo[]>('peers') || []
   
-  // Deduplicate by ID before appending
   const filtered = storedPeers.filter((p: PeerInfo) => p.id !== peer.id)
-  const peerInfo: PeerInfo = { id: peer.id, url, userId }
+  const peerInfo: PeerInfo = { id: peer.id, url, channel, userId }
   await storage.setItem('peers', [...filtered, peerInfo])
   await broadcastConnections()
 }
 
 export async function removePeer(peer: Peer) {
-  peers.delete(peer.id)
+  const channel = (peer as any).channel
+  if (channel) {
+    getChannelPeers(channel).delete(peer.id)
+    if (getChannelPeers(channel).size === 0) {
+      peers.delete(channel)
+    }
+  }
+  
   const storedPeers = await storage.getItem<PeerInfo[]>('peers') || []
   await storage.setItem('peers', storedPeers.filter((p: PeerInfo) => p.id !== peer.id))
   await broadcastConnections()
 }
 
-export async function getPeers() {
-  return await storage.getItem<PeerInfo[]>('peers') || []
+export async function getPeers(channel?: string) {
+  const allPeers = await storage.getItem<PeerInfo[]>('peers') || []
+  if (channel) {
+    return allPeers.filter(p => p.channel === channel)
+  }
+  return allPeers
 }
 
-export function broadcast(event: string, data: unknown) {
+export function broadcast(event: string, data: unknown, channel?: string) {
   const message = JSON.stringify({ event, data })
-  for (const peer of peers.values()) {
+  const targetPeers = channel ? getChannelPeers(channel).values() : Array.from(peers.values()).flatMap(map => Array.from(map.values()))
+
+  for (const peer of targetPeers) {
     try {
       peer.send(message)
     }
@@ -47,8 +68,8 @@ export function broadcast(event: string, data: unknown) {
 }
 
 export async function broadcastConnections() {
-  const peers = await getPeers()
-  broadcast('connections-update', { totalConnections: peers.length })
+  const allPeers = await getPeers()
+  broadcast('connections-update', { totalConnections: allPeers.length })
 }
 
 // Bundled results update

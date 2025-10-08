@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { Question, UserQuestion } from '~/types'
+import type { UserQuestion } from '~/types'
 
 const userNickname = ref('')
 const nicknameInput = ref('')
+const emojiInput = ref('')
 const { activeQuestion, selectedAnswer } = useQuizSocket()
 
 // Load nickname from localStorage
@@ -103,6 +104,59 @@ async function submitAnswer() {
     }
   }
 }
+
+// Submit emoji
+const isEmojiCooldown = ref(false)
+const cooldownTimerInSec = ref(0)
+let cooldownEndTime = 0
+
+const { pause, resume } = useIntervalFn(() => {
+  const remaining = cooldownEndTime - Date.now()
+  if (remaining <= 0) {
+    isEmojiCooldown.value = false
+    cooldownTimerInSec.value = 0
+    pause()
+  }
+  else {
+    cooldownTimerInSec.value = remaining / 1000
+  }
+}, 10, { immediate: false })
+
+async function submitEmoji() {
+  if (isEmojiCooldown.value || !isValidEmoji(emojiInput.value)) {
+    if (!isValidEmoji(emojiInput.value)) {
+      alert('Please enter a single emoji.')
+    }
+    return
+  }
+
+  try {
+    await $fetch('/api/emojis/submit', {
+      method: 'POST',
+      body: {
+        emoji: emojiInput.value
+      }
+    })
+
+    // Start cooldown
+    isEmojiCooldown.value = true
+    cooldownEndTime = Date.now() + 1500
+    cooldownTimerInSec.value = 1.5
+    resume()
+  }
+  catch (error) {
+    logger_error('Failed to submit emoji:', error)
+    alert('Failed to send emoji. Please try again.')
+  }
+}
+
+const quickEmojis = ['👍', '❤️', '😂', '🤔', '👏', '❓']
+
+async function sendQuickEmoji(emoji: string) {
+  if (isEmojiCooldown.value) return
+  emojiInput.value = emoji
+  await submitEmoji()
+}
 </script>
 
 <template>
@@ -124,11 +178,38 @@ async function submitAnswer() {
       </form>
     </div>
 
-    <!-- Quiz Section -->
+    <!-- With Nickname -->
     <div v-else class="flex flex-col gap-8">
-      <div class="flex justify-between items-center p-4 bg-white border-[3px] border-black">
+      <!-- Display Nickname with change function -->
+      <div class="flex justify-between items-center p-4 bg-white border-[4px] border-black">
         <span>Playing as: <strong class="text-lg">{{ userNickname }}</strong></span>
         <UiButton @click="changeNickname">Change</UiButton>
+      </div>
+
+      <!-- Emoji Submission -->
+      <div class="bg-white border-[4px] border-black p-6">
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <button
+            v-for="emoji in quickEmojis"
+            :key="emoji"
+            class="p-2 text-3xl border-2 border-black bg-white transition-transform duration-150 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isEmojiCooldown"
+            @click="sendQuickEmoji(emoji)"
+          >
+            {{ emoji }}
+          </button>
+          <form @submit.prevent="submitEmoji" class="flex items-center">
+            <UiInput
+              v-model="emojiInput"
+              placeholder="?"
+              class="text-2xl text-center w-16 h-16 flex-shrink-0 border-r-0"
+            />
+            <UiButton type="submit" :disabled="isEmojiCooldown" class="h-16">
+              <span v-if="isEmojiCooldown">{{ cooldownTimerInSec.toFixed(2) }}s</span>
+              <span v-else>Send</span>
+            </UiButton>
+          </form>
+        </div>
       </div>
 
       <!-- Active Question -->

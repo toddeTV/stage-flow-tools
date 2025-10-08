@@ -1,17 +1,19 @@
 import { Peer, Message } from 'crossws'
 
 export default defineWebSocketHandler({
-  open(peer) {
+  async open(peer) {
     logger('WebSocket connection opened')
-    const requestUrl = new URL(peer.request.url)
+    const { url: requestUrlString } = peer.request
+    const requestUrl = new URL(requestUrlString)
     const url = requestUrl.pathname
     const userId = requestUrl.searchParams.get('userId') || undefined
-    addPeer(peer, url, userId)
+    const channel = requestUrl.searchParams.get('channel') || 'default'
+    await addPeer(peer, channel, url, userId)
   },
 
-  close(peer: Peer) {
+  async close(peer: Peer) {
     logger('WebSocket connection closed')
-    removePeer(peer)
+    await removePeer(peer)
   },
 
   error(peer: Peer, error: Error) {
