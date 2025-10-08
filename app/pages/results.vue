@@ -79,6 +79,25 @@ function getPercentage(count: number) {
   return Math.round((count / results.value.totalVotes) * 100)
 }
 
+async function pickRandomUser(option: string) {
+  try {
+    const response = await $fetch<{ username: string }>('/api/results/pick-random-user', {
+      method: 'POST',
+      body: {
+        questionId: results.value?.question.id,
+        option
+      }
+    })
+    if (response.username) {
+      alert(`Random user for "${option}": ${response.username}`)
+    }
+  }
+  catch (error: unknown) {
+    logger_error(error)
+    alert('Could not pick a random user. See console for details.')
+  }
+}
+
 </script>
 
 <template>
@@ -115,11 +134,14 @@ function getPercentage(count: number) {
         >
           <div class="flex justify-between items-center text-lg">
             <span class="font-bold">{{ option }} <span v-if="result.emoji && !hideResults" class="ml-2">{{ result.emoji }}</span></span>
-            <span class="py-1 px-2.5 bg-gray-100 border-2 border-black text-sm">
-              <template v-if="hideResults">?</template>
-              <template v-else>{{ result.count }}</template>
-              votes
-            </span>
+            <div class="flex items-center gap-2">
+              <span class="py-1 px-2.5 bg-gray-100 border-2 border-black text-sm">
+                <template v-if="hideResults">?</template>
+                <template v-else>{{ result.count }}</template>
+                votes
+              </span>
+              <UiButton size="small" @click="pickRandomUser(option)">🎲</UiButton>
+            </div>
           </div>
           <div class="h-12 bg-gray-100 border-[3px] border-black relative overflow-hidden">
             <div v-if="hideResults" class="flex items-center justify-center h-full">
