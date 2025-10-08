@@ -227,27 +227,16 @@ async function sendQuickEmoji(emoji: string) {
         </div>
 
         <div class="flex flex-col gap-4 mb-5">
-          <label
+          <UiRadioOption
             v-for="(option, index) in activeQuestion.answer_options"
             :key="index"
-            class="flex items-center p-5 border-[3px] border-black cursor-pointer transition-all duration-200 relative"
-            :class="{
-              'bg-black text-white': selectedAnswer === (typeof option === 'string' ? option : option.text),
-              'opacity-60 cursor-not-allowed': activeQuestion.is_locked,
-              'hover:translate-x-1 hover:shadow-[-5px_5px_0_#000]': !activeQuestion.is_locked
-            }"
+            v-model="selectedAnswer"
+            :value="typeof option === 'string' ? option : option.text"
+            :disabled="activeQuestion.is_locked"
+            @update:modelValue="submitAnswer"
           >
-            <input
-              type="radio"
-              :value="typeof option === 'string' ? option : option.text"
-              v-model="selectedAnswer"
-              :disabled="activeQuestion.is_locked"
-              @change="submitAnswer"
-              class="w-5 h-5 mr-4"
-              :class="selectedAnswer === (typeof option === 'string' ? option : option.text) ? 'accent-white' : 'accent-black'"
-            />
-            <span class="text-lg">{{ typeof option === 'string' ? option : option.text }}</span>
-          </label>
+            {{ typeof option === 'string' ? option : option.text }}
+          </UiRadioOption>
         </div>
 
         <div v-if="selectedAnswer && !activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
