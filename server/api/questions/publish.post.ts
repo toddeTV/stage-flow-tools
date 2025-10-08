@@ -1,3 +1,5 @@
+import { WebSocketChannel } from '~/types'
+
 export default defineEventHandler(async (event) => {
   verifyAdmin(event)
 
@@ -26,7 +28,7 @@ export default defineEventHandler(async (event) => {
   // Also broadcast an empty results update to clear previous results
   const results = await getResultsForQuestion(questionId)
   if (results) {
-    scheduleResultsUpdate(results)
+    scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
   }
 
   return question

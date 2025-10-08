@@ -1,24 +1,24 @@
 import type { Peer } from 'crossws'
-import type { Results } from '~/types'
+import type { Results, WebSocketChannel } from '~/types'
 
 interface PeerInfo {
   id: string
   url: string
-  channel: string
+  channel: WebSocketChannel
   userId?: string
 }
 
 const storage = useStorage('ws')
-const peers = new Map<string, Map<string, Peer>>() // Channel -> Peer ID -> Peer
+const peers = new Map<WebSocketChannel, Map<string, Peer>>() // Channel -> Peer ID -> Peer
 
-function getChannelPeers(channel: string): Map<string, Peer> {
+function getChannelPeers(channel: WebSocketChannel): Map<string, Peer> {
   if (!peers.has(channel)) {
     peers.set(channel, new Map<string, Peer>())
   }
   return peers.get(channel)!
 }
 
-export async function addPeer(peer: Peer, channel: string, url: string, userId?: string) {
+export async function addPeer(peer: Peer, channel: WebSocketChannel, url: string, userId?: string) {
   ;(peer as any).userId = userId
   ;(peer as any).channel = channel
   getChannelPeers(channel).set(peer.id, peer)
@@ -45,7 +45,7 @@ export async function removePeer(peer: Peer) {
   await broadcastConnections()
 }
 
-export async function getPeers(channel?: string) {
+export async function getPeers(channel?: WebSocketChannel) {
   const allPeers = await storage.getItem<PeerInfo[]>('peers') || []
   if (channel) {
     return allPeers.filter(p => p.channel === channel)
@@ -53,7 +53,7 @@ export async function getPeers(channel?: string) {
   return allPeers
 }
 
-export function broadcast(event: string, data: unknown, channel?: string) {
+export function broadcast(event: string, data: unknown, channel?: WebSocketChannel) {
   const message = JSON.stringify({ event, data })
   const targetPeers = channel ? getChannelPeers(channel).values() : Array.from(peers.values()).flatMap(map => Array.from(map.values()))
 
@@ -76,7 +76,7 @@ export async function broadcastConnections() {
 let resultsBuffer: Results[] = []
 let resultsTimeout: ReturnType<typeof setTimeout> | null = null
 
-export function scheduleResultsUpdate(data: Results, channel: string) {
+export function scheduleResultsUpdate(data: Results, channel: WebSocketChannel) {
   resultsBuffer.push(data)
 
   if (!resultsTimeout) {
