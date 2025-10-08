@@ -4,7 +4,7 @@ definePageMeta({
 })
 
 interface Emoji {
-  id: number
+  id: string
   text: string
   x: number
   y: number
@@ -13,8 +13,6 @@ interface Emoji {
 }
 
 const emojis = ref<Emoji[]>([])
-let emojiIdCounter = 0
-
 const { width: windowWidth, height: windowHeight } = useWindowSize()
 
 const route = useRoute()
@@ -33,8 +31,8 @@ const { data } = useWebSocket(wsEndpoint, {
 watch(data, (newValue) => {
   try {
     const event = JSON.parse(newValue)
-    if (event.event === 'emoji' && event.data?.emoji) {
-      addEmoji(event.data.emoji)
+    if (event.event === 'emoji' && event.data?.emoji && event.data?.id) {
+      addEmoji(event.data.emoji, event.data.id)
     }
   }
   catch (error) {
@@ -42,9 +40,9 @@ watch(data, (newValue) => {
   }
 })
 
-function addEmoji(text: string) {
+function addEmoji(text: string, id: string) {
   const newEmoji: Emoji = {
-    id: emojiIdCounter++,
+    id,
     text,
     x: Math.random() * windowWidth.value,
     y: -100, // Start above the screen
