@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { Question, UserQuestion } from '~/types'
+import type { UserQuestion } from '~/types'
 
 const userNickname = ref('')
 const nicknameInput = ref('')
+const emojiInput = ref('')
 const { activeQuestion, selectedAnswer } = useQuizSocket()
 
 // Load nickname from localStorage
@@ -103,6 +104,28 @@ async function submitAnswer() {
     }
   }
 }
+
+// Submit emoji
+async function submitEmoji() {
+  if (!isValidEmoji(emojiInput.value)) {
+    alert('Please enter a single emoji.')
+    return
+  }
+
+  try {
+    await $fetch('/api/emojis/submit', {
+      method: 'POST',
+      body: {
+        emoji: emojiInput.value
+      }
+    })
+    emojiInput.value = ''
+  }
+  catch (error) {
+    logger_error('Failed to submit emoji:', error)
+    alert('Failed to send emoji. Please try again.')
+  }
+}
 </script>
 
 <template>
@@ -124,11 +147,24 @@ async function submitAnswer() {
       </form>
     </div>
 
-    <!-- Quiz Section -->
+    <!-- With Nickname -->
     <div v-else class="flex flex-col gap-8">
-      <div class="flex justify-between items-center p-4 bg-white border-[3px] border-black">
+      <!-- Display Nickname with change function -->
+      <div class="flex justify-between items-center p-4 bg-white border-[4px] border-black">
         <span>Playing as: <strong class="text-lg">{{ userNickname }}</strong></span>
         <UiButton @click="changeNickname">Change</UiButton>
+      </div>
+
+      <!-- Emoji Submission -->
+      <div class="bg-white border-[4px] border-black p-6">
+        <form @submit.prevent="submitEmoji" class="flex items-center gap-4">
+          <UiInput
+            v-model="emojiInput"
+            placeholder="Send an Emoji..."
+            class="text-2xl flex-grow"
+          />
+          <UiButton type="submit">Send</UiButton>
+        </form>
       </div>
 
       <!-- Active Question -->
