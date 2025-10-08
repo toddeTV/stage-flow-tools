@@ -76,13 +76,13 @@ export async function broadcastConnections() {
 let resultsBuffer: Results[] = []
 let resultsTimeout: ReturnType<typeof setTimeout> | null = null
 
-export function scheduleResultsUpdate(data: Results) {
+export function scheduleResultsUpdate(data: Results, channel: string) {
   resultsBuffer.push(data)
 
   if (!resultsTimeout) {
     resultsTimeout = setTimeout(() => {
       if (resultsBuffer.length > 0) {
-        broadcast('results-update', resultsBuffer[resultsBuffer.length - 1])
+        broadcast('results-update', resultsBuffer[resultsBuffer.length - 1], channel)
         resultsBuffer = []
       }
       resultsTimeout = null
