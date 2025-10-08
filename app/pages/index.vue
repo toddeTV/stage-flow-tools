@@ -106,9 +106,15 @@ async function submitAnswer() {
 }
 
 // Submit emoji
+const isEmojiCooldown = ref(false)
+const cooldownTimer = ref(0)
+let cooldownInterval: NodeJS.Timeout
+
 async function submitEmoji() {
-  if (!isValidEmoji(emojiInput.value)) {
-    alert('Please enter a single emoji.')
+  if (isEmojiCooldown.value || !isValidEmoji(emojiInput.value)) {
+    if (!isValidEmoji(emojiInput.value)) {
+      alert('Please enter a single emoji.')
+    }
     return
   }
 
@@ -119,7 +125,18 @@ async function submitEmoji() {
         emoji: emojiInput.value
       }
     })
-    emojiInput.value = ''
+
+    // Start cooldown
+    isEmojiCooldown.value = true
+    cooldownTimer.value = 1.5
+    cooldownInterval = setInterval(() => {
+      cooldownTimer.value -= 0.01
+      if (cooldownTimer.value <= 0) {
+        clearInterval(cooldownInterval)
+        isEmojiCooldown.value = false
+        cooldownTimer.value = 0
+      }
+    }, 10)
   }
   catch (error) {
     logger_error('Failed to submit emoji:', error)
@@ -163,7 +180,10 @@ async function submitEmoji() {
             placeholder="Send an Emoji..."
             class="text-2xl flex-grow"
           />
-          <UiButton type="submit">Send</UiButton>
+          <UiButton type="submit" :disabled="isEmojiCooldown">
+            <span v-if="isEmojiCooldown">{{ cooldownTimer.toFixed(2) }}s</span>
+            <span v-else>Send</span>
+          </UiButton>
         </form>
       </div>
 
