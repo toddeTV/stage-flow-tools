@@ -1,3 +1,5 @@
+import { WebSocketChannel } from '~/types'
+
 export default defineEventHandler(async (event) => {
   verifyAdmin(event)
 
@@ -27,7 +29,7 @@ export default defineEventHandler(async (event) => {
     // Also broadcast a results update
     const results = await getResultsForQuestion(questionId)
     if (results) {
-      scheduleResultsUpdate(results)
+      scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
     }
   }
 

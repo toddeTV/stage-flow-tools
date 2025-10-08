@@ -1,7 +1,8 @@
+import { WebSocketChannel } from '~/types'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { user_id, user_nickname, selected_answer } = body as { 
+  const { user_id, user_nickname, selected_answer } = body as {
     user_id: string,
     user_nickname: string,
     selected_answer: string
@@ -57,7 +58,7 @@ export default defineEventHandler(async (event) => {
   // Schedule bundled results update
   const results = await getCurrentResults()
   if (results) {
-    scheduleResultsUpdate(results)
+    scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
   }
 
   return { success: true }

@@ -34,3 +34,9 @@ export interface Results {
   totalVotes: number
   totalConnections: number
 }
+
+export enum WebSocketChannel {
+  DEFAULT = 'default',
+  RESULTS = 'results',
+  EMOJIS = 'emojis',
+}

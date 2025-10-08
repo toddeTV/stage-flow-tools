@@ -2,7 +2,7 @@ import { useWebSocket, useLocalStorage } from '@vueuse/core'
 import { createId } from '@paralleldrive/cuid2'
 import type { Question, Results, UserQuestion } from '~/types'
 
-export const useQuizSocket = () => {
+export const useQuizSocket = (channel = 'default') => {
   const activeQuestion = ref<UserQuestion | Question | null>(null)
   const selectedAnswer = ref('')
   const results = ref<Results | null>(null)
@@ -13,7 +13,11 @@ export const useQuizSocket = () => {
     if (import.meta.client && !userId.value) {
       userId.value = createId()
     }
-    return getWsEndpoint('default', { userId: userId.value || '' })
+    const params: Record<string, string> = { userId: userId.value || '' }
+    if (channel) {
+      params.channel = channel
+    }
+    return getWsEndpoint('default', params)
   })
 
   const { status, data, send, open, close } = useWebSocket(wsEndpoint, {

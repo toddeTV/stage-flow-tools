@@ -1,4 +1,5 @@
 import { Peer, Message } from 'crossws'
+import { WebSocketChannel } from '~/types'
 
 export default defineWebSocketHandler({
   async open(peer) {
@@ -7,7 +8,7 @@ export default defineWebSocketHandler({
     const requestUrl = new URL(requestUrlString)
     const url = requestUrl.pathname
     const userId = requestUrl.searchParams.get('userId') || undefined
-    const channel = requestUrl.searchParams.get('channel') || 'default'
+    const channel = (requestUrl.searchParams.get('channel') as WebSocketChannel) || WebSocketChannel.DEFAULT
     await addPeer(peer, channel, url, userId)
   },
 
