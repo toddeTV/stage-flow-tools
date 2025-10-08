@@ -35,32 +35,6 @@
   }
 }
 
-/* Background Pattern */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 50px,
-      rgba(0, 0, 0, 0.03) 50px,
-      rgba(0, 0, 0, 0.03) 100px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 50px,
-      rgba(0, 0, 0, 0.03) 50px,
-      rgba(0, 0, 0, 0.03) 100px
-    );
-  pointer-events: none;
-  z-index: -1;
-}
 
 /* Scrollbar */
 ::-webkit-scrollbar {

@@ -2,7 +2,9 @@
 import type { Results } from '~/types'
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  footer: true,
+  background: false,
 })
 
 const { results } = useQuizSocket('results')
@@ -16,11 +18,6 @@ const scale = ref(route.query.scale ? Number(route.query.scale) : 1)
 const hideResults = ref(route.query.hideResults !== undefined)
 
 // Add body class for core view
-useHead({
-  bodyAttrs: {
-    class: isCoreView.value ? 'core-view-body' : ''
-  }
-})
 
 // Dynamic styles for core view
 const coreViewStyles = computed(() => {
@@ -208,15 +205,6 @@ async function pickRandomUser(option: string) {
   </div>
 </template>
 
-<style>
-  .core-view-body {
-    @apply bg-white;
-  }
-
-  .core-view-body::before {
-    content: none;
-  }
-</style>
 
 <style scoped>
 .page-title::after {

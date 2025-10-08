@@ -1,6 +1,9 @@
 <script setup lang="ts">
 definePageMeta({
-  middleware: 'auth'
+  layout: 'default',
+  middleware: 'auth',
+  footer: false,
+  background: false,
 })
 
 interface Emoji {
@@ -41,10 +44,15 @@ watch(data, (newValue) => {
 })
 
 function addEmoji(text: string, id: string) {
+  // Calculate padding based on emoji size (6xl ~ 60px) and scale
+  const emojiSize = 60 * scale.value
+  const padding = emojiSize
+  const spawnableWidth = windowWidth.value - (padding * 2)
+  
   const newEmoji: Emoji = {
     id,
     text,
-    x: Math.random() * windowWidth.value,
+    x: (Math.random() * spawnableWidth) + padding,
     y: -100, // Start above the screen
     speed: Math.random() * 3 + 2, // Random speed
     rotation: Math.random() * 40 - 20 // Random rotation -20 to 20 deg
@@ -65,11 +73,6 @@ onMounted(() => {
   animateEmojis()
 })
 
-useHead({
-  bodyAttrs: {
-    class: 'emojis-body'
-  }
-})
 </script>
 
 <template>
@@ -90,13 +93,3 @@ useHead({
     </div>
   </div>
 </template>
-
-<style>
-.emojis-body {
-  @apply bg-white;
-}
-
-.emojis-body::before {
-  content: none;
-}
-</style>

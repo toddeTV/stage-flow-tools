@@ -2,7 +2,10 @@
 import type { Question, AnswerOption } from '~/types'
 
 definePageMeta({
-  middleware: 'auth'
+  layout: 'default',
+  middleware: 'auth',
+  footer: true,
+  background: true,
 })
 
 const activeQuestion = ref<Question | null>(null)
