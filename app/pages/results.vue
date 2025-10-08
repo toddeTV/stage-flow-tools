@@ -81,7 +81,7 @@ function getPercentage(count: number) {
 
 async function pickRandomUser(option: string) {
   try {
-    const response = await $fetch<{ username: string }>('/api/results/pick-random-user', {
+    const response = await $fetch('/api/results/pick-random-user', {
       method: 'POST',
       body: {
         questionId: results.value?.question.id,
