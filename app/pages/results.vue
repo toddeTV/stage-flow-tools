@@ -90,6 +90,8 @@ async function pickRandomUser(option: string) {
     })
     if (response.username) {
       alert(`Random user for "${option}": ${response.username}`)
+    } else {
+      alert("No users found for this option.")
     }
   }
   catch (error: unknown) {
