@@ -5,7 +5,7 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const { results } = useQuizSocket()
+const { results } = useQuizSocket('results')
 
 const route = useRoute()
 const isCoreView = computed(() => route.query.core !== undefined)

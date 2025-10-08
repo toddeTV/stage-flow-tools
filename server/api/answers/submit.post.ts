@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
   // Schedule bundled results update
   const results = await getCurrentResults()
   if (results) {
-    scheduleResultsUpdate(results)
+    scheduleResultsUpdate(results, 'results')
   }
 
   return { success: true }
