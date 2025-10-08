@@ -107,8 +107,20 @@ async function submitAnswer() {
 
 // Submit emoji
 const isEmojiCooldown = ref(false)
-const cooldownTimer = ref(0)
-let cooldownInterval: NodeJS.Timeout
+const cooldownTimerInSec = ref(0)
+let cooldownEndTime = 0
+
+const { pause, resume } = useIntervalFn(() => {
+  const remaining = cooldownEndTime - Date.now()
+  if (remaining <= 0) {
+    isEmojiCooldown.value = false
+    cooldownTimerInSec.value = 0
+    pause()
+  }
+  else {
+    cooldownTimerInSec.value = remaining / 1000
+  }
+}, 10, { immediate: false })
 
 async function submitEmoji() {
   if (isEmojiCooldown.value || !isValidEmoji(emojiInput.value)) {
@@ -128,15 +140,9 @@ async function submitEmoji() {
 
     // Start cooldown
     isEmojiCooldown.value = true
-    cooldownTimer.value = 1.5
-    cooldownInterval = setInterval(() => {
-      cooldownTimer.value -= 0.01
-      if (cooldownTimer.value <= 0) {
-        clearInterval(cooldownInterval)
-        isEmojiCooldown.value = false
-        cooldownTimer.value = 0
-      }
-    }, 10)
+    cooldownEndTime = Date.now() + 1500
+    cooldownTimerInSec.value = 1.5
+    resume()
   }
   catch (error) {
     logger_error('Failed to submit emoji:', error)
@@ -181,7 +187,7 @@ async function submitEmoji() {
             class="text-2xl flex-grow"
           />
           <UiButton type="submit" :disabled="isEmojiCooldown">
-            <span v-if="isEmojiCooldown">{{ cooldownTimer.toFixed(2) }}s</span>
+            <span v-if="isEmojiCooldown">{{ cooldownTimerInSec.toFixed(2) }}s</span>
             <span v-else>Send</span>
           </UiButton>
         </form>
