@@ -149,6 +149,14 @@ async function submitEmoji() {
     alert('Failed to send emoji. Please try again.')
   }
 }
+
+const quickEmojis = ['👍', '❤️', '😂', '🤔', '👏', '❓']
+
+async function sendQuickEmoji(emoji: string) {
+  if (isEmojiCooldown.value) return
+  emojiInput.value = emoji
+  await submitEmoji()
+}
 </script>
 
 <template>
@@ -180,17 +188,28 @@ async function submitEmoji() {
 
       <!-- Emoji Submission -->
       <div class="bg-white border-[4px] border-black p-6">
-        <form @submit.prevent="submitEmoji" class="flex items-center gap-4">
-          <UiInput
-            v-model="emojiInput"
-            placeholder="Send an Emoji..."
-            class="text-2xl flex-grow"
-          />
-          <UiButton type="submit" :disabled="isEmojiCooldown">
-            <span v-if="isEmojiCooldown">{{ cooldownTimerInSec.toFixed(2) }}s</span>
-            <span v-else>Send</span>
-          </UiButton>
-        </form>
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <button
+            v-for="emoji in quickEmojis"
+            :key="emoji"
+            class="p-2 text-3xl border-2 border-black bg-white transition-transform duration-150 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isEmojiCooldown"
+            @click="sendQuickEmoji(emoji)"
+          >
+            {{ emoji }}
+          </button>
+          <form @submit.prevent="submitEmoji" class="flex items-center">
+            <UiInput
+              v-model="emojiInput"
+              placeholder="?"
+              class="text-2xl text-center w-16 h-16 flex-shrink-0 border-r-0"
+            />
+            <UiButton type="submit" :disabled="isEmojiCooldown" class="h-16">
+              <span v-if="isEmojiCooldown">{{ cooldownTimerInSec.toFixed(2) }}s</span>
+              <span v-else>Send</span>
+            </UiButton>
+          </form>
+        </div>
       </div>
 
       <!-- Active Question -->
