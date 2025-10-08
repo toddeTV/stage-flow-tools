@@ -219,7 +219,7 @@ export async function publishQuestion(questionId: string): Promise<Question | un
       await fs.writeFile(ANSWERS_FILE, JSON.stringify([]))
 
       // Broadcast the new question as a results update
-      const results = await getResultsForQuestion(question.id, questions)
+      const results = await getResultsForQuestion(question.id, questions, [])
       broadcast('results-update', results)
     }
     return question
@@ -361,12 +361,12 @@ export async function validateAdmin(username: string, password: string, event?: 
 }
 
 // Get results for current question
-export async function getResultsForQuestion(questionId: string, allQuestions?: Question[]): Promise<Results | null> {
+export async function getResultsForQuestion(questionId: string, allQuestions?: Question[], allAnswers?: Answer[]): Promise<Results | null> {
   const questions = allQuestions || await getQuestions()
   const question = questions.find(q => q.id === questionId)
   if (!question) return null
 
-  const answers = await getAnswersForQuestion(question.id)
+  const answers = allAnswers || await getAnswersForQuestion(question.id)
 
   // Count votes for each option
   const results: Record<string, { count: number, emoji?: string }> = {}
