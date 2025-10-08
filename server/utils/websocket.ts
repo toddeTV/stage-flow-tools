@@ -35,6 +35,9 @@ export async function removePeer(peer: Peer) {
   const channel = (peer as any).channel
   if (channel) {
     getChannelPeers(channel).delete(peer.id)
+    if (getChannelPeers(channel).size === 0) {
+      peers.delete(channel)
+    }
   }
   
   const storedPeers = await storage.getItem<PeerInfo[]>('peers') || []
