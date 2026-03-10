@@ -276,25 +276,6 @@ async function sendQuickEmoji(emoji: string) {
   </div>
 </template>
 
-<style scoped>
-@reference "tailwindcss";
-
-@keyframes pulse {
-  0%, 80%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  40% {
-    transform: scale(1.3);
-    opacity: 0.7;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 1.4s ease-in-out infinite;
-}
-</style>
-
 <i18n lang="yaml">
 en:
   pageTitle: "Quiz Time"
@@ -342,3 +323,22 @@ ja:
   waitingForQuestion: "質問を待っています"
   presenterWillStart: "プレゼンターがまもなく質問を開始します..."
 </i18n>
+
+<style scoped>
+@reference "tailwindcss";
+
+@keyframes pulse {
+  0%, 80%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+</style>
