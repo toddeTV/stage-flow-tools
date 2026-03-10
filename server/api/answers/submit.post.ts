@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     selected_answer: LocalizedString
   }
 
-  if (!user_id || !user_nickname || !selected_answer || !selected_answer.en) {
+  if (!user_id || !user_nickname || !selected_answer || typeof selected_answer.en !== 'string' || !selected_answer.en) {
     throw createError({
       statusCode: 400,
       statusMessage: 'User ID, nickname and answer required'
