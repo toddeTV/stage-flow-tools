@@ -26,7 +26,7 @@ const { data: fetchedQuestions, error: fetchError, refresh: loadQuestions } = us
 watch(fetchedQuestions, (newQuestions) => {
   if (newQuestions && Array.isArray(newQuestions)) {
     allQuestions.value = newQuestions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    activeQuestion.value = newQuestions.find(q => (q as any).is_active) || null
+    activeQuestion.value = newQuestions.find(q => q.is_active) || null
   }
   else {
     allQuestions.value = []

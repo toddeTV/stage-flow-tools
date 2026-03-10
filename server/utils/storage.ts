@@ -170,7 +170,7 @@ export async function saveQuestions(questions: Question[]): Promise<void> {
 
 export async function getActiveQuestion(): Promise<Question | undefined> {
   const questions = await getQuestions()
-  return questions.find(q => (q as any).is_active)
+  return questions.find(q => q.is_active)
 }
 
 export async function createQuestion(questionData: Omit<Question, 'id' | 'is_locked' | 'createdAt' | 'alreadyPublished'>): Promise<Question> {
@@ -205,13 +205,13 @@ export async function publishQuestion(questionId: string): Promise<Question | un
 
     // Deactivate all questions
     questions.forEach((q) => {
-      ;(q as any).is_active = false
+      q.is_active = false
     })
 
     // Activate the new question
     const question = questions.find(q => q.id === questionId)
     if (question) {
-      ;(question as any).is_active = true
+      question.is_active = true
       question.alreadyPublished = true
       await fs.writeFile(QUESTIONS_FILE, JSON.stringify(questions, null, 2))
 

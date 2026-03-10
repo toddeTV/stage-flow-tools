@@ -7,6 +7,7 @@ export interface Question {
   id: string
   question_text: string
   answer_options: AnswerOption[]
+  is_active?: boolean
   is_locked: boolean
   createdAt: string
   alreadyPublished: boolean
