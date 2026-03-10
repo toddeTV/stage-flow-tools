@@ -3,14 +3,8 @@ export default defineI18nConfig(() => ({
   locale: 'en',
   fallbackLocale: 'en',
   messages: {
-    en: {
-      welcome: 'Welcome'
-    },
-    de: {
-      welcome: 'Willkommen'
-    },
-    ja: {
-      welcome: 'ようこそ'
-    }
+    en: {},
+    de: {},
+    ja: {}
   }
 }))
