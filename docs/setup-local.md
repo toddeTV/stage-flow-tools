@@ -45,7 +45,7 @@ Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
 - `pnpm dev` - Start development server
 - `pnpm build` - Build for production
 - `pnpm preview` - Preview production build
-- `pnpm typecheck` - Run TypeScript checks
+- `pnpm test:types` - Run TypeScript checks
 
 ## Data Management
 
