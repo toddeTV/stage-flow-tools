@@ -1,0 +1,236 @@
+# _Content Last Updated: 2026-03-10 at 13:00 CET_
+
+# Language of the review.
+language: en-US
+
+# Opt-in to the free tier limits if no paid subscription is detected.
+enable_free_tier: false
+
+reviews:
+  # "assertive" emits a broad range of issues including nitpicks and improvements.
+  # "chill" provides lighter feedback with fewer non-critical comments.
+  profile: assertive
+
+  # If true, CodeRabbit will request changes on the PR if there are issues. If false, it will only comment.
+  request_changes_workflow: false
+
+  # Edit the PR description with a generated summary.
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  # high_level_summary_instructions:
+  # high_level_summary_in_walkthrough: false
+
+  # Generate the PR title if this is the title.
+  auto_title_placeholder: "@coderabbitai"
+  # auto_title_instructions:
+
+  # Print info about the review.
+  review_status: true
+
+  # Mark the commit as pending during review.
+  commit_status: true
+
+  # Do NOT mark the commit as failed if the review failed (due to any reason).
+  fail_commit_status: false
+
+  # Hide the walkthrough by default to save vertical space.
+  collapse_walkthrough: true
+
+  # Include a summary of changed files in the walkthrough.
+  changed_files_summary: true
+
+  # Generate sequence diagrams to visualize control flow.
+  # Very useful for understanding logic in Nitro server routes or WebSocket handlers.
+  sequence_diagrams: true
+
+  # Estimate the effort required to review the PR.
+  estimate_code_review_effort: true
+
+  # Assess how well the changes address linked issues.
+  assess_linked_issues: true
+
+  # Find and list related issues.
+  related_issues: true
+
+  # Find and list related pull requests.
+  related_prs: true
+
+  # We don't have/use labels so don't suggest any.
+  suggested_labels: false
+  # auto_apply_labels: false
+  # labeling_instructions:
+  #   - label:
+  #     instructions:
+
+  # We are a small team and everything should be reviewed by the other. So disable this.
+  suggested_reviewers: false
+  # auto_assign_reviewers: false
+
+  # Disable "fun" content like fortunes and poems in the review summary.
+  in_progress_fortune: false
+  poem: false
+
+  # Include a "Prompt for AI Agents" section in review comments with instructions for other AI tools to implement the suggestion.
+  enable_prompt_for_ai_agents: true
+
+  # Only run on these paths. Omit to run on all.
+  path_filters:
+    - "!.nuxt/**"
+    - "!.output/**"
+    - "!dist/**"
+    - "!pnpm-lock.yaml"
+
+  # Path-specific instructions for code review.
+  path_instructions:
+    - path: "**"
+      instructions: |
+        ## Project: stage-flow-tools
+
+        Real-time quiz and interaction tool for live presentations by Thorsten Seyschab (username: toddeTV).
+        The project is a **template** - other users can fork/clone it to run their own live quiz instances.
+        The author deploys a demo instance via Cloudflare.
+        Repository at https://github.com/toddeTV/stage-flow-tools.
+
+        ### Tech Stack
+        Nuxt 4, TypeScript (strict, no `any`), Vue 3 Composition API, Tailwind CSS v4, WebSockets (Nitro), JWT authentication, file-based JSON storage.
+        Package manager: pnpm (never npm/yarn/bun).
+        ESLint configured (when added).
+        Runtime env vars configured via `.env` file. See `.env.example` for all available variables.
+        SPA mode (`ssr: false`) with Nitro server for API + WebSockets.
+        Deployment: Dual options - (1) Docker container via Docker Compose with Traefik reverse proxy (self-hosted), (2) Cloudflare Pages/Workers (used for the author's demo instance).
+        CI/CD: Automated releases with GitHub Actions and Google `release-please` bot. Conventional Commits required. Docker images published to GitHub Container Registry (`ghcr.io`). See `release-please-config.json` for changelog section config.
+        i18n: `@nuxtjs/i18n` module (being added). Prefer `<i18n>` blocks in Vue SFCs. Global files only for keys used in 2+ components.
+
+        ### Directory Layout
+        - `app/` - Frontend (components, composables, layouts, pages, utils)
+        - `app/components/ui/` - Reusable UI primitives (`Ui*` prefix)
+        - `app/components/app/` - Application-specific components (`App*` prefix)
+        - `app/composables/` - Vue composables (`use*` prefix)
+        - `app/middleware/` - Route middleware (auth)
+        - `server/` - Backend (Nitro server)
+        - `server/api/` - REST API endpoints (answers, auth, emojis, questions, results)
+        - `server/routes/_ws/` - WebSocket handler
+        - `server/utils/` - Server utilities (auth, logger, storage, websocket)
+        - `shared/utils/` - Code shared between client and server (logger, validation)
+        - `data/` - File-based JSON storage (runtime, gitignored)
+        - `docs/` - Public project documentation
+
+        ### Code Conventions
+        - No duplication: extract repeated logic, markup patterns, or style combinations into reusable components, composables, or utilities.
+        - File size target ~100 lines, hard limit 200 (exceptions: config files, dev scripts, LLM rule files).
+        - Brief JSDoc on all functions.
+        - Vue components: PascalCase filenames. TS/JS files: kebab-case or camelCase.
+        - Composables: `use` prefix in `composables/`. Pure utilities: descriptive verb prefix in `utils/`.
+        - Prefer auto-imports. Use `import type` for types. Prefer `~/` paths.
+        - Never specify file extensions in imports. Nuxt auto-resolves them.
+        - All code, comments, and docs in English.
+        - All dates in ISO 8601 format (YYYY-MM-DD).
+        - Markdown line breaks within a block: use `<br>`. Never use trailing double spaces.
+
+        ### Vue SFC Conventions
+        - Block order: `<script setup lang="ts">` -> `<template>` -> `<i18n lang="yaml">` -> `<style scoped>`.
+        - Use `<NuxtLink>` for internal navigation, `<a>` or `<NuxtLink>` for external links.
+        - Component architecture: `ui/` for reusable primitives (no business logic), `app/` for business components.
+
+        ### Styling
+        - Light theme with sharp design. No rounded corners (enforced globally).
+        - Black and white primary color scheme. Bold borders, offset shadow hover effects.
+        - Standard Tailwind color utilities (no custom palettes or semantic aliases).
+        - No rounded corners anywhere (`border-radius: 0` enforced globally).
+        - Every `<style scoped>` block must start with `@reference "tailwindcss";`.
+        - Never raw CSS properties in style blocks - use `@apply` with Tailwind utilities. Exception: animations, pseudo-elements.
+        - Extract repeated Tailwind class strings in same component into CSS classes.
+
+        ### Data Model
+        - File-based JSON storage in `data/` (questions.json, answers.json, admin.json).
+        - All storage operations in `server/utils/storage.ts`, file locking via `proper-lockfile`.
+        - IDs generated with `@paralleldrive/cuid2`.
+
+        ### WebSockets
+        - Nitro experimental WebSocket support.
+        - Events: `new-question`, `lock-status`, `results-update`, `connections-update`, `emoji`.
+        - Results updates are buffered (2-second window) to reduce network traffic.
+        - Client uses `@vueuse/core` `useWebSocket` with auto-reconnect and heartbeat.
+
+        ### Authentication
+        - JWT tokens stored in HTTP-only cookies.
+        - Admin-only routes protected via `verifyAdmin(event)` server utility.
+        - Client-side auth middleware redirects to `/login` on failure.
+
+    - path: "**/*.vue"
+      instructions: |
+        Verify: SFC block order (`<script setup lang="ts">` -> `<template>` -> `<i18n lang="yaml">` -> `<style scoped>`).
+        Verify: no nested `<a>` inside `<a>`.
+        Verify: no rounded corners (sharp design enforced globally).
+        Verify: `@reference "tailwindcss";` at top of any `<style scoped>` block.
+        Verify: repeated Tailwind class strings are extracted into CSS classes.
+
+    - path: "**/*.{ts,mjs}"
+      instructions: |
+        Verify: strict types (no `any`), `import type` for type-only imports, no file extensions in imports.
+
+    - path: "server/**"
+      instructions: |
+        Verify: admin-only endpoints call `verifyAdmin(event)`.
+        Verify: user inputs are validated before processing.
+        Verify: file operations use proper-lockfile for concurrent access.
+        Verify: error types use `unknown`, not `any`.
+
+    - path: "app/pages/**"
+      instructions: |
+        Verify: `definePageMeta` is set with appropriate layout/middleware/footer/background.
+
+    - path: nuxt.config.ts
+      instructions: |
+        Verify: module options match upstream docs.
+        Verify: `ssr: false` is maintained (SPA mode with server API).
+
+  # Abort in-progress review on close/merge.
+  abort_on_close: true
+
+  auto_review:
+    # We want automatic reviews.
+    enabled: true
+
+    # And also incremental ones.
+    auto_incremental_review: true
+
+    # Review draft PRs.
+    drafts: true
+
+    # More ways to filter when to run automatic reviews.
+    # ignore_title_keywords:
+    #   -
+    # labels:
+    #   - "!autorelease: pending" # Exclude release-please bot PRs that are waiting for release.
+    # base_branches:
+    #   -
+    # ignore_usernames:
+    #   -
+
+  finishing_touches:
+    # Disable AI generation of docstrings/tests as we prefer manual control or existing suites.
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+
+  # Do not download the repo for each review.
+  disable_cache: false
+
+# Configure knowledge base features to let the AI learn from your project's documentation and past reviews.
+knowledge_base:
+  learnings:
+    # "auto" allows the AI to automatically learn from PR feedback and apply it to future reviews.
+    scope: auto
+
+  code_guidelines:
+    # Enable the AI to read and apply project-specific documentation.
+    enabled: true
+
+    # Index documentation to understand project conventions.
+    filePatterns:
+      - "docs/**/*.md"
+      - nuxt.config.ts
+      - package.json
+      - README.md
