@@ -18,6 +18,12 @@ function getLocalizedText(text: LocalizedString | string | undefined): string {
   return text || ''
 }
 
+// Look up the localized display text for a result key (English answer text)
+function getLocalizedOption(enKey: string): string {
+  const option = results.value?.question.answer_options.find(o => o.text.en === enKey)
+  return option ? getLocalizedText(option.text) : enKey
+}
+
 const route = useRoute()
 const isCoreView = computed(() => route.query.core !== undefined)
 
@@ -203,7 +209,7 @@ async function unpublishActiveQuestion() {
               class="flex flex-col gap-2.5"
             >
               <div class="flex justify-between items-center text-lg">
-                <span class="font-bold">{{ option }} <span v-if="result.emoji && !hideResults" class="ml-2">{{ result.emoji }}</span></span>
+                <span class="font-bold">{{ getLocalizedOption(String(option)) }} <span v-if="result.emoji && !hideResults" class="ml-2">{{ result.emoji }}</span></span>
                 <div class="flex items-center gap-2">
                   <span class="py-1 px-2.5 bg-gray-100 border-2 border-black text-sm">
                     <template v-if="hideResults">?</template>
