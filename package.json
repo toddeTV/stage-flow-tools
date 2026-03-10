@@ -38,8 +38,8 @@
     "interactive"
   ],
   "engines": {
-    "node": "~22",
-    "pnpm": "~10.13.1"
+    "node": "24.x",
+    "pnpm": "10.x"
   },
   "scripts": {
     "build": "nuxt build",
