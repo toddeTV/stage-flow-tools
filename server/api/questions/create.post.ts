@@ -4,7 +4,19 @@ export default defineEventHandler(async (event) => {
   verifyAdmin(event)
 
   const body = await readBody(event) as Omit<Question, 'id' | 'is_locked'>
-  const { key, question_text: raw_question_text, answer_options: raw_answer_options, note: raw_note } = body
+  const { key: rawKey, question_text: raw_question_text, answer_options: raw_answer_options, note: raw_note } = body
+
+  // Trim and validate key uniqueness
+  const key = typeof rawKey === 'string' ? rawKey.trim() : undefined
+  if (key) {
+    const existingQuestions = await getQuestions()
+    if (existingQuestions.some(q => q.key === key)) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'A question with this key already exists'
+      })
+    }
+  }
 
   // Validate and sanitize question_text
   if (typeof raw_question_text?.en !== 'string' || !raw_question_text.en.trim()) {
