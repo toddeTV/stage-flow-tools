@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Results } from '~/types'
+import type { Results, LocalizedString } from '~/types'
 
 definePageMeta({
   middleware: 'auth',
@@ -8,6 +8,15 @@ definePageMeta({
 })
 
 const { results } = useQuizSocket('results')
+const { t, locale } = useI18n()
+
+// Helper to get localized text with fallback to English
+function getLocalizedText(text: LocalizedString | string | undefined): string {
+  if (typeof text === 'object' && text !== null) {
+    return text[locale.value] || text.en || ''
+  }
+  return text || ''
+}
 
 const route = useRoute()
 const isCoreView = computed(() => route.query.core !== undefined)
@@ -149,18 +158,18 @@ async function unpublishActiveQuestion() {
 <template>
   <div :class="{ 'max-w-4xl mx-auto p-5 min-h-screen': !isCoreView }">
     <div :style="coreViewStyles">
-      <UiPageTitle v-if="!isCoreView" class="relative page-title">Live Results</UiPageTitle>
+      <UiPageTitle v-if="!isCoreView" class="relative page-title">{{ t('pageTitle') }}</UiPageTitle>
 
       <UiSection :bare="isCoreView">
         <!-- Controls -->
         <div class="mb-10 border-b-[3px] border-black pb-5">
           <div class="flex justify-between items-center text-lg">
-            <span v-if="results" class="font-bold py-2 px-4 bg-gray-100 border-2 border-black">Total Votes: {{ results.totalVotes }} ({{ results.totalConnections > 0 ? Math.round((results.totalVotes / results.totalConnections) * 100) : 0 }}%)</span>
+            <span v-if="results" class="font-bold py-2 px-4 bg-gray-100 border-2 border-black">{{ t('totalVotes') }}: {{ results.totalVotes }} ({{ results.totalConnections > 0 ? Math.round((results.totalVotes / results.totalConnections) * 100) : 0 }}%)</span>
             <span v-else>&nbsp;</span>
             <div class="flex items-center gap-4">
               <template v-if="results">
                 <UiCheckbox v-model="hideResults" size="small">
-                  Hide
+                  {{ t('hideButton') }}
                 </UiCheckbox>
                 <UiButton
                   :variant="results.question.is_locked ? 'primary' : 'secondary'"
@@ -168,21 +177,21 @@ async function unpublishActiveQuestion() {
                   @click="toggleLock"
                   :disabled="isTogglingLock"
                 >
-                  {{ results.question.is_locked ? '🔒 Locked' : '🔓 Open' }}
+                  {{ results.question.is_locked ? `🔒 ${t('lockedButton')}` : `🔓 ${t('openButton')}` }}
                 </UiButton>
                 <UiButton @click="unpublishActiveQuestion" variant="secondary" size="small">
-                  Unpublish
+                  {{ t('unpublishButton') }}
                 </UiButton>
               </template>
               <UiButton @click="refreshResults" variant="secondary" size="small">
-                🔄 Refresh
+                🔄 {{ t('refreshButton') }}
               </UiButton>
               <UiButton @click="publishNextQuestion" variant="secondary" size="small">
-                Next ➡
+                {{ t('nextButton') }} ➡
               </UiButton>
             </div>
           </div>
-          <h2 v-if="results" class="text-3xl mt-5 leading-tight">{{ results.question.question_text }}</h2>
+          <h2 v-if="results" class="text-3xl mt-5 leading-tight">{{ getLocalizedText(results.question.question_text) }}</h2>
         </div>
 
         <!-- Results Chart -->
@@ -199,7 +208,7 @@ async function unpublishActiveQuestion() {
                   <span class="py-1 px-2.5 bg-gray-100 border-2 border-black text-sm">
                     <template v-if="hideResults">?</template>
                     <template v-else>{{ result.count }}</template>
-                    votes
+                    {{ t('votes') }}
                   </span>
                   <UiButton size="small" @click="pickRandomUser(option)">🎲</UiButton>
                 </div>
@@ -221,14 +230,14 @@ async function unpublishActiveQuestion() {
 
           <!-- Note Display -->
           <div v-if="results.question.note && !hideResults" class="mt-8 p-4 bg-gray-100 border-2 border-black">
-            <p>{{ results.question.note }}</p>
+            <p>{{ getLocalizedText(results.question.note) }}</p>
           </div>
         </template>
 
         <!-- No Active Question -->
         <div v-else :class="{ 'py-20 px-8 text-center': !isCoreView }">
-          <h2 class="text-3xl mb-4">No Active Question</h2>
-          <p class="text-xl mb-8">Waiting for a question to be published...</p>
+          <h2 class="text-3xl mb-4">{{ t('noActiveQuestion') }}</h2>
+          <p class="text-xl mb-8">{{ t('waitingForQuestion') }}</p>
           <div class="flex justify-center gap-2.5">
             <span class="w-5 h-5 bg-black animate-bounce"></span>
             <span class="w-5 h-5 bg-black animate-bounce [animation-delay:0.2s]"></span>
@@ -242,8 +251,6 @@ async function unpublishActiveQuestion() {
 
 
 <style scoped>
-@reference "tailwindcss";
-
 .page-title::after {
   content: '●';
   position: absolute;
@@ -281,3 +288,42 @@ async function unpublishActiveQuestion() {
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 </style>
+
+<i18n lang="yaml">
+en:
+  pageTitle: "Live Results"
+  totalVotes: "Total Votes"
+  hideButton: "Hide"
+  lockedButton: "Locked"
+  openButton: "Open"
+  unpublishButton: "Unpublish"
+  refreshButton: "Refresh"
+  nextButton: "Next"
+  votes: "votes"
+  noActiveQuestion: "No Active Question"
+  waitingForQuestion: "Waiting for a question to be published..."
+de:
+  pageTitle: "Live-Ergebnisse"
+  totalVotes: "Stimmen Gesamt"
+  hideButton: "Verstecken"
+  lockedButton: "Gesperrt"
+  openButton: "Offen"
+  unpublishButton: "Veröffentlichung zurückziehen"
+  refreshButton: "Aktualisieren"
+  nextButton: "Nächste"
+  votes: "Stimmen"
+  noActiveQuestion: "Keine aktive Frage"
+  waitingForQuestion: "Warten auf die Veröffentlichung einer Frage..."
+ja:
+  pageTitle: "ライブ結果"
+  totalVotes: "総投票数"
+  hideButton: "隠す"
+  lockedButton: "ロック済み"
+  openButton: "オープン"
+  unpublishButton: "公開停止"
+  refreshButton: "更新"
+  nextButton: "次へ"
+  votes: "票"
+  noActiveQuestion: "アクティブな質問はありません"
+  waitingForQuestion: "質問が公開されるのを待っています..."
+</i18n>

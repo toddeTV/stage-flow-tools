@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Question, AnswerOption } from '~/types'
+import type { Question, AnswerOption, LocalizedString } from '~/types'
 
 definePageMeta({
   layout: 'default',
@@ -8,16 +8,28 @@ definePageMeta({
   background: true,
 })
 
+const { locale } = useI18n()
+
+// Helper to get localized text with fallback to English
+function getLocalizedText(text: LocalizedString | string | undefined): string {
+  if (typeof text === 'object' && text !== null) {
+    return text[locale.value] || text.en || ''
+  }
+  return text || ''
+}
+
 const activeQuestion = ref<Question | null>(null)
 const allQuestions = ref<Question[]>([])
 const newQuestion = ref<{
+  key: string
   question_text: string
-  answer_options: AnswerOption[]
-  note?: string
+  answer_options: { text: string, emoji?: string }[]
+  note: string
 }>({
-  question_text: '',
-  answer_options: [{ text: '' }, { text: '' }],
-  note: ''
+  key: '',
+  question_text: '{\n  "en": ""\n}',
+  answer_options: [{ text: '{\n  "en": ""\n}', emoji: '' }, { text: '{\n  "en": ""\n}', emoji: '' }],
+  note: '{\n  "en": ""\n}'
 })
 
 // Load questions
@@ -51,25 +63,26 @@ async function handleLogout() {
 // Create question
 async function handleCreateQuestion() {
   try {
-    // Filter out empty options
-    const filteredOptions = newQuestion.value.answer_options
-      .map(opt => ({
-        text: opt.text.trim(),
-        emoji: opt.emoji?.trim() || undefined
-      }))
-      .filter(opt => opt.text)
+    const questionText = JSON.parse(newQuestion.value.question_text)
+    const note = newQuestion.value.note.trim() ? JSON.parse(newQuestion.value.note) : undefined
 
-    if (filteredOptions.length < 2) {
-      alert('At least 2 answer options required')
+    const answerOptions = newQuestion.value.answer_options.map(opt => ({
+      text: JSON.parse(opt.text),
+      emoji: opt.emoji
+    })).filter(opt => opt.text.en)
+
+    if (answerOptions.length < 2) {
+      alert('At least 2 answer options with an "en" key are required.')
       return
     }
 
-    const question = await $fetch<Question>('/api/questions/create', {
+    await $fetch<Question>('/api/questions/create', {
       method: 'POST',
       body: {
-        question_text: newQuestion.value.question_text,
-        answer_options: filteredOptions,
-        note: newQuestion.value.note
+        key: newQuestion.value.key,
+        question_text: questionText,
+        answer_options: answerOptions,
+        note
       }
     })
 
@@ -77,9 +90,10 @@ async function handleCreateQuestion() {
 
     // Reset form
     newQuestion.value = {
-      question_text: '',
-      answer_options: [{ text: '' }, { text: '' }],
-      note: ''
+      key: '',
+      question_text: '{\n  "en": ""\n}',
+      answer_options: [{ text: '{\n  "en": ""\n}', emoji: '' }, { text: '{\n  "en": ""\n}', emoji: '' }],
+      note: '{\n  "en": ""\n}'
     }
 
     // alert('Question created successfully')
@@ -90,11 +104,11 @@ async function handleCreateQuestion() {
 }
 
 // Publish question
-async function publishQuestion(questionId: string) {
+async function publishQuestion(key: string) {
   try {
     const question = await $fetch<Question>('/api/questions/publish', {
       method: 'POST',
-      body: { questionId }
+      body: { key }
     })
 
     activeQuestion.value = question
@@ -155,7 +169,7 @@ async function publishNextQuestion() {
 
 // Add option
 function addOption() {
-  newQuestion.value.answer_options.push({ text: '' })
+  newQuestion.value.answer_options.push({ text: '{\n  "en": ""\n}', emoji: '' })
 }
 
 // Remove option
@@ -177,10 +191,10 @@ function removeOption(index: number) {
           <UiButton variant="secondary" @click="loadQuestions">Refresh</UiButton>
         </div>
         <div v-if="activeQuestion" class="bg-gray-100 border-2 border-black p-5">
-          <p class="text-lg mb-4 font-bold">{{ activeQuestion.question_text }}</p>
+          <p class="text-lg mb-4 font-bold">{{ getLocalizedText(activeQuestion.question_text) }}</p>
           <ul class="list-none p-0 mb-5">
             <li v-for="(option, index) in activeQuestion.answer_options" :key="index" class="p-2.5 bg-white border border-black mb-1.5">
-              {{ option.text }} <span v-if="option.emoji">{{ option.emoji }}</span>
+              {{ getLocalizedText(option.text) }} <span v-if="option.emoji">{{ option.emoji }}</span>
             </li>
           </ul>
           <div class="flex justify-between items-center">
@@ -212,28 +226,33 @@ function removeOption(index: number) {
       <UiSection>
         <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Prepare Next Question</h2>
         <form @submit.prevent="handleCreateQuestion" class="flex flex-col gap-5">
+          <UiInput
+            v-model="newQuestion.key"
+            placeholder="Enter a unique key/slug (optional, e.g., 'question-1')"
+            class="p-3 border-2 border-black text-base"
+          />
           <textarea
             v-model="newQuestion.question_text"
-            placeholder="Enter question text"
+            placeholder='Enter question text as JSON, e.g., { "en": "Hello", "de": "Hallo" }'
             required
-            class="p-3 border-2 border-black text-base min-h-[100px] resize-y bg-white font-sans"
+            class="p-3 border-2 border-black text-base min-h-[100px] resize-y bg-white font-mono"
           ></textarea>
 
           <textarea
             v-model="newQuestion.note"
-            placeholder="Enter a note for the question (optional, only for admins)"
-            class="p-3 border-2 border-black text-base min-h-[70px] resize-y bg-white font-sans"
+            placeholder='Enter note as JSON (optional), e.g., { "en": "Note" }'
+            class="p-3 border-2 border-black text-base min-h-[70px] resize-y bg-white font-mono"
           ></textarea>
 
           <div>
             <h3 class="mb-2.5 text-lg">Answer Options</h3>
-            <div v-for="(option, index) in newQuestion.answer_options" :key="index" class="flex gap-2.5 mb-2.5">
-              <UiInput
+            <div v-for="(option, index) in newQuestion.answer_options" :key="index" class="flex gap-2.5 mb-2.5 items-start">
+              <textarea
                 v-model="option.text"
-                :placeholder="`Option ${index + 1}`"
+                :placeholder="`Option ${index + 1} JSON`"
                 required
-                class="flex-1"
-              />
+                class="flex-1 p-3 border-2 border-black text-base min-h-[70px] resize-y bg-white font-mono"
+              ></textarea>
               <UiInput
                 :model-value="option.emoji || ''"
                 placeholder="Emoji"
@@ -268,14 +287,14 @@ function removeOption(index: number) {
             class="bg-gray-100 border-2 border-black p-5"
             :class="{ 'opacity-50': question.alreadyPublished }"
           >
-            <p class="font-bold mb-2.5">{{ question.question_text }}</p>
-            <p v-if="question.note" class="text-sm text-gray-600 mb-2.5 p-2 bg-gray-200 border border-black">{{ question.note }}</p>
+            <p class="font-bold mb-2.5">[{{ question.key }}] {{ getLocalizedText(question.question_text) }}</p>
+            <p v-if="question.note" class="text-sm text-gray-600 mb-2.5 p-2 bg-gray-200 border border-black">{{ getLocalizedText(question.note) }}</p>
             <ul class="list-disc list-inside p-0 mb-4">
               <li v-for="(option, index) in question.answer_options" :key="index">
-                {{ option.text }} <span v-if="option.emoji">{{ option.emoji }}</span>
+                {{ getLocalizedText(option.text) }} <span v-if="option.emoji">{{ option.emoji }}</span>
               </li>
             </ul>
-            <UiButton @click="publishQuestion(question.id)">
+            <UiButton @click="publishQuestion(question.key)">
               Publish This Question
             </UiButton>
           </div>

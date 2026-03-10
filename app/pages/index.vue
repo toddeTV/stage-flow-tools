@@ -1,10 +1,19 @@
 <script setup lang="ts">
-import type { UserQuestion } from '~/types'
+import type { Question, LocalizedString } from '~/types'
 
 const userNickname = ref('')
 const nicknameInput = ref('')
 const emojiInput = ref('')
 const { activeQuestion, selectedAnswer } = useQuizSocket()
+const { t, locale } = useI18n()
+
+// Helper to get localized text with fallback to English
+function getLocalizedText(text: LocalizedString | string | undefined): string {
+  if (typeof text === 'object' && text !== null) {
+    return text[locale.value] || text.en || ''
+  }
+  return text || ''
+}
 
 // Load nickname from localStorage
 onMounted(() => {
@@ -48,7 +57,7 @@ async function changeNickname() {
 }
 
 // Fetch active question
-const { data: question, refresh: refreshQuestion } = await useFetch<UserQuestion>('/api/questions/active', {
+const { data: question, refresh: refreshQuestion } = await useFetch<Question>('/api/questions/active', {
   onResponse({ response }) {
     const questionData = response._data
     if (questionData && !(questionData as any).message) {
@@ -89,7 +98,7 @@ async function submitAnswer() {
       body: {
         user_id: userId,
         user_nickname: userNickname.value,
-        selected_answer: selectedAnswer.value
+        selected_answer: activeQuestion.value.answer_options.find(o => getLocalizedText(o.text) === selectedAnswer.value)?.text,
       }
     })
 
@@ -165,20 +174,20 @@ async function sendQuickEmoji(emoji: string) {
 
 <template>
   <div class="max-w-3xl mx-auto p-5 min-h-screen">
-    <UiPageTitle>Quiz Time</UiPageTitle>
+    <UiPageTitle>{{ t('pageTitle') }}</UiPageTitle>
 
     <!-- Nickname Prompt -->
     <div v-if="!userNickname" class="max-w-lg mx-auto bg-white border-[4px] border-black p-10 text-center">
-      <h2 class="text-3xl mb-4">Welcome!</h2>
-      <p class="mb-8 text-lg">Please enter your nickname to participate</p>
+      <h2 class="text-3xl mb-4">{{ t('welcome') }}</h2>
+      <p class="mb-8 text-lg">{{ t('enterNicknamePrompt') }}</p>
       <form @submit.prevent="setNickname" class="flex flex-col gap-5">
         <UiInput
           v-model="nicknameInput"
-          placeholder="Enter your nickname"
+          :placeholder="t('nicknamePlaceholder')"
           required
           class="text-xl text-center"
         />
-        <UiButton type="submit">Join Quiz</UiButton>
+        <UiButton type="submit">{{ t('joinButton') }}</UiButton>
       </form>
     </div>
 
@@ -186,8 +195,8 @@ async function sendQuickEmoji(emoji: string) {
     <div v-else class="flex flex-col gap-8">
       <!-- Display Nickname with change function -->
       <div class="flex justify-between items-center p-4 bg-white border-[4px] border-black">
-        <span>Playing as: <strong class="text-lg">{{ userNickname }}</strong></span>
-        <UiButton @click="changeNickname">Change</UiButton>
+        <span>{{ t('playingAs') }} <strong class="text-lg">{{ userNickname }}</strong></span>
+        <UiButton @click="changeNickname">{{ t('changeButton') }}</UiButton>
       </div>
 
       <!-- Emoji Submission -->
@@ -210,7 +219,7 @@ async function sendQuickEmoji(emoji: string) {
             />
             <UiButton type="submit" :disabled="isEmojiCooldown" class="h-16">
               <span v-if="isEmojiCooldown">{{ cooldownTimerInSec.toFixed(2) }}s</span>
-              <span v-else>Send</span>
+              <span v-else>{{ t('sendButton') }}</span>
             </UiButton>
           </form>
         </div>
@@ -220,14 +229,14 @@ async function sendQuickEmoji(emoji: string) {
       <div v-if="activeQuestion" class="bg-white border-[4px] border-black p-8">
         <div class="flex justify-between items-center mb-4">
           <UiButton @click="refreshQuestion" variant="secondary" size="small">
-            🔄 Refresh
+            🔄 {{ t('refreshButton') }}
           </UiButton>
           <div v-if="activeQuestion.is_locked" class="py-2 px-4 bg-black text-white uppercase text-sm whitespace-nowrap">
-            🔒 Answers Locked
+            🔒 {{ t('answersLocked') }}
           </div>
         </div>
         <div class="flex justify-between items-start">
-          <h2 class="text-2xl leading-tight flex-1">{{ activeQuestion.question_text }}</h2>
+          <h2 class="text-2xl leading-tight flex-1">{{ getLocalizedText(activeQuestion.question_text) }}</h2>
         </div>
 
         <div class="flex flex-col gap-4 mb-5">
@@ -235,27 +244,27 @@ async function sendQuickEmoji(emoji: string) {
             v-for="(option, index) in activeQuestion.answer_options"
             :key="index"
             v-model="selectedAnswer"
-            :value="typeof option === 'string' ? option : option.text"
+            :value="getLocalizedText(option.text)"
             :disabled="activeQuestion.is_locked"
             @update:modelValue="submitAnswer"
           >
-            {{ typeof option === 'string' ? option : option.text }}
+            {{ getLocalizedText(option.text) }}
           </UiRadioOption>
         </div>
 
         <div v-if="selectedAnswer && !activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
-          ✓ Your answer has been submitted. You can change it until the question is locked.
+          ✓ {{ t('answerSubmitted') }}
         </div>
 
         <div v-if="selectedAnswer && activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
-          Your answer: <strong class="font-bold">{{ selectedAnswer }}</strong>
+          {{ t('yourAnswer') }} <strong class="font-bold">{{ selectedAnswer }}</strong>
         </div>
       </div>
 
       <!-- No Active Question -->
       <div v-else class="bg-white border-[4px] border-black py-16 px-8 text-center">
-        <h2 class="text-3xl mb-4">Waiting for Question</h2>
-        <p class="text-xl mb-8">The presenter will start a question soon...</p>
+        <h2 class="text-3xl mb-4">{{ t('waitingForQuestion') }}</h2>
+        <p class="text-xl mb-8">{{ t('presenterWillStart') }}</p>
         <div class="flex justify-center gap-2.5">
           <span class="w-4 h-4 bg-black animate-pulse"></span>
           <span class="w-4 h-4 bg-black animate-pulse [animation-delay:0.2s]"></span>
@@ -285,3 +294,51 @@ async function sendQuickEmoji(emoji: string) {
   animation: pulse 1.4s ease-in-out infinite;
 }
 </style>
+
+<i18n lang="yaml">
+en:
+  pageTitle: "Quiz Time"
+  welcome: "Welcome!"
+  enterNicknamePrompt: "Please enter your nickname to participate"
+  nicknamePlaceholder: "Enter your nickname"
+  joinButton: "Join Quiz"
+  playingAs: "Playing as:"
+  changeButton: "Change"
+  sendButton: "Send"
+  refreshButton: "Refresh"
+  answersLocked: "Answers Locked"
+  answerSubmitted: "Your answer has been submitted. You can change it until the question is locked."
+  yourAnswer: "Your answer:"
+  waitingForQuestion: "Waiting for Question"
+  presenterWillStart: "The presenter will start a question soon..."
+de:
+  pageTitle: "Quiz-Zeit"
+  welcome: "Willkommen!"
+  enterNicknamePrompt: "Bitte gib deinen Spitznamen ein, um teilzunehmen"
+  nicknamePlaceholder: "Spitznamen eingeben"
+  joinButton: "Quiz beitreten"
+  playingAs: "Spielt als:"
+  changeButton: "Ändern"
+  sendButton: "Senden"
+  refreshButton: "Aktualisieren"
+  answersLocked: "Antworten gesperrt"
+  answerSubmitted: "Deine Antwort wurde übermittelt. Du kannst sie ändern, bis die Frage gesperrt wird."
+  yourAnswer: "Deine Antwort:"
+  waitingForQuestion: "Warten auf Frage"
+  presenterWillStart: "Der Moderator wird bald eine Frage starten..."
+ja:
+  pageTitle: "クイズタイム"
+  welcome: "ようこそ！"
+  enterNicknamePrompt: "参加するにはニックネームを入力してください"
+  nicknamePlaceholder: "ニックネームを入力"
+  joinButton: "クイズに参加"
+  playingAs: "プレイヤー："
+  changeButton: "変更"
+  sendButton: "送信"
+  refreshButton: "更新"
+  answersLocked: "回答はロックされています"
+  answerSubmitted: "回答が送信されました。質問がロックされるまで変更できます。"
+  yourAnswer: "あなたの答え："
+  waitingForQuestion: "質問を待っています"
+  presenterWillStart: "プレゼンターがまもなく質問を開始します..."
+</i18n>
