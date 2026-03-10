@@ -1,4 +1,6 @@
-export type LocalizedString = Record<string, string>
+export type LocalizedString = {
+  en: string
+} & Record<string, string>
 
 export interface AnswerOption {
   text: LocalizedString
