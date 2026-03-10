@@ -78,9 +78,11 @@ async function initStorage(event?: H3Event) {
           for (const q of predefinedQuestions) {
             if (!existingQuestionTexts.has(q.question_text.en)) {
               existingQuestionTexts.add(q.question_text.en) // Add to set to prevent duplicates within the batch
+              const id = createId()
               newQuestions.push({
                 ...q,
-                id: createId(),
+                id,
+                key: q.key || id,
                 is_active: false,
                 is_locked: false,
                 createdAt: new Date().toISOString(),
