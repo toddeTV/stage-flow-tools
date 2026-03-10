@@ -18,7 +18,7 @@ export type UserQuestion = Omit<Question, 'answer_options' | 'note'> & {
   answer_options: string[]
 }
 
-export type InputQuestion = Omit<Question, 'id' | 'is_locked' | 'createdAt' | 'alreadyPublished'>
+export type InputQuestion = Omit<Question, 'id' | 'is_active' | 'is_locked' | 'createdAt' | 'alreadyPublished'>
 
 export interface Answer {
   id: string

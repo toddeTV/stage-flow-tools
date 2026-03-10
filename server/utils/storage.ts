@@ -173,7 +173,7 @@ export async function getActiveQuestion(): Promise<Question | undefined> {
   return questions.find(q => q.is_active)
 }
 
-export async function createQuestion(questionData: Omit<Question, 'id' | 'is_locked' | 'createdAt' | 'alreadyPublished'>): Promise<Question> {
+export async function createQuestion(questionData: Omit<Question, 'id' | 'is_active' | 'is_locked' | 'createdAt' | 'alreadyPublished'>): Promise<Question> {
   await initStorage()
   const release = await lock(QUESTIONS_FILE)
   try {
