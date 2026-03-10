@@ -1,9 +1,9 @@
 import { useWebSocket, useLocalStorage } from '@vueuse/core'
 import { createId } from '@paralleldrive/cuid2'
-import type { Question, Results, UserQuestion } from '~/types'
+import type { Question, Results } from '~/types'
 
 export const useQuizSocket = (channel = 'default') => {
-  const activeQuestion = ref<UserQuestion | Question | null>(null)
+  const activeQuestion = ref<Question | null>(null)
   const selectedAnswer = ref('')
   const results = ref<Results | null>(null)
   const totalConnections = ref(0)

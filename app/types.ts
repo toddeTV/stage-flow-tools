@@ -1,22 +1,22 @@
+export type LocalizedString = Record<string, string>
+
 export interface AnswerOption {
-  text: string
+  text: LocalizedString
   emoji?: string
 }
 
 export interface Question {
   id: string
-  question_text: string
+  key: string
+  question_text: LocalizedString
   answer_options: AnswerOption[]
   is_active?: boolean
   is_locked: boolean
   createdAt: string
   alreadyPublished: boolean
-  note?: string
+  note?: LocalizedString
 }
 
-export type UserQuestion = Omit<Question, 'answer_options' | 'note'> & {
-  answer_options: string[]
-}
 
 export type InputQuestion = Omit<Question, 'id' | 'is_active' | 'is_locked' | 'createdAt' | 'alreadyPublished'>
 
@@ -25,7 +25,7 @@ export interface Answer {
   question_id: string
   user_id: string
   user_nickname: string
-  selected_answer: string
+  selected_answer: LocalizedString
   timestamp: string
 }
 
