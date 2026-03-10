@@ -241,6 +241,8 @@ async function unpublishActiveQuestion() {
 
 
 <style scoped>
+@reference "tailwindcss";
+
 .page-title::after {
   content: '●';
   position: absolute;

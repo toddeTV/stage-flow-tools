@@ -20,6 +20,8 @@ const props = computed(() => ({
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .has-background {
   @apply bg-gray-100;
   background-image:
