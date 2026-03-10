@@ -25,3 +25,10 @@ logs
 .env
 .env.*
 !.env.example
+
+# no AI files (AI should only be used for reviewing code, not for generating it)
+CLAUDE.md
+.claude
+.github/instructions
+.github/prompts
+.vscode/mcp.json

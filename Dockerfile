@@ -1,7 +1,7 @@
 # --- Build Stage ---
 # This stage builds the application. It installs all dependencies (including dev)
 # and creates the optimized production output in the /.output directory.
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 
 # Set working directory
 WORKDIR /app
@@ -26,7 +26,7 @@ RUN pnpm build
 # This is the final, minimal image. It only copies the built application
 # from the 'build' stage and installs production-only dependencies.
 # No source code or development dependencies are included.
-FROM node:22-alpine AS production
+FROM node:24-alpine AS production
 
 # Set working directory
 WORKDIR /app

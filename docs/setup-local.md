@@ -6,8 +6,8 @@ Complete guide for setting up the quiz application locally.
 
 ### Required Software
 
-- **Node.js**: Version 18 or higher
-- **pnpm**: Latest version
+- **Node.js**: Version 24.x
+- **pnpm**: Version 10.x
 - **Git**: For version control
 
 ### Installation Steps
@@ -45,7 +45,7 @@ Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
 - `pnpm dev` - Start development server
 - `pnpm build` - Build for production
 - `pnpm preview` - Preview production build
-- `pnpm typecheck` - Run TypeScript checks
+- `pnpm test:types` - Run TypeScript checks
 
 ## Data Management
 

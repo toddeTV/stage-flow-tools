@@ -17,25 +17,32 @@ Login as administrator.
 ```
 
 **Response:**
+Sets `admin_token` HTTP-only cookie and returns JWT token.
+
+### POST `/api/auth/logout`
+
+Logout the administrator. Clears the `admin_token` cookie.
+
+**Response:**
 ```json
 {
-  "token": "JWT string"
+  "success": true
 }
 ```
 
 ### GET `/api/auth/verify`
 
-Verify authentication token.
+Verify authentication token (admin only).
 
 **Headers:**
-- `Authorization: Bearer <token>`
-- Or cookie: `admin_token`
+- Cookie: `admin_token` (set automatically by login)
+- Or `Authorization: Bearer <token>`
 
 **Response:**
 ```json
 {
   "valid": true,
-  "user": { /* user data */ }
+  "user": { /* decoded JWT payload */ }
 }
 ```
 
@@ -43,16 +50,31 @@ Verify authentication token.
 
 ### GET `/api/questions`
 
-Get active question.
+Get all questions (admin only).
 
-**Response:**
+**Response:** Array of question objects.
+
+### GET `/api/questions/active`
+
+Get the currently active question (public). Returns a simplified version without emojis and admin notes.
+
+**Response (active question):**
 ```json
 {
   "id": "string",
   "question_text": "string",
   "answer_options": ["string"],
   "is_active": true,
-  "is_locked": false
+  "is_locked": false,
+  "createdAt": "ISO 8601",
+  "alreadyPublished": true
+}
+```
+
+**Response (no active question):**
+```json
+{
+  "message": "No active question"
 }
 ```
 
@@ -64,13 +86,16 @@ Create new question (admin only).
 ```json
 {
   "question_text": "string",
-  "answer_options": ["string", "string"]
+  "answer_options": [
+    { "text": "string", "emoji": "string (optional)" }
+  ],
+  "note": "string (optional)"
 }
 ```
 
 ### POST `/api/questions/publish`
 
-Publish question as active (admin only).
+Publish question as active (admin only). Clears existing answers and broadcasts to all WebSocket clients.
 
 **Request:**
 ```json
@@ -81,7 +106,7 @@ Publish question as active (admin only).
 
 ### POST `/api/questions/toggle-lock`
 
-Toggle answer lock (admin only).
+Toggle answer lock on active question (admin only). Broadcasts lock status via WebSocket.
 
 **Request:**
 ```json
@@ -94,11 +119,12 @@ Toggle answer lock (admin only).
 
 ### POST `/api/answers/submit`
 
-Submit user answer.
+Submit or update a user answer.
 
 **Request:**
 ```json
 {
+  "user_id": "string",
   "user_nickname": "string",
   "selected_answer": "string"
 }
@@ -111,23 +137,83 @@ Submit user answer.
 }
 ```
 
+### POST `/api/answers/retract`
+
+Retract a user's answer.
+
+**Request:**
+```json
+{
+  "user_id": "string",
+  "question_id": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+## Emojis
+
+### POST `/api/emojis/submit`
+
+Submit an emoji reaction. Broadcasts to all clients on the emojis WebSocket channel.
+
+**Request:**
+```json
+{
+  "emoji": "string (single emoji)"
+}
+```
+
 ## Results
 
 ### GET `/api/results/current`
 
-Get current question results.
+Get current question results (admin only).
 
 **Response:**
 ```json
 {
   "question": { /* question object */ },
   "results": {
-    "Option A": 10,
-    "Option B": 5
+    "Option A": { "count": 10, "emoji": "optional" },
+    "Option B": { "count": 5 }
   },
-  "totalVotes": 15
+  "totalVotes": 15,
+  "totalConnections": 42
 }
 ```
+
+### POST `/api/results/pick-random-user`
+
+Pick a random user who voted for a specific option (admin only).
+
+**Request:**
+```json
+{
+  "questionId": "string",
+  "option": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "username": "string or null"
+}
+```
+
+## WebSocket Connections
+
+### GET `/api/websockets/connections`
+
+Get active WebSocket connections (admin only).
+
+**Response:** Array of connection objects with `id` and `url`.
 
 ## Error Responses
 

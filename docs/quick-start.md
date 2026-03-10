@@ -4,8 +4,8 @@ Get the quiz application running in minutes.
 
 ## Prerequisites
 
-- Node.js 18+
-- pnpm package manager
+- Node.js 24.x
+- pnpm 10.x
 
 ## Installation
 

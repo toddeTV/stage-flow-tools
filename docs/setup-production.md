@@ -17,7 +17,7 @@ Creates optimized production bundle in `.output/` directory.
 ### 1. Node.js Server (VPS/Dedicated)
 
 **Requirements:**
-- Node.js 18+
+- Node.js 24.x
 - PM2 or similar process manager
 
 **Steps:**
@@ -33,7 +33,7 @@ Creates optimized production bundle in `.output/` directory.
 
 **Dockerfile example:**
 ```dockerfile
-FROM node:18-alpine
+FROM node:24-alpine
 WORKDIR /app
 COPY .output .output
 EXPOSE 3000
