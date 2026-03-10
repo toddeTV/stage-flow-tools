@@ -98,7 +98,7 @@ async function submitAnswer() {
       body: {
         user_id: userId,
         user_nickname: userNickname.value,
-        selected_answer: activeQuestion.value.answer_options.find(o => getLocalizedText(o.text) === selectedAnswer.value)?.text,
+        selected_answer: activeQuestion.value.answer_options.find(o => o.text.en === selectedAnswer.value)?.text,
       }
     })
 
@@ -244,7 +244,7 @@ async function sendQuickEmoji(emoji: string) {
             v-for="(option, index) in activeQuestion.answer_options"
             :key="index"
             v-model="selectedAnswer"
-            :value="getLocalizedText(option.text)"
+            :value="option.text.en"
             :disabled="activeQuestion.is_locked"
             @update:modelValue="submitAnswer"
           >
@@ -257,7 +257,7 @@ async function sendQuickEmoji(emoji: string) {
         </div>
 
         <div v-if="selectedAnswer && activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
-          {{ t('yourAnswer') }} <strong class="font-bold">{{ selectedAnswer }}</strong>
+          {{ t('yourAnswer') }} <strong class="font-bold">{{ getLocalizedText(activeQuestion.answer_options.find(o => o.text.en === selectedAnswer)?.text) }}</strong>
         </div>
       </div>
 
