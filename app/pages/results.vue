@@ -256,45 +256,6 @@ async function unpublishActiveQuestion() {
 </template>
 
 
-<style scoped>
-.page-title::after {
-  content: '●';
-  position: absolute;
-  right: 20px;
-  color: #ff0000;
-  animation: blink 1.5s ease-in-out infinite;
-}
-
-@keyframes blink {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
-}
-
-.result-bar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 10px,
-    rgba(255, 255, 255, 0.1) 10px,
-    rgba(255, 255, 255, 0.1) 20px
-  );
-}
-
-.text-shadow-lg {
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-</style>
-
 <i18n lang="yaml">
 en:
   pageTitle: "Live Results"
@@ -333,3 +294,44 @@ ja:
   noActiveQuestion: "アクティブな質問はありません"
   waitingForQuestion: "質問が公開されるのを待っています..."
 </i18n>
+
+<style scoped>
+@reference "tailwindcss";
+
+.page-title::after {
+  content: '●';
+  position: absolute;
+  right: 20px;
+  color: #ff0000;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.result-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.1) 10px,
+    rgba(255, 255, 255, 0.1) 20px
+  );
+}
+
+.text-shadow-lg {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+</style>
