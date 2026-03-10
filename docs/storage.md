@@ -54,14 +54,14 @@ data/
 ### Data Access Patterns
 
 - **Synchronous Reads** - Fast file access
-- **Atomic Writes** - Complete file replacement
+- **Serialized Writes** - `fs.writeFile()` under `proper-lockfile` lock; prevents concurrent writer interleaving but is not crash-safe (a crash mid-write can leave partial data)
 - **In-Memory Caching** - Considered for future
 
 ### Concurrency Handling
 
 - **File Locking** - Uses `proper-lockfile` for safe concurrent access
 - **Lock-per-operation** - Each read/write acquires and releases a file lock
-- **Atomic Writes** - Complete file replacement under lock
+- **Serialized Writes** - `fs.writeFile()` under lock serializes writers; not atomic on crash (no temp-file + rename)
 
 ## Maintenance
 
