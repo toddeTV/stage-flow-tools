@@ -78,6 +78,7 @@ async function initStorage(event?: H3Event) {
               newQuestions.push({
                 ...q,
                 id: createId(),
+                is_active: false,
                 is_locked: false,
                 createdAt: new Date().toISOString(),
                 alreadyPublished: false
@@ -182,6 +183,7 @@ export async function createQuestion(questionData: Omit<Question, 'id' | 'is_act
     const newQuestion: Question = {
       id: createId(),
       ...questionData,
+      is_active: false,
       is_locked: false,
       createdAt: new Date().toISOString(),
       alreadyPublished: false
