@@ -46,7 +46,8 @@ export default defineNuxtConfig({
         showWebsocketConnectionsInFrontend: false,
         showConsoleOutputs: false
       },
-      version: version
+      version: version,
+      emojiCooldownMs: 1500
     }
   },
 

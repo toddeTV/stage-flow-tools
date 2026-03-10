@@ -12,6 +12,9 @@ const ADMIN_FILE = join(DATA_DIR, 'admin.json')
 const PREDEFINED_QUESTIONS_FILE = join(DATA_DIR, 'predefined-questions.json')
 const PROCESSING_FILE = `${PREDEFINED_QUESTIONS_FILE}.processing`
 
+// In-memory store for emoji cooldowns
+const emojiCooldowns = new Map<string, number>()
+
 // Type guard to check for Node.js errors
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && 'code' in error
@@ -397,4 +400,23 @@ export async function getCurrentResults(): Promise<Results | null> {
   const activeQuestion = await getActiveQuestion()
   if (!activeQuestion) return null
   return getResultsForQuestion(activeQuestion.id)
+}
+
+// Emoji cooldown operations
+export function checkEmojiCooldown(userId: string): boolean {
+  const config = useRuntimeConfig()
+  const cooldownMs = config.public.emojiCooldownMs
+
+  const lastSubmission = emojiCooldowns.get(userId)
+  if (lastSubmission) {
+    const now = Date.now()
+    if (now - lastSubmission < cooldownMs) {
+      return true // Cooldown is active
+    }
+  }
+  return false // Cooldown is over or user has not submitted before
+}
+
+export function updateEmojiTimestamp(userId: string): void {
+  emojiCooldowns.set(userId, Date.now())
 }
