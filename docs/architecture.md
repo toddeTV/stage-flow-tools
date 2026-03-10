@@ -5,7 +5,7 @@ System design and technical architecture of the quiz application.
 ## Tech Stack
 
 ### Frontend
-- **Nuxt 3** - Vue meta-framework
+- **Nuxt 4** - Vue meta-framework
 - **Vue 3** - Composition API
 - **Tailwind CSS** - Utility-first CSS framework
 
@@ -20,14 +20,23 @@ System design and technical architecture of the quiz application.
 ## Application Structure
 
 ```text
-quiz/
+stage-flow-tools/
 ├── app/           # Frontend application
+│   ├── components/# Vue components (ui/, app/)
+│   ├── composables/# Vue composables
+│   ├── layouts/   # Nuxt layouts
+│   ├── middleware/ # Route middleware
 │   ├── pages/     # Route components
+│   ├── utils/     # Client utilities
 │   └── app.vue    # Root component
 ├── server/        # Backend services
 │   ├── api/       # REST endpoints
+│   ├── routes/    # WebSocket handlers
 │   └── utils/     # Server utilities
-└── data/          # JSON data storage
+├── shared/        # Shared code (client + server)
+│   └── utils/     # Shared utilities
+├── data/          # JSON data storage (runtime)
+└── docs/          # Project documentation
 ```
 
 ## Core Components
@@ -35,8 +44,10 @@ quiz/
 ### Pages
 
 - **`index.vue`** - Main quiz interface
+- **`login.vue`** - Admin login
 - **`admin.vue`** - Admin dashboard
 - **`results.vue`** - Results display
+- **`emojis.vue`** - Emoji overlay
 
 ### API Routes
 
@@ -44,6 +55,8 @@ quiz/
 - **`/questions/*`** - Question management
 - **`/answers/*`** - Answer submission
 - **`/results/*`** - Results retrieval
+- **`/emojis/*`** - Emoji reactions
+- **`/websockets/*`** - Connection monitoring
 
 ## Design Decisions
 

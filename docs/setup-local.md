@@ -6,8 +6,8 @@ Complete guide for setting up the quiz application locally.
 
 ### Required Software
 
-- **Node.js**: Version 18 or higher
-- **pnpm**: Latest version
+- **Node.js**: Version 24.x
+- **pnpm**: Version 10.x
 - **Git**: For version control
 
 ### Installation Steps

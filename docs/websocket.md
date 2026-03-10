@@ -13,12 +13,17 @@ Real-time communication system documentation.
 ### Client Connection
 
 ```javascript
-const ws = new WebSocket('ws://localhost:3000/_ws')
+const ws = new WebSocket('ws://localhost:3000/_ws?channel=default&userId=abc123')
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data)
   // Handle message
 }
 ```
+
+### Query Parameters
+
+- **`channel`** - WebSocket channel: `default`, `results`, or `emojis`
+- **`userId`** - Optional user identifier for tracking
 
 ## Event Types
 
@@ -46,11 +51,34 @@ Question lock state change
 ```
 
 #### `results-update`
-Bundled voting results
+Bundled voting results (batched every 2 seconds)
 ```json
 {
   "event": "results-update",
   "data": { /* results object */ }
+}
+```
+
+#### `connections-update`
+Peer count change (on connect/disconnect)
+```json
+{
+  "event": "connections-update",
+  "data": {
+    "totalConnections": "number"
+  }
+}
+```
+
+#### `emoji`
+Emoji reaction broadcast
+```json
+{
+  "event": "emoji",
+  "data": {
+    "emoji": "string",
+    "id": "string (cuid2)"
+  }
 }
 ```
 

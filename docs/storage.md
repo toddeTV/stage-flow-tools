@@ -19,12 +19,14 @@ data/
 
 ```json
 {
-  "id": "string",
+  "id": "string (cuid2)",
   "question_text": "string",
-  "answer_options": ["string"],
-  "is_active": "boolean",
+  "answer_options": [{ "text": "string", "emoji": "string (optional)" }],
+  "is_active": "boolean (optional, only one question active at a time)",
   "is_locked": "boolean",
-  "created_at": "ISO 8601 timestamp"
+  "createdAt": "ISO 8601 timestamp",
+  "alreadyPublished": "boolean",
+  "note": "string (optional)"
 }
 ```
 
@@ -32,8 +34,9 @@ data/
 
 ```json
 {
-  "id": "string",
+  "id": "string (cuid2)",
   "question_id": "string",
+  "user_id": "string",
   "user_nickname": "string",
   "selected_answer": "string",
   "timestamp": "ISO 8601 timestamp"
@@ -56,9 +59,9 @@ data/
 
 ### Concurrency Handling
 
-- **Single-threaded** - Node.js event loop
-- **Queue Updates** - Serialized write operations
-- **Race Conditions** - Minimal risk in presentation context
+- **File Locking** - Uses `proper-lockfile` for safe concurrent access
+- **Lock-per-operation** - Each read/write acquires and releases a file lock
+- **Atomic Writes** - Complete file replacement under lock
 
 ## Maintenance
 
