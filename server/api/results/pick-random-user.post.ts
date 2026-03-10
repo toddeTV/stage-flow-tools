@@ -17,14 +17,14 @@ export default defineEventHandler(async (event) => {
     const questionAnswers = await getAnswersForQuestion(questionId)
 
     if (!questionAnswers || questionAnswers.length === 0) {
-      return createError({ statusCode: 404, statusMessage: 'No answers found for this question' })
+      throw createError({ statusCode: 404, statusMessage: 'No answers found for this question' })
     }
 
     const usersForOption = questionAnswers
       .filter((userAnswer: Answer) => userAnswer.selected_answer.en === option)
 
     if (usersForOption.length === 0) {
-      return createError({ statusCode: 404, statusMessage: 'No users found for this option' })
+      throw createError({ statusCode: 404, statusMessage: 'No users found for this option' })
     }
 
     const randomIndex = Math.floor(Math.random() * usersForOption.length)
