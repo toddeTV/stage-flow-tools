@@ -4,16 +4,18 @@ export default defineEventHandler(async (event) => {
   verifyAdmin(event)
 
   const body = await readBody(event) as Omit<Question, 'id' | 'is_locked'>
-  const { question_text: raw_question_text, answer_options: raw_answer_options, note: raw_note } = body
+  const { key, question_text: raw_question_text, answer_options: raw_answer_options, note: raw_note } = body
 
   // Validate and sanitize question_text
-  const question_text = typeof raw_question_text === 'string' ? raw_question_text.trim() : ''
-  if (!question_text) {
+  if (typeof raw_question_text?.en !== 'string' || !raw_question_text.en.trim()) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Question text is required'
+      statusMessage: 'Question text (English) is required'
     })
   }
+  const question_text = Object.fromEntries(
+    Object.entries(raw_question_text).map(([lang, value]) => [lang, String(value).trim()])
+  )
 
   // Validate and sanitize answer_options
   if (!Array.isArray(raw_answer_options)) {
@@ -25,10 +27,12 @@ export default defineEventHandler(async (event) => {
 
   const answer_options = raw_answer_options
     .map((option: AnswerOption) => ({
-      text: typeof option.text === 'string' ? option.text.trim() : '',
+      text: typeof option.text?.en === 'string'
+        ? Object.fromEntries(Object.entries(option.text).map(([lang, value]) => [lang, String(value).trim()]))
+        : { en: '' },
       emoji: typeof option.emoji === 'string' ? option.emoji.trim() : undefined
     }))
-    .filter(option => option.text)
+    .filter(option => option.text.en)
 
   if (answer_options.length < 2) {
     throw createError({
@@ -37,9 +41,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const note = typeof raw_note === 'string' ? raw_note.trim() : undefined
+  const note = (typeof raw_note?.en === 'string' && raw_note.en.trim())
+    ? Object.fromEntries(
+        Object.entries(raw_note).map(([lang, value]) => [lang, String(value).trim()])
+      )
+    : undefined
 
   const question = await createQuestion({
+    key,
     question_text,
     answer_options,
     note

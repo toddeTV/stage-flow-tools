@@ -1,14 +1,14 @@
-import { WebSocketChannel } from '~/types'
+import { WebSocketChannel, type LocalizedString } from '~/types'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { user_id, user_nickname, selected_answer } = body as {
     user_id: string,
     user_nickname: string,
-    selected_answer: string
+    selected_answer: LocalizedString
   }
 
-  if (!user_id || !user_nickname || !selected_answer) {
+  if (!user_id || !user_nickname || !selected_answer || !selected_answer.en) {
     throw createError({
       statusCode: 400,
       statusMessage: 'User ID, nickname and answer required'
@@ -34,8 +34,8 @@ export default defineEventHandler(async (event) => {
 
   // Normalize and validate answer
   // Normalize and validate answer
-  const answerOptions = activeQuestion.answer_options.map(opt => opt.text.toLowerCase())
-  const selectedAnswerNormalized = selected_answer.toLowerCase()
+  const answerOptions = activeQuestion.answer_options.map(opt => opt.text.en?.toLowerCase())
+  const selectedAnswerNormalized = selected_answer.en.toLowerCase()
 
   if (!answerOptions.includes(selectedAnswerNormalized)) {
     throw createError({
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Find the original-cased answer option
-  const originalAnswer = activeQuestion.answer_options.find(opt => opt.text.toLowerCase() === selectedAnswerNormalized)
+  const originalAnswer = activeQuestion.answer_options.find(opt => opt.text.en?.toLowerCase() === selectedAnswerNormalized)
 
   // Submit answer
   await submitAnswer({

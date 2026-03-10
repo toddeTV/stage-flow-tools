@@ -3,17 +3,17 @@ import { WebSocketChannel } from '~/types'
 export default defineEventHandler(async (event) => {
   verifyAdmin(event)
 
-  const body = await readBody(event) as { questionId?: string }
-  const { questionId } = body
+  const body = await readBody(event) as { key?: string }
+  const { key } = body
 
-  if (!questionId) {
+  if (!key) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Question ID required'
+      statusMessage: 'Question key is required'
     })
   }
 
-  const question = await publishQuestion(questionId)
+  const question = await publishQuestion(key)
 
   if (!question) {
     throw createError({
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
   broadcast('new-question', question)
 
   // Also broadcast an empty results update to clear previous results
-  const results = await getResultsForQuestion(questionId)
+  const results = await getResultsForQuestion(question.id)
   if (results) {
     scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
   }

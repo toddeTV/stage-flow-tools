@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const usersForOption = questionAnswers
-      .filter((userAnswer: Answer) => userAnswer.selected_answer === option)
+      .filter((userAnswer: Answer) => userAnswer.selected_answer.en === option)
 
     if (usersForOption.length === 0) {
       return createError({ statusCode: 404, statusMessage: 'No users found for this option' })
@@ -30,12 +30,14 @@ export default defineEventHandler(async (event) => {
     const randomIndex = Math.floor(Math.random() * usersForOption.length)
     const randomUser = usersForOption[randomIndex]
 
-    sendToUser(randomUser.user_id, 'winner-selected', {
-      userId: randomUser.user_id,
-      username: randomUser.user_nickname,
-      questionId,
-      option
-    })
+    if (randomUser) {
+      sendToUser(randomUser.user_id, 'winner-selected', {
+        userId: randomUser.user_id,
+        username: randomUser.user_nickname,
+        questionId,
+        option
+      })
+    }
 
     event.node.res.statusCode = 204
     return ''
