@@ -1,10 +1,6 @@
 <script setup lang="ts">
 const { locale, locales } = useI18n()
 
-const availableLocales = computed(() => {
-  return (locales.value).filter(i => i.code !== locale.value)
-})
-
 const languageMap: Record<string, string> = {
   en: '🇺🇸',
   de: '🇩🇪',
