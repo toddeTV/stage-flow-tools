@@ -120,7 +120,36 @@ async function toggleLock() {
     activeQuestion.value = question
   }
   catch (error: unknown) {
+    logger_error('Failed to toggle lock status from results page', error)
     alert('Failed to toggle lock status')
+  }
+}
+
+// Unpublish active question
+async function unpublishActiveQuestion() {
+  try {
+    await $fetch('/api/questions/unpublish-active', {
+      method: 'POST'
+    })
+    activeQuestion.value = null
+    await loadQuestions()
+  }
+  catch (error: unknown) {
+    alert('Failed to unpublish active question.')
+  }
+}
+
+// Publish next question
+async function publishNextQuestion() {
+  try {
+    const question = await $fetch<Question>('/api/questions/publish-next', {
+      method: 'POST'
+    })
+    activeQuestion.value = question
+    await loadQuestions()
+  }
+  catch (error: unknown) {
+    alert('Failed to publish next question. Maybe there are no unpublished questions left.')
   }
 }
 
@@ -164,6 +193,12 @@ function removeOption(index: number) {
               </NuxtLink>
               <UiButton @click="toggleLock">
                 {{ activeQuestion.is_locked ? 'Unlock' : 'Lock' }} Question
+              </UiButton>
+              <UiButton @click="publishNextQuestion" variant="secondary">
+                Publish Next →
+              </UiButton>
+              <UiButton @click="unpublishActiveQuestion" variant="secondary">
+                Unpublish
               </UiButton>
             </div>
           </div>
