@@ -17,21 +17,28 @@ export default defineEventHandler(async (event) => {
     const questionAnswers = await getAnswersForQuestion(questionId)
 
     if (!questionAnswers || questionAnswers.length === 0) {
-      return { username: null }
+      return createError({ statusCode: 404, statusMessage: 'No answers found for this question' })
     }
 
     const usersForOption = questionAnswers
       .filter((userAnswer: Answer) => userAnswer.selected_answer === option)
-      .map((userAnswer: Answer) => userAnswer.user_nickname)
 
     if (usersForOption.length === 0) {
-      return { username: null }
+      return createError({ statusCode: 404, statusMessage: 'No users found for this option' })
     }
 
     const randomIndex = Math.floor(Math.random() * usersForOption.length)
-    const randomUsername = usersForOption[randomIndex]
+    const randomUser = usersForOption[randomIndex]
 
-    return { username: randomUsername }
+    sendToUser(randomUser.user_id, 'winner-selected', {
+      userId: randomUser.user_id,
+      username: randomUser.user_nickname,
+      questionId,
+      option
+    })
+
+    event.node.res.statusCode = 204
+    return ''
   }
   catch (error: unknown) {
     logger_error('Failed to pick random user', error)

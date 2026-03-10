@@ -11,7 +11,7 @@ interface PeerInfo {
 const storage = useStorage('ws')
 const peers = new Map<WebSocketChannel, Map<string, Peer>>() // Channel -> Peer ID -> Peer
 
-function getChannelPeers(channel: WebSocketChannel): Map<string, Peer> {
+export function getChannelPeers(channel: WebSocketChannel): Map<string, Peer> {
   if (!peers.has(channel)) {
     peers.set(channel, new Map<string, Peer>())
   }
@@ -63,6 +63,23 @@ export function broadcast(event: string, data: unknown, channel?: WebSocketChann
     }
     catch (error: unknown) {
       logger_error('Broadcast error:', error)
+    }
+  }
+}
+
+export function sendToUser(userId: string, event: string, data: unknown) {
+  const message = JSON.stringify({ event, data })
+  const allChannels = Array.from(peers.values())
+  const allPeers = allChannels.flatMap(map => Array.from(map.values()))
+
+  for (const peer of allPeers) {
+    if ((peer as any).userId === userId) {
+      try {
+        peer.send(message)
+      }
+      catch (error: unknown) {
+        logger_error(`Failed to send message to user ${userId}:`, error)
+      }
     }
   }
 }

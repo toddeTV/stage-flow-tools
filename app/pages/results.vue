@@ -74,24 +74,18 @@ function getPercentage(count: number) {
 }
 
 async function pickRandomUser(option: string) {
-  try {
-    const response = await $fetch('/api/results/pick-random-user', {
-      method: 'POST',
-      body: {
-        questionId: results.value?.question.id,
-        option
-      }
-    })
-    if (response.username) {
-      alert(`Random user for "${option}": ${response.username}`)
-    } else {
-      alert("No users found for this option.")
+  // Optimistic UI: Assume success and let the websocket handle the notification.
+  $fetch('/api/results/pick-random-user', {
+    method: 'POST',
+    body: {
+      questionId: results.value?.question.id,
+      option
     }
-  }
-  catch (error: unknown) {
-    logger_error(error)
-    alert('Could not pick a random user. See console for details.')
-  }
+  }).catch((error: unknown) => {
+    // Handle errors silently in the background
+    logger_error('Failed to pick random user:', error)
+    alert('An error occurred while picking a random user. Please try again.')
+  })
 }
 
 async function toggleLock() {
