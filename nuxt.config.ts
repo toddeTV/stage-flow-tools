@@ -9,10 +9,21 @@ export default defineNuxtConfig({
   },
   
   modules: [ // try stick to alphabetically sorted
+    '@nuxtjs/i18n',
     '@nuxtjs/tailwindcss',
     '@vueuse/nuxt',
     process.env.NODE_ENV === 'development' ? 'nuxt-mcp' : null
   ].filter(Boolean),
+
+  i18n: {
+    locales: [
+      { code: 'en', iso: 'en-US', name: 'English' },
+      { code: 'de', iso: 'de-DE', name: 'Deutsch' },
+      { code: 'ja', iso: 'ja-JP', name: '日本語' }
+    ],
+    defaultLocale: 'en',
+    vueI18n: './i18n.config.ts' // Using a separate file for better organization
+  },
 
   css: [
     '~/../assets/css/tailwind.css'
