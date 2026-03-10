@@ -21,6 +21,7 @@ const props = computed(() => ({
 
 <style scoped>
 .has-background {
+  @apply bg-gray-100;
   background-image:
     repeating-linear-gradient(
       0deg,
