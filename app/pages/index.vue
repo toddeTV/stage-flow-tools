@@ -134,14 +134,18 @@ async function submitEmoji() {
     await $fetch('/api/emojis/submit', {
       method: 'POST',
       body: {
-        emoji: emojiInput.value
+        emoji: emojiInput.value,
+        user_id: localStorage.getItem('quiz-user-id')
       }
     })
 
     // Start cooldown
+    const config = useRuntimeConfig()
+    const cooldownMs = config.public.emojiCooldownMs
+
     isEmojiCooldown.value = true
-    cooldownEndTime = Date.now() + 1500
-    cooldownTimerInSec.value = 1.5
+    cooldownEndTime = Date.now() + cooldownMs
+    cooldownTimerInSec.value = cooldownMs / 1000
     resume()
   }
   catch (error) {

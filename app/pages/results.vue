@@ -15,7 +15,8 @@ const isCoreView = computed(() => route.query.core !== undefined)
 // State for core view parameters
 const padding = ref(route.query.padding ? Number(route.query.padding) : 0)
 const scale = ref(route.query.scale ? Number(route.query.scale) : 1)
-const hideResults = ref(route.query.hideResults !== undefined)
+const visibility = ref((route.query.visibility as string) || 'hide-all')
+const hideResults = ref(visibility.value.startsWith('hide'))
 const isTogglingLock = ref(false)
 
 // Dynamic styles for core view
@@ -44,9 +45,15 @@ watch(fetchedResults, (newResults) => {
 }, { immediate: true })
 
 // Watch for new questions and automatically hide results
+// Watch for new questions and update visibility based on the mode
 watch(() => results.value?.question.id, (newId, oldId) => {
   if (newId && newId !== oldId) {
-    hideResults.value = true
+    if (visibility.value === 'hide-all') {
+      hideResults.value = true
+    }
+    else if (visibility.value === 'show-all') {
+      hideResults.value = false
+    }
   }
 })
 
