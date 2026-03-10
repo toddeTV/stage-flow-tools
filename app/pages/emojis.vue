@@ -85,6 +85,7 @@ onMounted(() => {
         left: `${emoji.x}px`,
         top: `${emoji.y}px`,
         transform: `scale(${scale}) rotate(${emoji.rotation}deg)`,
+        'transform-origin': 'center',
         opacity: transparency,
         pointerEvents: 'none'
       }"

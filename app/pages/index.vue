@@ -264,6 +264,8 @@ async function sendQuickEmoji(emoji: string) {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 @keyframes pulse {
   0%, 80%, 100% {
     transform: scale(1);

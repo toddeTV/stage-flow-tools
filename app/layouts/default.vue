@@ -20,7 +20,10 @@ const props = computed(() => ({
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .has-background {
+  @apply bg-gray-100;
   background-image:
     repeating-linear-gradient(
       0deg,
