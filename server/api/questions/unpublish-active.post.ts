@@ -4,11 +4,11 @@ export default defineEventHandler(async (event) => {
   verifyAdmin(event)
 
   const allQuestions = await getQuestions()
-  const activeQuestion = allQuestions.find(q => (q as any).is_active)
+  const activeQuestion = allQuestions.find(q => q.is_active)
 
   if (activeQuestion) {
     // Deactivate the question
-    ;(activeQuestion as any).is_active = false
+    activeQuestion.is_active = false
     await saveQuestions(allQuestions)
 
     // Clear answers for the unpublished question
