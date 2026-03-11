@@ -1,13 +1,17 @@
-import type { Question } from '~/types'
+import type { Question, LocalizedString } from '~/types'
 
-export default defineEventHandler(async (): Promise<Omit<Question, 'note' | 'key' | 'alreadyPublished'> | { message: string }> => {
+type PublicQuestion = Omit<Question, 'note' | 'key' | 'alreadyPublished' | 'answer_options'> & {
+  answer_options: { text: LocalizedString }[]
+}
+
+export default defineEventHandler(async (): Promise<PublicQuestion | { message: string }> => {
   const question = await getActiveQuestion()
 
   if (question) {
-    const { note, key, alreadyPublished, ...publicQuestion } = question
+    const { note, key, alreadyPublished, answer_options, ...rest } = question
     return {
-      ...publicQuestion,
-      answer_options: question.answer_options.map(({ text }) => ({ text }))
+      ...rest,
+      answer_options: answer_options.map(({ text }) => ({ text }))
     }
   }
 
