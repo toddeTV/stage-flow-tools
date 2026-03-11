@@ -8,7 +8,8 @@ export default defineNuxtConfig({
     enabled: true
   },
   
-  modules: [ // try stick to alphabetically sorted
+  modules: [
+    '@nuxt/eslint',
     '@nuxtjs/i18n',
     '@nuxtjs/tailwindcss',
     '@vueuse/nuxt',
