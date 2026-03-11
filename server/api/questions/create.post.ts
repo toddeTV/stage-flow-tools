@@ -95,12 +95,24 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const question = await createQuestion({
-    key,
-    question_text,
-    answer_options,
-    note
-  })
+  let question
+  try {
+    question = await createQuestion({
+      key,
+      question_text,
+      answer_options,
+      note
+    })
+  }
+  catch (error: unknown) {
+    if (error instanceof Error && error.message.includes('already exists')) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'A question with this key already exists'
+      })
+    }
+    throw error
+  }
 
   return question
 })
