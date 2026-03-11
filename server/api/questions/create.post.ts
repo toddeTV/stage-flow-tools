@@ -25,8 +25,17 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Question text (English) is required'
     })
   }
+  // Validate all locale values are strings
+  for (const [lang, value] of Object.entries(raw_question_text)) {
+    if (typeof value !== 'string') {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `Invalid value for locale "${lang}" in question_text: expected string`
+      })
+    }
+  }
   const question_text = Object.fromEntries(
-    Object.entries(raw_question_text).map(([lang, value]) => [lang, String(value).trim()])
+    Object.entries(raw_question_text).map(([lang, value]) => [lang, (value as string).trim()])
   )
 
   // Validate and sanitize answer_options
@@ -38,12 +47,23 @@ export default defineEventHandler(async (event) => {
   }
 
   const answer_options = raw_answer_options
-    .map((option: AnswerOption) => ({
-      text: typeof option.text?.en === 'string'
-        ? Object.fromEntries(Object.entries(option.text).map(([lang, value]) => [lang, String(value).trim()]))
-        : { en: '' },
-      emoji: typeof option.emoji === 'string' ? option.emoji.trim() : undefined
-    }))
+    .map((option: AnswerOption) => {
+      if (typeof option.text?.en !== 'string') {
+        return { text: { en: '' }, emoji: undefined }
+      }
+      for (const [lang, value] of Object.entries(option.text)) {
+        if (typeof value !== 'string') {
+          throw createError({
+            statusCode: 400,
+            statusMessage: `Invalid value for locale "${lang}" in answer option text: expected string`
+          })
+        }
+      }
+      return {
+        text: Object.fromEntries(Object.entries(option.text).map(([lang, value]) => [lang, (value as string).trim()])),
+        emoji: typeof option.emoji === 'string' ? option.emoji.trim() : undefined
+      }
+    })
     .filter(option => option.text.en)
 
   if (answer_options.length < 2) {
@@ -53,11 +73,20 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const note = (typeof raw_note?.en === 'string' && raw_note.en.trim())
-    ? Object.fromEntries(
-        Object.entries(raw_note).map(([lang, value]) => [lang, String(value).trim()])
-      )
-    : undefined
+  let note: Record<string, string> | undefined
+  if (typeof raw_note?.en === 'string' && raw_note.en.trim()) {
+    for (const [lang, value] of Object.entries(raw_note)) {
+      if (typeof value !== 'string') {
+        throw createError({
+          statusCode: 400,
+          statusMessage: `Invalid value for locale "${lang}" in note: expected string`
+        })
+      }
+    }
+    note = Object.fromEntries(
+      Object.entries(raw_note).map(([lang, value]) => [lang, (value as string).trim()])
+    )
+  }
 
   const question = await createQuestion({
     key,
