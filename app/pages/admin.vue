@@ -6,6 +6,7 @@ definePageMeta({
   middleware: 'auth',
   footer: true,
   background: true,
+  localeSwitcher: true,
 })
 
 const { t } = useI18n()

@@ -2,9 +2,11 @@
 import type { Results } from '~/types'
 
 definePageMeta({
+  layout: 'default',
   middleware: 'auth',
   footer: false,
   background: false,
+  localeSwitcher: true,
 })
 
 const { results } = useQuizSocket('results')
@@ -183,6 +185,9 @@ async function unpublishActiveQuestion() {
             <span v-if="results" class="font-bold py-2 px-4 bg-gray-100 border-2 border-black">{{ t('totalVotes') }}: {{ results.totalVotes }} ({{ results.totalConnections > 0 ? Math.round((results.totalVotes / results.totalConnections) * 100) : 0 }}%)</span>
             <span v-else>&nbsp;</span>
             <div class="flex items-center gap-4">
+              <UiButton @click="refreshResults" variant="secondary" size="small">
+                🔄 {{ t('refreshButton') }}
+              </UiButton>
               <template v-if="results">
                 <UiCheckbox v-model="hideResults" size="small">
                   {{ t('hideButton') }}
@@ -199,9 +204,6 @@ async function unpublishActiveQuestion() {
                   {{ t('unpublishButton') }}
                 </UiButton>
               </template>
-              <UiButton @click="refreshResults" variant="secondary" size="small">
-                🔄 {{ t('refreshButton') }}
-              </UiButton>
               <UiButton @click="publishNextQuestion" variant="secondary" size="small">
                 {{ t('nextButton') }} ➡
               </UiButton>
