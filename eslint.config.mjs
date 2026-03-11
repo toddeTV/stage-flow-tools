@@ -22,6 +22,7 @@ export default withNuxt(
       '.data/',
       '.claude/skills/**/.skilld/',
       'pnpm-lock.yaml',
+      'data/',
     ],
   },
 
