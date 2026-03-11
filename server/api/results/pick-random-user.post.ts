@@ -30,13 +30,15 @@ export default defineEventHandler(async (event) => {
     const randomIndex = Math.floor(Math.random() * usersForOption.length)
     const randomUser = usersForOption[randomIndex]
 
-    if (randomUser) {
-      sendToUser(randomUser.user_id, 'winner-selected', {
-        userId: randomUser.user_id,
-        username: randomUser.user_nickname,
-        questionId,
-        option
-      })
+    const delivered = sendToUser(randomUser.user_id, 'winner-selected', {
+      userId: randomUser.user_id,
+      username: randomUser.user_nickname,
+      questionId,
+      option
+    }, 'default')
+
+    if (!delivered) {
+      throw createError({ statusCode: 503, statusMessage: 'Winner is not currently connected' })
     }
 
     event.node.res.statusCode = 204

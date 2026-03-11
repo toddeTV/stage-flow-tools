@@ -58,6 +58,9 @@ export const useQuizSocket = (channel = 'default') => {
       else if (parsed.event === 'winner-selected' && parsed.data.userId === userId.value) {
         alert(`Congratulations, ${parsed.data.username}! You have won for option "${parsed.data.option}".`)
       }
+      else {
+        logger(`Unknown WebSocket event: ${parsed.event}`)
+      }
     }
     catch (error: unknown) {
       logger_error('WebSocket message error:', error)
