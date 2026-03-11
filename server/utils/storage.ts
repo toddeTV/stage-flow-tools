@@ -470,6 +470,7 @@ export function checkEmojiCooldown(userId: string): boolean {
   return false // Cooldown is over or user has not submitted before
 }
 
+/** Records the current timestamp for the given user in the emoji cooldown map. */
 export function updateEmojiTimestamp(userId: string): void {
   emojiCooldowns.set(userId, Date.now())
 }
