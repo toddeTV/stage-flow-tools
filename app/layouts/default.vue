@@ -11,6 +11,9 @@ const props = computed(() => ({
 
 <template>
   <div class="flex flex-col min-h-screen" :class="{ 'has-background': props.background }">
+    <div class="absolute top-4 right-4 z-10">
+      <UiLocaleSwitcher />
+    </div>
     <main class="flex-grow">
       <slot />
     </main>

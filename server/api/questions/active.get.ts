@@ -1,14 +1,17 @@
-import type { UserQuestion } from '~/types'
+import type { Question, LocalizedString } from '~/types'
 
-export default defineEventHandler(async (): Promise<UserQuestion | { message: string }> => {
+type PublicQuestion = Omit<Question, 'note' | 'key' | 'alreadyPublished' | 'answer_options'> & {
+  answer_options: { text: LocalizedString }[]
+}
+
+export default defineEventHandler(async (): Promise<PublicQuestion | { message: string }> => {
   const question = await getActiveQuestion()
 
   if (question) {
-    // Strip emojis and notes from the question before sending to the client
-    const { note, ...questionForUser } = question
+    const { note, key, alreadyPublished, answer_options, ...rest } = question
     return {
-      ...questionForUser,
-      answer_options: question.answer_options.map(option => option.text)
+      ...rest,
+      answer_options: answer_options.map(({ text }) => ({ text }))
     }
   }
 

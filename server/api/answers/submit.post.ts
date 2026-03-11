@@ -1,19 +1,33 @@
-import { WebSocketChannel } from '~/types'
+import { WebSocketChannel, type LocalizedString } from '~/types'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { user_id, user_nickname, selected_answer } = body as {
-    user_id: string,
-    user_nickname: string,
-    selected_answer: string
+
+  if (!body || typeof body !== 'object') {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Invalid payload'
+    })
   }
 
-  if (!user_id || !user_nickname || !selected_answer) {
+  const user_id = typeof body.user_id === 'string' ? body.user_id.trim() : ''
+  const user_nickname = typeof body.user_nickname === 'string' ? body.user_nickname.trim() : ''
+  const selected_answer = body.selected_answer as LocalizedString | undefined
+
+  if (
+    !user_id
+    || !user_nickname
+    || !selected_answer
+    || typeof selected_answer.en !== 'string' || !selected_answer.en.trim()
+  ) {
     throw createError({
       statusCode: 400,
       statusMessage: 'User ID, nickname and answer required'
     })
   }
+
+  // Update selected_answer with trimmed value to reuse it safely
+  selected_answer.en = selected_answer.en.trim()
 
   // Get active question
   const activeQuestion = await getActiveQuestion()
@@ -33,9 +47,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Normalize and validate answer
-  // Normalize and validate answer
-  const answerOptions = activeQuestion.answer_options.map(opt => opt.text.toLowerCase())
-  const selectedAnswerNormalized = selected_answer.toLowerCase()
+  const answerOptions = activeQuestion.answer_options
+    .map(opt => opt.text.en?.toLowerCase())
+    .filter((v): v is string => typeof v === 'string')
+  const selectedAnswerNormalized = selected_answer.en.toLowerCase()
 
   if (!answerOptions.includes(selectedAnswerNormalized)) {
     throw createError({
@@ -45,7 +60,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Find the original-cased answer option
-  const originalAnswer = activeQuestion.answer_options.find(opt => opt.text.toLowerCase() === selectedAnswerNormalized)
+  const originalAnswer = activeQuestion.answer_options.find(opt => opt.text.en?.toLowerCase() === selectedAnswerNormalized)
 
   // Submit answer
   await submitAnswer({

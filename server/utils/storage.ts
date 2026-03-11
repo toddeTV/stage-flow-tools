@@ -56,8 +56,8 @@ async function initStorage(event?: H3Event) {
       }
 
       for (const q of predefinedQuestions) {
-        if (typeof q.question_text !== 'string' || q.question_text.trim() === '') {
-          logger_error('Invalid question_text in processing file:', q)
+        if (typeof q.question_text?.en !== 'string' || q.question_text.en.trim() === '') {
+          logger_error('Invalid question_text in processing file (must have "en" property):', q)
           return
         }
         if (!Array.isArray(q.answer_options) || q.answer_options.length === 0) {
@@ -72,15 +72,17 @@ async function initStorage(event?: H3Event) {
         try {
           const questionsData = await fs.readFile(QUESTIONS_FILE, 'utf-8')
           const existingQuestions: Question[] = JSON.parse(questionsData)
-          const existingQuestionTexts = new Set(existingQuestions.map(q => q.question_text))
+          const existingQuestionTexts = new Set(existingQuestions.map(q => q.question_text.en))
 
           const newQuestions: Question[] = []
           for (const q of predefinedQuestions) {
-            if (!existingQuestionTexts.has(q.question_text)) {
-              existingQuestionTexts.add(q.question_text) // Add to set to prevent duplicates within the batch
+            if (!existingQuestionTexts.has(q.question_text.en)) {
+              existingQuestionTexts.add(q.question_text.en) // Add to set to prevent duplicates within the batch
+              const id = createId()
               newQuestions.push({
                 ...q,
-                id: createId(),
+                id,
+                key: q.key || id,
                 is_active: false,
                 is_locked: false,
                 createdAt: new Date().toISOString(),
@@ -183,10 +185,18 @@ export async function createQuestion(questionData: Omit<Question, 'id' | 'is_act
   try {
     const data = await fs.readFile(QUESTIONS_FILE, 'utf-8')
     const questions: Question[] = JSON.parse(data)
+    const id = createId()
+    const resolvedKey = questionData.key || id
+
+    // Re-check uniqueness under lock to prevent concurrent duplicates
+    if (questions.some(q => q.key === resolvedKey)) {
+      throw new Error(`A question with key "${resolvedKey}" already exists`)
+    }
+
     const newQuestion: Question = {
-      id: createId(),
+      id,
       ...questionData,
-      is_active: false,
+      key: resolvedKey,
       is_locked: false,
       createdAt: new Date().toISOString(),
       alreadyPublished: false
@@ -200,10 +210,10 @@ export async function createQuestion(questionData: Omit<Question, 'id' | 'is_act
   }
 }
 
-export async function publishQuestion(questionId: string): Promise<Question | undefined> {
+export async function publishQuestion(key: string): Promise<Question | undefined> {
   await initStorage()
-  const releaseQuestions = await lock(QUESTIONS_FILE)
   const releaseAnswers = await lock(ANSWERS_FILE)
+  const releaseQuestions = await lock(QUESTIONS_FILE)
   try {
     const data = await fs.readFile(QUESTIONS_FILE, 'utf-8')
     const questions: Question[] = JSON.parse(data)
@@ -214,7 +224,7 @@ export async function publishQuestion(questionId: string): Promise<Question | un
     })
 
     // Activate the new question
-    const question = questions.find(q => q.id === questionId)
+    const question = questions.find(q => q.key === key)
     if (question) {
       question.is_active = true
       question.alreadyPublished = true
@@ -230,8 +240,8 @@ export async function publishQuestion(questionId: string): Promise<Question | un
     return question
   }
   finally {
-    await releaseAnswers()
     await releaseQuestions()
+    await releaseAnswers()
   }
 }
 
@@ -290,7 +300,7 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
       throw new Error('Question not found')
     }
 
-    if (!question.answer_options.some(option => option.text === answerData.selected_answer)) {
+    if (!question.answer_options.some(option => option.text.en === answerData.selected_answer.en)) {
       throw new Error('Invalid answer option')
     }
 
@@ -376,12 +386,14 @@ export async function getResultsForQuestion(questionId: string, allQuestions?: Q
   // Count votes for each option
   const results: Record<string, { count: number, emoji?: string }> = {}
   question.answer_options.forEach((option) => {
-    results[option.text] = { count: 0, emoji: option.emoji }
+    if (option.text.en) {
+      results[option.text.en] = { count: 0, emoji: option.emoji }
+    }
   })
 
   answers.forEach((answer) => {
-    if (Object.prototype.hasOwnProperty.call(results, answer.selected_answer)) {
-      const result = results[answer.selected_answer]
+    if (answer.selected_answer.en && Object.prototype.hasOwnProperty.call(results, answer.selected_answer.en)) {
+      const result = results[answer.selected_answer.en]
       if (result) {
         result.count++
       }

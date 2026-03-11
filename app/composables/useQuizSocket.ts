@@ -1,10 +1,10 @@
 import { useWebSocket, useLocalStorage } from '@vueuse/core'
 import { createId } from '@paralleldrive/cuid2'
-import type { Question, Results, UserQuestion } from '~/types'
+import type { Question, Results } from '~/types'
 
 export const useQuizSocket = (channel = 'default') => {
-  const activeQuestion = ref<UserQuestion | Question | null>(null)
-  const selectedAnswer = ref('')
+  const activeQuestion = ref<Question | null>(null)
+  const selectedAnswer = ref<number | null>(null)
   const results = ref<Results | null>(null)
   const totalConnections = ref(0)
   const userId = useLocalStorage<string | null>('quiz-user-id', null)
@@ -36,9 +36,13 @@ export const useQuizSocket = (channel = 'default') => {
       const parsed = JSON.parse(newMessage)
 
       if (parsed.event === 'new-question') {
+        const previousQuestionId = activeQuestion.value?.id
         activeQuestion.value = parsed.data
-        selectedAnswer.value = ''
-        sessionStorage.removeItem(`answer-${parsed.data.id}`)
+
+        if (previousQuestionId !== parsed.data.id) {
+          selectedAnswer.value = null
+          sessionStorage.removeItem(`answer-${parsed.data.id}`)
+        }
       }
       else if (parsed.event === 'lock-status') {
         if (activeQuestion.value && activeQuestion.value.id === parsed.data.questionId) {
