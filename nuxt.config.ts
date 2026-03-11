@@ -40,6 +40,15 @@ export default defineNuxtConfig({
   typescript: {
     shim: false
   },
+  
+  eslint: { // for `@nuxt/eslint`
+    config: {
+      stylistic: {
+        indent: 2,
+        quotes: 'single',
+      },
+    },
+  },
 
   runtimeConfig: {
     // Private keys (only available server-side)
