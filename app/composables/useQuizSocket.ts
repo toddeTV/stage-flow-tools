@@ -36,9 +36,13 @@ export const useQuizSocket = (channel = 'default') => {
       const parsed = JSON.parse(newMessage)
 
       if (parsed.event === 'new-question') {
+        const previousQuestionId = activeQuestion.value?.id
         activeQuestion.value = parsed.data
-        selectedAnswer.value = null
-        sessionStorage.removeItem(`answer-${parsed.data.id}`)
+
+        if (previousQuestionId !== parsed.data.id) {
+          selectedAnswer.value = null
+          sessionStorage.removeItem(`answer-${parsed.data.id}`)
+        }
       }
       else if (parsed.event === 'lock-status') {
         if (activeQuestion.value && activeQuestion.value.id === parsed.data.questionId) {
