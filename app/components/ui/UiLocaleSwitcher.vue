@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const { locale, locales, t } = useI18n()
+const { locale, locales } = useI18n({ useScope: 'global' })
+const { t } = useI18n()
 
 const languageMap: Record<string, string> = {
   en: '🇺🇸',

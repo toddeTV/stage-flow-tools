@@ -2,7 +2,7 @@ import type { LocalizedString } from '~/types'
 
 /** Provides locale-aware text resolution with English fallback. */
 export function useLocalization() {
-  const { locale } = useI18n()
+  const { locale } = useI18n({ useScope: 'global' })
 
   /** Resolves a LocalizedString to the current locale, falling back to English. */
   function getLocalizedText(text: LocalizedString | string | undefined): string {
