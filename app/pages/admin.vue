@@ -100,7 +100,7 @@ async function handleCreateQuestion() {
     // alert('Question created successfully')
   }
   catch (error: unknown) {
-    alert('Failed to create question')
+    alert(t('failedCreateQuestion'))
   }
 }
 
@@ -118,7 +118,7 @@ async function publishQuestion(key: string) {
     // alert('Question published successfully')
   }
   catch (error: unknown) {
-    alert('Failed to publish question')
+    alert(t('failedPublishQuestion'))
   }
 }
 
@@ -136,7 +136,7 @@ async function toggleLock() {
   }
   catch (error: unknown) {
     logger_error('Failed to toggle lock status from results page', error)
-    alert('Failed to toggle lock status')
+    alert(t('failedToggleLock'))
   }
 }
 
@@ -150,7 +150,7 @@ async function unpublishActiveQuestion() {
     await loadQuestions()
   }
   catch (error: unknown) {
-    alert('Failed to unpublish active question.')
+    alert(t('failedUnpublish'))
   }
 }
 
@@ -164,7 +164,7 @@ async function publishNextQuestion() {
     await loadQuestions()
   }
   catch (error: unknown) {
-    alert('Failed to publish next question. Maybe there are no unpublished questions left.')
+    alert(t('failedPublishNext'))
   }
 }
 
@@ -256,7 +256,7 @@ function removeOption(index: number) {
               ></textarea>
               <UiInput
                 :model-value="option.emoji || ''"
-                placeholder="Emoji"
+                :placeholder="t('emojiPlaceholder')"
                 class="w-24"
                 maxlength="10"
                 @update:model-value="option.emoji = String($event || '').trim() || undefined"
@@ -335,6 +335,12 @@ en:
   validationMinOptions: 'At least 2 answer options with an "en" key are required.'
   validationOptionEnRequired: "Each answer option must have a non-empty English (\"en\") text."
   optionPlaceholder: "Option {n} JSON"
+  emojiPlaceholder: "Emoji"
+  failedCreateQuestion: "Failed to create question."
+  failedPublishQuestion: "Failed to publish question."
+  failedToggleLock: "Failed to toggle lock status."
+  failedUnpublish: "Failed to unpublish active question."
+  failedPublishNext: "Failed to publish next question. There may be no unpublished questions left."
 de:
   pageTitle: "Admin-Dashboard"
   currentActiveQuestion: "Aktuelle aktive Frage"
@@ -362,6 +368,12 @@ de:
   validationMinOptions: 'Mindestens 2 Antwortoptionen mit einem "en"-Schlüssel sind erforderlich.'
   validationOptionEnRequired: "Jede Antwortoption muss einen nicht-leeren englischen (\"en\") Text haben."
   optionPlaceholder: "Option {n} JSON"
+  emojiPlaceholder: "Emoji"
+  failedCreateQuestion: "Frage konnte nicht erstellt werden."
+  failedPublishQuestion: "Frage konnte nicht veröffentlicht werden."
+  failedToggleLock: "Sperrstatus konnte nicht geändert werden."
+  failedUnpublish: "Veröffentlichung konnte nicht zurückgezogen werden."
+  failedPublishNext: "Nächste Frage konnte nicht veröffentlicht werden. Möglicherweise gibt es keine unveröffentlichten Fragen mehr."
 ja:
   pageTitle: "管理ダッシュボード"
   currentActiveQuestion: "現在のアクティブな質問"
@@ -389,6 +401,12 @@ ja:
   validationMinOptions: '"en"キーを持つ回答オプションが2つ以上必要です。'
   validationOptionEnRequired: "各回答オプションには空でない英語（\"en\"）テキストが必要です。"
   optionPlaceholder: "オプション {n} JSON"
+  emojiPlaceholder: "絵文字"
+  failedCreateQuestion: "質問の作成に失敗しました。"
+  failedPublishQuestion: "質問の公開に失敗しました。"
+  failedToggleLock: "ロック状態の切り替えに失敗しました。"
+  failedUnpublish: "公開停止に失敗しました。"
+  failedPublishNext: "次の質問の公開に失敗しました。未公開の質問がない可能性があります。"
 </i18n>
 
 <style scoped>
