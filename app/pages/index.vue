@@ -133,7 +133,7 @@ const { pause, resume } = useIntervalFn(() => {
 async function submitEmoji() {
   if (isEmojiCooldown.value || !isValidEmoji(emojiInput.value)) {
     if (!isValidEmoji(emojiInput.value)) {
-      alert('Please enter a single emoji.')
+      alert(t('emojis.singleEmojiRequired'))
     }
     return
   }
@@ -158,7 +158,7 @@ async function submitEmoji() {
   }
   catch (error) {
     logger_error('Failed to submit emoji:', error)
-    alert('Failed to send emoji. Please try again.')
+    alert(t('emojis.failedToSend'))
   }
 }
 
@@ -291,6 +291,9 @@ en:
   yourAnswer: "Your answer:"
   waitingForQuestion: "Waiting for Question"
   presenterWillStart: "The presenter will start a question soon..."
+  emojis:
+    singleEmojiRequired: "Please enter a single emoji."
+    failedToSend: "Failed to send emoji. Please try again."
 de:
   pageTitle: "Quiz-Zeit"
   welcome: "Willkommen!"
@@ -306,6 +309,9 @@ de:
   yourAnswer: "Deine Antwort:"
   waitingForQuestion: "Warten auf Frage"
   presenterWillStart: "Der Moderator wird bald eine Frage starten..."
+  emojis:
+    singleEmojiRequired: "Bitte geben Sie ein einzelnes Emoji ein."
+    failedToSend: "Emoji konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
 ja:
   pageTitle: "クイズタイム"
   welcome: "ようこそ！"
@@ -321,6 +327,9 @@ ja:
   yourAnswer: "あなたの答え："
   waitingForQuestion: "質問を待っています"
   presenterWillStart: "プレゼンターがまもなく質問を開始します..."
+  emojis:
+    singleEmojiRequired: "単一の絵文字を入力してください。"
+    failedToSend: "絵文字の送信に失敗しました。もう一度お試しください。"
 </i18n>
 
 <style scoped>
