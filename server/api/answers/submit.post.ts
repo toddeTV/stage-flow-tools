@@ -47,7 +47,9 @@ export default defineEventHandler(async (event) => {
   }
 
   // Normalize and validate answer
-  const answerOptions = activeQuestion.answer_options.map(opt => opt.text.en?.toLowerCase())
+  const answerOptions = activeQuestion.answer_options
+    .map(opt => opt.text.en?.toLowerCase())
+    .filter((v): v is string => typeof v === 'string')
   const selectedAnswerNormalized = selected_answer.en.toLowerCase()
 
   if (!answerOptions.includes(selectedAnswerNormalized)) {
