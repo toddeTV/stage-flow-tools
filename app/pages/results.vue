@@ -137,6 +137,7 @@ async function publishNextQuestion() {
     // The websocket will update the state, no need to manually refresh here.
   }
   catch (error: unknown) {
+    logger_error('Failed to publish next question', error)
     alert('Failed to publish next question. Maybe there are no unpublished questions left.')
   }
 }
@@ -149,6 +150,7 @@ async function unpublishActiveQuestion() {
     // The websocket will update the state.
   }
   catch (error: unknown) {
+    logger_error('Failed to unpublish active question', error)
     alert('Failed to unpublish active question.')
   }
 }
