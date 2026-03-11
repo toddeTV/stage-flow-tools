@@ -443,9 +443,22 @@ export async function getCurrentResults(): Promise<Results | null> {
 }
 
 // Emoji cooldown operations
+
+/** Removes expired entries from the cooldown map to prevent unbounded growth. */
+function pruneExpiredCooldowns(cooldownMs: number): void {
+  const now = Date.now()
+  for (const [id, timestamp] of emojiCooldowns) {
+    if (now - timestamp >= cooldownMs) {
+      emojiCooldowns.delete(id)
+    }
+  }
+}
+
 export function checkEmojiCooldown(userId: string): boolean {
   const config = useRuntimeConfig()
   const cooldownMs = config.public.emojiCooldownMs
+
+  pruneExpiredCooldowns(cooldownMs)
 
   const lastSubmission = emojiCooldowns.get(userId)
   if (lastSubmission) {
