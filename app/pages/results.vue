@@ -23,7 +23,12 @@ const isCoreView = computed(() => route.query.core !== undefined)
 // State for core view parameters
 const padding = ref(route.query.padding ? Number(route.query.padding) : 0)
 const scale = ref(route.query.scale ? Number(route.query.scale) : 1)
-const visibility = ref((route.query.visibility as string) || 'hide-all')
+
+// Supports legacy ?hideResults flag by explicitly mapping it to 'hide-all'
+const visibility = ref(
+  (route.query.visibility as string)
+  || (route.query.hideResults !== undefined ? 'hide-all' : 'hide-all'),
+)
 const hideResults = ref(visibility.value.startsWith('hide'))
 const isTogglingLock = ref(false)
 const isPickingUser = ref(false)

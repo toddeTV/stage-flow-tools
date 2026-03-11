@@ -139,11 +139,17 @@ async function submitEmoji() {
   }
 
   try {
+    const userId = localStorage.getItem('quiz-user-id')
+    if (!userId) {
+      logger_error('User ID not found')
+      return
+    }
+
     await $fetch('/api/emojis/submit', {
       method: 'POST',
       body: {
         emoji: emojiInput.value,
-        user_id: localStorage.getItem('quiz-user-id')
+        user_id: userId
       }
     })
 
