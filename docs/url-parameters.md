@@ -22,17 +22,25 @@ This document describes the GET parameters available for customizing page views.
 - **Default**: `1`
 - **Effect**: Applies CSS transform scale to the content. Only active when `core` parameter is present.
 
-### `hideResults`
+### `visibility`
+
+- **Type**: String (`hide-all` | `show-all`)
+- **Default**: `hide-all`
+- **Effect**: Controls how results behave when a new question is published.
+  - `hide-all` - Results are hidden whenever a new question appears. The admin can reveal them manually.
+  - `show-all` - Results are shown immediately when a new question appears.
+
+### `hideResults` (deprecated)
 
 - **Type**: Flag (presence check)
 - **Default**: Not set
-- **Effect**: Hides vote counts, percentages, and question notes. Displays question marks instead of results. Useful for presentations where results should be revealed later.
+- **Effect**: Legacy parameter. Mapped to `visibility=hide-all` for backward compatibility. Prefer using `visibility` instead.
 
 ### Examples
 
 ```text
 /results
-Standard results view with full UI.
+Standard results view. Results hidden on new questions (default: hide-all).
 
 /results?core
 Core view with minimal UI, no padding, normal scale.
@@ -40,11 +48,17 @@ Core view with minimal UI, no padding, normal scale.
 /results?core&padding=20&scale=0.9
 Core view with 20px padding and 90% scale.
 
-/results?core&hideResults
-Core view with results hidden (shows "?" instead of numbers).
+/results?core&visibility=hide-all
+Core view with results hidden on each new question.
 
-/results?core&padding=30&scale=1.2&hideResults
+/results?core&visibility=show-all
+Core view with results shown immediately on each new question.
+
+/results?core&padding=30&scale=1.2&visibility=hide-all
 Core view with 30px padding, 120% scale, and hidden results.
+
+/results?core&hideResults
+Legacy: equivalent to visibility=hide-all.
 ```
 
 ## `/emojis` Page
