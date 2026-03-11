@@ -43,6 +43,10 @@ export default defineEventHandler(async (event) => {
     return ''
   }
   catch (error: unknown) {
+    // Re-throw H3 errors (from createError) as-is to preserve status codes
+    if (error && typeof error === 'object' && 'statusCode' in error) {
+      throw error
+    }
     logger_error('Failed to pick random user', error)
     throw createError({
       statusCode: 500,
