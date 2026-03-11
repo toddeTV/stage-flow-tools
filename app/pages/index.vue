@@ -251,11 +251,11 @@ async function sendQuickEmoji(emoji: string) {
           </UiRadioOption>
         </div>
 
-        <div v-if="selectedAnswer !== null && !activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
+        <div v-if="selectedAnswer !== null && !activeQuestion.is_locked" class="answer-banner">
           ✓ {{ t('answerSubmitted') }}
         </div>
 
-        <div v-if="selectedAnswer !== null && activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
+        <div v-if="selectedAnswer !== null && activeQuestion.is_locked" class="answer-banner">
           {{ t('yourAnswer') }} <strong class="font-bold">{{ getLocalizedText(activeQuestion.answer_options[selectedAnswer]?.text) }}</strong>
         </div>
       </div>
@@ -348,5 +348,9 @@ ja:
 
 .animate-pulse {
   animation: pulse 1.4s ease-in-out infinite;
+}
+
+.answer-banner {
+  @apply border-2 border-black bg-gray-100 p-4 text-center text-base;
 }
 </style>
