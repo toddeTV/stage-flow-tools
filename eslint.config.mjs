@@ -1,7 +1,4 @@
 // @ts-check
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
 import pluginStylistic from '@stylistic/eslint-plugin'
 import pluginFormat from 'eslint-plugin-format'
 import * as pluginJsonc from 'eslint-plugin-jsonc'
@@ -9,8 +6,6 @@ import pluginTailwindCSS from 'eslint-plugin-tailwindcss'
 import * as pluginYml from 'eslint-plugin-yml'
 
 import withNuxt from './.nuxt/eslint.config.mjs'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default withNuxt(
   // ── Global ignores ──────────────────────────────────────────────────────────
@@ -150,7 +145,9 @@ export default withNuxt(
     },
     settings: {
       tailwindcss: {
-        config: resolve(__dirname, 'app/assets/css/main.css'),
+        // TW v3 without a tailwind.config.js - use empty object to suppress resolve warnings
+        config: {},
+        cssFiles: ['app/assets/css/main.css'],
       },
     },
   },
