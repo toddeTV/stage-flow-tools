@@ -76,7 +76,7 @@ export default defineEventHandler(async (event) => {
   }
 
   let note: Record<string, string> | undefined
-  if (typeof raw_note === 'object' && raw_note !== null) {
+  if (typeof raw_note === 'object' && raw_note !== null && !Array.isArray(raw_note)) {
     const validNotes: Record<string, string> = {}
     for (const [lang, value] of Object.entries(raw_note)) {
       if (typeof value !== 'string') {
