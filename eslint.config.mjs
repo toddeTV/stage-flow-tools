@@ -2,6 +2,7 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import pluginStylistic from '@stylistic/eslint-plugin'
 import pluginFormat from 'eslint-plugin-format'
 import * as pluginJsonc from 'eslint-plugin-jsonc'
 import pluginTailwindCSS from 'eslint-plugin-tailwindcss'
@@ -106,6 +107,9 @@ export default withNuxt(
       '**/*.ts',
       '**/*.vue',
     ],
+    plugins: {
+      '@stylistic': pluginStylistic,
+    },
     rules: {
       '@stylistic/max-len': ['error', {
         code: 120,
@@ -132,6 +136,7 @@ export default withNuxt(
   },
 
   // ── Tailwind CSS class sorting ──────────────────────────────────────────────
+  // @ts-expect-error - pluginTailwindCSS types diverge from ESLint flat config Plugin type
   {
     files: [
       '**/*.{js,mjs,ts,vue}',
