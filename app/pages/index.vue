@@ -51,7 +51,7 @@ async function changeNickname() {
   }
   userNickname.value = ''
   nicknameInput.value = ''
-  selectedAnswer.value = ''
+  selectedAnswer.value = null
   localStorage.removeItem('quiz-nickname')
 }
 
@@ -65,23 +65,23 @@ const { data: question, refresh: refreshQuestion } = await useFetch<Question>('/
       // Check if user has already answered
       const savedAnswer = sessionStorage.getItem(`answer-${questionData.id}`)
       if (savedAnswer) {
-        selectedAnswer.value = savedAnswer
+        selectedAnswer.value = parseInt(savedAnswer, 10)
       }
     }
     else {
       activeQuestion.value = null
-      selectedAnswer.value = ''
+      selectedAnswer.value = null
     }
   },
   onResponseError() {
     activeQuestion.value = null
-    selectedAnswer.value = ''
+    selectedAnswer.value = null
   }
 })
 
 // Submit answer
 async function submitAnswer() {
-  if (!selectedAnswer.value || !activeQuestion.value || activeQuestion.value.is_locked) {
+  if (selectedAnswer.value === null || !activeQuestion.value || activeQuestion.value.is_locked) {
     return
   }
 
@@ -97,12 +97,12 @@ async function submitAnswer() {
       body: {
         user_id: userId,
         user_nickname: userNickname.value,
-        selected_answer: activeQuestion.value.answer_options.find(o => o.text.en === selectedAnswer.value)?.text,
+        selected_answer: activeQuestion.value.answer_options[selectedAnswer.value]?.text,
       }
     })
 
     // Save answer in sessionStorage
-    sessionStorage.setItem(`answer-${activeQuestion.value.id}`, selectedAnswer.value)
+    sessionStorage.setItem(`answer-${activeQuestion.value.id}`, selectedAnswer.value.toString())
   }
   catch (error: unknown) {
     logger_error('Failed to submit answer:', error)
@@ -243,7 +243,7 @@ async function sendQuickEmoji(emoji: string) {
             v-for="(option, index) in activeQuestion.answer_options"
             :key="index"
             v-model="selectedAnswer"
-            :value="option.text.en"
+            :value="index"
             :disabled="activeQuestion.is_locked"
             @update:modelValue="submitAnswer"
           >
@@ -251,12 +251,12 @@ async function sendQuickEmoji(emoji: string) {
           </UiRadioOption>
         </div>
 
-        <div v-if="selectedAnswer && !activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
+        <div v-if="selectedAnswer !== null && !activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
           ✓ {{ t('answerSubmitted') }}
         </div>
 
-        <div v-if="selectedAnswer && activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
-          {{ t('yourAnswer') }} <strong class="font-bold">{{ getLocalizedText(activeQuestion.answer_options.find(o => o.text.en === selectedAnswer)?.text) }}</strong>
+        <div v-if="selectedAnswer !== null && activeQuestion.is_locked" class="p-4 bg-gray-100 border-2 border-black text-center text-base">
+          {{ t('yourAnswer') }} <strong class="font-bold">{{ getLocalizedText(activeQuestion.answer_options[selectedAnswer]?.text) }}</strong>
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import type { Question, Results } from '~/types'
 
 export const useQuizSocket = (channel = 'default') => {
   const activeQuestion = ref<Question | null>(null)
-  const selectedAnswer = ref('')
+  const selectedAnswer = ref<number | null>(null)
   const results = ref<Results | null>(null)
   const totalConnections = ref(0)
   const userId = useLocalStorage<string | null>('quiz-user-id', null)
@@ -37,7 +37,7 @@ export const useQuizSocket = (channel = 'default') => {
 
       if (parsed.event === 'new-question') {
         activeQuestion.value = parsed.data
-        selectedAnswer.value = ''
+        selectedAnswer.value = null
         sessionStorage.removeItem(`answer-${parsed.data.id}`)
       }
       else if (parsed.event === 'lock-status') {

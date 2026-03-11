@@ -1,11 +1,12 @@
 <script setup lang="ts">
-defineProps({
+const props = defineProps({
   modelValue: {
-    type: String,
-    required: true
+    type: [String, Number] as any,
+    required: false,
+    default: null
   },
   value: {
-    type: String,
+    type: [String, Number],
     required: true
   },
   disabled: {
@@ -15,12 +16,11 @@ defineProps({
 })
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
+  'update:modelValue': [value: string | number | null]
 }>()
 
-function handleChange(event: Event) {
-  const target = event.target as HTMLInputElement
-  emit('update:modelValue', target.value)
+function handleChange() {
+  emit('update:modelValue', props.value)
 }
 </script>
 
