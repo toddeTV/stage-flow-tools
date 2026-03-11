@@ -1,9 +1,8 @@
 <script setup lang="ts">
-defineProps({
-  bare: {
-    type: Boolean,
-    default: false
-  }
+withDefaults(defineProps<{
+  bare?: boolean
+}>(), {
+  bare: false,
 })
 </script>
 

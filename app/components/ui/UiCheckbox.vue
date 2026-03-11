@@ -1,20 +1,11 @@
 <script setup lang="ts">
-import type { PropType } from 'vue'
-import { computed } from 'vue'
-
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    required: true
-  },
-  disabled: {
-    type: Boolean,
-    default: false
-  },
-  size: {
-    type: String as PropType<'small' | 'medium'>,
-    default: 'medium'
-  }
+const props = withDefaults(defineProps<{
+  modelValue: boolean
+  disabled?: boolean
+  size?: 'small' | 'medium'
+}>(), {
+  disabled: false,
+  size: 'medium',
 })
 
 const emit = defineEmits<{

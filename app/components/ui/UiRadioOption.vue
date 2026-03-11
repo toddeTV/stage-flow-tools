@@ -1,18 +1,11 @@
 <script setup lang="ts">
-const props = defineProps({
-  modelValue: {
-    type: [String, Number] as any,
-    required: false,
-    default: null
-  },
-  value: {
-    type: [String, Number],
-    required: true
-  },
-  disabled: {
-    type: Boolean,
-    default: false
-  }
+const props = withDefaults(defineProps<{
+  modelValue?: string | number | null
+  value: string | number
+  disabled?: boolean
+}>(), {
+  modelValue: null,
+  disabled: false,
 })
 
 const emit = defineEmits<{
