@@ -137,7 +137,6 @@ export default withNuxt(
   },
 
   // ── Tailwind CSS class sorting ──────────────────────────────────────────────
-  // @ts-expect-error - pluginTailwindCSS types diverge from ESLint flat config Plugin type
   {
     files: [
       '**/*.{js,mjs,ts,vue}',

@@ -68,7 +68,7 @@
     "eslint": "~10.0.3",
     "eslint-plugin-format": "~2.0.1",
     "eslint-plugin-jsonc": "~3.1.1",
-    "eslint-plugin-tailwindcss": "~3.18.2",
+    "eslint-plugin-tailwindcss": "4.0.0-beta.0",
     "eslint-plugin-yml": "~3.3.1",
     "jsonwebtoken": "~9.0.2",
     "npm-run-all2": "~8.0.4",
