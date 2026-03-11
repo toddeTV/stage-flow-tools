@@ -2,15 +2,21 @@ import { WebSocketChannel, type LocalizedString } from '~/types'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { user_id, user_nickname, selected_answer } = body as {
-    user_id: string,
-    user_nickname: string,
-    selected_answer: LocalizedString
+
+  if (!body || typeof body !== 'object') {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Invalid payload'
+    })
   }
 
+  const user_id = typeof body.user_id === 'string' ? body.user_id.trim() : ''
+  const user_nickname = typeof body.user_nickname === 'string' ? body.user_nickname.trim() : ''
+  const selected_answer = body.selected_answer as LocalizedString | undefined
+
   if (
-    typeof user_id !== 'string' || !user_id.trim()
-    || typeof user_nickname !== 'string' || !user_nickname.trim()
+    !user_id
+    || !user_nickname
     || !selected_answer
     || typeof selected_answer.en !== 'string' || !selected_answer.en.trim()
   ) {
@@ -19,6 +25,9 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'User ID, nickname and answer required'
     })
   }
+
+  // Update selected_answer with trimmed value to reuse it safely
+  selected_answer.en = selected_answer.en.trim()
 
   // Get active question
   const activeQuestion = await getActiveQuestion()
