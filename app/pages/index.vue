@@ -1,19 +1,12 @@
 <script setup lang="ts">
-import type { Question, LocalizedString } from '~/types'
+import type { Question } from '~/types'
 
 const userNickname = ref('')
 const nicknameInput = ref('')
 const emojiInput = ref('')
 const { activeQuestion, selectedAnswer } = useQuizSocket()
-const { t, locale } = useI18n()
-
-// Helper to get localized text with fallback to English
-function getLocalizedText(text: LocalizedString | string | undefined): string {
-  if (typeof text === 'object' && text !== null) {
-    return text[locale.value] || text.en || ''
-  }
-  return text || ''
-}
+const { t } = useI18n()
+const { getLocalizedText } = useLocalization()
 
 // Load nickname from localStorage
 onMounted(() => {
@@ -60,7 +53,7 @@ async function changeNickname() {
 const { data: question, refresh: refreshQuestion } = await useFetch<Question>('/api/questions/active', {
   onResponse({ response }) {
     const questionData = response._data
-    if (questionData && !(questionData as any).message) {
+    if (questionData && !('message' in questionData)) {
       activeQuestion.value = questionData
 
       // Check if user has already answered
@@ -105,10 +98,10 @@ async function submitAnswer() {
     // Save answer in sessionStorage
     sessionStorage.setItem(`answer-${activeQuestion.value.id}`, selectedAnswer.value)
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger_error('Failed to submit answer:', error)
     // If locked, reload question
-    if (error.statusCode === 403) {
+    if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 403) {
       await refreshQuestion()
     }
   }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Question, AnswerOption, LocalizedString } from '~/types'
+import type { Question, AnswerOption } from '~/types'
 
 definePageMeta({
   layout: 'default',
@@ -8,15 +8,8 @@ definePageMeta({
   background: true,
 })
 
-const { t, locale } = useI18n()
-
-// Helper to get localized text with fallback to English
-function getLocalizedText(text: LocalizedString | string | undefined): string {
-  if (typeof text === 'object' && text !== null) {
-    return text[locale.value] || text.en || ''
-  }
-  return text || ''
-}
+const { t } = useI18n()
+const { getLocalizedText } = useLocalization()
 
 const activeQuestion = ref<Question | null>(null)
 const allQuestions = ref<Question[]>([])
@@ -72,7 +65,7 @@ async function handleCreateQuestion() {
     })).filter(opt => opt.text.en)
 
     if (answerOptions.length < 2) {
-      alert('At least 2 answer options with an "en" key are required.')
+      alert(t('validationMinOptions'))
       return
     }
 
@@ -249,7 +242,7 @@ function removeOption(index: number) {
             <div v-for="(option, index) in newQuestion.answer_options" :key="index" class="flex gap-2.5 mb-2.5 items-start">
               <textarea
                 v-model="option.text"
-                :placeholder="`Option ${index + 1} JSON`"
+                :placeholder="t('optionPlaceholder', { n: index + 1 })"
                 required
                 class="flex-1 p-3 border-2 border-black text-base min-h-[70px] resize-y bg-white font-mono"
               ></textarea>
@@ -331,6 +324,8 @@ en:
   allQuestions: "All Questions"
   publishThisQuestion: "Publish This Question"
   logoutButton: "Logout"
+  validationMinOptions: 'At least 2 answer options with an "en" key are required.'
+  optionPlaceholder: "Option {n} JSON"
 de:
   pageTitle: "Admin-Dashboard"
   currentActiveQuestion: "Aktuelle aktive Frage"
@@ -355,6 +350,8 @@ de:
   allQuestions: "Alle Fragen"
   publishThisQuestion: "Diese Frage veroffentlichen"
   logoutButton: "Abmelden"
+  validationMinOptions: 'Mindestens 2 Antwortoptionen mit einem "en"-Schlüssel sind erforderlich.'
+  optionPlaceholder: "Option {n} JSON"
 ja:
   pageTitle: "管理ダッシュボード"
   currentActiveQuestion: "現在のアクティブな質問"
@@ -379,4 +376,6 @@ ja:
   allQuestions: "全ての質問"
   publishThisQuestion: "この質問を公開"
   logoutButton: "ログアウト"
+  validationMinOptions: '"en"キーを持つ回答オプションが2つ以上必要です。'
+  optionPlaceholder: "オプション {n} JSON"
 </i18n>

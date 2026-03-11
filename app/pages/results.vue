@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Results, LocalizedString } from '~/types'
+import type { Results } from '~/types'
 
 definePageMeta({
   middleware: 'auth',
@@ -8,15 +8,8 @@ definePageMeta({
 })
 
 const { results } = useQuizSocket('results')
-const { t, locale } = useI18n()
-
-// Helper to get localized text with fallback to English
-function getLocalizedText(text: LocalizedString | string | undefined): string {
-  if (typeof text === 'object' && text !== null) {
-    return text[locale.value] || text.en || ''
-  }
-  return text || ''
-}
+const { t } = useI18n()
+const { getLocalizedText } = useLocalization()
 
 // Look up the localized display text for a result key (English answer text)
 function getLocalizedOption(enKey: string): string {
