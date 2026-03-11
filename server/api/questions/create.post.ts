@@ -48,8 +48,11 @@ export default defineEventHandler(async (event) => {
 
   const answer_options = raw_answer_options
     .map((option: AnswerOption) => {
-      if (typeof option.text?.en !== 'string') {
-        return { text: { en: '' }, emoji: undefined }
+      if (typeof option.text?.en !== 'string' || !option.text.en.trim()) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: 'Each answer option must have a non-empty English text'
+        })
       }
       for (const [lang, value] of Object.entries(option.text)) {
         if (typeof value !== 'string') {
@@ -64,7 +67,6 @@ export default defineEventHandler(async (event) => {
         emoji: typeof option.emoji === 'string' ? option.emoji.trim() : undefined
       }
     })
-    .filter(option => option.text.en)
 
   if (answer_options.length < 2) {
     throw createError({
