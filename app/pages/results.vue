@@ -26,6 +26,7 @@ const scale = ref(route.query.scale ? Number(route.query.scale) : 1)
 const visibility = ref((route.query.visibility as string) || 'hide-all')
 const hideResults = ref(visibility.value.startsWith('hide'))
 const isTogglingLock = ref(false)
+const isPickingUser = ref(false)
 const hasHydratedOnce = ref(false)
 
 // Dynamic styles for core view
@@ -96,6 +97,9 @@ function getPercentage(count: number) {
 }
 
 async function pickRandomUser(option: string) {
+  if (isPickingUser.value) return
+  isPickingUser.value = true
+
   // Optimistic UI: Assume success and let the websocket handle the notification.
   $fetch('/api/results/pick-random-user', {
     method: 'POST',
@@ -104,9 +108,10 @@ async function pickRandomUser(option: string) {
       option
     }
   }).catch((error: unknown) => {
-    // Handle errors silently in the background
     logger_error('Failed to pick random user:', error)
     alert('An error occurred while picking a random user. Please try again.')
+  }).finally(() => {
+    isPickingUser.value = false
   })
 }
 
@@ -218,7 +223,7 @@ async function unpublishActiveQuestion() {
                     <template v-else>{{ result.count }}</template>
                     {{ t('votes') }}
                   </span>
-                  <UiButton size="small" @click="pickRandomUser(option)">🎲</UiButton>
+                  <UiButton size="small" @click="pickRandomUser(String(option))" :disabled="isPickingUser">🎲</UiButton>
                 </div>
               </div>
               <div class="h-12 bg-gray-100 border-[3px] border-black relative overflow-hidden">
