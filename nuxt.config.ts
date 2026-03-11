@@ -12,8 +12,7 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
     '@nuxtjs/tailwindcss',
     '@vueuse/nuxt',
-    process.env.NODE_ENV === 'development' ? 'nuxt-mcp' : null
-  ].filter(Boolean),
+  ],
 
   i18n: {
     locales: [

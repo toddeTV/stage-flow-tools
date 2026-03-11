@@ -2,9 +2,11 @@
 import type { Results } from '~/types'
 
 definePageMeta({
+  layout: 'default',
   middleware: 'auth',
   footer: false,
   background: false,
+  localeSwitcher: true,
 })
 
 const { results } = useQuizSocket('results')
@@ -24,10 +26,8 @@ const isCoreView = computed(() => route.query.core !== undefined)
 const padding = ref(route.query.padding ? Number(route.query.padding) : 0)
 const scale = ref(route.query.scale ? Number(route.query.scale) : 1)
 
-// Supports legacy ?hideResults flag by explicitly mapping it to 'hide-all'
 const visibility = ref(
-  (route.query.visibility as string)
-  || (route.query.hideResults !== undefined ? 'hide-all' : 'hide-all'),
+  (route.query.visibility as string) || 'hide',
 )
 const hideResults = ref(visibility.value.startsWith('hide'))
 const isTogglingLock = ref(false)
@@ -70,10 +70,10 @@ watch(() => results.value?.question.id, (newId, oldId) => {
   }
   hasHydratedOnce.value = true
 
-  if (visibility.value === 'hide-all') {
+  if (visibility.value === 'hide') {
     hideResults.value = true
   }
-  else if (visibility.value === 'show-all') {
+  else if (visibility.value === 'show') {
     hideResults.value = false
   }
 })
@@ -185,6 +185,9 @@ async function unpublishActiveQuestion() {
             <span v-if="results" class="font-bold py-2 px-4 bg-gray-100 border-2 border-black">{{ t('totalVotes') }}: {{ results.totalVotes }} ({{ results.totalConnections > 0 ? Math.round((results.totalVotes / results.totalConnections) * 100) : 0 }}%)</span>
             <span v-else>&nbsp;</span>
             <div class="flex items-center gap-4">
+              <UiButton @click="refreshResults" variant="secondary" size="small">
+                🔄 {{ t('refreshButton') }}
+              </UiButton>
               <template v-if="results">
                 <UiCheckbox v-model="hideResults" size="small">
                   {{ t('hideButton') }}
@@ -201,9 +204,6 @@ async function unpublishActiveQuestion() {
                   {{ t('unpublishButton') }}
                 </UiButton>
               </template>
-              <UiButton @click="refreshResults" variant="secondary" size="small">
-                🔄 {{ t('refreshButton') }}
-              </UiButton>
               <UiButton @click="publishNextQuestion" variant="secondary" size="small">
                 {{ t('nextButton') }} ➡
               </UiButton>

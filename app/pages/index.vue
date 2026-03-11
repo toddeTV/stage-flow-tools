@@ -3,8 +3,10 @@ import type { Question } from '~/types'
 
 definePageMeta({
   layout: 'default',
+  // middleware: '',
   footer: true,
   background: true,
+  localeSwitcher: true,
 })
 
 const userNickname = ref('')
