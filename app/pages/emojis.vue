@@ -4,6 +4,7 @@ definePageMeta({
   middleware: 'auth',
   footer: false,
   background: false,
+  localeSwitcher: false,
 })
 
 interface Emoji {

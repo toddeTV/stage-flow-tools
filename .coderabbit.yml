@@ -178,7 +178,7 @@ reviews:
 
     - path: "app/pages/**"
       instructions: |
-        Verify: `definePageMeta` is set with appropriate layout/middleware/footer/background.
+        Verify: `definePageMeta` is set with appropriate layout/middleware/footer/background/localeSwitcher.
 
     - path: nuxt.config.ts
       instructions: |
