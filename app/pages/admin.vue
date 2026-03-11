@@ -57,7 +57,16 @@ async function handleLogout() {
 async function handleCreateQuestion() {
   try {
     const questionText = JSON.parse(newQuestion.value.question_text)
-    const note = newQuestion.value.note.trim() ? JSON.parse(newQuestion.value.note) : undefined
+
+    if (typeof questionText.en !== 'string' || !questionText.en.trim()) {
+      alert(t('validationQuestionEnRequired'))
+      return
+    }
+
+    const parsedNote = newQuestion.value.note.trim() ? JSON.parse(newQuestion.value.note) : undefined
+    const note = parsedNote && typeof parsedNote === 'object'
+      ? (Object.values(parsedNote as Record<string, string>).some(v => typeof v === 'string' && v.trim()) ? parsedNote : undefined)
+      : undefined
 
     const answerOptions = newQuestion.value.answer_options.map(opt => ({
       text: JSON.parse(opt.text),
@@ -332,6 +341,7 @@ en:
   allQuestions: "All Questions"
   publishThisQuestion: "Publish This Question"
   logoutButton: "Logout"
+  validationQuestionEnRequired: "Question text must have a non-empty English (\"en\") value."
   validationMinOptions: 'At least 2 answer options with an "en" key are required.'
   validationOptionEnRequired: "Each answer option must have a non-empty English (\"en\") text."
   optionPlaceholder: "Option {n} JSON"
@@ -365,6 +375,7 @@ de:
   allQuestions: "Alle Fragen"
   publishThisQuestion: "Diese Frage veroffentlichen"
   logoutButton: "Abmelden"
+  validationQuestionEnRequired: "Fragetext muss einen nicht-leeren englischen (\"en\") Wert haben."
   validationMinOptions: 'Mindestens 2 Antwortoptionen mit einem "en"-Schlüssel sind erforderlich.'
   validationOptionEnRequired: "Jede Antwortoption muss einen nicht-leeren englischen (\"en\") Text haben."
   optionPlaceholder: "Option {n} JSON"
@@ -398,6 +409,7 @@ ja:
   allQuestions: "全ての質問"
   publishThisQuestion: "この質問を公開"
   logoutButton: "ログアウト"
+  validationQuestionEnRequired: "質問テキストには空でない英語（\"en\"）の値が必要です。"
   validationMinOptions: '"en"キーを持つ回答オプションが2つ以上必要です。'
   validationOptionEnRequired: "各回答オプションには空でない英語（\"en\"）テキストが必要です。"
   optionPlaceholder: "オプション {n} JSON"
