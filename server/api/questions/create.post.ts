@@ -76,7 +76,8 @@ export default defineEventHandler(async (event) => {
   }
 
   let note: Record<string, string> | undefined
-  if (typeof raw_note?.en === 'string' && raw_note.en.trim()) {
+  if (typeof raw_note === 'object' && raw_note !== null) {
+    const validNotes: Record<string, string> = {}
     for (const [lang, value] of Object.entries(raw_note)) {
       if (typeof value !== 'string') {
         throw createError({
@@ -84,10 +85,14 @@ export default defineEventHandler(async (event) => {
           statusMessage: `Invalid value for locale "${lang}" in note: expected string`
         })
       }
+      const trimmed = value.trim()
+      if (trimmed) {
+        validNotes[lang] = trimmed
+      }
     }
-    note = Object.fromEntries(
-      Object.entries(raw_note).map(([lang, value]) => [lang, (value as string).trim()])
-    )
+    if (Object.keys(validNotes).length > 0) {
+      note = validNotes
+    }
   }
 
   const question = await createQuestion({
