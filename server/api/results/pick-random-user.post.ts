@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     }, 'default')
 
     if (!delivered) {
-      throw createError({ statusCode: 404, statusMessage: 'Winner is not currently connected' })
+      throw createError({ statusCode: 503, statusMessage: 'Winner is not currently connected' })
     }
 
     event.node.res.statusCode = 204

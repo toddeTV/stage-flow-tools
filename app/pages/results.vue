@@ -96,7 +96,7 @@ function getPercentage(count: number) {
   return Math.round((count / results.value.totalVotes) * 100)
 }
 
-async function pickRandomUser(option: string) {
+function pickRandomUser(option: string) {
   if (isPickingUser.value) return
   isPickingUser.value = true
 
