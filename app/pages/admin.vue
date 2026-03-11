@@ -332,8 +332,8 @@ en:
   noActiveQuestion: "No active question"
   prepareNextQuestion: "Prepare Next Question"
   keyPlaceholder: "Enter a unique key/slug (optional, e.g., 'question-1')"
-  questionTextPlaceholder: 'Enter question text as JSON, e.g., { "en": "Hello", "de": "Hallo" }'
-  notePlaceholder: 'Enter note as JSON (optional), e.g., { "en": "Note" }'
+  questionTextPlaceholder: "Enter question text as JSON, e.g., {'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
+  notePlaceholder: "Enter note as JSON (optional), e.g., {'{'} \"en\": \"Note\" {'}'}"
   answerOptions: "Answer Options"
   removeButton: "Remove"
   addOptionButton: "Add Option"
@@ -365,9 +365,9 @@ de:
   unpublishButton: "Veröffentlichung zurückziehen"
   noActiveQuestion: "Keine aktive Frage"
   prepareNextQuestion: "Nächste Frage vorbereiten"
-  keyPlaceholder: "Eindeutigen Schlüssel eingeben (optional, z. B. 'frage-1')"
-  questionTextPlaceholder: 'Fragetext als JSON eingeben, z.B. { "en": "Hello", "de": "Hallo" }'
-  notePlaceholder: 'Notiz als JSON eingeben (optional), z.B. { "en": "Notiz" }'
+  keyPlaceholder: "Eindeutigen Schlüssel eingeben (optional, z.B. 'frage-1')"
+  questionTextPlaceholder: "Fragetext als JSON eingeben, z.B. {'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
+  notePlaceholder: "Notiz als JSON eingeben (optional), z.B. {'{'} \"en\": \"Notiz\" {'}'}"
   answerOptions: "Antwortoptionen"
   removeButton: "Entfernen"
   addOptionButton: "Option hinzufügen"
@@ -400,8 +400,8 @@ ja:
   noActiveQuestion: "アクティブな質問はありません"
   prepareNextQuestion: "次の質問を準備"
   keyPlaceholder: "一意のキー/スラグを入力（任意、例：'question-1'）"
-  questionTextPlaceholder: '質問テキストをJSONで入力、例：{ "en": "Hello", "de": "Hallo" }'
-  notePlaceholder: 'ノートをJSONで入力（任意）、例：{ "en": "メモ" }'
+  questionTextPlaceholder: "質問テキストをJSONで入力、例：{'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
+  notePlaceholder: "ノートをJSONで入力（任意）、例：{'{'} \"en\": \"メモ\" {'}'}"
   answerOptions: "回答オプション"
   removeButton: "削除"
   addOptionButton: "オプションを追加"
