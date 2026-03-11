@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { PropType } from 'vue'
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -11,8 +12,8 @@ const props = defineProps({
     default: false
   },
   size: {
-    type: String,
-    default: 'medium' // 'medium' or 'small'
+    type: String as PropType<'small' | 'medium'>,
+    default: 'medium'
   }
 })
 
