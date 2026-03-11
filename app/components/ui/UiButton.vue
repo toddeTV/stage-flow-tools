@@ -1,17 +1,12 @@
 <script setup lang="ts">
-defineProps({
-  type: {
-    type: String as PropType<'button' | 'submit' | 'reset'>,
-    default: 'button'
-  },
-  variant: {
-    type: String as PropType<'primary' | 'secondary' | 'link' | 'danger'>,
-    default: 'primary'
-  },
-  size: {
-    type: String as PropType<'normal' | 'small'>,
-    default: 'normal'
-  }
+withDefaults(defineProps<{
+  type?: 'button' | 'submit' | 'reset'
+  variant?: 'primary' | 'secondary' | 'link' | 'danger'
+  size?: 'normal' | 'small'
+}>(), {
+  type: 'button',
+  variant: 'primary',
+  size: 'normal',
 })
 </script>
 
