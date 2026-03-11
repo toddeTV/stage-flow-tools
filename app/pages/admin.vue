@@ -62,7 +62,15 @@ async function handleCreateQuestion() {
     const answerOptions = newQuestion.value.answer_options.map(opt => ({
       text: JSON.parse(opt.text),
       emoji: opt.emoji
-    })).filter(opt => opt.text.en)
+    }))
+
+    const hasInvalidOption = answerOptions.some(
+      opt => typeof opt.text?.en !== 'string' || !opt.text.en.trim(),
+    )
+    if (hasInvalidOption) {
+      alert(t('validationOptionEnRequired'))
+      return
+    }
 
     if (answerOptions.length < 2) {
       alert(t('validationMinOptions'))
@@ -325,6 +333,7 @@ en:
   publishThisQuestion: "Publish This Question"
   logoutButton: "Logout"
   validationMinOptions: 'At least 2 answer options with an "en" key are required.'
+  validationOptionEnRequired: "Each answer option must have a non-empty English (\"en\") text."
   optionPlaceholder: "Option {n} JSON"
 de:
   pageTitle: "Admin-Dashboard"
@@ -351,6 +360,7 @@ de:
   publishThisQuestion: "Diese Frage veroffentlichen"
   logoutButton: "Abmelden"
   validationMinOptions: 'Mindestens 2 Antwortoptionen mit einem "en"-Schlüssel sind erforderlich.'
+  validationOptionEnRequired: "Jede Antwortoption muss einen nicht-leeren englischen (\"en\") Text haben."
   optionPlaceholder: "Option {n} JSON"
 ja:
   pageTitle: "管理ダッシュボード"
@@ -377,6 +387,7 @@ ja:
   publishThisQuestion: "この質問を公開"
   logoutButton: "ログアウト"
   validationMinOptions: '"en"キーを持つ回答オプションが2つ以上必要です。'
+  validationOptionEnRequired: "各回答オプションには空でない英語（\"en\"）テキストが必要です。"
   optionPlaceholder: "オプション {n} JSON"
 </i18n>
 
