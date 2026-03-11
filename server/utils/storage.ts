@@ -245,6 +245,34 @@ export async function publishQuestion(key: string): Promise<Question | undefined
   }
 }
 
+/** Deactivate the active question and clear its answers under a single lock scope. */
+export async function unpublishActiveQuestion(): Promise<Question | undefined> {
+  await initStorage()
+  const releaseAnswers = await lock(ANSWERS_FILE)
+  const releaseQuestions = await lock(QUESTIONS_FILE)
+  try {
+    const data = await fs.readFile(QUESTIONS_FILE, 'utf-8')
+    const questions: Question[] = JSON.parse(data)
+    const activeQuestion = questions.find(q => q.is_active)
+
+    if (activeQuestion) {
+      activeQuestion.is_active = false
+      await fs.writeFile(QUESTIONS_FILE, JSON.stringify(questions, null, 2))
+
+      const answersData = await fs.readFile(ANSWERS_FILE, 'utf-8')
+      const answers: Answer[] = JSON.parse(answersData)
+      const remainingAnswers = answers.filter(a => a.question_id !== activeQuestion.id)
+      await fs.writeFile(ANSWERS_FILE, JSON.stringify(remainingAnswers, null, 2))
+    }
+
+    return activeQuestion
+  }
+  finally {
+    await releaseQuestions()
+    await releaseAnswers()
+  }
+}
+
 export async function toggleQuestionLock(questionId: string): Promise<Question | undefined> {
   await initStorage()
   const release = await lock(QUESTIONS_FILE)

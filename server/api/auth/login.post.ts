@@ -28,13 +28,7 @@ export default defineEventHandler(async (event) => {
     { expiresIn: '24h' }
   )
   
-  setCookie(event, 'admin_token', token, {
-    httpOnly: true,
-    path: '/',
-    sameSite: 'none',
-    secure: true,
-    maxAge: 60 * 60 * 24 // 24 hours
-  })
+  setAdminCookie(event, token, 60 * 60 * 24) // 24 hours
 
   return {
     success: true

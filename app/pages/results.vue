@@ -26,6 +26,7 @@ const scale = ref(route.query.scale ? Number(route.query.scale) : 1)
 const visibility = ref((route.query.visibility as string) || 'hide-all')
 const hideResults = ref(visibility.value.startsWith('hide'))
 const isTogglingLock = ref(false)
+const hasHydratedOnce = ref(false)
 
 // Dynamic styles for core view
 const coreViewStyles = computed(() => {
@@ -52,16 +53,22 @@ watch(fetchedResults, (newResults) => {
   }
 }, { immediate: true })
 
-// Watch for new questions and automatically hide results
 // Watch for new questions and update visibility based on the mode
 watch(() => results.value?.question.id, (newId, oldId) => {
-  if (newId && newId !== oldId) {
-    if (visibility.value === 'hide-all') {
-      hideResults.value = true
-    }
-    else if (visibility.value === 'show-all') {
-      hideResults.value = false
-    }
+  if (!newId || newId === oldId) return
+
+  // Skip the very first hydration (undefined -> newId)
+  if (oldId === undefined && !hasHydratedOnce.value) {
+    hasHydratedOnce.value = true
+    return
+  }
+  hasHydratedOnce.value = true
+
+  if (visibility.value === 'hide-all') {
+    hideResults.value = true
+  }
+  else if (visibility.value === 'show-all') {
+    hideResults.value = false
   }
 })
 
@@ -137,6 +144,7 @@ async function publishNextQuestion() {
     // The websocket will update the state, no need to manually refresh here.
   }
   catch (error: unknown) {
+    logger_error('Failed to publish next question', error)
     alert('Failed to publish next question. Maybe there are no unpublished questions left.')
   }
 }
@@ -149,6 +157,7 @@ async function unpublishActiveQuestion() {
     // The websocket will update the state.
   }
   catch (error: unknown) {
+    logger_error('Failed to unpublish active question', error)
     alert('Failed to unpublish active question.')
   }
 }
