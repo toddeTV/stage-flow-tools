@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { Question } from '~/types'
 
+definePageMeta({
+  layout: 'default',
+  footer: true,
+  background: true,
+})
+
 const userNickname = ref('')
 const nicknameInput = ref('')
 const emojiInput = ref('')
