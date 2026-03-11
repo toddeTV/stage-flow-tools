@@ -180,7 +180,7 @@ function removeOption(index: number) {
       <!-- Current Question -->
       <UiSection>
         <div class="flex justify-between items-center mb-5">
-          <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">{{ t('currentActiveQuestion') }}</h2>
+          <h2 class="section-heading">{{ t('currentActiveQuestion') }}</h2>
           <UiButton variant="secondary" @click="loadQuestions">{{ t('refreshButton') }}</UiButton>
         </div>
         <div v-if="activeQuestion" class="bg-gray-100 border-2 border-black p-5">
@@ -217,7 +217,7 @@ function removeOption(index: number) {
 
       <!-- New Question Form -->
       <UiSection>
-        <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">{{ t('prepareNextQuestion') }}</h2>
+        <h2 class="section-heading">{{ t('prepareNextQuestion') }}</h2>
         <form @submit.prevent="handleCreateQuestion" class="flex flex-col gap-5">
           <UiInput
             v-model="newQuestion.key"
@@ -228,13 +228,13 @@ function removeOption(index: number) {
             v-model="newQuestion.question_text"
             :placeholder="t('questionTextPlaceholder')"
             required
-            class="p-3 border-2 border-black text-base min-h-[100px] resize-y bg-white font-mono"
+            class="json-textarea min-h-[100px]"
           ></textarea>
 
           <textarea
             v-model="newQuestion.note"
             :placeholder="t('notePlaceholder')"
-            class="p-3 border-2 border-black text-base min-h-[70px] resize-y bg-white font-mono"
+            class="json-textarea min-h-[70px]"
           ></textarea>
 
           <div>
@@ -244,7 +244,7 @@ function removeOption(index: number) {
                 v-model="option.text"
                 :placeholder="t('optionPlaceholder', { n: index + 1 })"
                 required
-                class="flex-1 p-3 border-2 border-black text-base min-h-[70px] resize-y bg-white font-mono"
+                class="json-textarea min-h-[70px] flex-1"
               ></textarea>
               <UiInput
                 :model-value="option.emoji || ''"
@@ -272,7 +272,7 @@ function removeOption(index: number) {
 
       <!-- All Questions -->
       <UiSection>
-        <h2 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">{{ t('allQuestions') }}</h2>
+        <h2 class="section-heading">{{ t('allQuestions') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div
             v-for="question in allQuestions"
@@ -379,3 +379,15 @@ ja:
   validationMinOptions: '"en"キーを持つ回答オプションが2つ以上必要です。'
   optionPlaceholder: "オプション {n} JSON"
 </i18n>
+
+<style scoped>
+@reference "tailwindcss";
+
+.section-heading {
+  @apply mb-5 border-b-[3px] border-black pb-2.5 text-3xl uppercase;
+}
+
+.json-textarea {
+  @apply resize-y border-2 border-black bg-white p-3 font-mono text-base;
+}
+</style>
