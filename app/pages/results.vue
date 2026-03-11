@@ -55,7 +55,7 @@ watch(fetchedResults, (newResults) => {
 // Watch for new questions and automatically hide results
 // Watch for new questions and update visibility based on the mode
 watch(() => results.value?.question.id, (newId, oldId) => {
-  if (newId && newId !== oldId) {
+  if (newId && oldId !== undefined && newId !== oldId) {
     if (visibility.value === 'hide-all') {
       hideResults.value = true
     }
