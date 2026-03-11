@@ -28,15 +28,7 @@ export default defineEventHandler(async (event) => {
     { expiresIn: '24h' }
   )
   
-  const isSecure = getRequestProtocol(event) === 'https'
-
-  setCookie(event, 'admin_token', token, {
-    httpOnly: true,
-    path: '/',
-    sameSite: isSecure ? 'none' : 'lax',
-    secure: isSecure,
-    maxAge: 60 * 60 * 24 // 24 hours
-  })
+  setAdminCookie(event, token, 60 * 60 * 24) // 24 hours
 
   return {
     success: true

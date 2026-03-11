@@ -1,6 +1,18 @@
 import jwt from 'jsonwebtoken'
 import type { H3Event } from 'h3'
 
+/** Sets the admin_token cookie with protocol-aware security attributes. */
+export function setAdminCookie(event: H3Event, value: string, maxAge: number) {
+  const isSecure = getRequestProtocol(event) === 'https'
+  setCookie(event, 'admin_token', value, {
+    httpOnly: true,
+    path: '/',
+    sameSite: isSecure ? 'none' : 'lax',
+    secure: isSecure,
+    maxAge,
+  })
+}
+
 /**
  * Extracts the JWT from cookies or headers.
  * @param event The H3 event object.
