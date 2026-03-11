@@ -186,10 +186,17 @@ export async function createQuestion(questionData: Omit<Question, 'id' | 'is_act
     const data = await fs.readFile(QUESTIONS_FILE, 'utf-8')
     const questions: Question[] = JSON.parse(data)
     const id = createId()
+    const resolvedKey = questionData.key || id
+
+    // Re-check uniqueness under lock to prevent concurrent duplicates
+    if (questions.some(q => q.key === resolvedKey)) {
+      throw new Error(`A question with key "${resolvedKey}" already exists`)
+    }
+
     const newQuestion: Question = {
       id,
       ...questionData,
-      key: questionData.key || id,
+      key: resolvedKey,
       is_locked: false,
       createdAt: new Date().toISOString(),
       alreadyPublished: false
@@ -205,8 +212,8 @@ export async function createQuestion(questionData: Omit<Question, 'id' | 'is_act
 
 export async function publishQuestion(key: string): Promise<Question | undefined> {
   await initStorage()
-  const releaseQuestions = await lock(QUESTIONS_FILE)
   const releaseAnswers = await lock(ANSWERS_FILE)
+  const releaseQuestions = await lock(QUESTIONS_FILE)
   try {
     const data = await fs.readFile(QUESTIONS_FILE, 'utf-8')
     const questions: Question[] = JSON.parse(data)
@@ -233,8 +240,8 @@ export async function publishQuestion(key: string): Promise<Question | undefined
     return question
   }
   finally {
-    await releaseAnswers()
     await releaseQuestions()
+    await releaseAnswers()
   }
 }
 
