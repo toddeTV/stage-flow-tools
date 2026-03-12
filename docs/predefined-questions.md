@@ -20,7 +20,7 @@ This document explains how to automatically load a set of questions into the app
         },
         "answer_options": [
           { "text": { "en": "Red", "de": "Rot" } },
-          { "text": { "en": "Green", "de": "Grun" }, "emoji": "💚" },
+          { "text": { "en": "Green", "de": "Grün" }, "emoji": "💚" },
           { "text": { "en": "Blue", "de": "Blau" } }
         ]
       },

@@ -73,6 +73,7 @@ Create a `wrangler.toml` in the project root:
 ```toml
 name = "stage-flow-tools"
 compatibility_date = "2025-07-15"
+pages_build_output_dir = ".output/public"
 
 [vars]
 NUXT_ADMIN_USERNAME = "admin"
@@ -223,7 +224,9 @@ const { payload } = await jwtVerify(token, secret);
 - Route `/_ws` connections to the Durable Object instead of using Nitro's built-in WebSocket handler.
 - The buffered results update (`scheduleResultsUpdate` with `setTimeout`) works inside Durable Objects since they support `setTimeout`.
 
-**Note:** Durable Objects require a paid Cloudflare Workers plan ($5/month minimum).
+**Architecture note:** Cloudflare Pages cannot define Durable Object classes directly. The DO class must live in a separate Worker project. You then bind it into your Pages project via `wrangler.toml` using `script_name`, `class_name`, and a `[[durable_objects.bindings]]` declaration. During local development, this means running the DO Worker (`npx wrangler dev`) and the Pages project (`npx wrangler pages dev`) concurrently.
+
+**Note:** SQLite-backed Durable Objects are available on the free plan. Only key-value-backed Durable Objects require a paid Workers plan ($5/month minimum).
 
 ### 4. CUID2 ID generation
 
@@ -266,11 +269,12 @@ Public variables (`NUXT_PUBLIC_*`) are embedded at build time. Private variables
 
 ## Cost Considerations
 
-| Resource        | Free tier                           | Paid plan                     |
-| --------------- | ----------------------------------- | ----------------------------- |
-| Pages           | 500 builds/month, 100K requests/day | $5/month for more             |
-| Workers         | 100K requests/day                   | $5/month (10M requests/month) |
-| KV              | 100K reads/day, 1K writes/day       | $0.50/M reads, $5/M writes    |
-| Durable Objects | Not available on free tier          | $5/month minimum              |
+| Resource                        | Free tier                           | Paid plan                     |
+| ------------------------------- | ----------------------------------- | ----------------------------- |
+| Pages                           | 500 builds/month, 100K requests/day | $5/month for more             |
+| Workers                         | 100K requests/day                   | $5/month (10M requests/month) |
+| KV                              | 100K reads/day, 1K writes/day       | $0.50/M reads, $5/M writes    |
+| Durable Objects (SQLite-backed) | Free                                | Included                      |
+| Durable Objects (KV-backed)     | Not available on free tier          | $5/month minimum              |
 
-For a typical conference quiz with 100-500 participants, the free tier (except Durable Objects) is sufficient. WebSocket support via Durable Objects requires the paid plan.
+For a typical conference quiz with 100-500 participants, the free tier is sufficient. SQLite-backed Durable Objects for WebSocket coordination are available on the free plan.

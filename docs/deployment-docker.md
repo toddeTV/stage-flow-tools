@@ -7,7 +7,7 @@ Deploy the application on your own Linux server using Docker Compose and a Traef
 - **Full control** - your server, your data, your rules.
 - **Works everywhere** - any Linux server with Docker installed.
 - **Data persistence** - JSON files stored directly on disk via volume mounts.
-- **Corporate friendly** - runs behind firewalls and VPNs without external dependencies.
+- **Corporate-friendly** - runs behind firewalls and VPNs without external dependencies.
 - **Ready to use** - the current codebase runs natively on Node.js, no migration needed.
 
 ## Prerequisites
