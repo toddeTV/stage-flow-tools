@@ -25,7 +25,8 @@
  *   CLOUDFLARE_ACCOUNT_ID       - Required by wrangler for authentication.
  */
 
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -95,6 +96,16 @@ for (const [i, q] of questions.entries()) {
   }
 }
 
+// Populate defaults for optional runtime fields
+for (const q of questions) {
+  if (!q.id) q.id = randomUUID()
+  if (!q.key) q.key = q.id
+  if (q.is_active === undefined) q.is_active = false
+  if (q.is_locked === undefined) q.is_locked = true
+  if (!q.createdAt) q.createdAt = new Date().toISOString()
+  if (q.alreadyPublished === undefined) q.alreadyPublished = false
+}
+
 // Validate admin JSON if provided
 let adminData
 if (adminPath) {
@@ -121,22 +132,23 @@ if (adminPath) {
 // Execution
 // ---------------------------------------------------------------------------
 
-function run(description, command) {
+function run(description, args) {
+  const cmdStr = `pnpm ${args.join(' ')}`
   console.log(`\n> ${description}`)
   if (dryRun) {
-    console.log(`  [dry-run] ${command}`)
+    console.log(`  [dry-run] ${cmdStr}`)
     return
   }
   try {
-    execSync(command, { stdio: 'inherit' })
+    execFileSync('pnpm', args, { stdio: 'inherit' })
   }
   catch {
-    console.error(`  Command failed: ${command}`)
+    console.error(`  Command failed: ${cmdStr}`)
     process.exit(1)
   }
 }
 
-const nsFlag = `--namespace-id=${namespaceId}`
+const wranglerBase = ['exec', 'wrangler', 'kv', 'key', 'put', `--namespace-id=${namespaceId}`]
 
 console.log('=== Push to Cloudflare KV ===')
 console.log(`Questions file : ${resolvedQuestionsPath}`)
@@ -145,15 +157,14 @@ console.log(`Namespace ID   : ${namespaceId}`)
 if (dryRun) console.log('Mode           : DRY RUN')
 
 // Step 1: Reset answers to empty array
-run('Resetting answers to []', `npx wrangler kv key put ${nsFlag} "answers" "[]"`)
+run('Resetting answers to []', [...wranglerBase, 'answers', '[]'])
 
-// Step 2: Upload questions from file
-run('Uploading questions', `npx wrangler kv key put ${nsFlag} "questions" --path=${resolvedQuestionsPath}`)
+// Step 2: Upload questions (with populated defaults)
+run('Uploading questions', [...wranglerBase, 'questions', JSON.stringify(questions)])
 
 // Step 3: Upload admin data if provided (override, never delete)
 if (adminData) {
-  const adminJson = JSON.stringify(adminData)
-  run('Uploading admin credentials', `npx wrangler kv key put ${nsFlag} "admin" '${adminJson}'`)
+  run('Uploading admin credentials', [...wranglerBase, 'admin', JSON.stringify(adminData)])
 }
 
 console.log('\n=== Done ===')
