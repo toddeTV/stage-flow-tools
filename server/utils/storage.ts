@@ -51,9 +51,10 @@ export async function processPredefinedQuestions(predefinedQuestions: InputQuest
 
   for (const q of predefinedQuestions) {
     if (typeof q.question_text?.en !== 'string' || q.question_text.en.trim() === '') {
+      const details = JSON.stringify(q.question_text)
       throw new Error(
-        `Invalid question_text in predefined questions (must have non-empty "en" property): 
-        ${JSON.stringify(q.question_text)}`)
+        `Invalid question_text in predefined questions (must have non-empty "en" property): ${details}`,
+      )
     }
     if (!Array.isArray(q.answer_options) || q.answer_options.length === 0) {
       throw new Error(`Invalid answer_options in predefined questions: ${JSON.stringify(q.answer_options)}`)
@@ -148,10 +149,6 @@ export async function publishQuestion(key: string): Promise<Question | undefined
 
     // Clear all answers when publishing new question
     await storage.setItem('answers', [])
-
-    // Broadcast the new question as a results update
-    const results = await getResultsForQuestion(question.id, questions, [])
-    broadcast('results-update', results)
   }
   return question
 }
