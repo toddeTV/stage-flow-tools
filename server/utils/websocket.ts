@@ -19,12 +19,12 @@ export function getChannelPeers(channel: WebSocketChannel): Map<string, Peer> {
 }
 
 export async function addPeer(peer: Peer, channel: WebSocketChannel, url: string, userId?: string) {
-  ;(peer as any).userId = userId
-  ;(peer as any).channel = channel
+  ;(peer as unknown as Record<string, unknown>).userId = userId
+  ;(peer as unknown as Record<string, unknown>).channel = channel
   getChannelPeers(channel).set(peer.id, peer)
 
   const storedPeers = await storage.getItem<PeerInfo[]>('peers') || []
-  
+
   const filtered = storedPeers.filter((p: PeerInfo) => p.id !== peer.id)
   const peerInfo: PeerInfo = { id: peer.id, url, channel, userId }
   await storage.setItem('peers', [...filtered, peerInfo])
@@ -32,14 +32,14 @@ export async function addPeer(peer: Peer, channel: WebSocketChannel, url: string
 }
 
 export async function removePeer(peer: Peer) {
-  const channel = (peer as any).channel
+  const channel = (peer as unknown as Record<string, unknown>).channel as WebSocketChannel | undefined
   if (channel) {
     getChannelPeers(channel).delete(peer.id)
     if (getChannelPeers(channel).size === 0) {
       peers.delete(channel)
     }
   }
-  
+
   const storedPeers = await storage.getItem<PeerInfo[]>('peers') || []
   await storage.setItem('peers', storedPeers.filter((p: PeerInfo) => p.id !== peer.id))
   await broadcastConnections()
@@ -55,7 +55,11 @@ export async function getPeers(channel?: WebSocketChannel) {
 
 export function broadcast(event: string, data: unknown, channel?: WebSocketChannel) {
   const message = JSON.stringify({ event, data })
-  const targetPeers = channel ? getChannelPeers(channel).values() : Array.from(peers.values()).flatMap(map => Array.from(map.values()))
+  const targetPeers = channel
+    ? getChannelPeers(channel).values()
+    : Array.from(peers.values()).flatMap(
+        map => Array.from(map.values()),
+      )
 
   for (const peer of targetPeers) {
     try {
@@ -75,7 +79,7 @@ export function sendToUser(userId: string, event: string, data: unknown, channel
 
   let delivered = false
   for (const peer of targetPeers) {
-    if ((peer as any).userId === userId) {
+    if ((peer as unknown as Record<string, unknown>).userId === userId) {
       try {
         peer.send(message)
         delivered = true

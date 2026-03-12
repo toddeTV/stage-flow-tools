@@ -19,20 +19,20 @@ function handleChange() {
 
 <template>
   <label
-    class="flex items-center p-5 border-[3px] border-black cursor-pointer transition-all duration-200 relative"
+    class="relative flex cursor-pointer items-center border-[3px] border-black p-5 transition-all duration-200"
     :class="{
       'bg-black text-white': modelValue === value,
-      'opacity-60 cursor-not-allowed': disabled,
-      'hover:translate-x-1 hover:shadow-[-5px_5px_0_#000]': !disabled
+      'cursor-not-allowed opacity-60': disabled,
+      'hover:translate-x-1 hover:shadow-[-5px_5px_0_#000]': !disabled,
     }"
   >
     <input
+      :checked="modelValue === value"
+      class="mr-4 h-5 w-5"
+      :class="modelValue === value ? 'accent-white' : 'accent-black'"
+      :disabled="disabled"
       type="radio"
       :value="value"
-      :checked="modelValue === value"
-      :disabled="disabled"
-      class="w-5 h-5 mr-4"
-      :class="modelValue === value ? 'accent-white' : 'accent-black'"
       @change="handleChange"
     >
     <span class="text-lg">

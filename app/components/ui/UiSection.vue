@@ -7,7 +7,7 @@ withDefaults(defineProps<{
 </script>
 
 <template>
-  <section :class="{ 'bg-white border-[3px] border-black p-8' : !bare }">
+  <section :class="{ 'border-[3px] border-black bg-white p-8': !bare }">
     <slot />
   </section>
 </template>

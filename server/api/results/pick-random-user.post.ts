@@ -1,4 +1,5 @@
 import type { Answer } from '~/types'
+import { WebSocketChannel } from '~/types'
 
 export default defineEventHandler(async (event) => {
   verifyAdmin(event)
@@ -9,7 +10,7 @@ export default defineEventHandler(async (event) => {
   if (!questionId || !option) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Missing questionId or option'
+      statusMessage: 'Missing questionId or option',
     })
   }
 
@@ -28,14 +29,14 @@ export default defineEventHandler(async (event) => {
     }
 
     const randomIndex = Math.floor(Math.random() * usersForOption.length)
-    const randomUser = usersForOption[randomIndex]
+    const randomUser = usersForOption[randomIndex]!
 
     const delivered = sendToUser(randomUser.user_id, 'winner-selected', {
       userId: randomUser.user_id,
       username: randomUser.user_nickname,
       questionId,
-      option
-    }, 'default')
+      option,
+    }, WebSocketChannel.DEFAULT)
 
     if (!delivered) {
       throw createError({ statusCode: 503, statusMessage: 'Winner is not currently connected' })
@@ -52,7 +53,7 @@ export default defineEventHandler(async (event) => {
     logger_error('Failed to pick random user', error)
     throw createError({
       statusCode: 500,
-      statusMessage: 'Internal Server Error'
+      statusMessage: 'Internal Server Error',
     })
   }
 })

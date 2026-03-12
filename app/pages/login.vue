@@ -7,7 +7,7 @@ async function handleLogin() {
     loginError.value = ''
     await $fetch('/api/auth/login', {
       method: 'POST',
-      body: loginForm.value
+      body: loginForm.value,
     })
 
     const router = useRouter()
@@ -27,20 +27,32 @@ async function handleLogin() {
 
     router.push(redirectPath)
   }
-  catch (error: any) {
-    loginError.value = error.data?.statusMessage || 'Login failed'
+  catch (error: unknown) {
+    const fetchError = error as { data?: { statusMessage?: string } }
+    loginError.value = fetchError.data?.statusMessage || 'Login failed'
   }
 }
 </script>
 
 <template>
-  <div class="max-w-md mx-auto mt-20 p-8 border-[3px] border-black bg-white">
-    <h1 class="mb-5 text-3xl uppercase border-b-[3px] border-black pb-2.5">Admin Login</h1>
-    <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
+  <div class="mx-auto mt-20 max-w-md border-[3px] border-black bg-white p-8">
+    <h1 class="mb-5 border-b-[3px] border-black pb-2.5 text-3xl uppercase">
+      Admin Login
+    </h1>
+    <form class="flex flex-col gap-4" @submit.prevent="handleLogin">
       <UiInput v-model="loginForm.username" placeholder="Username" required />
-      <UiInput v-model="loginForm.password" type="password" placeholder="Password" required />
-      <UiButton type="submit">Login</UiButton>
-      <div v-if="loginError" class="text-black bg-white border-2 border-black p-2.5 text-center">{{ loginError }}</div>
+      <UiInput
+        v-model="loginForm.password"
+        placeholder="Password"
+        required
+        type="password"
+      />
+      <UiButton type="submit">
+        Login
+      </UiButton>
+      <div v-if="loginError" class="border-2 border-black bg-white p-2.5 text-center text-black">
+        {{ loginError }}
+      </div>
     </form>
   </div>
 </template>

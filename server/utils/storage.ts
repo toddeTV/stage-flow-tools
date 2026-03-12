@@ -28,7 +28,7 @@ async function initStorage(event?: H3Event) {
     try {
       await fs.access(QUESTIONS_FILE)
     }
-    catch (error: unknown) {
+    catch {
       await fs.writeFile(QUESTIONS_FILE, JSON.stringify([]))
     }
 
@@ -86,7 +86,7 @@ async function initStorage(event?: H3Event) {
                 is_active: false,
                 is_locked: false,
                 createdAt: new Date().toISOString(),
-                alreadyPublished: false
+                alreadyPublished: false,
               })
             }
           }
@@ -122,7 +122,7 @@ async function initStorage(event?: H3Event) {
     try {
       await fs.access(ANSWERS_FILE)
     }
-    catch (error: unknown) {
+    catch {
       await fs.writeFile(ANSWERS_FILE, JSON.stringify([]))
     }
 
@@ -130,17 +130,17 @@ async function initStorage(event?: H3Event) {
     try {
       await fs.access(ADMIN_FILE)
     }
-    catch (error: unknown) {
+    catch {
       // Get runtime config if event is provided, otherwise use defaults
       const config = event
         ? useRuntimeConfig(event)
         : {
             adminUsername: 'admin',
-            adminPassword: '123'
+            adminPassword: '123',
           }
       const defaultAdmin = {
         username: config.adminUsername,
-        password: config.adminPassword
+        password: config.adminPassword,
       }
       await fs.writeFile(ADMIN_FILE, JSON.stringify(defaultAdmin))
     }
@@ -179,7 +179,9 @@ export async function getActiveQuestion(): Promise<Question | undefined> {
   return questions.find(q => q.is_active)
 }
 
-export async function createQuestion(questionData: Omit<Question, 'id' | 'is_active' | 'is_locked' | 'createdAt' | 'alreadyPublished'>): Promise<Question> {
+export async function createQuestion(
+  questionData: Omit<Question, 'id' | 'is_active' | 'is_locked' | 'createdAt' | 'alreadyPublished'>,
+): Promise<Question> {
   await initStorage()
   const release = await lock(QUESTIONS_FILE)
   try {
@@ -199,7 +201,7 @@ export async function createQuestion(questionData: Omit<Question, 'id' | 'is_act
       key: resolvedKey,
       is_locked: false,
       createdAt: new Date().toISOString(),
-      alreadyPublished: false
+      alreadyPublished: false,
     }
     questions.push(newQuestion)
     await fs.writeFile(QUESTIONS_FILE, JSON.stringify(questions, null, 2))
@@ -338,7 +340,7 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
     // Check if user already answered this question
     const existingIndex = answers.findIndex(
       a => a.question_id === answerData.question_id
-        && a.user_id === answerData.user_id
+        && a.user_id === answerData.user_id,
     )
 
     if (existingIndex >= 0) {
@@ -348,7 +350,7 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
         answers[existingIndex] = {
           ...existingAnswer,
           selected_answer: answerData.selected_answer,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         }
       }
     }
@@ -357,7 +359,7 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
       const newAnswer: Answer = {
         id: createId(),
         ...answerData,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
       answers.push(newAnswer)
     }
@@ -383,7 +385,7 @@ export async function retractAnswer(userId: string, questionId: string): Promise
     const answers: Answer[] = JSON.parse(data)
 
     const updatedAnswers = answers.filter(
-      a => !(a.user_id === userId && a.question_id === questionId)
+      a => !(a.user_id === userId && a.question_id === questionId),
     )
 
     await fs.writeFile(ANSWERS_FILE, JSON.stringify(updatedAnswers, null, 2))
@@ -404,7 +406,11 @@ export async function validateAdmin(username: string, password: string, event?: 
 }
 
 // Get results for current question
-export async function getResultsForQuestion(questionId: string, allQuestions?: Question[], allAnswers?: Answer[]): Promise<Results | null> {
+export async function getResultsForQuestion(
+  questionId: string,
+  allQuestions?: Question[],
+  allAnswers?: Answer[],
+): Promise<Results | null> {
   const questions = allQuestions || await getQuestions()
   const question = questions.find(q => q.id === questionId)
   if (!question) return null
@@ -432,7 +438,7 @@ export async function getResultsForQuestion(questionId: string, allQuestions?: Q
     question,
     results,
     totalVotes: answers.length,
-    totalConnections: (await getPeers()).length
+    totalConnections: (await getPeers()).length,
   }))
 }
 

@@ -9,6 +9,7 @@ REST API endpoints documentation.
 Login as administrator.
 
 **Request:**
+
 ```json
 {
   "username": "string",
@@ -24,6 +25,7 @@ Sets `admin_token` HTTP-only cookie and returns JWT token.
 Logout the administrator. Clears the `admin_token` cookie.
 
 **Response:**
+
 ```json
 {
   "success": true
@@ -35,14 +37,18 @@ Logout the administrator. Clears the `admin_token` cookie.
 Verify authentication token (admin only).
 
 **Headers:**
+
 - Cookie: `admin_token` (set automatically by login)
 - Or `Authorization: Bearer <token>`
 
 **Response:**
+
 ```json
 {
   "valid": true,
-  "user": { /* decoded JWT payload */ }
+  "user": {
+    /* decoded JWT payload */
+  }
 }
 ```
 
@@ -59,6 +65,7 @@ Get all questions (admin only).
 Get the currently active question (public). Returns a simplified version without emojis and admin notes.
 
 **Response (active question):**
+
 ```json
 {
   "id": "string",
@@ -72,6 +79,7 @@ Get the currently active question (public). Returns a simplified version without
 ```
 
 **Response (no active question):**
+
 ```json
 {
   "message": "No active question"
@@ -83,12 +91,11 @@ Get the currently active question (public). Returns a simplified version without
 Create new question (admin only).
 
 **Request:**
+
 ```json
 {
   "question_text": "string",
-  "answer_options": [
-    { "text": "string", "emoji": "string (optional)" }
-  ],
+  "answer_options": [{ "text": "string", "emoji": "string (optional)" }],
   "note": "string (optional)"
 }
 ```
@@ -98,6 +105,7 @@ Create new question (admin only).
 Publish question as active (admin only). Clears existing answers and broadcasts to all WebSocket clients.
 
 **Request:**
+
 ```json
 {
   "questionId": "string"
@@ -109,6 +117,7 @@ Publish question as active (admin only). Clears existing answers and broadcasts 
 Toggle answer lock on active question (admin only). Broadcasts lock status via WebSocket.
 
 **Request:**
+
 ```json
 {
   "questionId": "string"
@@ -122,6 +131,7 @@ Toggle answer lock on active question (admin only). Broadcasts lock status via W
 Submit or update a user answer.
 
 **Request:**
+
 ```json
 {
   "user_id": "string",
@@ -131,6 +141,7 @@ Submit or update a user answer.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true
@@ -142,6 +153,7 @@ Submit or update a user answer.
 Retract a user's answer.
 
 **Request:**
+
 ```json
 {
   "user_id": "string",
@@ -150,6 +162,7 @@ Retract a user's answer.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true
@@ -163,6 +176,7 @@ Retract a user's answer.
 Submit an emoji reaction. Broadcasts to all clients on the emojis WebSocket channel.
 
 **Request:**
+
 ```json
 {
   "emoji": "string (single emoji)"
@@ -176,9 +190,12 @@ Submit an emoji reaction. Broadcasts to all clients on the emojis WebSocket chan
 Get current question results (admin only).
 
 **Response:**
+
 ```json
 {
-  "question": { /* question object */ },
+  "question": {
+    /* question object */
+  },
   "results": {
     "Option A": { "count": 10, "emoji": "optional" },
     "Option B": { "count": 5 }
@@ -193,6 +210,7 @@ Get current question results (admin only).
 Pick a random user who voted for a specific option (admin only).
 
 **Request:**
+
 ```json
 {
   "questionId": "string",
@@ -201,6 +219,7 @@ Pick a random user who voted for a specific option (admin only).
 ```
 
 **Response:**
+
 ```json
 {
   "username": "string or null"

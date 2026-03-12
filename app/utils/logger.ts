@@ -40,6 +40,6 @@ export function logger(data: unknown, options?: unknown): void {
  * logger_error(error, 'API call failed', { endpoint: '/api/data' })
  * ```
  */
-export function logger_error(data: unknown, ...optionalParams: any[]): void {
+export function logger_error(data: unknown, ...optionalParams: unknown[]): void {
   global_logger_error(data, ...optionalParams)
 }

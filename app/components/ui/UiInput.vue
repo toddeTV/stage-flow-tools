@@ -35,12 +35,12 @@ function onInput(event: Event) {
 
 <template>
   <input
-    :type="type"
-    :step="step"
+    class="border-2 border-black bg-white p-3 text-base"
     :placeholder="placeholder"
-    :value="modelValue"
     :required="required"
-    class="p-3 border-2 border-black text-base bg-white"
+    :step="step"
+    :type="type"
+    :value="modelValue"
     @input="onInput"
   >
 </template>

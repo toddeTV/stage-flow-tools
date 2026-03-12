@@ -1,4 +1,4 @@
-export default defineNuxtRouteMiddleware(async (to, from) => {
+export default defineNuxtRouteMiddleware(async (to, _from) => {
   const timeout = 15000 // 15 seconds
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeout)
@@ -15,7 +15,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       throw new Error('Auth verification failed')
     }
   }
-  catch (err) {
+  catch {
     // Always clear the timeout to prevent it from firing after error handling
     clearTimeout(timeoutId)
 

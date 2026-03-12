@@ -13,6 +13,7 @@ Complete guide for setting up the quiz application locally.
 ### Installation Steps
 
 1. **Install pnpm** (if not installed)
+
    ```bash
    npm install -g pnpm
    ```
@@ -29,11 +30,13 @@ Complete guide for setting up the quiz application locally.
 ### Environment Variables
 
 Create `.env` file from template:
+
 ```bash
 cp .env.example .env
 ```
 
 **Generate a strong JWT secret:**
+
 ```bash
 openssl rand -base64 48
 ```
@@ -55,6 +58,7 @@ Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
 ### Storage Location
 
 Data files are stored in `/data`:
+
 - `questions.json` - Quiz questions
 - `answers.json` - User answers
 - `admin.json` - Admin credentials
@@ -77,6 +81,7 @@ cp -r data/ data-backup-$(date +%Y%m%d)
 ### Port Already in Use
 
 Change port in `.env`:
+
 ```
 PORT=3001
 ```
@@ -84,6 +89,7 @@ PORT=3001
 ### Permission Errors
 
 Ensure write permissions:
+
 ```bash
 chmod 755 data/
 ```

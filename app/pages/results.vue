@@ -40,10 +40,10 @@ const coreViewStyles = computed(() => {
     return {}
   }
   return {
-    padding: `${padding.value}px`,
-    transform: `scale(${scale.value})`,
+    'padding': `${padding.value}px`,
+    'transform': `scale(${scale.value})`,
     'transform-origin': 'top left',
-    width: `calc(100% / ${scale.value})`
+    'width': `calc(100% / ${scale.value})`,
   }
 })
 
@@ -110,8 +110,8 @@ function pickRandomUser(option: string) {
     method: 'POST',
     body: {
       questionId: results.value?.question.id,
-      option
-    }
+      option,
+    },
   }).catch((error: unknown) => {
     logger_error('Failed to pick random user:', error)
     alert('An error occurred while picking a random user. Please try again.')
@@ -132,7 +132,7 @@ async function toggleLock() {
   try {
     await $fetch('/api/questions/toggle-lock', {
       method: 'POST',
-      body: { questionId: results.value.question.id }
+      body: { questionId: results.value.question.id },
     })
     // The websocket will eventually confirm the state, but the UI is already updated.
   }
@@ -149,7 +149,7 @@ async function toggleLock() {
 async function publishNextQuestion() {
   try {
     await $fetch('/api/questions/publish-next', {
-      method: 'POST'
+      method: 'POST',
     })
     // The websocket will update the state, no need to manually refresh here.
   }
@@ -162,7 +162,7 @@ async function publishNextQuestion() {
 async function unpublishActiveQuestion() {
   try {
     await $fetch('/api/questions/unpublish-active', {
-      method: 'POST'
+      method: 'POST',
     })
     // The websocket will update the state.
   }
@@ -174,18 +174,30 @@ async function unpublishActiveQuestion() {
 </script>
 
 <template>
-  <div :class="{ 'max-w-4xl mx-auto p-5 min-h-screen': !isCoreView }">
+  <div :class="{ 'mx-auto min-h-screen max-w-4xl p-5': !isCoreView }">
     <div :style="coreViewStyles">
-      <UiPageTitle v-if="!isCoreView" class="relative page-title">{{ t('pageTitle') }}</UiPageTitle>
+      <UiPageTitle v-if="!isCoreView" class="page-title relative">
+        {{ t('pageTitle') }}
+      </UiPageTitle>
 
       <UiSection :bare="isCoreView">
         <!-- Controls -->
         <div class="mb-10 border-b-[3px] border-black pb-5">
-          <div class="flex justify-between items-center text-lg">
-            <span v-if="results" class="font-bold py-2 px-4 bg-gray-100 border-2 border-black">{{ t('totalVotes') }}: {{ results.totalVotes }} ({{ results.totalConnections > 0 ? Math.round((results.totalVotes / results.totalConnections) * 100) : 0 }}%)</span>
+          <div class="flex items-center justify-between text-lg">
+            <span
+              v-if="results"
+              class="border-2 border-black bg-gray-100 px-4 py-2 font-bold"
+            >
+              {{ t('totalVotes') }}: {{ results.totalVotes }}
+              ({{
+                results.totalConnections > 0
+                  ? Math.round((results.totalVotes / results.totalConnections) * 100)
+                  : 0
+              }}%)
+            </span>
             <span v-else>&nbsp;</span>
             <div class="flex items-center gap-4">
-              <UiButton @click="refreshResults" variant="secondary" size="small">
+              <UiButton size="small" variant="secondary" @click="refreshResults">
                 🔄 {{ t('refreshButton') }}
               </UiButton>
               <template v-if="results">
@@ -193,23 +205,25 @@ async function unpublishActiveQuestion() {
                   {{ t('hideButton') }}
                 </UiCheckbox>
                 <UiButton
-                  :variant="results.question.is_locked ? 'primary' : 'secondary'"
-                  size="small"
-                  @click="toggleLock"
                   :disabled="isTogglingLock"
+                  size="small"
+                  :variant="results.question.is_locked ? 'primary' : 'secondary'"
+                  @click="toggleLock"
                 >
                   {{ results.question.is_locked ? `🔒 ${t('lockedButton')}` : `🔓 ${t('openButton')}` }}
                 </UiButton>
-                <UiButton @click="unpublishActiveQuestion" variant="secondary" size="small">
+                <UiButton size="small" variant="secondary" @click="unpublishActiveQuestion">
                   {{ t('unpublishButton') }}
                 </UiButton>
               </template>
-              <UiButton @click="publishNextQuestion" variant="secondary" size="small">
+              <UiButton size="small" variant="secondary" @click="publishNextQuestion">
                 {{ t('nextButton') }} ➡
               </UiButton>
             </div>
           </div>
-          <h2 v-if="results" class="text-3xl mt-5 leading-tight">{{ getLocalizedText(results.question.question_text) }}</h2>
+          <h2 v-if="results" class="mt-5 text-3xl leading-tight">
+            {{ getLocalizedText(results.question.question_text) }}
+          </h2>
         </div>
 
         <!-- Results Chart -->
@@ -220,46 +234,61 @@ async function unpublishActiveQuestion() {
               :key="option"
               class="flex flex-col gap-2.5"
             >
-              <div class="flex justify-between items-center text-lg">
-                <span class="font-bold">{{ getLocalizedOption(String(option)) }} <span v-if="result.emoji && !hideResults" class="ml-2">{{ result.emoji }}</span></span>
+              <div class="flex items-center justify-between text-lg">
+                <span class="font-bold">
+                  {{ getLocalizedOption(String(option)) }}
+                  <span v-if="result.emoji && !hideResults" class="ml-2">
+                    {{ result.emoji }}
+                  </span>
+                </span>
                 <div class="flex items-center gap-2">
-                  <span class="py-1 px-2.5 bg-gray-100 border-2 border-black text-sm">
+                  <span class="border-2 border-black bg-gray-100 px-2.5 py-1 text-sm">
                     <template v-if="hideResults">?</template>
                     <template v-else>{{ result.count }}</template>
                     {{ t('votes') }}
                   </span>
-                  <UiButton size="small" @click="pickRandomUser(String(option))" :disabled="isPickingUser">🎲</UiButton>
+                  <UiButton :disabled="isPickingUser" size="small" @click="pickRandomUser(String(option))">
+                    🎲
+                  </UiButton>
                 </div>
               </div>
-              <div class="h-12 bg-gray-100 border-[3px] border-black relative overflow-hidden">
-                <div v-if="hideResults" class="flex items-center justify-center h-full">
+              <div class="relative h-12 overflow-hidden border-[3px] border-black bg-gray-100">
+                <div v-if="hideResults" class="flex h-full items-center justify-center">
                   <span class="text-2xl font-bold text-gray-400">?</span>
                 </div>
                 <div
                   v-else
-                  class="h-full bg-black transition-width duration-500 ease-out flex items-center justify-end pr-2.5 min-w-[50px] relative result-bar"
+                  class="transition-width result-bar relative flex h-full
+                    min-w-[50px] items-center justify-end bg-black
+                    pr-2.5 duration-500 ease-out"
                   :style="{ width: getBarWidth(result.count) + '%' }"
                 >
-                  <span class="text-white font-bold text-xl text-shadow-lg relative z-10">{{ getPercentage(result.count) }}%</span>
+                  <span class="text-shadow-lg relative z-10 text-xl font-bold text-white">
+                    {{ getPercentage(result.count) }}%
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Note Display -->
-          <div v-if="results.question.note && !hideResults" class="mt-8 p-4 bg-gray-100 border-2 border-black">
+          <div v-if="results.question.note && !hideResults" class="mt-8 border-2 border-black bg-gray-100 p-4">
             <p>{{ getLocalizedText(results.question.note) }}</p>
           </div>
         </template>
 
         <!-- No Active Question -->
-        <div v-else :class="{ 'py-20 px-8 text-center': !isCoreView }">
-          <h2 class="text-3xl mb-4">{{ t('noActiveQuestion') }}</h2>
-          <p class="text-xl mb-8">{{ t('waitingForQuestion') }}</p>
+        <div v-else :class="{ 'px-8 py-20 text-center': !isCoreView }">
+          <h2 class="mb-4 text-3xl">
+            {{ t('noActiveQuestion') }}
+          </h2>
+          <p class="mb-8 text-xl">
+            {{ t('waitingForQuestion') }}
+          </p>
           <div class="flex justify-center gap-2.5">
-            <span class="w-5 h-5 bg-black animate-bounce"></span>
-            <span class="w-5 h-5 bg-black animate-bounce [animation-delay:0.2s]"></span>
-            <span class="w-5 h-5 bg-black animate-bounce [animation-delay:0.4s]"></span>
+            <span class="h-5 w-5 animate-bounce bg-black" />
+            <span class="h-5 w-5 animate-bounce bg-black [animation-delay:0.2s]" />
+            <span class="h-5 w-5 animate-bounce bg-black [animation-delay:0.4s]" />
           </div>
         </div>
       </UiSection>
@@ -267,44 +296,43 @@ async function unpublishActiveQuestion() {
   </div>
 </template>
 
-
 <i18n lang="yaml">
 en:
-  pageTitle: "Live Results"
-  totalVotes: "Total Votes"
-  hideButton: "Hide"
-  lockedButton: "Locked"
-  openButton: "Open"
-  unpublishButton: "Unpublish"
-  refreshButton: "Refresh"
-  nextButton: "Next"
-  votes: "votes"
-  noActiveQuestion: "No Active Question"
-  waitingForQuestion: "Waiting for a question to be published..."
+  pageTitle: Live Results
+  totalVotes: Total Votes
+  hideButton: Hide
+  lockedButton: Locked
+  openButton: Open
+  unpublishButton: Unpublish
+  refreshButton: Refresh
+  nextButton: Next
+  votes: votes
+  noActiveQuestion: No Active Question
+  waitingForQuestion: Waiting for a question to be published...
 de:
-  pageTitle: "Live-Ergebnisse"
-  totalVotes: "Stimmen Gesamt"
-  hideButton: "Verstecken"
-  lockedButton: "Gesperrt"
-  openButton: "Offen"
-  unpublishButton: "Veröffentlichung zurückziehen"
-  refreshButton: "Aktualisieren"
-  nextButton: "Nächste"
-  votes: "Stimmen"
-  noActiveQuestion: "Keine aktive Frage"
-  waitingForQuestion: "Warten auf die Veröffentlichung einer Frage..."
+  pageTitle: Live-Ergebnisse
+  totalVotes: Stimmen Gesamt
+  hideButton: Verstecken
+  lockedButton: Gesperrt
+  openButton: Offen
+  unpublishButton: Veröffentlichung zurückziehen
+  refreshButton: Aktualisieren
+  nextButton: Nächste
+  votes: Stimmen
+  noActiveQuestion: Keine aktive Frage
+  waitingForQuestion: Warten auf die Veröffentlichung einer Frage...
 ja:
-  pageTitle: "ライブ結果"
-  totalVotes: "総投票数"
-  hideButton: "隠す"
-  lockedButton: "ロック済み"
-  openButton: "オープン"
-  unpublishButton: "公開停止"
-  refreshButton: "更新"
-  nextButton: "次へ"
-  votes: "票"
-  noActiveQuestion: "アクティブな質問はありません"
-  waitingForQuestion: "質問が公開されるのを待っています..."
+  pageTitle: ライブ結果
+  totalVotes: 総投票数
+  hideButton: 隠す
+  lockedButton: ロック済み
+  openButton: オープン
+  unpublishButton: 公開停止
+  refreshButton: 更新
+  nextButton: 次へ
+  votes: 票
+  noActiveQuestion: アクティブな質問はありません
+  waitingForQuestion: 質問が公開されるのを待っています...
 </i18n>
 
 <style scoped>
