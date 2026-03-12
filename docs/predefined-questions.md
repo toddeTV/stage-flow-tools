@@ -38,6 +38,7 @@ This document explains how to automatically load a set of questions into the app
     - When the application starts, it checks for the existence of `data/predefined-questions.json`.
     - If found, it renames the file to `data/predefined-questions.json.processing` to prevent it from being processed again.
     - It reads the questions from the `.processing` file and adds any questions that do not already exist (matched by the English `question_text.en` value) to the main `data/questions.json` file.
+    - Every question must have a non-empty `question_text.en` value. If any question in the batch is missing it or has an empty string, the **entire import is aborted** and the `.processing` file is left in place. Fix the offending entry in the `.processing` file and restart the application to retry.
     - After successful processing, the `.processing` file is deleted.
     - If an error occurs (e.g., malformed JSON), the `.processing` file is left in place for manual inspection.
 
