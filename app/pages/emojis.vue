@@ -49,14 +49,14 @@ function addEmoji(text: string, id: string) {
   const emojiSize = 60 * scale.value
   const padding = emojiSize
   const spawnableWidth = windowWidth.value - (padding * 2)
-  
+
   const newEmoji: Emoji = {
     id,
     text,
     x: (Math.random() * spawnableWidth) + padding,
     y: -100, // Start above the screen
     speed: Math.random() * 3 + 2, // Random speed
-    rotation: Math.random() * 40 - 20 // Random rotation -20 to 20 deg
+    rotation: Math.random() * 40 - 20, // Random rotation -20 to 20 deg
   }
   emojis.value.push(newEmoji)
 }
@@ -64,7 +64,7 @@ function addEmoji(text: string, id: string) {
 function animateEmojis() {
   emojis.value = emojis.value.map(emoji => ({
     ...emoji,
-    y: emoji.y + emoji.speed
+    y: emoji.y + emoji.speed,
   })).filter(emoji => emoji.y < windowHeight.value + 100) // Remove when off-screen
 
   requestAnimationFrame(animateEmojis)
@@ -73,7 +73,6 @@ function animateEmojis() {
 onMounted(() => {
   animateEmojis()
 })
-
 </script>
 
 <template>
@@ -83,12 +82,12 @@ onMounted(() => {
       :key="emoji.id"
       class="absolute text-6xl"
       :style="{
-        left: `${emoji.x}px`,
-        top: `${emoji.y}px`,
-        transform: `scale(${scale}) rotate(${emoji.rotation}deg)`,
+        'left': `${emoji.x}px`,
+        'top': `${emoji.y}px`,
+        'transform': `scale(${scale}) rotate(${emoji.rotation}deg)`,
         'transform-origin': 'center',
-        opacity: transparency,
-        pointerEvents: 'none'
+        'opacity': transparency,
+        'pointerEvents': 'none',
       }"
     >
       {{ emoji.text }}

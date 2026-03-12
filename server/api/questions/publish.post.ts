@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   if (!key) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Question key is required'
+      statusMessage: 'Question key is required',
     })
   }
 
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   if (!question) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Question not found'
+      statusMessage: 'Question not found',
     })
   }
 

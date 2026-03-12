@@ -5,8 +5,10 @@
  * across the entire application. Uses `console.dir` for better object inspection capabilities.
  *
  * @param data - The data to be logged, which can be of any type (e.g., string, object, array, Error).
- * @param showConsoleOutputs - Boolean flag that determines whether logging is enabled. When `false`, no output is produced.
- * @param options - Optional parameters for `console.dir`, such as `{ depth: null }` to display deeply nested objects fully,
+ * @param showConsoleOutputs - Boolean flag that determines whether logging is enabled.
+ *                               When `false`, no output is produced.
+ * @param options - Optional parameters for `console.dir`,
+ *                  such as `{ depth: null }` to display deeply nested objects fully,
  *                  or `{ colors: true }` for colored output (in Node.js environments).
  *
  * @example
@@ -49,6 +51,6 @@ export function global_logger(data: unknown, showConsoleOutputs: boolean, option
  * global_logger_error(new Error('Database timeout'), { query: 'SELECT ...', timeout: 5000 })
  * ```
  */
-export function global_logger_error(data: unknown, ...optionalParams: any[]): void {
+export function global_logger_error(data: unknown, ...optionalParams: unknown[]): void {
   console.error(data, ...optionalParams)
 }

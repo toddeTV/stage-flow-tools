@@ -86,3 +86,4 @@ To stop the application:
 
 ```bash
 docker compose down
+```

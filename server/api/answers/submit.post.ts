@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   if (!body || typeof body !== 'object') {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Invalid payload'
+      statusMessage: 'Invalid payload',
     })
   }
 
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   ) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'User ID, nickname and answer required'
+      statusMessage: 'User ID, nickname and answer required',
     })
   }
 
@@ -35,14 +35,14 @@ export default defineEventHandler(async (event) => {
   if (!activeQuestion) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'No active question'
+      statusMessage: 'No active question',
     })
   }
 
   if (activeQuestion.is_locked) {
     throw createError({
       statusCode: 403,
-      statusMessage: 'Question is locked'
+      statusMessage: 'Question is locked',
     })
   }
 
@@ -55,19 +55,21 @@ export default defineEventHandler(async (event) => {
   if (!answerOptions.includes(selectedAnswerNormalized)) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Invalid answer'
+      statusMessage: 'Invalid answer',
     })
   }
 
   // Find the original-cased answer option
-  const originalAnswer = activeQuestion.answer_options.find(opt => opt.text.en?.toLowerCase() === selectedAnswerNormalized)
+  const originalAnswer = activeQuestion.answer_options.find(
+    opt => opt.text.en?.toLowerCase() === selectedAnswerNormalized,
+  )
 
   // Submit answer
   await submitAnswer({
     question_id: activeQuestion.id,
     user_id,
     user_nickname,
-    selected_answer: originalAnswer ? originalAnswer.text : selected_answer
+    selected_answer: originalAnswer ? originalAnswer.text : selected_answer,
   })
 
   // Schedule bundled results update

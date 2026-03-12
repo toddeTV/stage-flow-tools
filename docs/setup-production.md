@@ -17,10 +17,12 @@ Creates optimized production bundle in `.output/` directory.
 ### 1. Node.js Server (VPS/Dedicated)
 
 **Requirements:**
+
 - Node.js 24.x
 - PM2 or similar process manager
 
 **Steps:**
+
 1. Build application
 2. Copy `.output/` to server
 3. Set environment variables
@@ -32,6 +34,7 @@ Creates optimized production bundle in `.output/` directory.
 ### 2. Docker Container
 
 **Dockerfile example:**
+
 ```dockerfile
 FROM node:24-alpine
 WORKDIR /app
@@ -43,10 +46,12 @@ CMD ["node", ".output/server/index.mjs"]
 ### 3. Platform-as-a-Service
 
 **Vercel:**
+
 - Note: File storage is ephemeral
 - Consider external database for persistence
 
 **Railway/Render:**
+
 - Full Node.js support
 - Persistent file storage available
 
@@ -55,6 +60,7 @@ CMD ["node", ".output/server/index.mjs"]
 ### Production Variables
 
 **Generate a strong JWT secret:**
+
 ```bash
 openssl rand -base64 48
 ```
@@ -74,16 +80,19 @@ Store the generated secret in your environment management system or secrets mana
 ### File Storage Limitations
 
 **Ephemeral Platforms** (Vercel, some PaaS):
+
 - Data resets on redeploy
 - Not suitable for production quiz data
 
 **Persistent Platforms** (VPS, dedicated servers):
+
 - Data persists across restarts
 - Regular backups recommended
 
 ### Migration to Database
 
 For high-availability production:
+
 1. Consider PostgreSQL/MySQL
 2. Use cloud database services
 3. Implement proper backup strategy
@@ -105,6 +114,7 @@ Access `/api/questions` to verify API availability.
 ### Single Instance
 
 Current architecture supports:
+
 - ~100-500 concurrent users
 - One active question at a time
 - File-based storage
@@ -112,6 +122,7 @@ Current architecture supports:
 ### Multi-Instance
 
 For larger scale:
+
 - Implement Redis for session/WebSocket sync
 - Use external database
 - Load balancer configuration
@@ -121,6 +132,7 @@ For larger scale:
 ### Automated Backups
 
 Schedule cron job:
+
 ```bash
 0 */6 * * * cp -r /app/data /backups/data-$(date +\%Y\%m\%d-\%H\%M)
 ```
@@ -128,6 +140,7 @@ Schedule cron job:
 ### Manual Backup
 
 Before updates:
+
 ```bash
 tar -czf quiz-backup-$(date +%Y%m%d).tar.gz data/
 ```

@@ -10,17 +10,20 @@ Get the quiz application running in minutes.
 ## Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd stage-flow-tools
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
 
 3. **Configure environment**
+
    ```bash
    cp .env.example .env
    ```

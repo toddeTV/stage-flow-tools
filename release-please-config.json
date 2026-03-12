@@ -1,12 +1,12 @@
 {
   "changelog-sections": [
-    { "type": "feat", "section": "✨ Features" },
-    { "type": "fix", "section": "🐛 Bug Fixes" },
-    { "type": "perf", "section": "⚡ Performance Improvements" },
-    { "type": "revert", "section": "⏪ Reverts" },
-    { "type": "chore", "section": "🧹 Miscellaneous Chores" },
-    { "type": "docs", "section": "📚 Documentation" },
-    { "type": "refactor", "section": "🔨 Code Refactoring" }
+    { "section": "✨ Features", "type": "feat" },
+    { "section": "🐛 Bug Fixes", "type": "fix" },
+    { "section": "⚡ Performance Improvements", "type": "perf" },
+    { "section": "⏪ Reverts", "type": "revert" },
+    { "section": "🧹 Miscellaneous Chores", "type": "chore" },
+    { "section": "📚 Documentation", "type": "docs" },
+    { "section": "🔨 Code Refactoring", "type": "refactor" }
   ],
   "packages": {
     ".": {

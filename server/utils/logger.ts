@@ -40,6 +40,6 @@ export function logger(data: unknown, options?: unknown): void {
  * logger_error(error, 'Failed to process request', { userId: 123 })
  * ```
  */
-export function logger_error(data: unknown, ...optionalParams: any[]): void {
+export function logger_error(data: unknown, ...optionalParams: unknown[]): void {
   global_logger_error(data, ...optionalParams)
 }

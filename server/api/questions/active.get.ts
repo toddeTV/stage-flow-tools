@@ -11,7 +11,7 @@ export default defineEventHandler(async (): Promise<PublicQuestion | { message: 
     const { note, key, alreadyPublished, answer_options, ...rest } = question
     return {
       ...rest,
-      answer_options: answer_options.map(({ text }) => ({ text }))
+      answer_options: answer_options.map(({ text }) => ({ text })),
     }
   }
 

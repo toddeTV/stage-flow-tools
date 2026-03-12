@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   if (!questionId || !option) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Missing questionId or option'
+      statusMessage: 'Missing questionId or option',
     })
   }
 
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
       userId: randomUser.user_id,
       username: randomUser.user_nickname,
       questionId,
-      option
+      option,
     }, 'default')
 
     if (!delivered) {
@@ -52,7 +52,7 @@ export default defineEventHandler(async (event) => {
     logger_error('Failed to pick random user', error)
     throw createError({
       statusCode: 500,
-      statusMessage: 'Internal Server Error'
+      statusMessage: 'Internal Server Error',
     })
   }
 })

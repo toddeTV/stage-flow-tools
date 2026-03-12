@@ -22,36 +22,36 @@ const sizeClasses = computed(() => {
     'p-5': props.size === 'medium',
     'p-2': props.size === 'small',
     'text-lg': props.size === 'medium',
-    'text-sm': props.size === 'small'
+    'text-sm': props.size === 'small',
   }
 })
 
 const inputSizeClasses = computed(() => {
   return {
     'w-5 h-5 mr-4': props.size === 'medium',
-    'w-4 h-4 mr-2': props.size === 'small'
+    'w-4 h-4 mr-2': props.size === 'small',
   }
 })
 </script>
 
 <template>
   <label
-    class="flex items-center border-[3px] border-black cursor-pointer transition-all duration-200 relative"
+    class="relative flex cursor-pointer items-center border-[3px] border-black transition-all duration-200"
     :class="[
       sizeClasses,
       {
         'bg-black text-white': modelValue,
-        'opacity-60 cursor-not-allowed': disabled,
-        'hover:translate-x-1 hover:shadow-[-5px_5px_0_#000]': !disabled
-      }
+        'cursor-not-allowed opacity-60': disabled,
+        'hover:translate-x-1 hover:shadow-[-5px_5px_0_#000]': !disabled,
+      },
     ]"
   >
     <input
-      type="checkbox"
       :checked="modelValue"
-      :disabled="disabled"
       class=""
       :class="[inputSizeClasses, modelValue ? 'accent-white' : 'accent-black']"
+      :disabled="disabled"
+      type="checkbox"
       @change="handleChange"
     >
     <span class="font-bold">

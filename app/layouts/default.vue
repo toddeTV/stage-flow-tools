@@ -11,8 +11,8 @@ const props = computed(() => ({
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen" :class="{ 'has-background': props.background }">
-    <div v-if="props.localeSwitcher" class="absolute top-2 right-2 z-10">
+  <div class="flex min-h-screen flex-col" :class="{ 'has-background': props.background }">
+    <div v-if="props.localeSwitcher" class="absolute right-2 top-2 z-10">
       <UiLocaleSwitcher />
     </div>
     <main class="flex-grow">

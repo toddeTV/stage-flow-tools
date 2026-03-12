@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   if (!nextQuestion) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'No more unpublished questions found.'
+      statusMessage: 'No more unpublished questions found.',
     })
   }
 
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   if (!question) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Failed to publish the next question.'
+      statusMessage: 'Failed to publish the next question.',
     })
   }
 

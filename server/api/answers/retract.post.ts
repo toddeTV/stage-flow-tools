@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!user_id || !question_id) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'User ID and question ID required'
+      statusMessage: 'User ID and question ID required',
     })
   }
 

@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     if (existingQuestions.some(q => q.key === key)) {
       throw createError({
         statusCode: 409,
-        statusMessage: 'A question with this key already exists'
+        statusMessage: 'A question with this key already exists',
       })
     }
   }
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   if (typeof raw_question_text?.en !== 'string' || !raw_question_text.en.trim()) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Question text (English) is required'
+      statusMessage: 'Question text (English) is required',
     })
   }
   // Validate all locale values are strings
@@ -30,19 +30,19 @@ export default defineEventHandler(async (event) => {
     if (typeof value !== 'string') {
       throw createError({
         statusCode: 400,
-        statusMessage: `Invalid value for locale "${lang}" in question_text: expected string`
+        statusMessage: `Invalid value for locale "${lang}" in question_text: expected string`,
       })
     }
   }
   const question_text = Object.fromEntries(
-    Object.entries(raw_question_text).map(([lang, value]) => [lang, (value as string).trim()])
+    Object.entries(raw_question_text).map(([lang, value]) => [lang, (value as string).trim()]),
   )
 
   // Validate and sanitize answer_options
   if (!Array.isArray(raw_answer_options)) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Answer options must be an array'
+      statusMessage: 'Answer options must be an array',
     })
   }
 
@@ -51,27 +51,27 @@ export default defineEventHandler(async (event) => {
       if (typeof option.text?.en !== 'string' || !option.text.en.trim()) {
         throw createError({
           statusCode: 400,
-          statusMessage: 'Each answer option must have a non-empty English text'
+          statusMessage: 'Each answer option must have a non-empty English text',
         })
       }
       for (const [lang, value] of Object.entries(option.text)) {
         if (typeof value !== 'string') {
           throw createError({
             statusCode: 400,
-            statusMessage: `Invalid value for locale "${lang}" in answer option text: expected string`
+            statusMessage: `Invalid value for locale "${lang}" in answer option text: expected string`,
           })
         }
       }
       return {
         text: Object.fromEntries(Object.entries(option.text).map(([lang, value]) => [lang, (value as string).trim()])),
-        emoji: typeof option.emoji === 'string' ? option.emoji.trim() : undefined
+        emoji: typeof option.emoji === 'string' ? option.emoji.trim() : undefined,
       }
     })
 
   if (answer_options.length < 2) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'At least 2 non-empty answer options are required'
+      statusMessage: 'At least 2 non-empty answer options are required',
     })
   }
 
@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
       if (typeof value !== 'string') {
         throw createError({
           statusCode: 400,
-          statusMessage: `Invalid value for locale "${lang}" in note: expected string`
+          statusMessage: `Invalid value for locale "${lang}" in note: expected string`,
         })
       }
       const trimmed = value.trim()
@@ -101,14 +101,14 @@ export default defineEventHandler(async (event) => {
       key,
       question_text,
       answer_options,
-      note
+      note,
     })
   }
   catch (error: unknown) {
     if (error instanceof Error && error.message.includes('already exists')) {
       throw createError({
         statusCode: 409,
-        statusMessage: 'A question with this key already exists'
+        statusMessage: 'A question with this key already exists',
       })
     }
     throw error

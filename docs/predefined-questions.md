@@ -9,6 +9,7 @@ This document explains how to automatically load a set of questions into the app
 2.  **File Format**: The file must contain a JSON array of question objects. Each object must have a `question_text` (string) and `answer_options` (an array of objects, each with a `text` property).
 
     **Example `data/predefined-questions.json`:**
+
     ```json
     [
       {
@@ -21,10 +22,7 @@ This document explains how to automatically load a set of questions into the app
       },
       {
         "question_text": "Which technology do you prefer?",
-        "answer_options": [
-          { "text": "Frontend" },
-          { "text": "Backend" }
-        ]
+        "answer_options": [{ "text": "Frontend" }, { "text": "Backend" }]
       }
     ]
     ```

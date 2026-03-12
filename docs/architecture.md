@@ -5,16 +5,19 @@ System design and technical architecture of the quiz application.
 ## Tech Stack
 
 ### Frontend
+
 - **Nuxt 4** - Vue meta-framework
 - **Vue 3** - Composition API
 - **Tailwind CSS** - Utility-first CSS framework
 
 ### Backend
+
 - **Nitro** - Nuxt server engine
 - **WebSockets** - Real-time communication
 - **JWT** - Authentication tokens
 
 ### Storage
+
 - **File-based JSON** - Zero-dependency persistence
 
 ## Application Structure

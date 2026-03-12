@@ -5,12 +5,12 @@ const { t } = useI18n()
 const languageMap: Record<string, string> = {
   en: '🇺🇸',
   de: '🇩🇪',
-  ja: '🇯🇵'
+  ja: '🇯🇵',
 }
 </script>
 
 <template>
-  <select v-model="locale" class="px-2 py-1 text-sm border-2 border-black bg-white" :aria-label="t('selectLanguage')">
+  <select v-model="locale" :aria-label="t('selectLanguage')" class="border-2 border-black bg-white px-2 py-1 text-sm">
     <option v-for="lang in locales" :key="lang.code" :value="lang.code">
       {{ languageMap[lang.code] }} {{ lang.name }}
     </option>
@@ -19,9 +19,9 @@ const languageMap: Record<string, string> = {
 
 <i18n lang="yaml">
 en:
-  selectLanguage: "Select language"
+  selectLanguage: Select language
 de:
-  selectLanguage: "Sprache auswählen"
+  selectLanguage: Sprache auswählen
 ja:
-  selectLanguage: "言語を選択"
+  selectLanguage: 言語を選択
 </i18n>

@@ -19,7 +19,6 @@ export interface Question {
   note?: LocalizedString
 }
 
-
 export type InputQuestion = Omit<Question, 'id' | 'is_active' | 'is_locked' | 'createdAt' | 'alreadyPublished'>
 
 export interface Answer {

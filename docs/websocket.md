@@ -13,11 +13,13 @@ Real-time communication system documentation.
 ### Client Connection
 
 ```javascript
-const ws = new WebSocket('ws://localhost:3000/_ws?channel=default&userId=abc123')
+const ws = new WebSocket(
+  "ws://localhost:3000/_ws?channel=default&userId=abc123",
+);
 ws.onmessage = (event) => {
-  const data = JSON.parse(event.data)
+  const data = JSON.parse(event.data);
   // Handle message
-}
+};
 ```
 
 ### Query Parameters
@@ -30,16 +32,22 @@ ws.onmessage = (event) => {
 ### Server-to-Client Events
 
 #### `new-question`
+
 Broadcast when question published
+
 ```json
 {
   "event": "new-question",
-  "data": { /* question object */ }
+  "data": {
+    /* question object */
+  }
 }
 ```
 
 #### `lock-status`
+
 Question lock state change
+
 ```json
 {
   "event": "lock-status",
@@ -51,16 +59,22 @@ Question lock state change
 ```
 
 #### `results-update`
+
 Bundled voting results (batched every 2 seconds)
+
 ```json
 {
   "event": "results-update",
-  "data": { /* results object */ }
+  "data": {
+    /* results object */
+  }
 }
 ```
 
 #### `connections-update`
+
 Peer count change (on connect/disconnect)
+
 ```json
 {
   "event": "connections-update",
@@ -71,7 +85,9 @@ Peer count change (on connect/disconnect)
 ```
 
 #### `emoji`
+
 Emoji reaction broadcast
+
 ```json
 {
   "event": "emoji",
@@ -85,7 +101,9 @@ Emoji reaction broadcast
 ### Client-to-Server
 
 #### `ping`
+
 Keep-alive message
+
 ```json
 "ping"
 ```
@@ -105,9 +123,9 @@ Keep-alive message
 // Auto-reconnect after 3 seconds
 ws.onclose = () => {
   setTimeout(() => {
-    setupWebSocket()
-  }, 3000)
-}
+    setupWebSocket();
+  }, 3000);
+};
 ```
 
 ### Keep-Alive

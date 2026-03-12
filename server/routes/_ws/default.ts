@@ -1,4 +1,4 @@
-import { Peer, Message } from 'crossws'
+import type { Peer, Message } from 'crossws'
 import { WebSocketChannel } from '~/types'
 
 export default defineWebSocketHandler({
