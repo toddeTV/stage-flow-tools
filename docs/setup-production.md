@@ -36,6 +36,8 @@ EXPOSE 3000
 CMD ["node", ".output/server/index.mjs"]
 ```
 
+> Mount `/app/.data/db` to a persistent host path or named volume to preserve quiz data across container restarts. Without this, data is lost when the container is recreated.
+
 ### 3. Node.js Server (VPS/Dedicated)
 
 **Requirements:**
@@ -100,9 +102,9 @@ Data is stored in `.data/db/` on the local filesystem.
 - Data resets on redeploy
 - Not suitable for production quiz data
 
-**Persistent Platforms** (VPS, dedicated servers, Docker):
+**Persistent Platforms** (VPS, dedicated servers, Docker with a mounted volume):
 
-- Data persists in `.data/db/` across restarts
+- Data persists in `.data/db/` across restarts when `/app/.data/db` is backed by persistent storage
 - Regular backups recommended
 
 ### Migration to Database
@@ -158,5 +160,5 @@ Schedule cron job (Docker / Node.js):
 Before updates:
 
 ```bash
-tar -czf quiz-backup-$(date +%Y%m%d).tar.gz data/
+tar -czf quiz-backup-$(date +%Y%m%d).tar.gz .data/db/
 ```
