@@ -42,8 +42,14 @@ export default defineNitroPlugin(async () => {
     if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
       // No predefined questions file - this is fine
     }
-    else if (error instanceof Error && error.message?.includes('not supported')) {
-      // Node.js fs module not available (Cloudflare Workers) - this is fine
+    else if (
+      error instanceof Error && (
+        error.message?.includes('No such module')
+        || error.message?.includes('not supported')
+        || error.message?.includes('not implemented')
+      )
+    ) {
+      // Node.js fs module not available (Cloudflare Workers, edge runtimes) - this is fine
     }
     else {
       logger_error('Error loading predefined questions from file:', error)
