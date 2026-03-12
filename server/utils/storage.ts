@@ -51,12 +51,10 @@ export async function processPredefinedQuestions(predefinedQuestions: InputQuest
 
   for (const q of predefinedQuestions) {
     if (typeof q.question_text?.en !== 'string' || q.question_text.en.trim() === '') {
-      logger_error('Invalid question_text in predefined questions (must have "en" property):', q)
-      return
+      throw new Error(`Invalid question_text in predefined questions (must have non-empty "en" property): ${JSON.stringify(q.question_text)}`)
     }
     if (!Array.isArray(q.answer_options) || q.answer_options.length === 0) {
-      logger_error('Invalid answer_options in predefined questions:', q)
-      return
+      throw new Error(`Invalid answer_options in predefined questions: ${JSON.stringify(q.answer_options)}`)
     }
   }
 
