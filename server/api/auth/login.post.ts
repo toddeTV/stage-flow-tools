@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import { SignJWT } from 'jose'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
@@ -22,11 +22,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // Generate token
-  const token = jwt.sign(
-    { username, isAdmin: true },
-    config.jwtSecret,
-    { expiresIn: '24h' },
-  )
+  const secret = new TextEncoder().encode(config.jwtSecret)
+  const token = await new SignJWT({ username, isAdmin: true })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('24h')
+    .sign(secret)
 
   setAdminCookie(event, token, 60 * 60 * 24) // 24 hours
 

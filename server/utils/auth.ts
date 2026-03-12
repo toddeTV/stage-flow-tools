@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import { jwtVerify } from 'jose'
 import type { H3Event } from 'h3'
 
 /** Sets the admin_token cookie with protocol-aware security attributes. */
@@ -27,7 +27,7 @@ export function getToken(event: H3Event): string | undefined {
  * Throws an error if the token is missing or invalid.
  * @param event The H3 event object.
  */
-export function verifyAdmin(event: H3Event) {
+export async function verifyAdmin(event: H3Event) {
   const config = useRuntimeConfig(event)
   const token = getToken(event)
 
@@ -39,8 +39,9 @@ export function verifyAdmin(event: H3Event) {
   }
 
   try {
-    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] })
-    return decoded
+    const secret = new TextEncoder().encode(config.jwtSecret)
+    const { payload } = await jwtVerify(token, secret, { algorithms: ['HS256'] })
+    return payload
   }
   catch {
     throw createError({
