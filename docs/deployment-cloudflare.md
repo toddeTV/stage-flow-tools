@@ -340,6 +340,8 @@ See the full schema in [storage.md](storage.md).
 
 ### Admin File Format
 
+> **Security:** This file contains plaintext credentials. Add it to `.gitignore` and never commit it to version control. For production credentials, prefer `npx wrangler secret put` instead.
+
 ```json
 {
   "username": "admin",
