@@ -40,8 +40,9 @@ export const useQuizSocket = (channel = 'default') => {
         activeQuestion.value = parsed.data
 
         if (previousQuestionId !== parsed.data.id) {
-          selectedAnswer.value = null
-          sessionStorage.removeItem(`answer-${parsed.data.id}`)
+          // Restore previously saved answer for this question, or clear selection
+          const savedAnswer = sessionStorage.getItem(`answer-${parsed.data.id}`)
+          selectedAnswer.value = savedAnswer !== null ? parseInt(savedAnswer, 10) : null
         }
       }
       else if (parsed.event === 'lock-status') {
