@@ -6,7 +6,7 @@ This application supports two deployment strategies. Cloudflare is the primary t
 
 ### 1. Cloudflare (Primary)
 
-Deploy to Cloudflare Pages with Workers for the server API and WebSocket support. Zero infrastructure management, automatic SSL, global CDN, and generous free tier.
+Deploy as a Cloudflare Worker with KV storage for data persistence. Zero infrastructure management, automatic SSL, global edge network, and WebSocket support.
 
 - [Cloudflare Deployment Guide](deployment-cloudflare.md)
 
@@ -18,17 +18,13 @@ Self-host on any Linux server using Docker Compose with a Traefik reverse proxy.
 
 ## Comparison
 
-| Aspect           | Cloudflare                                      | Docker                            |
-| ---------------- | ----------------------------------------------- | --------------------------------- |
-| Infrastructure   | Managed (zero servers)                          | Self-managed Linux server         |
-| SSL/TLS          | Automatic                                       | Via Traefik + Let's Encrypt       |
-| Storage          | Cloudflare KV (requires migration)              | Local JSON files on disk          |
-| WebSockets       | Cloudflare Durable Objects (requires migration) | Native Node.js WebSockets         |
-| Scaling          | Automatic edge distribution                     | Single instance (manual scaling)  |
-| Data persistence | Cloud-managed KV store                          | Volume-mounted `./data` directory |
-| Cost             | Free tier available                             | Server costs                      |
-| Current status   | **Requires migration** (see below)              | **Ready to use**                  |
-
-## Cloudflare Compatibility Notice
-
-The current codebase is built for a Node.js runtime and is **not yet directly compatible** with Cloudflare Workers/Pages. The Docker deployment works out of the box. Deploying to Cloudflare requires migrating several Node.js-specific components first. See the [Cloudflare Deployment Guide](deployment-cloudflare.md) for the full list of required changes and a migration roadmap.
+| Aspect           | Cloudflare                        | Docker                           |
+| ---------------- | --------------------------------- | -------------------------------- |
+| Infrastructure   | Managed (zero servers)            | Self-managed Linux server        |
+| SSL/TLS          | Automatic                         | Via Traefik + Let's Encrypt      |
+| Storage          | Cloudflare KV                     | Local filesystem (`.data/db`)    |
+| WebSockets       | In-memory (single Worker isolate) | In-memory (Node.js process)      |
+| Scaling          | Automatic edge distribution       | Single instance (manual scaling) |
+| Data persistence | Cloud-managed KV store            | Volume-mounted `.data/db`        |
+| Cost             | Free tier available (paid for KV) | Server costs                     |
+| Current status   | **Ready to use**                  | **Ready to use**                 |

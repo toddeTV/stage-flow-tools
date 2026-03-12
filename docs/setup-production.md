@@ -14,7 +14,19 @@ Creates optimized production bundle in `.output/` directory.
 
 ## Deployment Options
 
-### 1. Node.js Server (VPS/Dedicated)
+### 1. Cloudflare Workers (Primary)
+
+See the [Cloudflare Deployment Guide](deployment-cloudflare.md) for a step-by-step tutorial.
+
+```bash
+pnpm run deploy:cloudflare
+```
+
+### 2. Docker Container
+
+See the [Docker Deployment Guide](deployment-docker.md).
+
+### 3. Node.js Server (VPS/Dedicated)
 
 **Requirements:**
 
@@ -77,16 +89,22 @@ Store the generated secret in your environment management system or secrets mana
 
 ## Data Persistence
 
-### File Storage Limitations
+### Cloudflare Workers
+
+Data is stored in Cloudflare KV - persists across deployments, globally replicated.
+
+### Docker / Node.js
+
+Data is stored in `.data/db/` on the local filesystem.
 
 **Ephemeral Platforms** (Vercel, some PaaS):
 
 - Data resets on redeploy
 - Not suitable for production quiz data
 
-**Persistent Platforms** (VPS, dedicated servers):
+**Persistent Platforms** (VPS, dedicated servers, Docker):
 
-- Data persists across restarts
+- Data persists in `.data/db/` across restarts
 - Regular backups recommended
 
 ### Migration to Database
@@ -131,10 +149,10 @@ For larger scale:
 
 ### Automated Backups
 
-Schedule cron job:
+Schedule cron job (Docker / Node.js):
 
 ```bash
-0 */6 * * * cp -r /app/data /backups/data-$(date +\%Y\%m\%d-\%H\%M)
+0 */6 * * * cp -r /app/.data/db /backups/data-$(date +\%Y\%m\%d-\%H\%M)
 ```
 
 ### Manual Backup

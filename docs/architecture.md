@@ -18,7 +18,7 @@ System design and technical architecture of the quiz application.
 
 ### Storage
 
-- **File-based JSON** - Zero-dependency persistence
+- **Nitro `useStorage()`** - Pluggable storage with driver abstraction (filesystem for dev/Docker, Cloudflare KV for Workers)
 
 ## Application Structure
 
@@ -38,7 +38,8 @@ stage-flow-tools/
 │   └── utils/     # Server utilities
 ├── shared/        # Shared code (client + server)
 │   └── utils/     # Shared utilities
-├── data/          # JSON data storage (runtime)
+├── .data/db/      # Local storage (dev/Docker, gitignored)
+├── data/          # Predefined questions source (Node.js only)
 └── docs/          # Project documentation
 ```
 
@@ -63,11 +64,11 @@ stage-flow-tools/
 
 ## Design Decisions
 
-### Why File-Based Storage?
+### Why Nitro useStorage()?
 
-- **Zero Dependencies** - No database setup required
-- **Portability** - Works anywhere Node.js runs
-- **Simplicity** - JSON files are human-readable
+- **Driver Abstraction** - Same code runs on filesystem (dev/Docker) and Cloudflare KV (Workers)
+- **Zero Config for Dev** - Filesystem driver works out of the box via `devStorage`
+- **Cloud-Ready** - Swap to Cloudflare KV by setting `NITRO_PRESET=cloudflare-module`
 - **Adequate Scale** - Perfect for presentation use case
 
 ### Why WebSockets?
@@ -106,9 +107,9 @@ stage-flow-tools/
 
 ### Authentication
 
-- **JWT Tokens** - Stateless authentication
+- **JWT Tokens** - Stateless authentication via `jose` library (Web Crypto API, works in Workers and Node.js)
 - **HTTP-only Cookies** - Token storage
-- **Admin-only Routes** - Protected endpoints
+- **Admin-only Routes** - Protected endpoints (async `verifyAdmin()`)
 
 ### Data Validation
 

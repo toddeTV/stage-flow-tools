@@ -43,3 +43,25 @@ This document explains how to automatically load a set of questions into the app
     - If an error occurs (e.g., malformed JSON), the `.processing` file is left in place for manual inspection.
 
 This ensures that predefined questions are loaded exactly once in an atomic and safe manner.
+
+## Cloudflare Workers (KV Seeding)
+
+On Cloudflare Workers the filesystem is not available. Predefined questions must be seeded directly into KV using the Wrangler CLI.
+
+### Seeding Questions into KV
+
+Prepare your questions as a JSON array matching the `Question[]` schema and write them to KV:
+
+```bash
+npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" --path=./my-questions.json
+```
+
+Or inline for a small set:
+
+```bash
+npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" '[{"id":"q1","key":"demo","question_text":{"en":"Demo?"},"answer_options":[{"text":{"en":"Yes"}},{"text":{"en":"No"}}],"is_locked":true,"createdAt":"2025-01-01T00:00:00.000Z","alreadyPublished":false}]'
+```
+
+Each question object must include all required fields (`id`, `key`, `question_text`, `answer_options`, `is_locked`, `createdAt`, `alreadyPublished`). See the schema in [storage.md](storage.md).
+
+> KV data persists across deployments. You only need to seed once unless you want to replace the data.
