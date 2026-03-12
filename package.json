@@ -46,6 +46,7 @@
     "build:ssg": "cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt generate",
     "build:ssr": "cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt build",
     "deploy:cloudflare": "pnpm run build:cloudflare && npx wrangler deploy",
+    "deploy:push-to-cloudflare": "node scripts/push-to-cloudflare.mjs",
     "dev": "nuxt dev",
     "dev:preset": "nuxt dev --port 3000 --public",
     "fix:lint": "run-s \"test:lint --fix\"",
