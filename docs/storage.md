@@ -116,11 +116,22 @@ cp -r .data/db/ backups/data-$(date +%Y%m%d)
 ### Backup (Cloudflare KV)
 
 ```bash
-# Export all keys
-npx wrangler kv key list --binding=STAGE_FLOW_DATA
-npx wrangler kv key get --binding=STAGE_FLOW_DATA "questions"
-npx wrangler kv key get --binding=STAGE_FLOW_DATA "answers"
+# Export data to local backup files
+backup_dir="backups/kv-$(date +%Y%m%d)"
+mkdir -p "$backup_dir"
+npx wrangler kv key get --binding=STAGE_FLOW_DATA "questions" > "$backup_dir/questions.json"
+npx wrangler kv key get --binding=STAGE_FLOW_DATA "answers" > "$backup_dir/answers.json"
+npx wrangler kv key get --binding=STAGE_FLOW_DATA "admin" > "$backup_dir/admin.json"
 ```
+
+Restore from backup:
+
+```bash
+npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" --path="$backup_dir/questions.json"
+npx wrangler kv key put --binding=STAGE_FLOW_DATA "answers" --path="$backup_dir/answers.json"
+```
+
+> Emoji cooldown keys (`emoji:*`) are transient and excluded from backups.
 
 ### Data Reset (Docker / Node.js)
 
