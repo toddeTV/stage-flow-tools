@@ -290,6 +290,8 @@ For conference speakers who maintain quiz questions alongside presentation slide
 
 ### Usage
 
+> **Security:** If using `--admin`, the file contains plaintext credentials. Keep it out of version control (add to `.gitignore`). Prefer `npx wrangler secret put` for persistent production credentials.
+
 ```bash
 # Basic: push questions only
 pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json
@@ -360,6 +362,8 @@ npx wrangler login
 Or set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` environment variables for non-interactive use.
 
 ### Typical Workflow for Conference Speakers
+
+> Keep `admin.json` out of version control. See [Admin File Format](#admin-file-format) for security guidance.
 
 ```bash
 # 1. Prepare questions in your presentation repo
