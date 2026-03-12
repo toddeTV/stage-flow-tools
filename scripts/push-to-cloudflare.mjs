@@ -94,6 +94,12 @@ for (const [i, q] of questions.entries()) {
     console.error(`Error: question at index ${i} has invalid or empty "answer_options".`)
     process.exit(1)
   }
+  for (const [j, opt] of q.answer_options.entries()) {
+    if (typeof opt.text?.en !== 'string' || opt.text.en.trim() === '') {
+      console.error(`Error: question at index ${i}, option ${j} is missing a non-empty "text.en" field.`)
+      process.exit(1)
+    }
+  }
 }
 
 // Populate defaults for optional runtime fields
