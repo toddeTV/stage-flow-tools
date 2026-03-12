@@ -64,7 +64,8 @@ npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" '[{"id":"q1","key"
 
 Each question object must include all required fields (`id`, `question_text`, `answer_options`, `is_locked`, `createdAt`, `alreadyPublished`). The `key` field is optional. See the schema in [storage.md](storage.md).
 
-> KV data persists across deployments. You only need to seed once unless you want to replace the data.
+> **Manual deploys** (`npx wrangler deploy`): KV data persists across deployments - you only need to seed once unless you want to replace the data.<br>
+> **CI/CD deploys** (`deploy-cloudflare.yml`): The workflow resets `questions` and `answers` to `[]` after every deploy. Re-seed questions after each automated deployment. Admin credentials are preserved.
 
 ### Push Script (Recommended for Conference Speakers)
 
