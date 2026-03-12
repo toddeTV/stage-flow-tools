@@ -20,15 +20,27 @@ data/
 ```json
 {
   "id": "string (cuid2)",
-  "question_text": "string",
-  "answer_options": [{ "text": "string", "emoji": "string (optional)" }],
+  "key": "string (unique identifier, defaults to id)",
+  "question_text": {
+    "en": "string",
+    "de": "string (optional)",
+    "ja": "string (optional)"
+  },
+  "answer_options": [
+    {
+      "text": { "en": "string", "de": "string (optional)" },
+      "emoji": "string (optional)"
+    }
+  ],
   "is_active": "boolean (optional, only one question active at a time)",
   "is_locked": "boolean",
   "createdAt": "ISO 8601 timestamp",
   "alreadyPublished": "boolean",
-  "note": "string (optional)"
+  "note": { "en": "string (optional)" }
 }
 ```
+
+All text fields (`question_text`, `answer_options[].text`, `note`) use a `LocalizedString` type: an object with a required `en` key and optional locale keys (e.g., `de`, `ja`).
 
 #### Answer Schema
 
@@ -38,7 +50,7 @@ data/
   "question_id": "string",
   "user_id": "string",
   "user_nickname": "string",
-  "selected_answer": "string",
+  "selected_answer": { "en": "string" },
   "timestamp": "ISO 8601 timestamp"
 }
 ```
