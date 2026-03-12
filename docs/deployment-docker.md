@@ -1,13 +1,21 @@
-# Production Deployment with Docker
+# Docker Deployment Guide
 
-This guide describes how to deploy the application to a production environment on a Linux server using Docker and Docker Compose.
+Deploy the application on your own Linux server using Docker Compose and a Traefik reverse proxy. This is the self-hosted option - you control the infrastructure, and all data stays on your machine.
+
+## Why Docker?
+
+- **Full control** - your server, your data, your rules.
+- **Works everywhere** - any Linux server with Docker installed.
+- **Data persistence** - JSON files stored directly on disk via volume mounts.
+- **Corporate friendly** - runs behind firewalls and VPNs without external dependencies.
+- **Ready to use** - the current codebase runs natively on Node.js, no migration needed.
 
 ## Prerequisites
 
-- A Linux server with Docker and Docker Compose installed.
-- A Traefik reverse proxy instance running and configured on the same server.
-- The `traefik-public` Docker network must exist.
-- A domain or subdomain pointed to the server's IP address.
+- A Linux server with [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
+- A [Traefik](https://doc.traefik.io/traefik/) reverse proxy instance running and configured on the same server. Traefik handles SSL certificate provisioning via Let's Encrypt and routes HTTPS traffic to the application container.
+- The `traefik-public` Docker network must exist. Create it if needed: `docker network create traefik-public`.
+- A domain or subdomain pointed to the server's IP address (A or AAAA DNS record).
 
 ## Setup
 
@@ -32,6 +40,15 @@ Edit the `.env` file and set a strong, unique `NUXT_JWT_SECRET`. You can generat
 
 ```bash
 openssl rand -base64 48
+```
+
+Set a strong admin password as well:
+
+```bash
+# In .env:
+NUXT_ADMIN_USERNAME=admin
+NUXT_ADMIN_PASSWORD=<your-strong-password>
+NUXT_JWT_SECRET=<paste-output-from-openssl>
 ```
 
 ### 3. Configure Docker Compose
@@ -87,3 +104,49 @@ To stop the application:
 ```bash
 docker compose down
 ```
+
+## How It Works
+
+### Why Traefik?
+
+Traefik acts as a reverse proxy that sits in front of the application container. It provides:
+
+- **Automatic SSL** - provisions and renews Let's Encrypt certificates without manual setup.
+- **HTTP to HTTPS redirect** - forces all traffic through encrypted connections.
+- **WebSocket proxying** - transparently proxies WebSocket connections (`/_ws`) alongside regular HTTP traffic.
+- **Docker-native** - discovers containers via Docker labels, no manual config files for each service.
+
+The `docker-compose.yml` labels configure Traefik routing:
+
+- `traefik.http.routers.stage-flow-tools.rule=Host(...)` - routes traffic for your domain to this container.
+- `traefik.http.routers.stage-flow-tools.entrypoints=websecure` - listens on the HTTPS entrypoint.
+- `traefik.http.routers.stage-flow-tools.tls.certresolver=myresolver` - uses Let's Encrypt for SSL.
+- `traefik.http.services.stage-flow-tools.loadbalancer.server.port=3000` - forwards traffic to port 3000 inside the container.
+
+### Data persistence
+
+The `docker-compose.yml` mounts `./data:/app/data`, mapping the host's `./data` directory into the container. All application data (questions, answers, admin credentials) is stored as JSON files in this directory. This means:
+
+- Data survives container restarts, rebuilds, and updates.
+- You can back up data by copying the `./data` directory.
+- You can inspect or edit data files directly on the host.
+
+### Security considerations
+
+- Always set a strong `NUXT_JWT_SECRET` (at least 48 bytes of randomness).
+- Change the default admin password before making the application publicly accessible.
+- The `NUXT_JWT_SECRET` is the only secret passed via environment variable in `docker-compose.yml`. Admin credentials can be set in `.env` and are read by the container at startup.
+- Traefik handles SSL termination. Internal traffic between Traefik and the container is unencrypted (port 3000) but stays within the Docker network.
+
+## Using a Pre-Built Image
+
+Instead of building locally, you can use the pre-built Docker image from the GitHub Container Registry:
+
+```yaml
+services:
+  app:
+    image: ghcr.io/toddetv/stage-flow-tools:latest
+    # ... rest of config same as above
+```
+
+Replace `:latest` with a specific version tag (e.g., `:1.0.0`) for reproducible deployments. Available tags are published automatically on each release.
