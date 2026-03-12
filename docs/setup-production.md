@@ -26,6 +26,16 @@ pnpm run deploy:cloudflare
 
 See the [Docker Deployment Guide](deployment-docker.md).
 
+**Dockerfile example:**
+
+```dockerfile
+FROM node:24-alpine
+WORKDIR /app
+COPY .output .output
+EXPOSE 3000
+CMD ["node", ".output/server/index.mjs"]
+```
+
 ### 3. Node.js Server (VPS/Dedicated)
 
 **Requirements:**
@@ -43,19 +53,7 @@ See the [Docker Deployment Guide](deployment-docker.md).
    pm2 start .output/server/index.mjs --name quiz-app
    ```
 
-### 2. Docker Container
-
-**Dockerfile example:**
-
-```dockerfile
-FROM node:24-alpine
-WORKDIR /app
-COPY .output .output
-EXPOSE 3000
-CMD ["node", ".output/server/index.mjs"]
-```
-
-### 3. Platform-as-a-Service
+### 4. Platform-as-a-Service
 
 **Vercel:**
 
