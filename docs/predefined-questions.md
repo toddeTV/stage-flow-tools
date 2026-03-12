@@ -62,7 +62,7 @@ Or inline for a small set:
 npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" '[{"id":"q1","key":"demo","question_text":{"en":"Demo?"},"answer_options":[{"text":{"en":"Yes"}},{"text":{"en":"No"}}],"is_locked":true,"createdAt":"2025-01-01T00:00:00.000Z","alreadyPublished":false}]'
 ```
 
-Each question object must include all required fields (`id`, `key`, `question_text`, `answer_options`, `is_locked`, `createdAt`, `alreadyPublished`). See the schema in [storage.md](storage.md).
+Each question object must include all required fields (`id`, `question_text`, `answer_options`, `is_locked`, `createdAt`, `alreadyPublished`). The `key` field is optional. See the schema in [storage.md](storage.md).
 
 > KV data persists across deployments. You only need to seed once unless you want to replace the data.
 
