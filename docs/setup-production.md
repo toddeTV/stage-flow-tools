@@ -7,7 +7,7 @@ Guide for deploying the quiz application to production.
 ### Production Build
 
 ```bash
-pnpm build
+pnpm run build:ssr
 ```
 
 Creates optimized production bundle in `.output/` directory.

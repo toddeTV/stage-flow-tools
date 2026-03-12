@@ -98,6 +98,26 @@ Emoji reaction broadcast
 }
 ```
 
+#### `winner-selected`
+
+Sent to a specific user when they are picked as a random winner (via `/api/results/pick-random-user`). Only delivered to the winning user's WebSocket connection.
+
+```json
+{
+  "event": "winner-selected",
+  "data": {
+    "userId": "string",
+    "username": "string",
+    "questionId": "string",
+    "option": "string"
+  }
+}
+```
+
+#### `pong`
+
+Server response to client `ping` keep-alive.
+
 ### Client-to-Server
 
 #### `ping`

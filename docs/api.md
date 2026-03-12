@@ -62,19 +62,18 @@ Get all questions (admin only).
 
 ### GET `/api/questions/active`
 
-Get the currently active question (public). Returns a simplified version without emojis and admin notes.
+Get the currently active question (public). Returns a simplified version without emojis, admin notes, key, and `alreadyPublished`.
 
 **Response (active question):**
 
 ```json
 {
   "id": "string",
-  "question_text": "string",
-  "answer_options": ["string"],
+  "question_text": { "en": "string", "de": "string" },
+  "answer_options": [{ "text": { "en": "string", "de": "string" } }],
   "is_active": true,
   "is_locked": false,
-  "createdAt": "ISO 8601",
-  "alreadyPublished": true
+  "createdAt": "ISO 8601"
 }
 ```
 
@@ -94,21 +93,50 @@ Create new question (admin only).
 
 ```json
 {
-  "question_text": "string",
-  "answer_options": [{ "text": "string", "emoji": "string (optional)" }],
-  "note": "string (optional)"
+  "key": "string (optional, unique identifier)",
+  "question_text": { "en": "string", "de": "string (optional)" },
+  "answer_options": [
+    {
+      "text": { "en": "string", "de": "string (optional)" },
+      "emoji": "string (optional)"
+    }
+  ],
+  "note": { "en": "string (optional)" }
 }
 ```
 
 ### POST `/api/questions/publish`
 
-Publish question as active (admin only). Clears existing answers and broadcasts to all WebSocket clients.
+Publish question as active by key (admin only). Clears existing answers and broadcasts to all WebSocket clients.
 
 **Request:**
 
 ```json
 {
-  "questionId": "string"
+  "key": "string"
+}
+```
+
+### POST `/api/questions/publish-next`
+
+Publish the next unpublished question in creation order (admin only). Finds the earliest question where `alreadyPublished` is `false`, publishes it, and broadcasts to all WebSocket clients.
+
+**Request:** No body required.
+
+**Response:** The published question object, or 404 if no unpublished questions remain.
+
+### POST `/api/questions/unpublish-active`
+
+Deactivate the currently active question (admin only). Clears answers and broadcasts `null` as the new question.
+
+**Request:** No body required.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Active question unpublished."
 }
 ```
 
@@ -136,7 +164,7 @@ Submit or update a user answer.
 {
   "user_id": "string",
   "user_nickname": "string",
-  "selected_answer": "string"
+  "selected_answer": { "en": "string" }
 }
 ```
 
@@ -173,13 +201,14 @@ Retract a user's answer.
 
 ### POST `/api/emojis/submit`
 
-Submit an emoji reaction. Broadcasts to all clients on the emojis WebSocket channel.
+Submit an emoji reaction. Broadcasts to all clients on the emojis WebSocket channel. Enforces per-user cooldown.
 
 **Request:**
 
 ```json
 {
-  "emoji": "string (single emoji)"
+  "emoji": "string (single emoji)",
+  "user_id": "string"
 }
 ```
 
@@ -207,7 +236,7 @@ Get current question results (admin only).
 
 ### POST `/api/results/pick-random-user`
 
-Pick a random user who voted for a specific option (admin only).
+Pick a random user who voted for a specific option (admin only). Sends a `winner-selected` WebSocket event to the chosen user.
 
 **Request:**
 
@@ -218,13 +247,7 @@ Pick a random user who voted for a specific option (admin only).
 }
 ```
 
-**Response:**
-
-```json
-{
-  "username": "string or null"
-}
-```
+**Response:** `204 No Content` on success. Returns 404 if no answers or no users found for the option. Returns 503 if the winner is not currently connected.
 
 ## WebSocket Connections
 
@@ -269,5 +292,14 @@ Get active WebSocket connections (admin only).
 {
   "statusCode": 404,
   "statusMessage": "No active question"
+}
+```
+
+### 429 Too Many Requests
+
+```json
+{
+  "statusCode": 429,
+  "statusMessage": "You are sending emojis too fast. Please wait a moment."
 }
 ```

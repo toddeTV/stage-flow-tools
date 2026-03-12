@@ -46,7 +46,8 @@ Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
 ## Development Commands
 
 - `pnpm dev` - Start development server
-- `pnpm build` - Build for production
+- `pnpm run build:ssr` - Build for production (server-rendered)
+- `pnpm run build:ssg` - Static site generation build
 - `pnpm preview` - Preview production build
 - `pnpm test` - Run all checks (lint + types)
 - `pnpm run test:lint` - Lint and format check via ESLint
