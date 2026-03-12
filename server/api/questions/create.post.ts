@@ -1,4 +1,4 @@
-import type { Question, AnswerOption } from '~/types'
+import type { Question, AnswerOption, LocalizedString } from '~/types'
 
 export default defineEventHandler(async (event) => {
   verifyAdmin(event)
@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const { key: rawKey, question_text: raw_question_text, answer_options: raw_answer_options, note: raw_note } = body
 
   // Trim and validate key uniqueness
-  const key = typeof rawKey === 'string' ? rawKey.trim() : undefined
+  const key = typeof rawKey === 'string' ? rawKey.trim() : ''
   if (key) {
     const existingQuestions = await getQuestions()
     if (existingQuestions.some(q => q.key === key)) {
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
   }
   const question_text = Object.fromEntries(
     Object.entries(raw_question_text).map(([lang, value]) => [lang, (value as string).trim()]),
-  )
+  ) as LocalizedString
 
   // Validate and sanitize answer_options
   if (!Array.isArray(raw_answer_options)) {
@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
         }
       }
       return {
-        text: Object.fromEntries(Object.entries(option.text).map(([lang, value]) => [lang, (value as string).trim()])),
+        text: Object.fromEntries(Object.entries(option.text).map(([lang, value]) => [lang, (value as string).trim()])) as LocalizedString,
         emoji: typeof option.emoji === 'string' ? option.emoji.trim() : undefined,
       }
     })
@@ -75,9 +75,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  let note: Record<string, string> | undefined
+  let note: LocalizedString | undefined
   if (typeof raw_note === 'object' && raw_note !== null && !Array.isArray(raw_note)) {
-    const validNotes: Record<string, string> = {}
+    const validNotes: Record<string, string> & { en?: string } = {}
     for (const [lang, value] of Object.entries(raw_note)) {
       if (typeof value !== 'string') {
         throw createError({
@@ -91,7 +91,7 @@ export default defineEventHandler(async (event) => {
       }
     }
     if (Object.keys(validNotes).length > 0) {
-      note = validNotes
+      note = validNotes as LocalizedString
     }
   }
 
