@@ -8,7 +8,7 @@ Step-by-step tutorial for deploying stage-flow-tools to Cloudflare Workers with 
 - **Global edge network** - low latency for audiences worldwide.
 - **Automatic SSL** - HTTPS out of the box on your custom domain.
 - **Cloudflare KV** - managed key-value storage for quiz data.
-- **WebSocket support** - real-time quiz updates via a single Worker isolate.
+- **WebSocket support** - real-time quiz updates via in-memory peer tracking (best-effort, suitable for single-event scenarios).
 
 ## Architecture on Cloudflare
 
@@ -25,9 +25,9 @@ Browser (SPA)
   +-- /_ws (WebSocket) --> Cloudflare Worker (in-memory peer management)
 ```
 
-- The **Cloudflare Worker** serves the SPA, handles API routes, and manages WebSocket connections in a single isolate.
+- The **Cloudflare Worker** serves the SPA, handles API routes, and manages WebSocket connections.
 - **Cloudflare KV** stores questions, answers, and admin credentials (replaces the local filesystem driver used in Docker/Node.js deployments).
-- **WebSocket state** (connected peers, broadcasting) is held in-memory within the Worker isolate. This works because all connections route to the same isolate.
+- **WebSocket state** (connected peers, broadcasting) is held in-memory within the Worker isolate. Cloudflare does **not** guarantee that all connections route to the same isolate - in-memory peer tracking is best-effort. For a single-event conference quiz where all participants share the same edge location, this works reliably in practice. For production-grade multi-region coordination, consider [Cloudflare Durable Objects](https://developers.cloudflare.com/durable-objects/) as a single-threaded coordination point.
 
 ## Prerequisites
 

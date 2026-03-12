@@ -23,7 +23,7 @@ Self-host on any Linux server using Docker Compose with a Traefik reverse proxy.
 | Infrastructure   | Managed (zero servers)            | Self-managed Linux server        |
 | SSL/TLS          | Automatic                         | Via Traefik + Let's Encrypt      |
 | Storage          | Cloudflare KV                     | Local filesystem (`.data/db`)    |
-| WebSockets       | In-memory (single Worker isolate) | In-memory (Node.js process)      |
+| WebSockets       | In-memory (best-effort, see docs) | In-memory (Node.js process)      |
 | Scaling          | Automatic edge distribution       | Single instance (manual scaling) |
 | Data persistence | Cloud-managed KV store            | Volume-mounted `.data/db`        |
 | Cost             | Free tier available (paid for KV) | Server costs                     |
