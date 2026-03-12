@@ -63,7 +63,9 @@ export default defineEventHandler(async (event) => {
         }
       }
       return {
-        text: Object.fromEntries(Object.entries(option.text).map(([lang, value]) => [lang, (value as string).trim()])) as LocalizedString,
+        text: Object.fromEntries(
+          Object.entries(option.text).map(([lang, value]) => [lang, (value as string).trim()]),
+        ) as LocalizedString,
         emoji: typeof option.emoji === 'string' ? option.emoji.trim() : undefined,
       }
     })
