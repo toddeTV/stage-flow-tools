@@ -98,7 +98,7 @@ reviews:
         Runtime env vars configured via `.env` file. See `.env.example` for all available variables.
         SPA mode (`ssr: false`) with Nitro server for API + WebSockets.
         Deployment: Dual options - (1) Cloudflare Workers with KV storage (primary, build preset `cloudflare-module`), (2) Docker container via Docker Compose with Traefik reverse proxy (secondary, for self-hosted setups).
-        CI/CD: Automated releases with GitHub Actions and Google `release-please` bot. Conventional Commits required. Docker images published to GitHub Container Registry (`ghcr.io`). See `release-please-config.json` for changelog section config.
+        CI/CD: Automated releases with GitHub Actions and Google `release-please` bot. Conventional Commits required. Docker images published to GitHub Container Registry (`ghcr.io`). Cloudflare Workers auto-deployed on push to `main` via `deploy-cloudflare.yml`; KV data reset after each deploy. See `release-please-config.json` for changelog section config.
         i18n: `@nuxtjs/i18n` module (being added). Prefer `<i18n>` blocks in Vue SFCs. Global files only for keys used in 2+ components.
 
         ### Directory Layout

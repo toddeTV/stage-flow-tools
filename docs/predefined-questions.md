@@ -65,3 +65,13 @@ npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" '[{"id":"q1","key"
 Each question object must include all required fields (`id`, `key`, `question_text`, `answer_options`, `is_locked`, `createdAt`, `alreadyPublished`). See the schema in [storage.md](storage.md).
 
 > KV data persists across deployments. You only need to seed once unless you want to replace the data.
+
+### Push Script (Recommended for Conference Speakers)
+
+For a workflow where questions live alongside presentation slides in a separate repo, use the push script. It resets all quiz data and uploads fresh questions in a single command:
+
+```bash
+pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json
+```
+
+The script clears answers, replaces questions, and optionally overrides admin credentials. See [deployment-cloudflare.md](deployment-cloudflare.md#pushing-questions-from-local-to-cloudflare) for the full reference.

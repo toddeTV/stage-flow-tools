@@ -34,3 +34,20 @@ Upon merging the release PR, the GitHub Actions workflow performs the following 
 3. **Pushes to Registry**: The Docker image is pushed to the GitHub Container Registry (`ghcr.io`) with tags corresponding to the release version (e.g., `1.2.3`, `1.2`, `1`, `latest`).
 
 The `main` branch is now updated with the latest version, and a new, versioned Docker image is available for deployment.
+
+### 5. Cloudflare Deployment (Automatic)
+
+Every push to `main` (including merged PRs and release merges) triggers the `deploy-cloudflare.yml` workflow:
+
+1. The app is built for Cloudflare Workers.
+1. The Worker is deployed to Cloudflare.
+1. KV data (`questions`, `answers`) is reset to empty arrays.
+1. Admin credentials are preserved.
+
+After deployment, use the push script to seed quiz questions:
+
+```bash
+pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json
+```
+
+See the [Cloudflare Deployment Guide](deployment-cloudflare.md#automated-deployment-via-github-actions-cicd) for GitHub secrets setup.

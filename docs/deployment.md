@@ -6,7 +6,7 @@ This application supports two deployment strategies. Cloudflare is the primary t
 
 ### 1. Cloudflare (Primary)
 
-Deploy as a Cloudflare Worker with KV storage for data persistence. Zero infrastructure management, automatic SSL, global edge network, and WebSocket support.
+Deploy as a Cloudflare Worker with KV storage for data persistence. Zero infrastructure management, automatic SSL, global edge network, and WebSocket support. Automated CI/CD via GitHub Actions deploys on every merge to `main` and resets quiz data for a clean start.
 
 - [Cloudflare Deployment Guide](deployment-cloudflare.md)
 

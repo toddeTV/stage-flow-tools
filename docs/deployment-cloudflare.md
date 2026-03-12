@@ -212,7 +212,7 @@ Public variables (`NUXT_PUBLIC_*`) are embedded at build time. Private variables
 
 ## Updating Your Deployment
 
-To deploy a new version:
+To deploy a new version manually:
 
 ```bash
 git pull
@@ -220,7 +220,154 @@ pnpm install
 pnpm run deploy:cloudflare
 ```
 
-KV data persists across deployments - your questions and answers are not lost when you redeploy.
+KV data persists across deployments - your questions and answers are not lost when you redeploy manually.
+
+## Automated Deployment via GitHub Actions (CI/CD)
+
+A GitHub Actions workflow automatically deploys to Cloudflare Workers on every push to `main` (including merged PRs). After each deploy, questions and answers are reset to empty so the new version starts clean. Admin credentials are never deleted.
+
+### How It Works
+
+1. A PR is merged into `main`.
+1. The `deploy-cloudflare.yml` workflow triggers.
+1. The app is built with `pnpm run build:cloudflare`.
+1. A `wrangler.toml` is generated from GitHub secrets and variables.
+1. The Worker is deployed to Cloudflare.
+1. KV keys `questions` and `answers` are reset to `[]`.
+1. Admin credentials remain untouched (managed via Cloudflare secrets + `init-storage`).
+
+### Required GitHub Secrets
+
+Configure these in your repository under **Settings > Secrets and variables > Actions > Secrets**:
+
+| Secret                       | Description                                                                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`       | Cloudflare API token with **Workers** and **KV** permissions. Create one at Cloudflare Dashboard > My Profile > API Tokens. |
+| `CLOUDFLARE_ACCOUNT_ID`      | Your Cloudflare account ID. Found on the Workers overview page.                                                             |
+| `CLOUDFLARE_KV_NAMESPACE_ID` | The KV namespace ID for `STAGE_FLOW_DATA`. Get it from `npx wrangler kv namespace list`.                                    |
+
+### Optional GitHub Variables
+
+Configure these under **Settings > Secrets and variables > Actions > Variables**:
+
+| Variable                        | Default            | Description                   |
+| ------------------------------- | ------------------ | ----------------------------- |
+| `CLOUDFLARE_WORKER_NAME`        | `stage-flow-tools` | Name of the Cloudflare Worker |
+| `NUXT_ADMIN_USERNAME`           | `admin`            | Admin login username          |
+| `NUXT_PUBLIC_EMOJI_COOLDOWN_MS` | `1500`             | Emoji cooldown in ms          |
+
+### Creating a Cloudflare API Token
+
+1. Go to [Cloudflare Dashboard > My Profile > API Tokens](https://dash.cloudflare.com/profile/api-tokens).
+1. Click **Create Token**.
+1. Use the **Custom token** template.
+1. Add these permissions:
+   - **Account > Workers Scripts > Edit**
+   - **Account > Workers KV Storage > Edit**
+1. Set Account Resources to **Include > your account**.
+1. Create the token and copy it to `CLOUDFLARE_API_TOKEN` in GitHub.
+
+### Setting Cloudflare Secrets
+
+The Worker still needs runtime secrets (admin password, JWT secret). Set them once via Wrangler:
+
+```bash
+npx wrangler secret put NUXT_ADMIN_PASSWORD
+npx wrangler secret put NUXT_JWT_SECRET
+```
+
+These persist across deployments and do not need to be set in GitHub.
+
+## Pushing Questions from Local to Cloudflare
+
+For conference speakers who maintain quiz questions alongside presentation slides in separate repositories, a dedicated push script replaces all KV data with fresh local content.
+
+### What the Push Script Does
+
+1. Resets `answers` to `[]`.
+1. Replaces `questions` with the contents of your local JSON file.
+1. Optionally overrides `admin` credentials (never deletes them).
+
+### Usage
+
+```bash
+# Basic: push questions only
+pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json
+
+# With admin override
+pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json --admin ./my-admin.json
+
+# Specify namespace explicitly (otherwise uses CLOUDFLARE_KV_NAMESPACE_ID env var)
+pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json --namespace-id abc123
+
+# Preview without executing
+pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json --dry-run
+```
+
+Or run it directly:
+
+```bash
+node scripts/push-to-cloudflare.mjs --questions ./my-questions.json
+```
+
+### Questions File Format
+
+The questions file must be a JSON array matching the `Question[]` schema. Each question object must have all required fields:
+
+```json
+[
+  {
+    "id": "q1",
+    "key": "fav-color",
+    "question_text": {
+      "en": "What is your favorite color?",
+      "de": "Was ist deine Lieblingsfarbe?"
+    },
+    "answer_options": [
+      { "text": { "en": "Red", "de": "Rot" } },
+      { "text": { "en": "Green", "de": "Grun" }, "emoji": "💚" },
+      { "text": { "en": "Blue", "de": "Blau" } }
+    ],
+    "is_active": false,
+    "is_locked": true,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "alreadyPublished": false
+  }
+]
+```
+
+See the full schema in [storage.md](storage.md).
+
+### Admin File Format
+
+```json
+{
+  "username": "admin",
+  "password": "your-secret-password"
+}
+```
+
+### Authentication
+
+The push script uses `wrangler` under the hood. Authenticate before running:
+
+```bash
+npx wrangler login
+```
+
+Or set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` environment variables for non-interactive use.
+
+### Typical Workflow for Conference Speakers
+
+```bash
+# 1. Prepare questions in your presentation repo
+# 2. Deploy the app (if not already deployed via CI/CD)
+# 3. Push your questions to the live instance
+cd /path/to/stage-flow-tools
+export CLOUDFLARE_KV_NAMESPACE_ID="your-namespace-id"
+pnpm run deploy:push-to-cloudflare -- --questions /path/to/talk-repo/questions.json --admin /path/to/talk-repo/admin.json
+# 4. Open the admin dashboard and run your quiz
+```
 
 ## Troubleshooting
 

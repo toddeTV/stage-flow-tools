@@ -16,7 +16,7 @@ Creates optimized production bundle in `.output/` directory.
 
 ### 1. Cloudflare Workers (Primary)
 
-See the [Cloudflare Deployment Guide](deployment-cloudflare.md) for a step-by-step tutorial.
+See the [Cloudflare Deployment Guide](deployment-cloudflare.md) for a step-by-step tutorial covering manual deploys, automated CI/CD via GitHub Actions, and the push script for seeding quiz data.
 
 ```bash
 pnpm run deploy:cloudflare
