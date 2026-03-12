@@ -8,7 +8,8 @@ export default defineNuxtConfig({
     enabled: true
   },
   
-  modules: [ // try stick to alphabetically sorted
+  modules: [
+    '@nuxt/eslint',
     '@nuxtjs/i18n',
     '@nuxtjs/tailwindcss',
     '@vueuse/nuxt',
@@ -25,7 +26,7 @@ export default defineNuxtConfig({
   },
 
   css: [
-    '~/../assets/css/tailwind.css'
+    '~/assets/css/main.css'
   ],
 
   ssr: false,
@@ -38,6 +39,15 @@ export default defineNuxtConfig({
   
   typescript: {
     shim: false
+  },
+  
+  eslint: { // for `@nuxt/eslint`
+    config: {
+      stylistic: {
+        indent: 2,
+        quotes: 'single',
+      },
+    },
   },
 
   runtimeConfig: {
