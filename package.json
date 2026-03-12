@@ -42,8 +42,11 @@
     "pnpm": "10.x"
   },
   "scripts": {
+    "build:cloudflare": "cross-env NITRO_PRESET=cloudflare-module NODE_OPTIONS=--max-old-space-size=8192 nuxt build",
     "build:ssg": "cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt generate",
     "build:ssr": "cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt build",
+    "deploy:cloudflare": "pnpm run build:cloudflare && pnpm exec wrangler deploy",
+    "deploy:push-to-cloudflare": "node scripts/push-to-cloudflare.mjs",
     "dev": "nuxt dev",
     "dev:preset": "nuxt dev --port 3000 --public",
     "fix:lint": "run-s \"test:lint --fix\"",
@@ -65,8 +68,6 @@
     "@nuxtjs/i18n": "^10.1.1",
     "@nuxtjs/tailwindcss": "~6.14.0",
     "@paralleldrive/cuid2": "~2.2.2",
-    "@types/jsonwebtoken": "~9.0.10",
-    "@types/proper-lockfile": "~4.1.4",
     "@vueuse/core": "~13.9.0",
     "@vueuse/nuxt": "~13.9.0",
     "crossws": "~0.4.1",
@@ -75,15 +76,15 @@
     "eslint-plugin-jsonc": "~3.1.1",
     "eslint-plugin-tailwindcss": "~3.18.2",
     "eslint-plugin-yml": "~3.3.1",
-    "jsonwebtoken": "~9.0.2",
+    "jose": "~6.2.1",
     "npm-run-all2": "~8.0.4",
     "nuxi": "~3.28.0",
     "prettier": "~3.8.1",
-    "proper-lockfile": "~4.1.2",
     "typescript": "~5.9.3",
     "vue": "~3.5.22",
     "vue-router": "~4.5.1",
-    "vue-tsc": "~3.1.0"
+    "vue-tsc": "~3.1.0",
+    "wrangler": "~4.72.0"
   },
   "pnpm": {
     "overrides": {

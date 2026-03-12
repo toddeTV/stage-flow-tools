@@ -2,7 +2,7 @@ import type { Answer } from '~/types'
 import { WebSocketChannel } from '~/types'
 
 export default defineEventHandler(async (event) => {
-  verifyAdmin(event)
+  await verifyAdmin(event)
 
   const body = await readBody(event) as { questionId: string, option: string }
   const { questionId, option } = body

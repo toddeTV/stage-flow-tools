@@ -1,7 +1,7 @@
 import { WebSocketChannel } from '~/types'
 
 export default defineEventHandler(async (event) => {
-  verifyAdmin(event)
+  await verifyAdmin(event)
 
   const body = await readBody(event) as { key?: string }
   const { key } = body

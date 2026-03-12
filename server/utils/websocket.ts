@@ -8,7 +8,6 @@ interface PeerInfo {
   userId?: string
 }
 
-const storage = useStorage('ws')
 const peers = new Map<WebSocketChannel, Map<string, Peer>>() // Channel -> Peer ID -> Peer
 
 export function getChannelPeers(channel: WebSocketChannel): Map<string, Peer> {
@@ -21,13 +20,8 @@ export function getChannelPeers(channel: WebSocketChannel): Map<string, Peer> {
 export async function addPeer(peer: Peer, channel: WebSocketChannel, url: string, userId?: string) {
   ;(peer as unknown as Record<string, unknown>).userId = userId
   ;(peer as unknown as Record<string, unknown>).channel = channel
+  ;(peer as unknown as Record<string, unknown>).url = url
   getChannelPeers(channel).set(peer.id, peer)
-
-  const storedPeers = await storage.getItem<PeerInfo[]>('peers') || []
-
-  const filtered = storedPeers.filter((p: PeerInfo) => p.id !== peer.id)
-  const peerInfo: PeerInfo = { id: peer.id, url, channel, userId }
-  await storage.setItem('peers', [...filtered, peerInfo])
   await broadcastConnections()
 }
 
@@ -39,18 +33,28 @@ export async function removePeer(peer: Peer) {
       peers.delete(channel)
     }
   }
-
-  const storedPeers = await storage.getItem<PeerInfo[]>('peers') || []
-  await storage.setItem('peers', storedPeers.filter((p: PeerInfo) => p.id !== peer.id))
   await broadcastConnections()
 }
 
-export async function getPeers(channel?: WebSocketChannel) {
-  const allPeers = await storage.getItem<PeerInfo[]>('peers') || []
-  if (channel) {
-    return allPeers.filter(p => p.channel === channel)
+/** Returns peer info derived from the in-memory peer map. */
+export async function getPeers(channel?: WebSocketChannel): Promise<PeerInfo[]> {
+  const result: PeerInfo[] = []
+  const targetEntries = channel
+    ? [[channel, getChannelPeers(channel)] as const]
+    : Array.from(peers.entries())
+
+  for (const [ch, peerMap] of targetEntries) {
+    for (const [, peer] of peerMap) {
+      const peerData = peer as unknown as Record<string, unknown>
+      result.push({
+        id: peer.id,
+        url: (peerData.url as string) || '',
+        channel: ch,
+        userId: peerData.userId as string | undefined,
+      })
+    }
   }
-  return allPeers
+  return result
 }
 
 export function broadcast(event: string, data: unknown, channel?: WebSocketChannel) {

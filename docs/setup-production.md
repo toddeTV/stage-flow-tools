@@ -14,7 +14,31 @@ Creates optimized production bundle in `.output/` directory.
 
 ## Deployment Options
 
-### 1. Node.js Server (VPS/Dedicated)
+### 1. Cloudflare Workers (Primary)
+
+See the [Cloudflare Deployment Guide](deployment-cloudflare.md) for a step-by-step tutorial covering manual deploys, automated CI/CD via GitHub Actions, and the push script for seeding quiz data.
+
+```bash
+pnpm run deploy:cloudflare
+```
+
+### 2. Docker Container
+
+See the [Docker Deployment Guide](deployment-docker.md).
+
+**Dockerfile example:**
+
+```dockerfile
+FROM node:24-alpine
+WORKDIR /app
+COPY .output .output
+EXPOSE 3000
+CMD ["node", ".output/server/index.mjs"]
+```
+
+> Mount `/app/.data/db` to a persistent host path or named volume to preserve quiz data across container restarts. Without this, data is lost when the container is recreated.
+
+### 3. Node.js Server (VPS/Dedicated)
 
 **Requirements:**
 
@@ -31,19 +55,7 @@ Creates optimized production bundle in `.output/` directory.
    pm2 start .output/server/index.mjs --name quiz-app
    ```
 
-### 2. Docker Container
-
-**Dockerfile example:**
-
-```dockerfile
-FROM node:24-alpine
-WORKDIR /app
-COPY .output .output
-EXPOSE 3000
-CMD ["node", ".output/server/index.mjs"]
-```
-
-### 3. Platform-as-a-Service
+### 4. Platform-as-a-Service
 
 **Vercel:**
 
@@ -77,16 +89,22 @@ Store the generated secret in your environment management system or secrets mana
 
 ## Data Persistence
 
-### File Storage Limitations
+### Cloudflare Workers
+
+Data is stored in Cloudflare KV - persists across deployments, globally replicated.
+
+### Docker / Node.js
+
+Data is stored in `.data/db/` on the local filesystem.
 
 **Ephemeral Platforms** (Vercel, some PaaS):
 
 - Data resets on redeploy
 - Not suitable for production quiz data
 
-**Persistent Platforms** (VPS, dedicated servers):
+**Persistent Platforms** (VPS, dedicated servers, Docker with a mounted volume):
 
-- Data persists across restarts
+- Data persists in `.data/db/` across restarts when `/app/.data/db` is backed by persistent storage
 - Regular backups recommended
 
 ### Migration to Database
@@ -131,10 +149,10 @@ For larger scale:
 
 ### Automated Backups
 
-Schedule cron job:
+Schedule cron job (Docker / Node.js):
 
 ```bash
-0 */6 * * * cp -r /app/data /backups/data-$(date +\%Y\%m\%d-\%H\%M)
+0 */6 * * * cp -r /app/.data/db /backups/data-$(date +\%Y\%m\%d-\%H\%M)
 ```
 
 ### Manual Backup
@@ -142,5 +160,5 @@ Schedule cron job:
 Before updates:
 
 ```bash
-tar -czf quiz-backup-$(date +%Y%m%d).tar.gz data/
+tar -czf quiz-backup-$(date +%Y%m%d).tar.gz .data/db/
 ```

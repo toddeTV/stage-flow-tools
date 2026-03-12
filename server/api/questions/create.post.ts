@@ -1,7 +1,7 @@
 import type { Question, AnswerOption, LocalizedString } from '~/types'
 
 export default defineEventHandler(async (event) => {
-  verifyAdmin(event)
+  await verifyAdmin(event)
 
   const body = await readBody(event) as Omit<Question, 'id' | 'is_locked'>
   const { key: rawKey, question_text: raw_question_text, answer_options: raw_answer_options, note: raw_note } = body

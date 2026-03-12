@@ -1,4 +1,4 @@
-# _Content Last Updated: 2026-03-10 at 13:00 CET_
+# _Content Last Updated: 2026-03-12T17:00:00+01:00_
 
 # Language of the review.
 language: en-US
@@ -92,13 +92,13 @@ reviews:
         Repository at https://github.com/toddeTV/stage-flow-tools.
 
         ### Tech Stack
-        Nuxt 4, TypeScript (strict, no `any`), Vue 3 Composition API, Tailwind CSS v4, WebSockets (Nitro), JWT authentication, file-based JSON storage.
+        Nuxt 4, TypeScript (strict, no `any`), Vue 3 Composition API, Tailwind CSS v4, WebSockets (Nitro), JWT authentication (`jose`), Nitro `useStorage()` with pluggable drivers.
         Package manager: pnpm (never npm/yarn/bun).
         ESLint handles linting and formatting (see `eslint.config.mjs`). Run `pnpm run test:lint` to check, `pnpm run fix:lint` to auto-fix.
         Runtime env vars configured via `.env` file. See `.env.example` for all available variables.
         SPA mode (`ssr: false`) with Nitro server for API + WebSockets.
-        Deployment: Dual options - (1) Cloudflare Pages/Workers (primary, used for the author's demo instance), (2) Docker container via Docker Compose with Traefik reverse proxy (secondary, for self-hosted setups).
-        CI/CD: Automated releases with GitHub Actions and Google `release-please` bot. Conventional Commits required. Docker images published to GitHub Container Registry (`ghcr.io`). See `release-please-config.json` for changelog section config.
+        Deployment: Dual options - (1) Cloudflare Workers with KV storage (primary, build preset `cloudflare-module`), (2) Docker container via Docker Compose with Traefik reverse proxy (secondary, for self-hosted setups).
+        CI/CD: Automated releases with GitHub Actions and Google `release-please` bot. Conventional Commits required. Docker images published to GitHub Container Registry (`ghcr.io`). Cloudflare Workers auto-deployed on push to `main` via `deploy-cloudflare.yml`; `questions` and `answers` are reset after each deploy while `admin` is preserved. See `release-please-config.json` for changelog section config.
         i18n: `@nuxtjs/i18n` module (being added). Prefer `<i18n>` blocks in Vue SFCs. Global files only for keys used in 2+ components.
 
         ### Directory Layout
@@ -109,10 +109,12 @@ reviews:
         - `app/middleware/` - Route middleware (auth)
         - `server/` - Backend (Nitro server)
         - `server/api/` - REST API endpoints (answers, auth, emojis, questions, results)
+        - `server/plugins/` - Nitro plugins (init-storage.ts)
         - `server/routes/_ws/` - WebSocket handler
         - `server/utils/` - Server utilities (auth, logger, storage, websocket)
         - `shared/utils/` - Code shared between client and server (logger, validation)
-        - `data/` - File-based JSON storage (runtime, gitignored)
+        - `.data/db/` - Local storage (dev/Docker, gitignored)
+        - `data/` - Predefined questions source (Node.js only)
         - `docs/` - Public project documentation
 
         ### Code Conventions
@@ -142,8 +144,8 @@ reviews:
         - Extract repeated Tailwind class strings in same component into CSS classes.
 
         ### Data Model
-        - File-based JSON storage in `data/` (questions.json, answers.json, admin.json).
-        - All storage operations in `server/utils/storage.ts`, file locking via `proper-lockfile`.
+        - Nitro `useStorage('data')` with pluggable drivers (filesystem for dev/Docker, Cloudflare KV for Workers).
+        - All storage operations in `server/utils/storage.ts`. Initialization in `server/plugins/init-storage.ts`.
         - IDs generated with `@paralleldrive/cuid2`.
 
         ### WebSockets
@@ -153,8 +155,8 @@ reviews:
         - Client uses `@vueuse/core` `useWebSocket` with auto-reconnect and heartbeat.
 
         ### Authentication
-        - JWT tokens stored in HTTP-only cookies.
-        - Admin-only routes protected via `verifyAdmin(event)` server utility.
+        - JWT tokens stored in HTTP-only cookies (`jose` library, Web Crypto API).
+        - Admin-only routes protected via `await verifyAdmin(event)` (async) server utility.
         - Client-side auth middleware redirects to `/login` on failure.
 
     - path: "**/*.vue"
@@ -171,9 +173,8 @@ reviews:
 
     - path: "server/**"
       instructions: |
-        Verify: admin-only endpoints call `verifyAdmin(event)`.
+        Verify: admin-only endpoints call `await verifyAdmin(event)` (async).
         Verify: user inputs are validated before processing.
-        Verify: file operations use proper-lockfile for concurrent access.
         Verify: error types use `unknown`, not `any`.
 
     - path: "app/pages/**"

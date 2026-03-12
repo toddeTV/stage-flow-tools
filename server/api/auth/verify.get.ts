@@ -1,4 +1,4 @@
 export default defineEventHandler(async (event) => {
-  const user = verifyAdmin(event)
+  const user = await verifyAdmin(event)
   return { valid: true, user }
 })

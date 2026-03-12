@@ -58,23 +58,25 @@ Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
 
 ### Storage Location
 
-Data files are stored in `/data`:
+During local development, data is stored in `.data/db/` (created automatically, gitignored):
 
-- `questions.json` - Quiz questions
-- `answers.json` - User answers
-- `admin.json` - Admin credentials
+- `questions` - Quiz questions
+- `answers` - User answers
+- `admin` - Admin credentials
+
+Predefined questions can be loaded from `data/predefined-questions.json` (see [predefined-questions.md](predefined-questions.md)).
 
 ### Reset Data
 
 ```bash
-rm -rf data/
-# Application recreates on next start
+rm -rf .data/db/
+# Application recreates defaults on next start
 ```
 
 ### Backup Data
 
 ```bash
-cp -r data/ data-backup-$(date +%Y%m%d)
+cp -r .data/db/ data-backup-$(date +%Y%m%d)
 ```
 
 ## Troubleshooting
@@ -89,10 +91,10 @@ PORT=3001
 
 ### Permission Errors
 
-Ensure write permissions:
+Check write permissions on the `.data/` directory:
 
 ```bash
-chmod 755 data/
+chmod 755 .data/
 ```
 
 ### WebSocket Connection Issues

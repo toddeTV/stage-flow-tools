@@ -1,17 +1,42 @@
 # Storage System
 
-File-based JSON storage implementation details.
+Nitro `useStorage()` with pluggable driver abstraction.
 
 ## Storage Architecture
 
-### File Structure
+### Driver Configuration
 
+The storage driver is selected based on the `NITRO_PRESET` environment variable:
+
+- **Cloudflare Workers** (`NITRO_PRESET=cloudflare-module`): Cloudflare KV binding `STAGE_FLOW_DATA`.
+- **Node.js / Docker** (any other preset): Filesystem driver at `.data/db/`.
+- **Local dev** (`pnpm dev`): Always filesystem at `.data/db/` via `devStorage`.
+
+Configuration in `nuxt.config.ts`:
+
+```typescript
+const isCloudflare = process.env.NITRO_PRESET?.startsWith('cloudflare')
+
+nitro: {
+  storage: isCloudflare
+    ? { data: { driver: 'cloudflareKVBinding', binding: 'STAGE_FLOW_DATA' } }
+    : { data: { driver: 'fs', base: './.data/db' } },
+  devStorage: {
+    data: { driver: 'fs', base: './.data/db' },
+  },
+}
 ```
-data/
-├── questions.json    # All quiz questions
-├── answers.json      # User responses
-└── admin.json        # Admin credentials
-```
+
+### Storage Keys
+
+All data is accessed via `useStorage('data')` with these keys:
+
+| Key          | Content                   |
+| ------------ | ------------------------- |
+| `questions`  | `Question[]` array        |
+| `answers`    | `Answer[]` array          |
+| `admin`      | `{ username, password }`  |
+| `emoji:<id>` | Emoji cooldown timestamps |
 
 ### Data Models
 
@@ -59,43 +84,80 @@ All text fields (`question_text`, `answer_options[].text`, `note`) use a `Locali
 
 ### Initialization
 
-- Auto-creates `/data` directory
-- Initializes empty JSON files
-- Sets default admin credentials
+- `initStorage()` sets default values for missing keys (empty arrays for questions/answers, default admin credentials from runtime config).
+- Called automatically by the Nitro plugin `server/plugins/init-storage.ts` on server startup.
+- Idempotent - safe to call multiple times.
+
+### Predefined Questions Loading (Node.js / Docker Only)
+
+On Node.js runtimes the startup plugin checks for `data/predefined-questions.json`:
+
+1. Renames the file to `.processing` to prevent re-processing.
+1. Validates and merges new questions into storage.
+1. Deletes the `.processing` file on success.
+
+On Cloudflare Workers, the filesystem is not available. Seed questions directly into KV using `wrangler kv key put`. See [deployment-cloudflare.md](deployment-cloudflare.md#loading-predefined-questions).
 
 ### Data Access Patterns
 
-- **Synchronous Reads** - Fast file access
-- **Serialized Writes** - `fs.writeFile()` under `proper-lockfile` lock; prevents concurrent writer interleaving but is not crash-safe (a crash mid-write can leave partial data)
-- **In-Memory Caching** - Considered for future
-
-### Concurrency Handling
-
-- **File Locking** - Uses `proper-lockfile` for safe concurrent access
-- **Lock-per-operation** - Each read/write acquires and releases a file lock
-- **Serialized Writes** - `fs.writeFile()` under lock serializes writers; not atomic on crash (no temp-file + rename)
+- **Async reads/writes** via `useStorage('data').getItem()` / `.setItem()`.
+- **No file locking needed** - KV handles consistency; filesystem driver serializes within a single Node.js process.
+- **IDs generated** with `@paralleldrive/cuid2`.
 
 ## Maintenance
 
-### Backup Commands
+### Backup (Docker / Node.js)
 
 ```bash
-# Manual backup
-cp -r data/ backups/data-$(date +%Y%m%d)
-
-# Automated backup (cron)
-0 */6 * * * /path/to/backup-script.sh
+# Manual backup of local storage
+cp -r .data/db/ backups/data-$(date +%Y%m%d)
 ```
 
-### Data Cleanup
+### Backup (Cloudflare KV)
 
 ```bash
-# Remove old answers (keep questions)
-echo "[]" > data/answers.json
+# Export data to local backup files
+backup_dir="backups/kv-$(date +%Y%m%d)"
+mkdir -p "$backup_dir"
+npx wrangler kv key get --binding=STAGE_FLOW_DATA "questions" > "$backup_dir/questions.json"
+npx wrangler kv key get --binding=STAGE_FLOW_DATA "answers" > "$backup_dir/answers.json"
+npx wrangler kv key get --binding=STAGE_FLOW_DATA "admin" > "$backup_dir/admin.json"
+```
 
+Restore from backup:
+
+```bash
+npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" --path="$backup_dir/questions.json"
+npx wrangler kv key put --binding=STAGE_FLOW_DATA "answers" --path="$backup_dir/answers.json"
+```
+
+> Emoji cooldown keys (`emoji:*`) are transient and excluded from backups.
+
+### Data Reset (Docker / Node.js)
+
+```bash
 # Full reset
-rm -rf data/
+rm -rf .data/db/
+# Application recreates defaults on next start
 ```
+
+### Data Reset (Cloudflare KV)
+
+```bash
+npx wrangler kv key delete --binding=STAGE_FLOW_DATA "questions"
+npx wrangler kv key delete --binding=STAGE_FLOW_DATA "answers"
+npx wrangler kv key delete --binding=STAGE_FLOW_DATA "admin"
+```
+
+Alternatively, use the push script to reset and replace data in one step (admin is overridden, never deleted):
+
+```bash
+pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json --admin ./my-admin.json
+```
+
+See [deployment-cloudflare.md](deployment-cloudflare.md#pushing-questions-from-local-to-cloudflare) for details.
+
+> The CI/CD workflow (`deploy-cloudflare.yml`) resets `questions` and `answers` to `[]` after every deploy. Admin credentials are preserved.
 
 ## Migration Path
 
@@ -121,7 +183,15 @@ rm -rf data/
 
 ## Performance Characteristics
 
+### Filesystem Driver (Dev / Docker)
+
 - **Read Speed** - < 1ms for typical files
 - **Write Speed** - < 10ms for updates
-- **File Size Limits** - ~10MB practical limit
 - **Concurrent Users** - 100-500 comfortable range
+
+### Cloudflare KV
+
+- **Read Latency** - ~10ms (cached at edge)
+- **Write Latency** - ~50ms (eventually consistent, ~60s propagation)
+- **Concurrent Users** - 100-500+ comfortable range
+- **KV is eventually consistent** - acceptable for a quiz tool where slight delays in data propagation do not affect the user experience
