@@ -30,6 +30,13 @@ const visibility = ref(
   (route.query.visibility as string) || 'hide',
 )
 const hideResults = ref(visibility.value.startsWith('hide'))
+
+const scramble = ref(
+  (route.query.scramble as string) || 'show',
+)
+const scrambleResults = ref(scramble.value.startsWith('hide'))
+
+const showEmoji = ref(false)
 const isTogglingLock = ref(false)
 const isPickingUser = ref(false)
 const hasHydratedOnce = ref(false)
@@ -76,6 +83,25 @@ watch(() => results.value?.question.id, (newId, oldId) => {
   else if (visibility.value === 'show') {
     hideResults.value = false
   }
+
+  if (scramble.value === 'hide') {
+    scrambleResults.value = true
+  }
+  else if (scramble.value === 'show') {
+    scrambleResults.value = false
+  }
+
+  showEmoji.value = false
+})
+
+// Optionally shuffle the results order when scramble is active
+const displayResults = computed(() => {
+  if (!results.value) return []
+  const entries = Object.entries(results.value.results)
+  if (scrambleResults.value) {
+    return seededShuffle(entries, results.value.question.id)
+  }
+  return entries
 })
 
 // Calculate bar width
@@ -204,6 +230,12 @@ async function unpublishActiveQuestion() {
                 <UiCheckbox v-model="hideResults" size="small">
                   {{ t('hideButton') }}
                 </UiCheckbox>
+                <UiCheckbox v-model="scrambleResults" size="small">
+                  {{ t('scrambleButton') }}
+                </UiCheckbox>
+                <UiCheckbox v-model="showEmoji" size="small">
+                  {{ t('emojiButton') }}
+                </UiCheckbox>
                 <UiButton
                   :disabled="isTogglingLock"
                   size="small"
@@ -230,14 +262,15 @@ async function unpublishActiveQuestion() {
         <template v-if="results">
           <div class="flex flex-col gap-6">
             <div
-              v-for="(result, option) in results.results"
+              v-for="[option, result] in displayResults"
               :key="option"
               class="flex flex-col gap-2.5"
             >
               <div class="flex items-center justify-between text-lg">
                 <span class="font-bold">
-                  {{ getLocalizedOption(String(option)) }}
-                  <span v-if="result.emoji && !hideResults" class="ml-2">
+                  <template v-if="scrambleResults">?</template>
+                  <template v-else>{{ getLocalizedOption(String(option)) }}</template>
+                  <span v-if="result.emoji && showEmoji" class="ml-2">
                     {{ result.emoji }}
                   </span>
                 </span>
@@ -272,7 +305,10 @@ async function unpublishActiveQuestion() {
           </div>
 
           <!-- Note Display -->
-          <div v-if="results.question.note && !hideResults" class="mt-8 border-2 border-black bg-gray-100 p-4">
+          <div
+            v-if="results.question.note && !hideResults && !scrambleResults"
+            class="mt-8 border-2 border-black bg-gray-100 p-4"
+          >
             <p>{{ getLocalizedText(results.question.note) }}</p>
           </div>
         </template>
@@ -301,6 +337,8 @@ en:
   pageTitle: Live Results
   totalVotes: Total Votes
   hideButton: Hide
+  scrambleButton: Scramble
+  emojiButton: Emoji
   lockedButton: Locked
   openButton: Open
   unpublishButton: Unpublish
@@ -313,6 +351,8 @@ de:
   pageTitle: Live-Ergebnisse
   totalVotes: Stimmen Gesamt
   hideButton: Verstecken
+  scrambleButton: Mischen
+  emojiButton: Emoji
   lockedButton: Gesperrt
   openButton: Offen
   unpublishButton: Veröffentlichung zurückziehen
@@ -325,6 +365,8 @@ ja:
   pageTitle: ライブ結果
   totalVotes: 総投票数
   hideButton: 隠す
+  scrambleButton: シャッフル
+  emojiButton: 絵文字
   lockedButton: ロック済み
   openButton: オープン
   unpublishButton: 公開停止
