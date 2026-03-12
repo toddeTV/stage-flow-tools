@@ -2,10 +2,8 @@ import { version } from './package.json'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-
   modules: [
     '@nuxt/eslint',
-  compatibilityDate: '2025-07-15',
     '@nuxtjs/i18n',
     '@nuxtjs/tailwindcss',
     '@vueuse/nuxt',
@@ -41,6 +39,7 @@ export default defineNuxtConfig({
       emojiCooldownMs: 1500,
     },
   },
+
   compatibilityDate: '2025-07-15',
 
   nitro: {
