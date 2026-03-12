@@ -147,13 +147,14 @@ export async function publishQuestion(key: string): Promise<Question | undefined
     question.alreadyPublished = true
     await storage.setItem('questions', questions)
 
-    // Clear all answers when publishing new question
-    await storage.setItem('answers', [])
+    // Broadcast the results (includes any previously submitted answers for this question)
+    const results = await getResultsForQuestion(question.id, questions)
+    broadcast('results-update', results)
   }
   return question
 }
 
-/** Deactivate the active question and clear its answers. */
+/** Deactivate the active question (answers are preserved for potential re-publishing). */
 export async function unpublishActiveQuestion(): Promise<Question | undefined> {
   await initStorage()
   const questions = await storage.getItem<Question[]>('questions') || []
@@ -162,10 +163,6 @@ export async function unpublishActiveQuestion(): Promise<Question | undefined> {
   if (activeQuestion) {
     activeQuestion.is_active = false
     await storage.setItem('questions', questions)
-
-    const answers = await storage.getItem<Answer[]>('answers') || []
-    const remainingAnswers = answers.filter(a => a.question_id !== activeQuestion.id)
-    await storage.setItem('answers', remainingAnswers)
   }
 
   return activeQuestion
