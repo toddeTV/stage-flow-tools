@@ -7,8 +7,8 @@ export default defineEventHandler(async (event) => {
 
   if (deactivated) {
     // Broadcast that there is no active question
-    broadcast('new-question', null)
-    broadcast('results-update', null, WebSocketChannel.RESULTS)
+    await broadcast(event, 'new-question', null)
+    await broadcast(event, 'results-update', null, WebSocketChannel.RESULTS)
   }
 
   return { success: true, message: 'Active question unpublished.' }

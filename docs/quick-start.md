@@ -48,5 +48,5 @@ Get the quiz application running in minutes.
 ## Next Steps
 
 - [Local Development Setup](setup-local.md) - Detailed development configuration
-- [Production Deployment](setup-production.md) - Deploy to production
+- [Cloudflare Deployment](deployment-cloudflare.md) - Deploy to production
 - [Architecture Overview](architecture.md) - Understand the system

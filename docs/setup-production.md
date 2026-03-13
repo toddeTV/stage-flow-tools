@@ -1,164 +1,74 @@
 # Production Deployment
 
-Guide for deploying the quiz application to production.
+Guide for deploying the quiz application to production on Cloudflare Workers.
 
-## Build Process
-
-### Production Build
-
-```bash
-pnpm run build:ssr
-```
-
-Creates optimized production bundle in `.output/` directory.
-
-## Deployment Options
-
-### 1. Cloudflare Workers (Primary)
-
-See the [Cloudflare Deployment Guide](deployment-cloudflare.md) for a step-by-step tutorial covering manual deploys, automated CI/CD via GitHub Actions, and the push script for seeding quiz data.
+## Build and Deploy
 
 ```bash
 pnpm run deploy:cloudflare
 ```
 
-### 2. Docker Container
+This runs `nuxt build` with `NITRO_PRESET=cloudflare-module` and deploys via `wrangler deploy`.
 
-See the [Docker Deployment Guide](deployment-docker.md).
-
-**Dockerfile example:**
-
-```dockerfile
-FROM node:24-alpine
-WORKDIR /app
-COPY .output .output
-EXPOSE 3000
-CMD ["node", ".output/server/index.mjs"]
-```
-
-> Mount `/app/.data/db` to a persistent host path or named volume to preserve quiz data across container restarts. Without this, data is lost when the container is recreated.
-
-### 3. Node.js Server (VPS/Dedicated)
-
-**Requirements:**
-
-- Node.js 24.x
-- PM2 or similar process manager
-
-**Steps:**
-
-1. Build application
-2. Copy `.output/` to server
-3. Set environment variables
-4. Start with PM2:
-   ```bash
-   pm2 start .output/server/index.mjs --name quiz-app
-   ```
-
-### 4. Platform-as-a-Service
-
-**Vercel:**
-
-- Note: File storage is ephemeral
-- Consider external database for persistence
-
-**Railway/Render:**
-
-- Full Node.js support
-- Persistent file storage available
+See the [Cloudflare Deployment Guide](deployment-cloudflare.md) for a step-by-step tutorial covering manual deploys, automated CI/CD via GitHub Actions, and the push script for seeding quiz data.
 
 ## Environment Configuration
 
 ### Production Variables
 
-**Generate a strong JWT secret:**
+Set secrets securely via Wrangler (never commit to source control):
 
 ```bash
-openssl rand -base64 48
+openssl rand -base64 48  # Generate a strong JWT secret
+npx wrangler secret put NUXT_ADMIN_PASSWORD
+npx wrangler secret put NUXT_JWT_SECRET
 ```
 
-Store the generated secret in your environment management system or secrets manager to fill `NUXT_JWT_SECRET` in production (e.g., AWS Secrets Manager, HashiCorp Vault, Kubernetes Secrets, or your platform's environment variable manager).
+Public variables are configured in `wrangler.toml` under `[vars]`.
 
 ### Security Considerations
 
 - **Strong Passwords**: Use complex admin credentials
-- **JWT Secret**: Generate secure random string using `openssl rand -base64 48` and store it securely
-- **Secret Management**: Never commit secrets to source control; use environment management or a secrets manager
-- **HTTPS**: Always use SSL in production
-- **Firewall**: Configure appropriate rules
+- **JWT Secret**: Generate secure random string using `openssl rand -base64 48`
+- **Secret Management**: Never commit secrets to source control; use `npx wrangler secret put`
+- **HTTPS**: Automatic via Cloudflare
 
 ## Data Persistence
 
-### Cloudflare Workers
-
 Data is stored in Cloudflare KV - persists across deployments, globally replicated.
 
-### Docker / Node.js
-
-Data is stored in `.data/db/` on the local filesystem.
-
-**Ephemeral Platforms** (Vercel, some PaaS):
-
-- Data resets on redeploy
-- Not suitable for production quiz data
-
-**Persistent Platforms** (VPS, dedicated servers, Docker with a mounted volume):
-
-- Data persists in `.data/db/` across restarts when `/app/.data/db` is backed by persistent storage
-- Regular backups recommended
-
-### Migration to Database
-
-For high-availability production:
-
-1. Consider PostgreSQL/MySQL
-2. Use cloud database services
-3. Implement proper backup strategy
+WebSocket state (connections, emoji cooldowns, results batching) is managed by the `QuizSession` Durable Object in transient memory. This state is ephemeral but re-establishes automatically as clients reconnect.
 
 ## Monitoring
 
 ### Health Check Endpoint
 
-Access `/api/questions` to verify API availability.
+Access `/api/questions` to verify API availability (requires admin auth).
 
 ### Logs
 
-- Application logs to stdout
-- Use platform logging services
-- Monitor WebSocket connections
-
-## Scaling Considerations
-
-### Single Instance
-
-Current architecture supports:
-
-- ~100-500 concurrent users
-- One active question at a time
-- File-based storage
-
-### Multi-Instance
-
-For larger scale:
-
-- Implement Redis for session/WebSocket sync
-- Use external database
-- Load balancer configuration
+- Application logs via `wrangler tail`
+- Cloudflare Dashboard for Workers analytics
+- Monitor Durable Object metrics via CF dashboard
 
 ## Backup Strategy
 
-### Automated Backups
-
-Schedule cron job (Docker / Node.js):
+### KV Backup
 
 ```bash
-0 */6 * * * cp -r /app/.data/db /backups/data-$(date +\%Y\%m\%d-\%H\%M)
+backup_dir="backups/kv-$(date +%Y%m%d)"
+mkdir -p "$backup_dir"
+npx wrangler kv key get --binding=STAGE_FLOW_DATA "questions" > "$backup_dir/questions.json"
+npx wrangler kv key get --binding=STAGE_FLOW_DATA "answers" > "$backup_dir/answers.json"
+npx wrangler kv key get --binding=STAGE_FLOW_DATA "admin" > "$backup_dir/admin.json"
 ```
 
-### Manual Backup
+### Push Script
 
-Before updates:
+For conference speakers maintaining questions in a separate repo:
 
 ```bash
-tar -czf quiz-backup-$(date +%Y%m%d).tar.gz .data/db/
+pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json
 ```
+
+See [deployment-cloudflare.md](deployment-cloudflare.md#pushing-questions-from-local-to-cloudflare) for the full reference.

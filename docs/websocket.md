@@ -6,9 +6,11 @@ Real-time communication system documentation.
 
 ### Connection Management
 
-- **Endpoint**: `ws://localhost:3000/_ws`
+- **Endpoint**: `ws://<host>/_ws`
 - **Protocol**: Native WebSocket
-- **Framework**: Nitro experimental WebSocket
+- **Backend**: Cloudflare Durable Object (`QuizSession`) with WebSocket Hibernation API
+
+All WebSocket connections are managed by a single `QuizSession` Durable Object instance (`idFromName('global')`). The Nitro route handler at `/_ws` forwards the upgrade request to the DO.
 
 ### Client Connection
 
@@ -26,6 +28,8 @@ ws.onmessage = (event) => {
 
 - **`channel`** - WebSocket channel: `default`, `results`, or `emojis`
 - **`userId`** - Optional user identifier for tracking
+
+WebSocket connections are tagged with `channel:<name>` and `user:<userId>` for efficient filtering during broadcasts.
 
 ## Event Types
 
@@ -132,10 +136,39 @@ Keep-alive message
 
 ### Connection Lifecycle
 
-1. **Open** - Client connects
-2. **Message** - Bidirectional communication
-3. **Error** - Handle failures
-4. **Close** - Cleanup resources
+1. **Upgrade** - Client sends WebSocket upgrade to `/_ws`
+1. **Forward** - Nitro handler forwards upgrade to `QuizSession` Durable Object
+1. **Accept** - DO accepts WebSocket via Hibernation API with channel/user tags
+1. **Broadcast** - DO broadcasts connection count to all clients
+1. **Message** - DO handles incoming messages (ping/pong)
+1. **Close** - DO broadcasts updated connection count
+
+### Durable Object Internal API
+
+API routes communicate with the `QuizSession` DO via HTTP stub calls:
+
+| Endpoint                  | Method | Purpose                                     |
+| ------------------------- | ------ | ------------------------------------------- |
+| `/connections`            | GET    | Get connection count and peer info          |
+| `/broadcast`              | POST   | Broadcast event to all clients (by channel) |
+| `/send-to-user`           | POST   | Send event to a specific user               |
+| `/schedule-results`       | POST   | Schedule batched results update (alarm API) |
+| `/check-emoji-cooldown`   | POST   | Check if user is on emoji cooldown          |
+| `/update-emoji-timestamp` | POST   | Record emoji submission timestamp           |
+
+### Proxy Functions (`server/utils/websocket.ts`)
+
+API routes use proxy functions that abstract the DO stub calls:
+
+- `getQuizSessionStub(event)` - Returns the DO stub from `event.context.cloudflare.env.QUIZ_SESSION`
+- `broadcast(event, eventName, data, channel?)` - Broadcasts to all clients
+- `sendToUser(event, userId, eventName, data, channel?)` - Sends to a specific user
+- `getConnections(event)` - Returns `{ totalConnections, peers }`
+- `scheduleResultsUpdate(event, data, channel)` - Schedules batched results broadcast
+- `checkEmojiCooldown(event, userId, cooldownMs)` - Checks emoji cooldown
+- `updateEmojiTimestamp(event, userId)` - Records emoji timestamp
+
+All proxy functions take `H3Event` as the first parameter to access the Cloudflare environment.
 
 ### Reconnection Logic
 
@@ -181,22 +214,23 @@ ws.onclose = () => {
 - Unknown event handling
 - Error logging
 
-## Performance Optimization
+## Performance
 
-### Cloudflare Workers Compatibility
+### Durable Object Advantages
 
-WebSocket connections work on Cloudflare Workers using the `cloudflare-module` Nitro preset. The Worker runs as a single isolate, so in-memory peer tracking (the `peers` Map) persists across requests and WebSocket messages within the same isolate. No Durable Objects are needed for this use case.
-
-> **Note:** If the isolate is evicted (e.g., due to inactivity or redeployment), in-memory peer data is lost. Active WebSocket connections will be terminated and clients will need to reconnect.
+- **Persistent state** - WebSocket connections survive Worker isolate eviction. The DO stays alive as long as connections exist.
+- **WebSocket Hibernation** - Idle connections do not consume CPU. The DO "wakes up" on incoming messages or alarm events.
+- **Single instance** - All WebSocket connections are managed by one DO, eliminating cross-isolate coordination issues.
+- **Alarm API** - Results batching uses the built-in alarm for 2-second delay, avoiding manual timers.
 
 ### Message Batching
 
 - Group results updates
-- 2-second buffer window
+- 2-second buffer window via Durable Object alarm
 - Single broadcast per batch
 
-### Connection Pooling
+### Emoji Cooldowns
 
-- Maintain peer set
-- Efficient broadcast
-- Clean disconnection handling
+- Per-user cooldown tracked in DO transient memory
+- No KV writes needed for cooldown tracking
+- Expired cooldowns pruned automatically on each check

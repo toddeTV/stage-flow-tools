@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     const randomIndex = Math.floor(Math.random() * usersForOption.length)
     const randomUser = usersForOption[randomIndex]!
 
-    const delivered = sendToUser(randomUser.user_id, 'winner-selected', {
+    const delivered = await sendToUser(event, randomUser.user_id, 'winner-selected', {
       userId: randomUser.user_id,
       username: randomUser.user_nickname,
       questionId,

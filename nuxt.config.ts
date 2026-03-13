@@ -1,7 +1,5 @@
 import { version } from './package.json'
 
-const isCloudflare = process.env.NITRO_PRESET?.startsWith('cloudflare')
-
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: [
@@ -45,12 +43,9 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
 
   nitro: {
-    experimental: {
-      websocket: true,
+    storage: {
+      data: { driver: 'cloudflareKVBinding', binding: 'STAGE_FLOW_DATA' },
     },
-    storage: isCloudflare
-      ? { data: { driver: 'cloudflareKVBinding', binding: 'STAGE_FLOW_DATA' } }
-      : { data: { driver: 'fs', base: './.data/db' } },
     devStorage: {
       data: { driver: 'fs', base: './.data/db' },
     },

@@ -1,6 +1,6 @@
 # Cloudflare Deployment Guide
 
-Step-by-step tutorial for deploying stage-flow-tools to Cloudflare Workers with KV storage.
+Step-by-step tutorial for deploying stage-flow-tools to Cloudflare Workers with Durable Objects and KV storage.
 
 ## What You Get
 
@@ -8,7 +8,7 @@ Step-by-step tutorial for deploying stage-flow-tools to Cloudflare Workers with 
 - **Global edge network** - low latency for audiences worldwide.
 - **Automatic SSL** - HTTPS out of the box on your custom domain.
 - **Cloudflare KV** - managed key-value storage for quiz data.
-- **WebSocket support** - real-time quiz updates via in-memory peer tracking (best-effort, suitable for single-event scenarios).
+- **Durable Objects** - persistent, single-instance WebSocket management via the Hibernation API.
 
 ## Architecture on Cloudflare
 
@@ -21,17 +21,20 @@ Browser (SPA)
   |                          |
   |                          +-- reads/writes --> Cloudflare KV (storage)
   |                          +-- JWT auth    --> jose (Web Crypto API)
+  |                          +-- real-time   --> QuizSession Durable Object (stub calls)
   |
-  +-- /_ws (WebSocket) --> Cloudflare Worker (in-memory peer management)
+  +-- /_ws (WebSocket) --> Cloudflare Worker --> QuizSession Durable Object
+                              (upgrade forwarded to DO)
 ```
 
-- The **Cloudflare Worker** serves the SPA, handles API routes, and manages WebSocket connections.
-- **Cloudflare KV** stores questions, answers, and admin credentials (replaces the local filesystem driver used in Docker/Node.js deployments).
-- **WebSocket state** (connected peers, broadcasting) is held in-memory within the Worker isolate. Cloudflare does **not** guarantee that all connections route to the same isolate - in-memory peer tracking is best-effort. For a single-event conference quiz where all participants share the same edge location, this works reliably in practice. For production-grade multi-region coordination, consider [Cloudflare Durable Objects](https://developers.cloudflare.com/durable-objects/) as a single-threaded coordination point.
+- The **Cloudflare Worker** serves the SPA, handles API routes, and forwards WebSocket upgrades to the Durable Object.
+- The **QuizSession Durable Object** manages all WebSocket connections using the Hibernation API. It handles broadcasting, per-user message delivery, emoji cooldowns (in-memory), and batched results updates (alarm API with 2-second delay).
+- **Cloudflare KV** stores questions, answers, and admin credentials as persistent data.
+- A single DO instance (`idFromName('global')`) serves all WebSocket channels.
 
 ## Prerequisites
 
-- A [Cloudflare account](https://dash.cloudflare.com/sign-up) with a **paid Workers plan** (required for KV write access beyond the free tier limits).
+- A [Cloudflare account](https://dash.cloudflare.com/sign-up) with a **paid Workers plan** (required for Durable Objects and KV write access beyond the free tier).
 - A domain or subdomain managed by Cloudflare DNS (or use the default `.workers.dev` subdomain).
 - [Node.js 24.x](https://nodejs.org/) and [pnpm 10.x](https://pnpm.io/) installed locally.
 
@@ -85,7 +88,7 @@ Edit `wrangler.toml` and replace the placeholder values:
 
 ```toml
 name = "stage-flow-tools"
-main = ".output/server/index.mjs"
+main = "worker-entry.ts"
 compatibility_date = "2025-07-15"
 
 [assets]
@@ -103,6 +106,15 @@ NUXT_PUBLIC_EMOJI_COOLDOWN_MS = "1500"
 binding = "STAGE_FLOW_DATA"
 id = "<paste-your-kv-namespace-id-here>"
 preview_id = "<paste-your-preview-kv-namespace-id-here>"
+
+[durable_objects]
+bindings = [
+  { name = "QUIZ_SESSION", class_name = "QuizSession" },
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["QuizSession"]
 ```
 
 > `wrangler.toml` is gitignored because it contains your namespace IDs. Each deployment maintains its own copy.
@@ -166,7 +178,7 @@ Test the admin login:
 
 ## Loading Predefined Questions
 
-On Node.js/Docker deployments, predefined questions load automatically from a JSON file on disk at startup. On Cloudflare Workers, the filesystem is not available, so you seed questions directly into KV.
+During local development, predefined questions can load automatically from a JSON file on disk at startup. On Cloudflare Workers, the filesystem is not available, so you seed questions directly into KV.
 
 ### Seeding via Wrangler CLI
 
@@ -393,8 +405,8 @@ pnpm run deploy:push-to-cloudflare -- --questions /path/to/talk-repo/questions.j
 
 ### WebSocket Connection Issues
 
-- The Worker serves WebSocket connections at `/_ws`. Verify your client connects to the correct URL.
-- Cloudflare Workers support WebSocket connections natively via the `cloudflare-module` preset.
+- The Worker forwards WebSocket upgrades at `/_ws` to the `QuizSession` Durable Object. Verify your client connects to the correct URL.
+- Durable Objects handle all WebSocket state. Connections survive Worker isolate eviction.
 
 ### Secrets Not Working
 
@@ -403,11 +415,15 @@ pnpm run deploy:push-to-cloudflare -- --questions /path/to/talk-repo/questions.j
 
 ## Cost Considerations
 
-| Resource   | Free tier         | Paid plan ($5/month)  |
-| ---------- | ----------------- | --------------------- |
-| Workers    | 100K requests/day | 10M requests/month    |
-| KV reads   | 100K reads/day    | 10M reads/month       |
-| KV writes  | 1K writes/day     | 1M writes/month       |
-| KV storage | 1 GB              | 1 GB (more available) |
+Pricing as of 2026-03-13. See [Cloudflare Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) for current details.
+
+| Resource        | Free tier                       | Paid plan ($5/month)           |
+| --------------- | ------------------------------- | ------------------------------ |
+| Workers         | 100K requests/day               | 10M requests/month             |
+| KV reads        | 100K reads/day                  | 10M reads/month                |
+| KV writes       | 1K writes/day                   | 1M writes/month                |
+| KV storage      | 1 GB                            | 1 GB included ($0.50/GB-month) |
+| Durable Objects | 100K requests/day (SQLite only) | 1M requests/month              |
+| DO storage      | 5 GB (SQLite only)              | 5 GB/month included            |
 
 For a typical conference quiz with 100-500 participants, a paid plan ($5/month) provides comfortable headroom.

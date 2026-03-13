@@ -27,12 +27,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // Broadcast new question to all connected clients
-  broadcast('new-question', question)
+  await broadcast(event, 'new-question', question)
 
   // Also broadcast an empty results update to clear previous results
-  const results = await getResultsForQuestion(question.id)
+  const { totalConnections } = await getConnections(event)
+  const results = await getResultsForQuestion(question.id, totalConnections)
   if (results) {
-    scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
+    await scheduleResultsUpdate(event, results, WebSocketChannel.RESULTS)
   }
 
   return question

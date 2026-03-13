@@ -3,7 +3,7 @@
 # See docs/deployment-cloudflare.md for setup instructions.
 
 name = "stage-flow-tools"
-main = ".output/server/index.mjs"
+main = "worker-entry.ts"
 compatibility_date = "2025-07-15"
 
 [assets]
@@ -21,3 +21,12 @@ NUXT_PUBLIC_EMOJI_COOLDOWN_MS = "1500"
 binding = "STAGE_FLOW_DATA"
 id = "<your-kv-namespace-id>"
 preview_id = "<your-preview-kv-namespace-id>"
+
+[durable_objects]
+bindings = [
+  { name = "QUIZ_SESSION", class_name = "QuizSession" },
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["QuizSession"]
