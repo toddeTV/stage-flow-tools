@@ -94,11 +94,17 @@ watch(() => results.value?.question.id, (newId, oldId) => {
   showEmoji.value = false
 })
 
-// Optionally shuffle the results order when scramble is active
+// Shuffle order when scramble is active, or persist shuffled order when
+// scramble=hide was set via URL (so unchecking the checkbox reveals texts
+// without jumping answers back to their original positions).
+const useShuffledOrder = computed(() =>
+  scramble.value === 'hide' || scrambleResults.value,
+)
+
 const displayResults = computed(() => {
   if (!results.value) return []
   const entries = Object.entries(results.value.results)
-  if (scrambleResults.value) {
+  if (useShuffledOrder.value) {
     return seededShuffle(entries, results.value.question.id)
   }
   return entries
