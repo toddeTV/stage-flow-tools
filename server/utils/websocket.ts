@@ -47,7 +47,7 @@ export async function sendToUser(
     body: JSON.stringify({ userId, event: eventName, data, channel }),
   }))
   const result = await response.json() as { delivered: boolean }
-  return result.delivered
+  return result?.delivered ?? false
 }
 
 /** Returns connection info from the Durable Object. */
@@ -76,15 +76,18 @@ export async function checkEmojiCooldown(event: H3Event, userId: string, cooldow
     body: JSON.stringify({ userId, cooldownMs }),
   }))
   const result = await response.json() as { onCooldown: boolean }
-  return result.onCooldown
+  return result?.onCooldown ?? true
 }
 
 /** Records the current emoji timestamp for a user via the Durable Object. */
 export async function updateEmojiTimestamp(event: H3Event, userId: string) {
   const stub = getQuizSessionStub(event)
-  await stub.fetch(new Request('https://do/update-emoji-timestamp', {
+  const response = await stub.fetch(new Request('https://do/update-emoji-timestamp', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId }),
   }))
+  if (!response.ok) {
+    logger_error('updateEmojiTimestamp failed:', response.status)
+  }
 }
