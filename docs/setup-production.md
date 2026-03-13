@@ -60,6 +60,7 @@ backup_dir="backups/kv-$(date +%Y%m%d)"
 mkdir -p "$backup_dir"
 npx wrangler kv key get --binding=STAGE_FLOW_DATA "questions" > "$backup_dir/questions.json"
 npx wrangler kv key get --binding=STAGE_FLOW_DATA "answers" > "$backup_dir/answers.json"
+npx wrangler kv key get --binding=STAGE_FLOW_DATA "admin" > "$backup_dir/admin.json"
 ```
 
 ### Push Script
