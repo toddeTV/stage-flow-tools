@@ -9,14 +9,18 @@ export default defineEventHandler(async (event) => {
   const url = getRequestURL(event)
   const headers = getRequestHeaders(event)
 
+  if (headers.upgrade?.toLowerCase() !== 'websocket') {
+    throw createError({
+      statusCode: 426,
+      statusMessage: 'Upgrade Required',
+    })
+  }
+
   const doUrl = new URL(url.pathname + url.search, 'https://do')
   const response = await stub.fetch(doUrl.toString(), {
-    headers: {
-      Upgrade: headers.upgrade || 'websocket',
-      ...Object.fromEntries(
-        Object.entries(headers).filter(([key]) => key.toLowerCase() !== 'host'),
-      ),
-    },
+    headers: Object.fromEntries(
+      Object.entries(headers).filter(([key]) => key.toLowerCase() !== 'host'),
+    ),
   })
 
   return response
