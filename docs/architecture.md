@@ -13,34 +13,38 @@ System design and technical architecture of the quiz application.
 ### Backend
 
 - **Nitro** - Nuxt server engine
-- **WebSockets** - Real-time communication
+- **Cloudflare Durable Objects** - Real-time WebSocket management via the WebSocket Hibernation API
+- **Cloudflare KV** - Persistent data storage
 - **JWT** - Authentication tokens
 
-### Storage
+### Deployment
 
-- **Nitro `useStorage()`** - Pluggable storage with driver abstraction (filesystem for dev/Docker, Cloudflare KV for Workers)
+- **Cloudflare Workers** - Serverless compute (only supported deployment target)
 
 ## Application Structure
 
 ```text
 stage-flow-tools/
-├── app/           # Frontend application
-│   ├── components/# Vue components (ui/, app/)
-│   ├── composables/# Vue composables
-│   ├── layouts/   # Nuxt layouts
-│   ├── middleware/ # Route middleware
-│   ├── pages/     # Route components
-│   ├── utils/     # Client utilities
-│   └── app.vue    # Root component
-├── server/        # Backend services
-│   ├── api/       # REST endpoints
-│   ├── routes/    # WebSocket handlers
-│   └── utils/     # Server utilities
-├── shared/        # Shared code (client + server)
-│   └── utils/     # Shared utilities
-├── .data/db/      # Local storage (dev/Docker, gitignored)
-├── data/          # Predefined questions source (Node.js only)
-└── docs/          # Project documentation
+├── app/                # Frontend application
+│   ├── components/     # Vue components (ui/, app/)
+│   ├── composables/    # Vue composables
+│   ├── layouts/        # Nuxt layouts
+│   ├── middleware/      # Route middleware
+│   ├── pages/          # Route components
+│   ├── utils/          # Client utilities
+│   └── app.vue         # Root component
+├── cloudflare/         # Cloudflare-specific code (outside Nitro)
+│   └── quiz-session.ts # QuizSession Durable Object class
+├── server/             # Backend services (Nitro)
+│   ├── api/            # REST endpoints
+│   ├── routes/         # WebSocket upgrade handler
+│   └── utils/          # Server utilities (storage, auth, DO proxy)
+├── shared/             # Shared code (client + server)
+│   └── utils/          # Shared utilities
+├── worker-entry.ts     # Cloudflare Worker entry (re-exports Nitro + DO)
+├── .data/db/           # Local storage (dev only, gitignored)
+├── data/               # Predefined questions source (local dev only)
+└── docs/               # Project documentation
 ```
 
 ## Core Components
@@ -64,21 +68,36 @@ stage-flow-tools/
 - **`/emojis/*`** - Emoji reactions
 - **`/websockets/*`** - Connection monitoring
 
+### Durable Object
+
+- **`QuizSession`** (`cloudflare/quiz-session.ts`) - Manages all WebSocket connections via the Hibernation API. Handles broadcasting, per-user message delivery, emoji cooldowns (in-memory), and results batching (alarm API with 2-second delay). A single instance (`idFromName('global')`) serves all channels.
+
+### Worker Entry
+
+- **`worker-entry.ts`** - Cloudflare Worker entry point. Re-exports the Nitro-generated fetch handler as the default export and the `QuizSession` Durable Object class. Referenced by `wrangler.toml` as `main`.
+
 ## Design Decisions
+
+### Why Cloudflare Durable Objects?
+
+- **Persistent WebSocket state** - Connection tracking survives Worker isolate eviction, unlike in-memory Maps
+- **WebSocket Hibernation API** - Efficient connection management without keeping the DO awake for idle connections
+- **Alarm API** - Built-in timer for batched results updates (2-second delay)
+- **Transient state** - Emoji cooldowns live in DO memory (no KV writes needed)
+- **Single instance** - One `QuizSession` DO handles all WebSocket channels (default, results, emojis)
 
 ### Why Nitro useStorage()?
 
-- **Driver Abstraction** - Same code runs on filesystem (dev/Docker) and Cloudflare KV (Workers)
-- **Zero Config for Dev** - Filesystem driver works out of the box via `devStorage`
-- **Cloud-Ready** - Swap to Cloudflare KV by setting `NITRO_PRESET=cloudflare-module`
+- **KV binding** - Cloudflare KV via `STAGE_FLOW_DATA` binding for persistent data
+- **Dev storage** - Filesystem driver at `.data/db/` via `devStorage` for local development
 - **Adequate Scale** - Perfect for presentation use case
 
-### Why WebSockets?
+### Why Cloudflare Workers Only?
 
-- **Real-time Updates** - Instant question changes
-- **Low Latency** - Immediate feedback
-- **Bidirectional** - Server can push updates
-- **Built-in Support** - Native Nitro integration
+- **Durable Objects** depend on Cloudflare's infrastructure
+- **Simplifies architecture** - No need to maintain two deployment paths
+- **Free/cheap tier** - Suitable for the quiz use case
+- **Global edge network** - Low latency for conference audiences worldwide
 
 ### Why Sharp Design (No Rounded Corners)?
 
@@ -92,18 +111,26 @@ stage-flow-tools/
 ### Quiz Participation
 
 1. User enters nickname
-2. Stored in localStorage
-3. Views current question
-4. Submits answer via API
-5. WebSocket broadcasts results
+1. Stored in localStorage
+1. Views current question
+1. Submits answer via REST API
+1. API route calls DO to schedule batched results broadcast
+1. DO alarm fires after 2 seconds and broadcasts results to WebSocket clients
 
 ### Admin Operations
 
 1. Admin authenticates (JWT)
-2. Creates question
-3. Publishes question
-4. WebSocket notifies all clients
-5. Controls lock status
+1. Creates question via REST API
+1. Publishes question via REST API
+1. API route calls DO to broadcast the new question to all WebSocket clients
+1. Controls lock status (broadcasts lock state via DO)
+
+### WebSocket Connection
+
+1. Client connects to `/_ws?channel=default&userId=abc123`
+1. Nitro route handler forwards the upgrade request to the `QuizSession` DO
+1. DO accepts the WebSocket using the Hibernation API, tagging with channel and userId
+1. DO broadcasts connection count update to all clients
 
 ## Security Model
 

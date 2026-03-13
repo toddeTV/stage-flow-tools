@@ -4,9 +4,6 @@ import type { Question, Results, Answer, InputQuestion } from '~/types'
 
 const storage = useStorage('data')
 
-// In-memory store for emoji cooldowns
-const emojiCooldowns = new Map<string, number>()
-
 // Track whether storage has been initialized
 let storageInitialized = false
 
@@ -146,10 +143,6 @@ export async function publishQuestion(key: string): Promise<Question | undefined
     question.is_active = true
     question.alreadyPublished = true
     await storage.setItem('questions', questions)
-
-    // Broadcast the results (includes any previously submitted answers for this question)
-    const results = await getResultsForQuestion(question.id, questions)
-    broadcast('results-update', results)
   }
   return question
 }
@@ -261,9 +254,10 @@ export async function validateAdmin(username: string, password: string, event?: 
   return admin.username === username && admin.password === password
 }
 
-// Get results for current question
+/** Computes results for a given question. Caller must supply totalConnections from the DO. */
 export async function getResultsForQuestion(
   questionId: string,
+  totalConnections: number,
   allQuestions?: Question[],
   allAnswers?: Answer[],
 ): Promise<Results | null> {
@@ -294,45 +288,13 @@ export async function getResultsForQuestion(
     question,
     results,
     totalVotes: answers.length,
-    totalConnections: (await getPeers()).length,
+    totalConnections,
   }))
 }
 
-export async function getCurrentResults(): Promise<Results | null> {
+/** Returns results for the currently active question. Caller must supply totalConnections from the DO. */
+export async function getCurrentResults(totalConnections: number): Promise<Results | null> {
   const activeQuestion = await getActiveQuestion()
   if (!activeQuestion) return null
-  return getResultsForQuestion(activeQuestion.id)
-}
-
-// Emoji cooldown operations
-
-/** Removes expired entries from the cooldown map to prevent unbounded growth. */
-function pruneExpiredCooldowns(cooldownMs: number): void {
-  const now = Date.now()
-  for (const [id, timestamp] of emojiCooldowns) {
-    if (now - timestamp >= cooldownMs) {
-      emojiCooldowns.delete(id)
-    }
-  }
-}
-
-export function checkEmojiCooldown(userId: string): boolean {
-  const config = useRuntimeConfig()
-  const cooldownMs = config.public.emojiCooldownMs
-
-  pruneExpiredCooldowns(cooldownMs)
-
-  const lastSubmission = emojiCooldowns.get(userId)
-  if (lastSubmission) {
-    const now = Date.now()
-    if (now - lastSubmission < cooldownMs) {
-      return true // Cooldown is active
-    }
-  }
-  return false // Cooldown is over or user has not submitted before
-}
-
-/** Records the current timestamp for the given user in the emoji cooldown map. */
-export function updateEmojiTimestamp(userId: string): void {
-  emojiCooldowns.set(userId, Date.now())
+  return getResultsForQuestion(activeQuestion.id, totalConnections)
 }

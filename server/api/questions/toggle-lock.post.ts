@@ -24,12 +24,13 @@ export default defineEventHandler(async (event) => {
 
   // Broadcast lock status change
   if (question) {
-    broadcast('lock-status', { questionId, is_locked: question.is_locked })
+    await broadcast(event, 'lock-status', { questionId, is_locked: question.is_locked })
 
     // Also broadcast a results update
-    const results = await getResultsForQuestion(questionId)
+    const { totalConnections } = await getConnections(event)
+    const results = await getResultsForQuestion(questionId, totalConnections)
     if (results) {
-      scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
+      await scheduleResultsUpdate(event, results, WebSocketChannel.RESULTS)
     }
   }
 

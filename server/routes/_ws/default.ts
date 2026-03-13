@@ -1,30 +1,23 @@
-import type { Peer, Message } from 'crossws'
-import { WebSocketChannel } from '~/types'
+/**
+ * WebSocket upgrade handler.
+ * Forwards the WebSocket upgrade request to the QuizSession Durable Object.
+ */
+export default defineEventHandler(async (event) => {
+  const stub = getQuizSessionStub(event)
 
-export default defineWebSocketHandler({
-  async open(peer) {
-    logger('WebSocket connection opened')
-    const { url: requestUrlString } = peer.request
-    const requestUrl = new URL(requestUrlString)
-    const url = requestUrl.pathname
-    const userId = requestUrl.searchParams.get('userId') || undefined
-    const channel = (requestUrl.searchParams.get('channel') as WebSocketChannel) || WebSocketChannel.DEFAULT
-    await addPeer(peer, channel, url, userId)
-  },
+  // Forward the original request to the Durable Object for WebSocket upgrade
+  const url = getRequestURL(event)
+  const headers = getRequestHeaders(event)
 
-  async close(peer: Peer) {
-    logger('WebSocket connection closed')
-    await removePeer(peer)
-  },
+  const doUrl = new URL(url.pathname + url.search, 'https://do')
+  const response = await stub.fetch(doUrl.toString(), {
+    headers: {
+      Upgrade: headers.upgrade || 'websocket',
+      ...Object.fromEntries(
+        Object.entries(headers).filter(([key]) => key.toLowerCase() !== 'host'),
+      ),
+    },
+  })
 
-  error(peer: Peer, error: Error) {
-    logger('WebSocket error:', error)
-  },
-
-  message(peer: Peer, message: Message) {
-    // Handle ping/pong for connection keepalive
-    if (message.text() === 'ping') {
-      peer.send('pong')
-    }
-  },
+  return response
 })

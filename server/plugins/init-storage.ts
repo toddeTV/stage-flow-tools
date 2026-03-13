@@ -3,8 +3,8 @@ import type { InputQuestion } from '~/types'
 
 /**
  * Nitro plugin that runs on server startup.
- * Initializes storage and loads predefined questions from the filesystem (Node.js only).
- * On Cloudflare, predefined questions are seeded via Wrangler CLI into KV storage.
+ * Initializes storage and loads predefined questions from the filesystem (local dev only).
+ * On Cloudflare Workers, predefined questions are seeded via Wrangler CLI into KV storage.
  */
 export default defineNitroPlugin(async () => {
   // Initialize storage defaults

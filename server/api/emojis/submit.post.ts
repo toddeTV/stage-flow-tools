@@ -12,7 +12,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  if (checkEmojiCooldown(user_id)) {
+  const config = useRuntimeConfig(event)
+  const cooldownMs = config.public.emojiCooldownMs
+
+  if (await checkEmojiCooldown(event, user_id, cooldownMs)) {
     throw createError({
       statusCode: 429,
       statusMessage: 'You are sending emojis too fast. Please wait a moment.',
@@ -26,10 +29,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  updateEmojiTimestamp(user_id)
+  await updateEmojiTimestamp(event, user_id)
 
   // Broadcast the emoji with a unique ID to ensure reactivity on the client
-  broadcast('emoji', { emoji, id: createId() }, WebSocketChannel.EMOJIS)
+  await broadcast(event, 'emoji', { emoji, id: createId() }, WebSocketChannel.EMOJIS)
 
   return {
     statusCode: 200,

@@ -1,120 +1,90 @@
-import type { Peer } from 'crossws'
+import type { H3Event } from 'h3'
 import type { Results, WebSocketChannel } from '~/types'
 
-interface PeerInfo {
-  id: string
-  url: string
-  channel: WebSocketChannel
-  userId?: string
+interface ConnectionsResponse {
+  totalConnections: number
+  peers: Array<{ id: string, channel: string }>
 }
 
-const peers = new Map<WebSocketChannel, Map<string, Peer>>() // Channel -> Peer ID -> Peer
-
-export function getChannelPeers(channel: WebSocketChannel): Map<string, Peer> {
-  if (!peers.has(channel)) {
-    peers.set(channel, new Map<string, Peer>())
+/**
+ * Returns a Durable Object stub for the singleton QuizSession instance.
+ * Uses a fixed ID so all API routes communicate with the same DO.
+ */
+export function getQuizSessionStub(event: H3Event) {
+  const { cloudflare } = event.context
+  if (!cloudflare?.env?.QUIZ_SESSION) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'QUIZ_SESSION Durable Object binding not available',
+    })
   }
-  return peers.get(channel)!
+  const id = cloudflare.env.QUIZ_SESSION.idFromName('global')
+  return cloudflare.env.QUIZ_SESSION.get(id)
 }
 
-export async function addPeer(peer: Peer, channel: WebSocketChannel, url: string, userId?: string) {
-  ;(peer as unknown as Record<string, unknown>).userId = userId
-  ;(peer as unknown as Record<string, unknown>).channel = channel
-  ;(peer as unknown as Record<string, unknown>).url = url
-  getChannelPeers(channel).set(peer.id, peer)
-  await broadcastConnections()
+/** Broadcasts an event to all connected WebSocket clients via the Durable Object. */
+export async function broadcast(event: H3Event, eventName: string, data: unknown, channel?: WebSocketChannel) {
+  const stub = getQuizSessionStub(event)
+  await stub.fetch(new Request('https://do/broadcast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event: eventName, data, channel }),
+  }))
 }
 
-export async function removePeer(peer: Peer) {
-  const channel = (peer as unknown as Record<string, unknown>).channel as WebSocketChannel | undefined
-  if (channel) {
-    getChannelPeers(channel).delete(peer.id)
-    if (getChannelPeers(channel).size === 0) {
-      peers.delete(channel)
-    }
-  }
-  await broadcastConnections()
+/** Sends an event to a specific user by userId via the Durable Object. */
+export async function sendToUser(
+  event: H3Event,
+  userId: string,
+  eventName: string,
+  data: unknown,
+  channel?: WebSocketChannel,
+): Promise<boolean> {
+  const stub = getQuizSessionStub(event)
+  const response = await stub.fetch(new Request('https://do/send-to-user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, event: eventName, data, channel }),
+  }))
+  const result = await response.json() as { delivered: boolean }
+  return result.delivered
 }
 
-/** Returns peer info derived from the in-memory peer map. */
-export async function getPeers(channel?: WebSocketChannel): Promise<PeerInfo[]> {
-  const result: PeerInfo[] = []
-  const targetEntries = channel
-    ? [[channel, getChannelPeers(channel)] as const]
-    : Array.from(peers.entries())
-
-  for (const [ch, peerMap] of targetEntries) {
-    for (const [, peer] of peerMap) {
-      const peerData = peer as unknown as Record<string, unknown>
-      result.push({
-        id: peer.id,
-        url: (peerData.url as string) || '',
-        channel: ch,
-        userId: peerData.userId as string | undefined,
-      })
-    }
-  }
-  return result
+/** Returns connection info from the Durable Object. */
+export async function getConnections(event: H3Event): Promise<ConnectionsResponse> {
+  const stub = getQuizSessionStub(event)
+  const response = await stub.fetch(new Request('https://do/connections'))
+  return await response.json() as ConnectionsResponse
 }
 
-export function broadcast(event: string, data: unknown, channel?: WebSocketChannel) {
-  const message = JSON.stringify({ event, data })
-  const targetPeers = channel
-    ? getChannelPeers(channel).values()
-    : Array.from(peers.values()).flatMap(
-        map => Array.from(map.values()),
-      )
-
-  for (const peer of targetPeers) {
-    try {
-      peer.send(message)
-    }
-    catch (error: unknown) {
-      logger_error('Broadcast error:', error)
-    }
-  }
+/** Schedules a batched results update via the Durable Object alarm. */
+export async function scheduleResultsUpdate(event: H3Event, data: Results, channel: WebSocketChannel) {
+  const stub = getQuizSessionStub(event)
+  await stub.fetch(new Request('https://do/schedule-results', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event: 'results-update', data, channel }),
+  }))
 }
 
-export function sendToUser(userId: string, event: string, data: unknown, channel?: WebSocketChannel): boolean {
-  const message = JSON.stringify({ event, data })
-  const targetPeers = channel
-    ? Array.from(getChannelPeers(channel).values())
-    : Array.from(peers.values()).flatMap(map => Array.from(map.values()))
-
-  let delivered = false
-  for (const peer of targetPeers) {
-    if ((peer as unknown as Record<string, unknown>).userId === userId) {
-      try {
-        peer.send(message)
-        delivered = true
-      }
-      catch (error: unknown) {
-        logger_error(`Failed to send message to user ${userId}:`, error)
-      }
-    }
-  }
-  return delivered
+/** Checks whether a user is on emoji cooldown via the Durable Object. */
+export async function checkEmojiCooldown(event: H3Event, userId: string, cooldownMs: number): Promise<boolean> {
+  const stub = getQuizSessionStub(event)
+  const response = await stub.fetch(new Request('https://do/check-emoji-cooldown', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, cooldownMs }),
+  }))
+  const result = await response.json() as { onCooldown: boolean }
+  return result.onCooldown
 }
 
-export async function broadcastConnections() {
-  const allPeers = await getPeers()
-  broadcast('connections-update', { totalConnections: allPeers.length })
-}
-
-// Bundled results update
-let resultsBuffer: Results[] = []
-let resultsTimeout: ReturnType<typeof setTimeout> | null = null
-
-export function scheduleResultsUpdate(data: Results, channel: WebSocketChannel) {
-  resultsBuffer.push(data)
-
-  if (!resultsTimeout) {
-    resultsTimeout = setTimeout(() => {
-      if (resultsBuffer.length > 0) {
-        broadcast('results-update', resultsBuffer[resultsBuffer.length - 1], channel)
-        resultsBuffer = []
-      }
-      resultsTimeout = null
-    }, 2000) // Bundle updates every 2 seconds
-  }
+/** Records the current emoji timestamp for a user via the Durable Object. */
+export async function updateEmojiTimestamp(event: H3Event, userId: string) {
+  const stub = getQuizSessionStub(event)
+  await stub.fetch(new Request('https://do/update-emoji-timestamp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId }),
+  }))
 }

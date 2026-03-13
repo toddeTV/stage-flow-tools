@@ -71,7 +71,6 @@
     "@vueuse/core": "~13.9.0",
     "@vueuse/nuxt": "~13.9.0",
     "cross-env": "~10.1.0",
-    "crossws": "~0.4.1",
     "eslint": "~10.0.3",
     "eslint-plugin-format": "~2.0.1",
     "eslint-plugin-jsonc": "~3.1.1",
@@ -86,10 +85,5 @@
     "vue-router": "~4.5.1",
     "vue-tsc": "~3.1.0",
     "wrangler": "~4.72.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "crossws": "0.4.1"
-    }
   }
 }

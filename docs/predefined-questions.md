@@ -2,7 +2,9 @@
 
 This document explains how to automatically load a set of questions into the application when it starts up. This is useful for populating the quiz with initial data without manual entry.
 
-## How It Works
+## How It Works (Local Dev Only)
+
+During local development (`pnpm dev`), questions can be auto-loaded from a JSON file on disk:
 
 1.  **Create the File**: In the `data/` directory, create a file named `predefined-questions.json`.
 
@@ -43,6 +45,8 @@ This document explains how to automatically load a set of questions into the app
     - If an error occurs (e.g., malformed JSON), the `.processing` file is left in place for manual inspection.
 
 This ensures that predefined questions are loaded exactly once in an atomic and safe manner.
+
+> Filesystem-based auto-loading is only available during local development. For production (Cloudflare Workers), seed questions via KV as described below.
 
 ## Cloudflare Workers (KV Seeding)
 

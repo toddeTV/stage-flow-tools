@@ -1,4 +1,4 @@
-# _Content Last Updated: 2026-03-12T17:00:00+01:00_
+# _Content Last Updated: 2026-03-13T12:00:00+01:00_
 
 # Language of the review.
 language: en-US
@@ -92,13 +92,13 @@ reviews:
         Repository at https://github.com/toddeTV/stage-flow-tools.
 
         ### Tech Stack
-        Nuxt 4, TypeScript (strict, no `any`), Vue 3 Composition API, Tailwind CSS v4, WebSockets (Nitro), JWT authentication (`jose`), Nitro `useStorage()` with pluggable drivers.
+        Nuxt 4, TypeScript (strict, no `any`), Vue 3 Composition API, Tailwind CSS v4, Cloudflare Durable Objects (WebSocket Hibernation API), JWT authentication (`jose`), Cloudflare KV via Nitro `useStorage()`.
         Package manager: pnpm (never npm/yarn/bun).
         ESLint handles linting and formatting (see `eslint.config.mjs`). Run `pnpm run test:lint` to check, `pnpm run fix:lint` to auto-fix.
         Runtime env vars configured via `.env` file. See `.env.example` for all available variables.
-        SPA mode (`ssr: false`) with Nitro server for API + WebSockets.
-        Deployment: Dual options - (1) Cloudflare Workers with KV storage (primary, build preset `cloudflare-module`), (2) Docker container via Docker Compose with Traefik reverse proxy (secondary, for self-hosted setups).
-        CI/CD: Automated releases with GitHub Actions and Google `release-please` bot. Conventional Commits required. Docker images published to GitHub Container Registry (`ghcr.io`). Cloudflare Workers auto-deployed on push to `main` via `deploy-cloudflare.yml`; `questions` and `answers` are reset after each deploy while `admin` is preserved. See `release-please-config.json` for changelog section config.
+        SPA mode (`ssr: false`) with Nitro server for API routes; WebSockets handled by Durable Objects.
+        Deployment: Cloudflare Workers only. Durable Objects for WebSocket management, KV for persistent storage. Build preset: `cloudflare-module`. Entry point: `worker-entry.ts`.
+        CI/CD: Automated releases with GitHub Actions and Google `release-please` bot. Conventional Commits required. Cloudflare Workers auto-deployed on push to `main` via `deploy-cloudflare.yml`; `questions` and `answers` are reset after each deploy while `admin` is preserved. See `release-please-config.json` for changelog section config.
         i18n: `@nuxtjs/i18n` module (being added). Prefer `<i18n>` blocks in Vue SFCs. Global files only for keys used in 2+ components.
 
         ### Directory Layout
@@ -110,11 +110,13 @@ reviews:
         - `server/` - Backend (Nitro server)
         - `server/api/` - REST API endpoints (answers, auth, emojis, questions, results)
         - `server/plugins/` - Nitro plugins (init-storage.ts)
-        - `server/routes/_ws/` - WebSocket handler
-        - `server/utils/` - Server utilities (auth, logger, storage, websocket)
+        - `server/routes/_ws/` - WebSocket upgrade handler (forwards to Durable Object)
+        - `server/utils/` - Server utilities (auth, logger, storage, DO proxy)
+        - `cloudflare/` - Cloudflare-specific code (QuizSession Durable Object class)
+        - `worker-entry.ts` - Cloudflare Worker entry point (re-exports Nitro + DO)
         - `shared/utils/` - Code shared between client and server (logger, validation)
-        - `.data/db/` - Local storage (dev/Docker, gitignored)
-        - `data/` - Predefined questions source (Node.js only)
+        - `.data/db/` - Local storage (dev only, gitignored)
+        - `data/` - Predefined questions source (local dev only)
         - `docs/` - Public project documentation
 
         ### Code Conventions
@@ -144,14 +146,17 @@ reviews:
         - Extract repeated Tailwind class strings in same component into CSS classes.
 
         ### Data Model
-        - Nitro `useStorage('data')` with pluggable drivers (filesystem for dev/Docker, Cloudflare KV for Workers).
+        - Nitro `useStorage('data')` with Cloudflare KV binding `STAGE_FLOW_DATA` for production. Filesystem driver via `devStorage` for local dev.
+        - Emoji cooldowns and results batching managed in `QuizSession` Durable Object transient memory (not KV).
         - All storage operations in `server/utils/storage.ts`. Initialization in `server/plugins/init-storage.ts`.
         - IDs generated with `@paralleldrive/cuid2`.
 
         ### WebSockets
-        - Nitro experimental WebSocket support.
-        - Events: `new-question`, `lock-status`, `results-update`, `connections-update`, `emoji`.
-        - Results updates are buffered (2-second window) to reduce network traffic.
+        - Durable Objects WebSocket Hibernation API via `QuizSession` class in `cloudflare/quiz-session.ts`.
+        - Single DO instance (`idFromName('global')`) manages all WebSocket channels.
+        - API routes communicate with DO via stub calls through `server/utils/websocket.ts` proxy functions.
+        - Events: `new-question`, `lock-status`, `results-update`, `connections-update`, `emoji`, `winner-selected`.
+        - Results updates are buffered (2-second window) via DO alarm API.
         - Client uses `@vueuse/core` `useWebSocket` with auto-reconnect and heartbeat.
 
         ### Authentication

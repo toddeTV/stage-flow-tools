@@ -14,9 +14,10 @@ export default defineEventHandler(async (event) => {
   await retractAnswer(user_id, question_id)
 
   // Schedule bundled results update
-  const results = await getCurrentResults()
+  const { totalConnections } = await getConnections(event)
+  const results = await getCurrentResults(totalConnections)
   if (results) {
-    scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
+    await scheduleResultsUpdate(event, results, WebSocketChannel.RESULTS)
   }
 
   return { success: true }

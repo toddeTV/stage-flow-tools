@@ -1,26 +1,21 @@
 # Storage System
 
-Nitro `useStorage()` with pluggable driver abstraction.
+Nitro `useStorage()` with Cloudflare KV as the primary storage driver.
 
 ## Storage Architecture
 
 ### Driver Configuration
 
-The storage driver is selected based on the `NITRO_PRESET` environment variable:
-
-- **Cloudflare Workers** (`NITRO_PRESET=cloudflare-module`): Cloudflare KV binding `STAGE_FLOW_DATA`.
-- **Node.js / Docker** (any other preset): Filesystem driver at `.data/db/`.
-- **Local dev** (`pnpm dev`): Always filesystem at `.data/db/` via `devStorage`.
+- **Cloudflare Workers** (production): Cloudflare KV binding `STAGE_FLOW_DATA`.
+- **Local dev** (`pnpm dev`): Filesystem at `.data/db/` via `devStorage`.
 
 Configuration in `nuxt.config.ts`:
 
 ```typescript
-const isCloudflare = process.env.NITRO_PRESET?.startsWith('cloudflare')
-
 nitro: {
-  storage: isCloudflare
-    ? { data: { driver: 'cloudflareKVBinding', binding: 'STAGE_FLOW_DATA' } }
-    : { data: { driver: 'fs', base: './.data/db' } },
+  storage: {
+    data: { driver: 'cloudflareKVBinding', binding: 'STAGE_FLOW_DATA' },
+  },
   devStorage: {
     data: { driver: 'fs', base: './.data/db' },
   },
@@ -29,14 +24,23 @@ nitro: {
 
 ### Storage Keys
 
-All data is accessed via `useStorage('data')` with these keys:
+All persistent data is accessed via `useStorage('data')` with these keys:
 
-| Key          | Content                   |
-| ------------ | ------------------------- |
-| `questions`  | `Question[]` array        |
-| `answers`    | `Answer[]` array          |
-| `admin`      | `{ username, password }`  |
-| `emoji:<id>` | Emoji cooldown timestamps |
+| Key         | Content                  |
+| ----------- | ------------------------ |
+| `questions` | `Question[]` array       |
+| `answers`   | `Answer[]` array         |
+| `admin`     | `{ username, password }` |
+
+### Transient State (Durable Object)
+
+Emoji cooldowns and results batching are managed in the `QuizSession` Durable Object's transient memory - not in KV. This avoids KV write costs for ephemeral data.
+
+| State            | Location                  | Persistence                        |
+| ---------------- | ------------------------- | ---------------------------------- |
+| Emoji cooldowns  | DO in-memory Map          | Lost on DO eviction (acceptable)   |
+| Results buffer   | DO `pendingResults` field | Lost on DO eviction (re-triggered) |
+| Connection peers | DO WebSocket Hibernation  | Managed by Cloudflare runtime      |
 
 ### Data Models
 
@@ -88,9 +92,9 @@ All text fields (`question_text`, `answer_options[].text`, `note`) use a `Locali
 - Called automatically by the Nitro plugin `server/plugins/init-storage.ts` on server startup.
 - Idempotent - safe to call multiple times.
 
-### Predefined Questions Loading (Node.js / Docker Only)
+### Predefined Questions Loading (Local Dev Only)
 
-On Node.js runtimes the startup plugin checks for `data/predefined-questions.json`:
+During local development the startup plugin checks for `data/predefined-questions.json`:
 
 1. Renames the file to `.processing` to prevent re-processing.
 1. Validates and merges new questions into storage.
@@ -105,13 +109,6 @@ On Cloudflare Workers, the filesystem is not available. Seed questions directly 
 - **IDs generated** with `@paralleldrive/cuid2`.
 
 ## Maintenance
-
-### Backup (Docker / Node.js)
-
-```bash
-# Manual backup of local storage
-cp -r .data/db/ backups/data-$(date +%Y%m%d)
-```
 
 ### Backup (Cloudflare KV)
 
@@ -131,14 +128,11 @@ npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" --path="$backup_di
 npx wrangler kv key put --binding=STAGE_FLOW_DATA "answers" --path="$backup_dir/answers.json"
 ```
 
-> Emoji cooldown keys (`emoji:*`) are transient and excluded from backups.
-
-### Data Reset (Docker / Node.js)
+### Backup (Local Dev)
 
 ```bash
-# Full reset
-rm -rf .data/db/
-# Application recreates defaults on next start
+# Manual backup of local dev storage
+cp -r .data/db/ backups/data-$(date +%Y%m%d)
 ```
 
 ### Data Reset (Cloudflare KV)
@@ -158,6 +152,14 @@ pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json --admin ./
 See [deployment-cloudflare.md](deployment-cloudflare.md#pushing-questions-from-local-to-cloudflare) for details.
 
 > The CI/CD workflow (`deploy-cloudflare.yml`) resets `questions` and `answers` to `[]` after every deploy. Admin credentials are preserved.
+
+### Data Reset (Local Dev)
+
+```bash
+# Full reset
+rm -rf .data/db/
+# Application recreates defaults on next start
+```
 
 ## Migration Path
 
@@ -183,15 +185,15 @@ See [deployment-cloudflare.md](deployment-cloudflare.md#pushing-questions-from-l
 
 ## Performance Characteristics
 
-### Filesystem Driver (Dev / Docker)
-
-- **Read Speed** - < 1ms for typical files
-- **Write Speed** - < 10ms for updates
-- **Concurrent Users** - 100-500 comfortable range
-
 ### Cloudflare KV
 
 - **Read Latency** - ~10ms (cached at edge)
 - **Write Latency** - ~50ms (eventually consistent, ~60s propagation)
 - **Concurrent Users** - 100-500+ comfortable range
 - **KV is eventually consistent** - acceptable for a quiz tool where slight delays in data propagation do not affect the user experience
+
+### Local Dev (Filesystem)
+
+- **Read Speed** - < 1ms for typical files
+- **Write Speed** - < 10ms for updates
+- Used only during `pnpm dev`
