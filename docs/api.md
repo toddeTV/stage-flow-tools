@@ -249,6 +249,26 @@ Pick a random user who voted for a specific option (admin only). Sends a `winner
 
 **Response:** `204 No Content` on success. Returns 404 if no answers or no users found for the option. Returns 503 if the winner is not currently connected.
 
+### GET `/api/results/leaderboard`
+
+Get aggregated player leaderboard across all published questions (admin only). A correct answer is any option with the `⭐` emoji.
+
+**Response:**
+
+```json
+{
+  "leaderboard": [
+    {
+      "rank": 1,
+      "userId": "string",
+      "nickname": "string",
+      "correctAnswers": 5
+    }
+  ],
+  "totalQuestionsWithCorrectAnswers": 10
+}
+```
+
 ## WebSocket Connections
 
 ### GET `/api/websockets/connections`
