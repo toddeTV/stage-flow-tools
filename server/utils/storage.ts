@@ -284,12 +284,12 @@ export async function getResultsForQuestion(
     }
   })
 
-  return JSON.parse(JSON.stringify({
-    question,
+  return {
+    question: { ...question },
     results,
     totalVotes: answers.length,
     totalConnections,
-  }))
+  }
 }
 
 /** Returns results for the currently active question. Caller must supply totalConnections from the DO. */
