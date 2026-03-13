@@ -23,8 +23,11 @@ Perfect for:
 ## Application Routes
 
 - **`/`** - Main quiz interface for participants
-- **`/admin`** - Dashboard for quiz administrators
-- **`/results`** - Live results display
+- **`/admin`** - Admin overview with links to sub-pages
+- **`/admin/questions`** - Question management dashboard
+- **`/admin/results`** - Live results display
+- **`/admin/leaderboard`** - Player leaderboard
+- **`/admin/emojis`** - Floating emoji overlay
 
 ## Documentation
 
