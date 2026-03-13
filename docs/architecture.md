@@ -49,10 +49,11 @@ stage-flow-tools/
 
 - **`index.vue`** - Main quiz interface
 - **`login.vue`** - Admin login
-- **`admin.vue`** - Admin dashboard
-- **`results.vue`** - Results display
-- **`leaderboard.vue`** - Admin leaderboard
-- **`emojis.vue`** - Emoji overlay
+- **`admin/index.vue`** - Admin overview with links to sub-pages
+- **`admin/questions.vue`** - Question management
+- **`admin/results.vue`** - Results display
+- **`admin/leaderboard.vue`** - Admin leaderboard
+- **`admin/emojis.vue`** - Emoji overlay
 
 ### API Routes
 

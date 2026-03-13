@@ -2,7 +2,7 @@
 
 This document describes the GET parameters available for customizing page views.
 
-## `/results` Page
+## `/admin/results` Page
 
 ### `core`
 
@@ -43,32 +43,32 @@ This document describes the GET parameters available for customizing page views.
 ### Examples
 
 ```text
-/results
+/admin/results
 Standard results view. Results hidden on new questions (default: hide), no scrambling.
 
-/results?core
+/admin/results?core
 Core view with minimal UI, no padding, normal scale.
 
-/results?core&padding=20&scale=0.9
+/admin/results?core&padding=20&scale=0.9
 Core view with 20px padding and 90% scale.
 
-/results?core&visibility=hide
+/admin/results?core&visibility=hide
 Core view with results hidden on each new question.
 
-/results?core&visibility=show
+/admin/results?core&visibility=show
 Core view with results shown immediately on each new question.
 
-/results?core&scramble=hide
+/admin/results?core&scramble=hide
 Core view with answers scrambled on each new question (Stimmungsbild mode).
 
-/results?core&visibility=hide&scramble=hide
+/admin/results?core&visibility=hide&scramble=hide
 Core view with results hidden and answers scrambled on each new question.
 
-/results?core&padding=30&scale=1.2&visibility=hide
+/admin/results?core&padding=30&scale=1.2&visibility=hide
 Core view with 30px padding, 120% scale, and hidden results.
 ```
 
-## `/emojis` Page
+## `/admin/emojis` Page
 
 ### `scale`
 
@@ -85,15 +85,15 @@ Core view with 30px padding, 120% scale, and hidden results.
 ### Examples
 
 ```text
-/emojis
+/admin/emojis
 Standard emoji display with normal size and full opacity.
 
-/emojis?scale=2
+/admin/emojis?scale=2
 Emojis rendered at double size.
 
-/emojis?transparency=0.5
+/admin/emojis?transparency=0.5
 Emojis rendered at 50% opacity.
 
-/emojis?scale=1.5&transparency=0.7
+/admin/emojis?scale=1.5&transparency=0.7
 Emojis at 150% size with 70% opacity.
 ```

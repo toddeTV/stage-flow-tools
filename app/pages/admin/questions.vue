@@ -47,12 +47,6 @@ watch(fetchError, (newError) => {
   }
 })
 
-// Logout handler
-async function handleLogout() {
-  await $fetch('/api/auth/logout', { method: 'POST' })
-  navigateTo('/login')
-}
-
 // Create question
 async function handleCreateQuestion() {
   try {
@@ -226,7 +220,7 @@ function removeOption(index: number) {
           <div class="flex items-center justify-between">
             <span>{{ t('statusLabel') }} {{ activeQuestion.is_locked ? t('locked') : t('unlocked') }}</span>
             <div class="flex gap-2.5">
-              <NuxtLink to="/results">
+              <NuxtLink to="/admin/results">
                 <UiButton variant="secondary">
                   {{ t('viewLiveResults') }} →
                 </UiButton>
@@ -342,10 +336,6 @@ function removeOption(index: number) {
           </div>
         </div>
       </UiSection>
-
-      <UiButton variant="secondary" @click="handleLogout">
-        {{ t('logoutButton') }}
-      </UiButton>
     </div>
   </div>
 </template>
@@ -374,7 +364,6 @@ en:
   createQuestion: Create Question
   allQuestions: All Questions
   publishThisQuestion: Publish This Question
-  logoutButton: Logout
   validationQuestionEnRequired: "Question text must have a non-empty English (\"en\") value."
   validationMinOptions: 'At least 2 answer options with an "en" key are required.'
   validationOptionEnRequired: "Each answer option must have a non-empty English (\"en\") text."
@@ -408,7 +397,6 @@ de:
   createQuestion: Frage erstellen
   allQuestions: Alle Fragen
   publishThisQuestion: Diese Frage veröffentlichen
-  logoutButton: Abmelden
   validationQuestionEnRequired: "Fragetext muss einen nicht-leeren englischen (\"en\") Wert haben."
   validationMinOptions: 'Mindestens 2 Antwortoptionen mit einem "en"-Schlüssel sind erforderlich.'
   validationOptionEnRequired: "Jede Antwortoption muss einen nicht-leeren englischen (\"en\") Text haben."
@@ -444,7 +432,6 @@ ja:
   createQuestion: 質問を作成
   allQuestions: 全ての質問
   publishThisQuestion: この質問を公開
-  logoutButton: ログアウト
   validationQuestionEnRequired: "質問テキストには空でない英語（\"en\"）の値が必要です。"
   validationMinOptions: '"en"キーを持つ回答オプションが2つ以上必要です。'
   validationOptionEnRequired: "各回答オプションには空でない英語（\"en\"）テキストが必要です。"
