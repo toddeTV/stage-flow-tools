@@ -415,14 +415,15 @@ pnpm run deploy:push-to-cloudflare -- --questions /path/to/talk-repo/questions.j
 
 ## Cost Considerations
 
-| Resource        | Free tier         | Paid plan ($5/month)  |
-| --------------- | ----------------- | --------------------- |
-| Workers         | 100K requests/day | 10M requests/month    |
-| KV reads        | 100K reads/day    | 10M reads/month       |
-| KV writes       | 1K writes/day     | 1M writes/month       |
-| KV storage      | 1 GB              | 1 GB (more available) |
-| Durable Objects | Not available     | Included in paid plan |
-| DO requests     | -                 | 1M requests/month     |
-| DO storage      | -                 | 1 GB included         |
+Pricing as of 2026-03-13. See [Cloudflare Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) for current details.
 
-For a typical conference quiz with 100-500 participants, a paid plan ($5/month) provides comfortable headroom. Durable Objects require a paid Workers plan.
+| Resource        | Free tier                          | Paid plan ($5/month)               |
+| --------------- | ---------------------------------- | ---------------------------------- |
+| Workers         | 100K requests/day                  | 10M requests/month                 |
+| KV reads        | 100K reads/day                     | 10M reads/month                    |
+| KV writes       | 1K writes/day                      | 1M writes/month                    |
+| KV storage      | 1 GB                               | 1 GB included ($0.50/GB-month)     |
+| Durable Objects | 100K requests/day (SQLite only)    | 1M requests/month                  |
+| DO storage      | 5 GB (SQLite only)                 | 5 GB/month included                |
+
+For a typical conference quiz with 100-500 participants, a paid plan ($5/month) provides comfortable headroom.
