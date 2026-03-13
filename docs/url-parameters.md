@@ -30,11 +30,21 @@ This document describes the GET parameters available for customizing page views.
   - `hide` - Results are hidden whenever a new question appears. The admin can reveal them manually.
   - `show` - Results are shown immediately when a new question appears.
 
+### `scramble`
+
+- **Type**: String (`hide` | `show`)
+- **Default**: `show`
+- **Effect**: Controls whether answers are scrambled (anonymized) when a new question is published.
+  - `hide` - Answers are scrambled on each new question: answer texts are replaced with `?`, emojis are hidden, and the display order is randomized. Bars and vote counts remain visible ("Stimmungsbild" mode).
+  - `show` - Answers are displayed normally (not scrambled) on each new question.
+  - The admin can toggle scrambling manually via the "Scramble" checkbox regardless of this default.
+  - When both `visibility=hide` and `scramble=hide` are active, the strictest hiding applies per element (bars and counts show `?`, answers show `?`, order is randomized).
+
 ### Examples
 
 ```text
 /results
-Standard results view. Results hidden on new questions (default: hide).
+Standard results view. Results hidden on new questions (default: hide), no scrambling.
 
 /results?core
 Core view with minimal UI, no padding, normal scale.
@@ -47,6 +57,12 @@ Core view with results hidden on each new question.
 
 /results?core&visibility=show
 Core view with results shown immediately on each new question.
+
+/results?core&scramble=hide
+Core view with answers scrambled on each new question (Stimmungsbild mode).
+
+/results?core&visibility=hide&scramble=hide
+Core view with results hidden and answers scrambled on each new question.
 
 /results?core&padding=30&scale=1.2&visibility=hide
 Core view with 30px padding, 120% scale, and hidden results.
