@@ -16,10 +16,18 @@ const subPages = computed(() => [
   { path: '/admin/emojis', label: t('emojis'), description: t('emojisDesc') },
 ])
 
+const logoutError = ref(false)
+
 /** Log the admin out and redirect to login. */
 async function handleLogout() {
-  await $fetch('/api/auth/logout', { method: 'POST' })
-  navigateTo('/login')
+  try {
+    await $fetch('/api/auth/logout', { method: 'POST' })
+    navigateTo('/login')
+  }
+  catch (error: unknown) {
+    logger_error('Logout failed', error)
+    logoutError.value = true
+  }
 }
 </script>
 
@@ -48,6 +56,9 @@ async function handleLogout() {
       <UiButton variant="secondary" @click="handleLogout">
         {{ t('logout') }}
       </UiButton>
+      <p v-if="logoutError" class="mt-2 text-sm text-red-600">
+        {{ t('logoutError') }}
+      </p>
     </div>
   </div>
 </template>
@@ -64,6 +75,7 @@ en:
   emojis: Emoji Overlay
   emojisDesc: Floating emoji reactions overlay for presentations.
   logout: Logout
+  logoutError: Logout failed. Please try again.
 de:
   title: Admin
   questions: Fragen
@@ -75,6 +87,7 @@ de:
   emojis: Emoji-Overlay
   emojisDesc: Schwebende Emoji-Reaktionen als Overlay für Präsentationen.
   logout: Abmelden
+  logoutError: Abmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.
 ja:
   title: 管理
   questions: 質問
@@ -86,4 +99,5 @@ ja:
   emojis: 絵文字オーバーレイ
   emojisDesc: プレゼンテーション用の浮遊する絵文字リアクションオーバーレイ。
   logout: ログアウト
+  logoutError: ログアウトに失敗しました。もう一度お試しください。
 </i18n>
