@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
   let previousScore = -1
   for (const [userId, data] of sorted) {
     if (data.correctAnswers !== previousScore) {
-      currentRank = leaderboard.length + 1
+      currentRank += 1
       previousScore = data.correctAnswers
     }
     leaderboard.push({
