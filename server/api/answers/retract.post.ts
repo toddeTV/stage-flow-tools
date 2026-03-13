@@ -13,11 +13,16 @@ export default defineEventHandler(async (event) => {
 
   await retractAnswer(user_id, question_id)
 
-  // Schedule bundled results update
-  const { totalConnections } = await getConnections(event)
-  const results = await getCurrentResults(totalConnections)
-  if (results) {
-    await scheduleResultsUpdate(event, results, WebSocketChannel.RESULTS)
+  // Best-effort realtime fan-out: DO connectivity issues must not fail the already-committed retract
+  try {
+    const { totalConnections } = await getConnections(event)
+    const results = await getCurrentResults(totalConnections)
+    if (results) {
+      await scheduleResultsUpdate(event, results, WebSocketChannel.RESULTS)
+    }
+  }
+  catch (error) {
+    logger_error('Realtime fan-out failed after retract:', error)
   }
 
   return { success: true }
