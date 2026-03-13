@@ -190,7 +190,7 @@ npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" '[
 For larger datasets, use a file:
 
 ```bash
-npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" --path=./my-questions.json
+npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" --path=./my-questions.json --preview false
 ```
 
 The JSON format matches the `Question[]` schema documented in [storage.md](storage.md).
