@@ -66,13 +66,13 @@ onMounted(() => {
     </div>
 
     <UiSection>
-      <p v-if="isLoading" class="py-10 text-center text-lg uppercase tracking-wide text-gray-400">
+      <p v-if="isLoading" class="status-message">
         {{ t('loading') }}
       </p>
 
       <p
         v-else-if="leaderboard.length === 0"
-        class="py-10 text-center text-lg uppercase tracking-wide text-gray-400"
+        class="status-message"
       >
         {{ t('empty') }}
       </p>
@@ -143,3 +143,9 @@ ja:
   empty: まだ回答が提出されていません。
   scoredQuestions: "正解のある質問数: {count}"
 </i18n>
+
+<style scoped>
+.status-message {
+  @apply py-10 text-center text-lg uppercase tracking-wide text-gray-400;
+}
+</style>
