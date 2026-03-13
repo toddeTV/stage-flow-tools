@@ -22,18 +22,22 @@ interface LeaderboardResponse {
 }
 
 const isLoading = ref(false)
+const hasError = ref(false)
 const leaderboard = ref<LeaderboardEntry[]>([])
 const totalQuestionsWithCorrectAnswers = ref(0)
 
 /** Fetch leaderboard data from the API. */
 async function fetchLeaderboard() {
   isLoading.value = true
+  hasError.value = false
   try {
     const data = await $fetch<LeaderboardResponse>('/api/results/leaderboard')
     leaderboard.value = data.leaderboard
     totalQuestionsWithCorrectAnswers.value = data.totalQuestionsWithCorrectAnswers
   }
-  catch {
+  catch (error: unknown) {
+    logger_error('Failed to fetch leaderboard', error)
+    hasError.value = true
     leaderboard.value = []
     totalQuestionsWithCorrectAnswers.value = 0
   }
@@ -68,6 +72,13 @@ onMounted(() => {
     <UiSection>
       <p v-if="isLoading" class="status-message">
         {{ t('loading') }}
+      </p>
+
+      <p
+        v-else-if="hasError"
+        class="status-message"
+      >
+        {{ t('error') }}
       </p>
 
       <p
@@ -123,6 +134,7 @@ en:
   refresh: Refresh
   loading: Loading...
   empty: No answers submitted yet.
+  error: Failed to load leaderboard. Please try again.
   scoredQuestions: "Questions with correct answers: {count}"
 de:
   title: Bestenliste
@@ -132,6 +144,7 @@ de:
   refresh: Aktualisieren
   loading: Laden...
   empty: Noch keine Antworten eingereicht.
+  error: Bestenliste konnte nicht geladen werden. Bitte erneut versuchen.
   scoredQuestions: "Fragen mit richtigen Antworten: {count}"
 ja:
   title: リーダーボード
@@ -141,6 +154,7 @@ ja:
   refresh: 更新
   loading: 読み込み中...
   empty: まだ回答が提出されていません。
+  error: リーダーボードの読み込みに失敗しました。もう一度お試しください。
   scoredQuestions: "正解のある質問数: {count}"
 </i18n>
 
