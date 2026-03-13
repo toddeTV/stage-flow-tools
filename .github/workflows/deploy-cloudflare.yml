@@ -43,6 +43,9 @@ jobs:
           main = ".output/server/index.mjs"
           compatibility_date = "2025-07-15"
 
+          [assets]
+          directory = ".output/public"
+
           [vars]
           NUXT_ADMIN_USERNAME = "${{ vars.NUXT_ADMIN_USERNAME || 'admin' }}"
           NUXT_PUBLIC_EMOJI_COOLDOWN_MS = "${{ vars.NUXT_PUBLIC_EMOJI_COOLDOWN_MS || '1500' }}"
