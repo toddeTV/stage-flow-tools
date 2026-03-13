@@ -38,6 +38,7 @@ Get the quiz application running in minutes.
 - **Quiz Interface**: http://localhost:3000
 - **Admin Dashboard**: http://localhost:3000/admin
 - **Live Results**: http://localhost:3000/results
+- **Leaderboard**: http://localhost:3000/leaderboard
 
 ## Default Credentials
 

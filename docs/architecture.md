@@ -51,6 +51,7 @@ stage-flow-tools/
 - **`login.vue`** - Admin login
 - **`admin.vue`** - Admin dashboard
 - **`results.vue`** - Results display
+- **`leaderboard.vue`** - Admin leaderboard
 - **`emojis.vue`** - Emoji overlay
 
 ### API Routes
