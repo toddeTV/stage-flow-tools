@@ -88,6 +88,9 @@ name = "stage-flow-tools"
 main = ".output/server/index.mjs"
 compatibility_date = "2025-07-15"
 
+[assets]
+directory = ".output/public"
+
 [vars]
 NUXT_ADMIN_USERNAME = "admin"
 NUXT_PUBLIC_EMOJI_COOLDOWN_MS = "1500"
@@ -190,7 +193,7 @@ npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" '[
 For larger datasets, use a file:
 
 ```bash
-npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" --path=./my-questions.json
+npx wrangler kv key put --binding=STAGE_FLOW_DATA "questions" --path=./my-questions.json --preview false
 ```
 
 The JSON format matches the `Question[]` schema documented in [storage.md](storage.md).
