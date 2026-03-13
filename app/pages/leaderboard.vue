@@ -159,6 +159,8 @@ ja:
 </i18n>
 
 <style scoped>
+@reference "tailwindcss";
+
 .status-message {
   @apply py-10 text-center text-lg uppercase tracking-wide text-gray-400;
 }
