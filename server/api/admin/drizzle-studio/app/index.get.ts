@@ -1,6 +1,7 @@
 import { verifyAdmin } from '../../../../utils/auth'
 
 const DRIZZLE_STUDIO_APP_ORIGIN = 'https://local.drizzle.studio'
+const DRIZZLE_STUDIO_SHELL_FETCH_TIMEOUT_MS = 8000
 
 /** Removes third-party analytics from the upstream Studio shell. */
 function sanitizeStudioHtml(html: string) {
@@ -24,7 +25,24 @@ function sanitizeStudioHtml(html: string) {
 export default defineEventHandler(async (event) => {
   await verifyAdmin(event)
 
-  const response = await fetch(`${DRIZZLE_STUDIO_APP_ORIGIN}/`)
+  let response: Response
+
+  try {
+    response = await fetch(`${DRIZZLE_STUDIO_APP_ORIGIN}/`, {
+      signal: AbortSignal.timeout(DRIZZLE_STUDIO_SHELL_FETCH_TIMEOUT_MS),
+    })
+  }
+  catch (error) {
+    const isAbort = error instanceof Error && error.name === 'AbortError'
+
+    throw createError({
+      statusCode: isAbort ? 504 : 502,
+      statusMessage: isAbort
+        ? 'Timed out loading Drizzle Studio shell'
+        : 'Failed to reach Drizzle Studio upstream',
+      data: error instanceof Error ? { message: error.message } : undefined,
+    })
+  }
 
   if (!response.ok) {
     throw createError({
