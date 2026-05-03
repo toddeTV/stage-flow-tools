@@ -10,7 +10,7 @@ The storage driver is selected based on the `NITRO_PRESET` environment variable:
 
 - **Cloudflare Workers** (`NITRO_PRESET=cloudflare-module`): Cloudflare KV binding `STAGE_FLOW_DATA`.
 - **Node.js / Docker** (any other preset): Filesystem driver at `.data/db/`.
-- **Local dev** (`pnpm dev`): Always filesystem at `.data/db/` via `devStorage`.
+- **Local dev** (`vp run dev`): Always filesystem at `.data/db/` via `devStorage`.
 
 Configuration in `nuxt.config.ts`:
 
