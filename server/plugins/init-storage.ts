@@ -15,8 +15,27 @@ export default defineNitroPlugin(async () => {
     const predefinedFile = join(process.cwd(), 'data', 'predefined-questions.json')
     const processingFile = `${predefinedFile}.processing`
 
-    // Step 1: Rename the file to mark it as being processed
-    await fs.rename(predefinedFile, processingFile)
+    // Step 1: Reuse an existing processing file before attempting a rename.
+    try {
+      await fs.access(processingFile)
+    }
+    catch (error: unknown) {
+      const errno = error as NodeJS.ErrnoException
+      if (errno.code !== 'ENOENT') {
+        throw error
+      }
+
+      try {
+        await fs.rename(predefinedFile, processingFile)
+      }
+      catch (renameError: unknown) {
+        if ((renameError as NodeJS.ErrnoException).code === 'ENOENT') {
+          return
+        }
+
+        throw renameError
+      }
+    }
 
     // Step 2: Read and parse the processing file
     const rawData = await fs.readFile(processingFile, 'utf-8')
@@ -37,10 +56,6 @@ export default defineNitroPlugin(async () => {
     await fs.unlink(processingFile)
   }
   catch (error: unknown) {
-    if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return
-    }
-
     logger_error('Error loading predefined questions from file:', error)
   }
 })
