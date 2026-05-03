@@ -14,6 +14,7 @@ jobs:
     name: Validate PR Title
     # Only runs this job on pull_request events, no need to run on push events
     if: github.event_name == 'pull_request'
+    timeout-minutes: 3
     runs-on: ubuntu-24.04
     permissions:
       pull-requests: read
@@ -25,41 +26,43 @@ jobs:
   # This job runs all tests and checks using a matrix strategy
   run-checks:
     name: ${{ matrix.name }}
+    timeout-minutes: 10
     runs-on: ubuntu-24.04
     # The matrix strategy allows running different test configurations in parallel to run all, even if one fails
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: Lint & Format Check
-            command: pnpm test:lint
+          - name: Lint & Format
+            command: vp run test:lint-format
+          - name: package.json Format
+            command: vp run test:package-json
           - name: Type Check
-            command: pnpm test:types
+            command: vp run test:type
 
     steps:
       # Check out the repository
       - name: Checkout the Codebase
         uses: actions/checkout@v6
-
-      # Install and set up pnpm for use in the workflow
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-
-      # Set up Node.js and enable pnpm caching
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
         with:
-          node-version: 24
-          cache: pnpm
+          fetch-depth: 0
+
+      # Install and set up Vite+ with Node with pnpm for use in the workflow
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "24"
+          cache: true
+          run-install: false
 
       # Install project dependencies with automatic `nuxt prepare` at the end.
       # Thanks to the cache, this step is extremely fast on subsequent runs.
       - name: Install dependencies
-        run: pnpm i --frozen-lockfile --prefer-offline
+        run: vp run install:clean
 
       # Execute the specific check command from the matrix
       - name: Run Check
-        # could also run as `pnpm test` as all commands are defined to run sequentially, but more control this way for now
+        # could also run `vp run test`, but matrix jobs keep per-check visibility and isolation
         run: ${{ matrix.command }}
 
   # This job acts as a single, final status check for branch protection.
@@ -78,7 +81,7 @@ jobs:
           # The flexible approach: a job is also considered "passed" if it was intentionally skipped.
           # This is important for conditional jobs that should only run if specific files have changed
           # (e.g., using an `if:` condition). In such cases, 'skipped' is a valid, non-error state.
-          # echo '<DOLLAR_SYMBOL>{{ toJSON(needs) }}' | jq -e 'all(.result == "success" or .result == "skipped")'
+          echo '${{ toJSON(needs) }}' | jq -e 'all(.result == "success" or .result == "skipped")'
 
-          # The strict approach: only 'success' is accepted. This will fail if any job is skipped.
-          echo '${{ toJSON(needs) }}' | jq -e 'all(.result == "success")'
+          # # The strict approach: only 'success' is accepted. This will fail if any job is skipped.
+          # echo '<DOLLAR_SYMBOL>{{ toJSON(needs) }}' | jq -e 'all(.result == "success")'
