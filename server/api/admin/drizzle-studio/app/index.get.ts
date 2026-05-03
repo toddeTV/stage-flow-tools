@@ -4,12 +4,21 @@ const DRIZZLE_STUDIO_APP_ORIGIN = 'https://local.drizzle.studio'
 
 /** Removes third-party analytics from the upstream Studio shell. */
 function sanitizeStudioHtml(html: string) {
-  const analyticsScript = new RegExp(
-    '<script defer="defer" data-site-id="local\\.drizzle\\.studio" '
-    + 'src="https:\\/\\/assets\\.onedollarstats\\.com\\/stonks\\.js"><\\/script>',
-  )
+  const scriptTagPattern = /<script\b[^>]*>[\s\S]*?<\/script>/gi
 
-  return html.replace(analyticsScript, '')
+  return html.replace(scriptTagPattern, (scriptTag) => {
+    const normalizedTag = scriptTag.toLowerCase()
+
+    if (
+      normalizedTag.includes('assets.onedollarstats.com/stonks.js')
+      || normalizedTag.includes('data-site-id="local.drizzle.studio"')
+      || normalizedTag.includes("data-site-id='local.drizzle.studio'")
+    ) {
+      return ''
+    }
+
+    return scriptTag
+  })
 }
 
 export default defineEventHandler(async (event) => {
