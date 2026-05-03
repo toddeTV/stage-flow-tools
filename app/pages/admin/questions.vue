@@ -22,7 +22,10 @@ const newQuestion = ref<{
 }>({
   key: '',
   question_text: '{\n  "en": ""\n}',
-  answer_options: [{ text: '{\n  "en": ""\n}', emoji: '' }, { text: '{\n  "en": ""\n}', emoji: '' }],
+  answer_options: [
+    { text: '{\n  "en": ""\n}', emoji: '' },
+    { text: '{\n  "en": ""\n}', emoji: '' },
+  ],
   note: '{\n  "en": ""\n}',
 })
 
@@ -60,12 +63,12 @@ async function handleCreateQuestion() {
     const parsedNote = newQuestion.value.note.trim() ? JSON.parse(newQuestion.value.note) : undefined
     const note = parsedNote && typeof parsedNote === 'object'
       ? (
-          Object.values(parsedNote as Record<string, string>).some(
-            v => typeof v === 'string' && v.trim(),
-          )
-            ? parsedNote
-            : undefined
+        Object.values(parsedNote as Record<string, string>).some(
+          v => typeof v === 'string' && v.trim(),
         )
+          ? parsedNote
+          : undefined
+      )
       : undefined
 
     const answerOptions = newQuestion.value.answer_options.map(opt => ({
@@ -102,7 +105,10 @@ async function handleCreateQuestion() {
     newQuestion.value = {
       key: '',
       question_text: '{\n  "en": ""\n}',
-      answer_options: [{ text: '{\n  "en": ""\n}', emoji: '' }, { text: '{\n  "en": ""\n}', emoji: '' }],
+      answer_options: [
+        { text: '{\n  "en": ""\n}', emoji: '' },
+        { text: '{\n  "en": ""\n}', emoji: '' },
+      ],
       note: '{\n  "en": ""\n}',
     }
 

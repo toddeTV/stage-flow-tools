@@ -328,9 +328,9 @@ async function unpublishActiveQuestion() {
             {{ t('waitingForQuestion') }}
           </p>
           <div class="flex justify-center gap-2.5">
-            <span class="h-5 w-5 animate-bounce bg-black" />
-            <span class="h-5 w-5 animate-bounce bg-black [animation-delay:0.2s]" />
-            <span class="h-5 w-5 animate-bounce bg-black [animation-delay:0.4s]" />
+            <span class="size-5 animate-bounce bg-black" />
+            <span class="size-5 animate-bounce bg-black [animation-delay:0.2s]" />
+            <span class="size-5 animate-bounce bg-black [animation-delay:0.4s]" />
           </div>
         </div>
       </UiSection>
