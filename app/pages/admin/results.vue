@@ -39,6 +39,7 @@ const scrambleResults = ref(scramble.value.startsWith('hide'))
 const showEmoji = ref(false)
 const isTogglingLock = ref(false)
 const isPickingUser = ref(false)
+const isResettingAnswers = ref(false)
 const hasHydratedOnce = ref(false)
 
 // Dynamic styles for core view
@@ -203,6 +204,30 @@ async function unpublishActiveQuestion() {
     alert('Failed to unpublish active question.')
   }
 }
+
+async function resetAnswers() {
+  if (!results.value?.question || isResettingAnswers.value) return
+
+  if (!window.confirm(t('confirmResetAnswers'))) {
+    return
+  }
+
+  isResettingAnswers.value = true
+
+  try {
+    await $fetch('/api/answers/reset', {
+      method: 'POST',
+    })
+    await refreshResults()
+  }
+  catch (error: unknown) {
+    logger_error('Failed to reset answers from results page', error)
+    alert(t('failedResetAnswers'))
+  }
+  finally {
+    isResettingAnswers.value = false
+  }
+}
 </script>
 
 <template>
@@ -249,6 +274,14 @@ async function unpublishActiveQuestion() {
                   @click="toggleLock"
                 >
                   {{ results.question.is_locked ? `🔒 ${t('lockedButton')}` : `🔓 ${t('openButton')}` }}
+                </UiButton>
+                <UiButton
+                  :disabled="isResettingAnswers"
+                  size="small"
+                  variant="danger"
+                  @click="resetAnswers"
+                >
+                  {{ isResettingAnswers ? t('resettingAnswers') : t('resetAnswers') }}
                 </UiButton>
                 <UiButton size="small" variant="secondary" @click="unpublishActiveQuestion">
                   {{ t('unpublishButton') }}
@@ -347,9 +380,13 @@ en:
   emojiButton: Emoji
   lockedButton: Locked
   openButton: Open
+  resetAnswers: Reset Answers
+  resettingAnswers: Resetting...
   unpublishButton: Unpublish
   refreshButton: Refresh
   nextButton: Next
+  confirmResetAnswers: Delete all submitted answers for current question?
+  failedResetAnswers: Failed to reset answers.
   votes: votes
   noActiveQuestion: No Active Question
   waitingForQuestion: Waiting for a question to be published...
@@ -361,9 +398,13 @@ de:
   emojiButton: Emoji
   lockedButton: Gesperrt
   openButton: Offen
+  resetAnswers: Antworten zurücksetzen
+  resettingAnswers: Antworten werden zurückgesetzt...
   unpublishButton: Veröffentlichung zurückziehen
   refreshButton: Aktualisieren
   nextButton: Nächste
+  confirmResetAnswers: Alle abgegebenen Antworten für die aktuelle Frage löschen?
+  failedResetAnswers: Antworten konnten nicht zurückgesetzt werden.
   votes: Stimmen
   noActiveQuestion: Keine aktive Frage
   waitingForQuestion: Warten auf die Veröffentlichung einer Frage...
@@ -375,9 +416,13 @@ ja:
   emojiButton: 絵文字
   lockedButton: ロック済み
   openButton: オープン
+  resetAnswers: 回答をリセット
+  resettingAnswers: リセット中...
   unpublishButton: 公開停止
   refreshButton: 更新
   nextButton: 次へ
+  confirmResetAnswers: 現在の質問の回答を全て削除しますか？
+  failedResetAnswers: 回答のリセットに失敗しました。
   votes: 票
   noActiveQuestion: アクティブな質問はありません
   waitingForQuestion: 質問が公開されるのを待っています...
