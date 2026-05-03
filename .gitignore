@@ -1,6 +1,3 @@
-# project specific
-data
-
 # Nuxt dev/build outputs
 .output
 .data

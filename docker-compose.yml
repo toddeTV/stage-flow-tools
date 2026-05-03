@@ -21,6 +21,5 @@ services:
       - traefik-public
     restart: unless-stopped
     volumes:
-      - ./data:/app/data
-      - ./.data/db:/app/.data/db
+      - ./.data:/app/.data
 version: "3.9"
