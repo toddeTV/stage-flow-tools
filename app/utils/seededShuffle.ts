@@ -20,7 +20,9 @@ function mulberry32(seed: number): () => number {
 
 /** Returns a shuffled copy of the array using a deterministic seed string. */
 export function seededShuffle<T>(array: T[], seed: string): T[] {
-  const copy = [...array]
+  const copy = [
+    ...array,
+  ]
   const rng = mulberry32(hashString(seed))
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1))

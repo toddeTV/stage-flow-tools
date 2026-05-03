@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply text-black min-h-screen relative;
+    @apply relative min-h-screen text-black;
   }
 
   ::selection {
@@ -42,11 +42,11 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100 border border-black;
+  @apply border border-black bg-gray-100;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-black border border-gray-100;
+  @apply border border-gray-100 bg-black;
 }
 
 ::-webkit-scrollbar-thumb:hover {

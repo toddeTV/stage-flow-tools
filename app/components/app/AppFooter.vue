@@ -30,7 +30,7 @@ const yearSpan = yearStart === yearCurrent ? yearStart : `${yearStart} - ${yearC
       >
         <span>Source Code on</span>
         <svg
-          class="h-5 w-5"
+          class="size-5"
           fill="none"
           height="24"
           stroke="currentColor"
