@@ -76,9 +76,3 @@ Manual backup:
 ```bash
 tar -czf quiz-backup-$(date +%Y%m%d).tar.gz .data/
 ```
-
-Example cron job:
-
-```bash
-0 */6 * * * cp -r /app/.data /backups/data-$(date +\%Y\%m\%d-\%H\%M)
-```
