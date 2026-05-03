@@ -33,9 +33,9 @@ export function deserializeQuestion(row: QuestionRow): Question {
   return {
     id: row.id,
     key: row.key,
-    question_text: parseJson<LocalizedString>(row.questionText, 'questions.question_text'),
-    answer_options: parseJson<AnswerOption[]>(row.answerOptions, 'questions.answer_options'),
-    note: row.note ? parseJson<LocalizedString>(row.note, 'questions.note') : undefined,
+    question_text: parseJson<LocalizedString>(row.questionText, `questions.question_text (id=${row.id})`),
+    answer_options: parseJson<AnswerOption[]>(row.answerOptions, `questions.answer_options (id=${row.id})`),
+    note: row.note ? parseJson<LocalizedString>(row.note, `questions.note (id=${row.id})`) : undefined,
     is_active: row.isActive,
     is_locked: row.isLocked,
     createdAt: row.createdAt,
@@ -49,7 +49,7 @@ export function deserializeAnswer(row: AnswerRow): Answer {
     question_id: row.questionId,
     user_id: row.userId,
     user_nickname: row.userNickname,
-    selected_answer: parseJson<LocalizedString>(row.selectedAnswer, 'answers.selected_answer'),
+    selected_answer: parseJson<LocalizedString>(row.selectedAnswer, `answers.selected_answer (id=${row.id})`),
     timestamp: row.timestamp,
   }
 }
