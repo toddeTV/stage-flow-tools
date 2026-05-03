@@ -1,6 +1,12 @@
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
+
+// Uses `eslint-plugin-tailwindcss` internals on purpose, since there is no
+// public utility for sorting `@apply` tokens in plain CSS. This path may break
+// on plugin upgrades. TODO: re-check and update this import when bumping
+// `eslint-plugin-tailwindcss`, and add coverage that fails if the util path or
+// sorting behavior changes.
 const { getSortedClassNames } = require('eslint-plugin-tailwindcss/lib/util/tailwindAPI')
 
 /**
