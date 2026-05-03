@@ -20,7 +20,6 @@ import {
   deserializeQuestion,
 } from '../database/question-records'
 import {
-  applyLocalMigrations,
   getLocalDatabaseClient,
 } from '../database/local-sqlite'
 import {
@@ -45,12 +44,12 @@ function getQuestionById(questionId: string): Question | undefined {
   return row ? deserializeQuestion(row) : undefined
 }
 
-/** Initializes SQLite access and applies any pending migrations once. */
+/** Initializes SQLite access once after the startup migration plugin has run. */
 export async function initStorage(_event?: H3Event) {
   if (storageInitialized) return
 
   try {
-    applyLocalMigrations(getDatabase())
+    getDatabase()
     storageInitialized = true
   }
   catch (error: unknown) {
