@@ -12,6 +12,7 @@ services:
       - traefik-public
     volumes:
       - ./data:/app/data
+      - ./.data/db:/app/.data/db
     environment:
       - NUXT_JWT_SECRET=${NUXT_JWT_SECRET}
     labels:
