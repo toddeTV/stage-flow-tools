@@ -12,6 +12,12 @@ import type {
   QuestionRow,
 } from './schema'
 
+/**
+ * Parses JSON from a text column and scopes failures to one field.
+ * @param value Serialized JSON string from SQLite storage.
+ * @param fieldName Field label used in thrown error text.
+ * @returns Parsed typed value.
+ */
 function parseJson<T>(value: string, fieldName: string): T {
   try {
     return JSON.parse(value) as T
@@ -21,14 +27,29 @@ function parseJson<T>(value: string, fieldName: string): T {
   }
 }
 
+/**
+ * Serializes a localized string for SQLite storage.
+ * @param value Localized string value from app state.
+ * @returns JSON string for the database row.
+ */
 export function serializeLocalizedString(value: LocalizedString): string {
   return JSON.stringify(value)
 }
 
+/**
+ * Serializes answer options for SQLite storage.
+ * @param value Answer options from a question model.
+ * @returns JSON string for the database row.
+ */
 export function serializeAnswerOptions(value: AnswerOption[]): string {
   return JSON.stringify(value)
 }
 
+/**
+ * Maps one stored question row into the app question shape.
+ * @param row Question row returned from SQLite.
+ * @returns Deserialized question object.
+ */
 export function deserializeQuestion(row: QuestionRow): Question {
   return {
     id: row.id,
@@ -43,6 +64,11 @@ export function deserializeQuestion(row: QuestionRow): Question {
   }
 }
 
+/**
+ * Maps one stored answer row into the app answer shape.
+ * @param row Answer row returned from SQLite.
+ * @returns Deserialized answer object.
+ */
 export function deserializeAnswer(row: AnswerRow): Answer {
   return {
     id: row.id,
@@ -54,6 +80,12 @@ export function deserializeAnswer(row: AnswerRow): Answer {
   }
 }
 
+/**
+ * Builds a question row from input-question data and optional stored flags.
+ * @param question Input question data from admin or seed flow.
+ * @param options Optional stored values such as ids, flags, and timestamps.
+ * @returns SQLite-ready question row.
+ */
 export function createQuestionInsert(
   question: InputQuestion,
   options: {
@@ -80,10 +112,20 @@ export function createQuestionInsert(
   }
 }
 
+/**
+ * Builds a stored question row for seeded question input.
+ * @param question Seed question data.
+ * @returns SQLite-ready seeded question row.
+ */
 export function createSeedQuestionInsert(question: InputQuestion): QuestionRow {
   return createQuestionInsert(question, { id: question.key || createId() })
 }
 
+/**
+ * Builds a stored question row from an already materialized question.
+ * @param question Existing question object from runtime storage.
+ * @returns SQLite-ready stored question row.
+ */
 export function createStoredQuestionInsert(question: Question): QuestionRow {
   return {
     id: question.id,
@@ -98,6 +140,11 @@ export function createStoredQuestionInsert(question: Question): QuestionRow {
   }
 }
 
+/**
+ * Builds a stored answer row from runtime answer data.
+ * @param answer Answer object with optional existing id.
+ * @returns SQLite-ready answer row.
+ */
 export function createStoredAnswerInsert(answer: Omit<Answer, 'id'> & { id?: string }): NewAnswerRow {
   return {
     id: answer.id ?? createId(),
