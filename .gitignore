@@ -9,6 +9,7 @@ wrangler.toml
 .nitro
 .cache
 dist
+.vite-hooks
 
 # Node dependencies
 node_modules

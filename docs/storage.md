@@ -10,7 +10,7 @@ The storage driver is selected based on the `NITRO_PRESET` environment variable:
 
 - **Cloudflare Workers** (`NITRO_PRESET=cloudflare-module`): Cloudflare KV binding `STAGE_FLOW_DATA`.
 - **Node.js / Docker** (any other preset): Filesystem driver at `.data/db/`.
-- **Local dev** (`pnpm dev`): Always filesystem at `.data/db/` via `devStorage`.
+- **Local dev** (`vp run dev`): Always filesystem at `.data/db/` via `devStorage`.
 
 Configuration in `nuxt.config.ts`:
 
@@ -152,7 +152,7 @@ npx wrangler kv key delete --binding=STAGE_FLOW_DATA "admin"
 Alternatively, use the push script to reset and replace data in one step (admin is overridden, never deleted):
 
 ```bash
-pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json --admin ./my-admin.json
+vp run deploy:push-to-cloudflare -- --questions ./my-questions.json --admin ./my-admin.json
 ```
 
 See [deployment-cloudflare.md](deployment-cloudflare.md#pushing-questions-from-local-to-cloudflare) for details.

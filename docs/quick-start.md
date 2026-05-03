@@ -5,7 +5,7 @@ Get the quiz application running in minutes.
 ## Prerequisites
 
 - Node.js 24.x
-- pnpm 10.x
+- Vite+ (`vp`)
 
 ## Installation
 
@@ -19,7 +19,7 @@ Get the quiz application running in minutes.
 2. **Install dependencies**
 
    ```bash
-   pnpm install
+   vp install
    ```
 
 3. **Configure environment**
@@ -30,7 +30,7 @@ Get the quiz application running in minutes.
 
 4. **Start development server**
    ```bash
-   pnpm dev
+   vp run dev
    ```
 
 ## Access Points

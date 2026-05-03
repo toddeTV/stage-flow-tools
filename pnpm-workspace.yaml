@@ -1,0 +1,21 @@
+allowBuilds:
+  esbuild: false
+
+catalog:
+  # vite-plus ecosystem, all same version to avoid mismatches
+  vite: npm:@voidzero-dev/vite-plus-core@~0.1.19
+  vite-plus: ~0.1.19
+  vitest: npm:@voidzero-dev/vite-plus-test@~0.1.19
+
+overrides:
+  # TODO check if this is still needed after dump all versions to latest
+  crossws: 0.4.1
+
+  vite: "catalog:"
+  vitest: "catalog:"
+
+shellEmulator: true
+
+trustPolicy: no-downgrade
+
+trustPolicyIgnoreAfter: 10080

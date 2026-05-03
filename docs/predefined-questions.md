@@ -72,7 +72,7 @@ Each question object must include all required fields (`id`, `question_text`, `a
 For a workflow where questions live alongside presentation slides in a separate repo, use the push script. It resets all quiz data and uploads fresh questions in a single command:
 
 ```bash
-pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json
+vp run deploy:push-to-cloudflare -- --questions ./my-questions.json
 ```
 
 The script clears answers, replaces questions, and optionally overrides admin credentials. See [deployment-cloudflare.md](deployment-cloudflare.md#pushing-questions-from-local-to-cloudflare) for the full reference.

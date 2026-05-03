@@ -2,7 +2,7 @@
   "name": "@todde.tv/stage-flow-tools",
   "type": "module",
   "version": "1.0.0-rc.0",
-  "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad",
+  "packageManager": "pnpm@10.33.0",
   "description": "Real-time quiz and interaction tool for live presentations. Features include admin-controlled quiz flow, live results, and instant audience participation. Boost engagement on stage - at conferences, sessions, and workshops.",
   "author": "Thorsten Seyschab <hello@todde.tv> (https://todde.tv/)",
   "contributors": [
@@ -45,20 +45,22 @@
     "build:cloudflare": "cross-env NITRO_PRESET=cloudflare-module NODE_OPTIONS=--max-old-space-size=8192 nuxt build",
     "build:ssg": "cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt generate",
     "build:ssr": "cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt build",
-    "deploy:cloudflare": "pnpm run build:cloudflare && pnpm exec wrangler deploy",
+    "deploy:cloudflare": "vp run build:cloudflare && vp exec wrangler deploy",
     "deploy:push-to-cloudflare": "node scripts/push-to-cloudflare.mjs",
     "dev": "nuxt dev",
     "dev:preset": "nuxt dev --port 3000 --public",
-    "fix:lint": "run-s \"test:lint --fix\"",
+    "fix:lint": "run-s \"test:lint-format --fix\"",
     "nuxi": "nuxi",
     "nuxt": "nuxt",
     "preview": "nuxt preview",
-    "preview:ssg": "pnpm exec serve .output/public",
+    "preview:ssg": "vp dlx serve .output/public",
     "preview:ssr": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "install:clean": "vp install --frozen-lockfile --prefer-offline",
     "test": "run-s test:*",
-    "test:lint": "eslint .",
-    "test:types": "nuxt typecheck"
+    "test:lint-format": "eslint .",
+    "test:type": "nuxt typecheck",
+    "prepare": "vp config --hooks-only"
   },
   "dependencies": {
     "nuxt": "~4.1.2"
@@ -85,11 +87,7 @@
     "vue": "~3.5.22",
     "vue-router": "~4.5.1",
     "vue-tsc": "~3.1.0",
-    "wrangler": "~4.72.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "crossws": "0.4.1"
-    }
+    "wrangler": "~4.72.0",
+    "vite-plus": "catalog:"
   }
 }

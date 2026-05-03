@@ -7,22 +7,22 @@ Complete guide for setting up the quiz application locally.
 ### Required Software
 
 - **Node.js**: Version 24.x
-- **pnpm**: Version 10.x
+- **Vite+ (`vp`)**: Installed and available in your shell
 - **Git**: For version control
 
 ### Installation Steps
 
-1. **Install pnpm** (if not installed)
+1. **Install Vite+** (if not installed)
 
    ```bash
-   npm install -g pnpm
+   curl -fsSL https://vite.plus | bash
    ```
 
 2. **Clone and install**
    ```bash
    git clone <repository-url>
    cd stage-flow-tools
-   pnpm install
+   vp install
    ```
 
 ## Configuration
@@ -45,14 +45,14 @@ Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
 
 ## Development Commands
 
-- `pnpm dev` - Start development server
-- `pnpm run build:ssr` - Build for production (server-rendered)
-- `pnpm run build:ssg` - Static site generation build
-- `pnpm preview` - Preview production build
-- `pnpm test` - Run all checks (lint + types)
-- `pnpm run test:lint` - Lint and format check via ESLint
-- `pnpm run test:types` - Run TypeScript checks
-- `pnpm run fix:lint` - Auto-fix lint and format issues
+- `vp run dev` - Start development server
+- `vp run build:ssr` - Build for production (server-rendered)
+- `vp run build:ssg` - Static site generation build
+- `vp run preview` - Preview production build
+- `vp run test` - Run all checks (lint + types)
+- `vp run test:lint-format` - Lint and format check via ESLint
+- `vp run test:type` - Run TypeScript checks
+- `vp run fix:lint` - Auto-fix lint and format issues
 
 ## Data Management
 
