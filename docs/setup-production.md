@@ -55,8 +55,11 @@ Set production values for:
 
 - `NUXT_ADMIN_USERNAME`
 - `NUXT_ADMIN_PASSWORD`
+- `NUXT_ADMIN_TOKEN` when external software needs direct admin bearer-token access
 - `NUXT_JWT_SECRET`
 - `NUXT_DRIZZLE_STUDIO_INTERNAL_PORT` when you need a non-default private Studio worker port
+
+Leave `NUXT_ADMIN_TOKEN` empty if you do not want static admin-token authentication. If you set it, keep it secret and rotate it by updating the environment and redeploying.
 
 ## Data Persistence
 
