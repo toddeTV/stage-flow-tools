@@ -9,6 +9,28 @@ export const useQuizSocket = (channel = 'default') => {
   const totalConnections = ref(0)
   const userId = useLocalStorage<string | null>('quiz-user-id', null)
 
+  function clearStoredAnswer(questionId: string) {
+    selectedAnswer.value = null
+
+    if (import.meta.client) {
+      sessionStorage.removeItem(`answer-${questionId}`)
+    }
+  }
+
+  function restoreStoredAnswer(questionId: string) {
+    if (!import.meta.client) {
+      selectedAnswer.value = null
+      return
+    }
+
+    const savedAnswer = sessionStorage.getItem(`answer-${questionId}`)
+    const parsedAnswer = savedAnswer === null ? Number.NaN : Number(savedAnswer)
+
+    selectedAnswer.value = Number.isInteger(parsedAnswer) && parsedAnswer >= 0
+      ? parsedAnswer
+      : null
+  }
+
   const wsEndpoint = computed(() => {
     if (import.meta.client && !userId.value) {
       userId.value = createId()
@@ -43,17 +65,17 @@ export const useQuizSocket = (channel = 'default') => {
           selectedAnswer.value = null
         }
         else if (previousQuestionId !== parsed.data.id) {
-          // Restore previously saved answer for this question, or clear selection
-          const savedAnswer = sessionStorage.getItem(`answer-${parsed.data.id}`)
-          const parsedAnswer = savedAnswer === null ? Number.NaN : Number(savedAnswer)
-          selectedAnswer.value = Number.isInteger(parsedAnswer) && parsedAnswer >= 0
-            ? parsedAnswer
-            : null
+          restoreStoredAnswer(parsed.data.id)
         }
       }
       else if (parsed.event === 'lock-status') {
         if (activeQuestion.value && activeQuestion.value.id === parsed.data.questionId) {
           activeQuestion.value.is_locked = parsed.data.is_locked
+        }
+      }
+      else if (parsed.event === 'answers-reset') {
+        if (activeQuestion.value && activeQuestion.value.id === parsed.data.questionId) {
+          clearStoredAnswer(parsed.data.questionId)
         }
       }
       else if (parsed.event === 'results-update') {
