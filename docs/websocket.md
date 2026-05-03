@@ -71,6 +71,23 @@ Bundled voting results (batched every 2 seconds)
 }
 ```
 
+`results-update` may be sent immediately for explicit admin actions such as answer reset.
+
+#### `answers-reset`
+
+Sent on default channel when admin clears all answers for current active question.
+
+Clients should clear local answer state for matching `questionId` so voting can start fresh if question stays unlocked.
+
+```json
+{
+  "event": "answers-reset",
+  "data": {
+    "questionId": "string"
+  }
+}
+```
+
 #### `connections-update`
 
 Peer count change (on connect/disconnect)
@@ -160,6 +177,7 @@ ws.onclose = () => {
 
 - New question published
 - Lock status changed
+- Answer reset
 
 ### Bundled Events
 
