@@ -1,6 +1,6 @@
 {
   "name": "@todde.tv/stage-flow-tools",
-  "version": "1.0.0-rc.0",
+  "version": "1.0.0",
   "description": "Real-time quiz and interaction tool for live presentations. Features include admin-controlled quiz flow, live results, and instant audience participation. Boost engagement on stage - at conferences, sessions, and workshops.",
   "license": "SEE LICENSE IN LICENSE.md",
   "author": "Thorsten Seyschab <hello@todde.tv> (https://todde.tv/)",
