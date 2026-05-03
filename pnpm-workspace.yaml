@@ -8,7 +8,9 @@ catalog:
   vitest: npm:@voidzero-dev/vite-plus-test@~0.1.19
 
 overrides:
+  # TODO check if this is still needed after dump all versions to latest
   crossws: 0.4.1
+
   vite: "catalog:"
   vitest: "catalog:"
 
