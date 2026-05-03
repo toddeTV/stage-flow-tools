@@ -22,7 +22,7 @@ Complete guide for setting up the quiz application locally.
    ```bash
    git clone <repository-url>
    cd stage-flow-tools
-   pnpm install
+   vp run install:clean
    ```
 
 ## Configuration
@@ -45,14 +45,14 @@ Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
 
 ## Development Commands
 
-- `pnpm dev` - Start development server
-- `pnpm run build:ssr` - Build for production (server-rendered)
-- `pnpm run build:ssg` - Static site generation build
-- `pnpm preview` - Preview production build
-- `pnpm test` - Run all checks (lint + types)
-- `pnpm run test:lint` - Lint and format check via ESLint
-- `pnpm run test:types` - Run TypeScript checks
-- `pnpm run fix:lint` - Auto-fix lint and format issues
+- `vp run dev` - Start development server
+- `vp run build:ssr` - Build for production (server-rendered)
+- `vp run build:ssg` - Static site generation build
+- `vp run preview` - Preview production build
+- `vp run test` - Run all checks (lint + types)
+- `vp run test:lint` - Lint and format check via ESLint
+- `vp run test:types` - Run TypeScript checks
+- `vp run fix:lint` - Auto-fix lint and format issues
 
 ## Data Management
 

@@ -19,7 +19,7 @@ Get the quiz application running in minutes.
 2. **Install dependencies**
 
    ```bash
-   pnpm install
+   vp run install:clean
    ```
 
 3. **Configure environment**
@@ -30,7 +30,7 @@ Get the quiz application running in minutes.
 
 4. **Start development server**
    ```bash
-   pnpm dev
+   vp run dev
    ```
 
 ## Access Points
