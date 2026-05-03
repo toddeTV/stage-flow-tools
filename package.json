@@ -1,18 +1,12 @@
 {
   "name": "@todde.tv/stage-flow-tools",
-  "type": "module",
   "version": "1.0.0-rc.0",
-  "packageManager": "pnpm@10.33.0",
   "description": "Real-time quiz and interaction tool for live presentations. Features include admin-controlled quiz flow, live results, and instant audience participation. Boost engagement on stage - at conferences, sessions, and workshops.",
+  "license": "SEE LICENSE IN LICENSE.md",
   "author": "Thorsten Seyschab <hello@todde.tv> (https://todde.tv/)",
   "contributors": [
-    {
-      "name": "Thorsten Seyschab",
-      "email": "hello@todde.tv",
-      "url": "https://todde.tv/"
-    }
+    "Thorsten Seyschab <hello@todde.tv> (https://todde.tv/)"
   ],
-  "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://todde.tv/",
   "repository": {
     "type": "git",
@@ -21,43 +15,27 @@
   "bugs": {
     "url": "https://github.com/toddeTV/stage-flow-tools/issues"
   },
-  "keywords": [
-    "quiz",
-    "live-interaction",
-    "audience-participation",
-    "presentation-tool",
-    "conference-tool",
-    "workshop",
-    "web-app",
-    "voting",
-    "results-display",
-    "engagement",
-    "educational",
-    "stage-flow",
-    "presenter",
-    "interactive"
-  ],
-  "engines": {
-    "node": "24.x",
-    "pnpm": "10.x"
-  },
+  "type": "module",
   "scripts": {
     "build:ssg": "cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt generate",
     "build:ssr": "cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt build",
     "dev": "nuxt dev",
     "dev:preset": "nuxt dev --port 3000 --public",
-    "fix:lint": "run-s \"test:lint-format --fix\"",
+    "fix": "vp run fix:lint-format && vp run fix:package-json",
+    "fix:lint-format": "vp exec eslint . --fix",
+    "fix:package-json": "vp exec prettier-package-json --write package.json",
+    "postinstall": "nuxt prepare",
+    "install:clean": "vp install --frozen-lockfile --prefer-offline",
     "nuxi": "nuxi",
     "nuxt": "nuxt",
+    "prepare": "vp config --hooks-only",
     "preview": "nuxt preview",
     "preview:ssg": "vp dlx serve .output/public",
     "preview:ssr": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "install:clean": "vp install --frozen-lockfile --prefer-offline",
-    "test": "run-s test:*",
-    "test:lint-format": "eslint .",
-    "test:type": "nuxt typecheck",
-    "prepare": "vp config --hooks-only"
+    "test": "concurrently --names \"test:lint-format,test:package-json,test:type\" \"vp exec eslint .\" \"vp exec prettier-package-json --list-different package.json\" \"nuxt typecheck\"",
+    "test:lint-format": "vp exec eslint .",
+    "test:package-json": "vp exec prettier-package-json --list-different package.json",
+    "test:type": "nuxt typecheck"
   },
   "dependencies": {
     "nuxt": "~4.1.2"
@@ -69,21 +47,45 @@
     "@paralleldrive/cuid2": "~2.2.2",
     "@vueuse/core": "~13.9.0",
     "@vueuse/nuxt": "~13.9.0",
+    "concurrently": "~9.2.1",
     "cross-env": "~10.1.0",
     "crossws": "~0.4.1",
-    "eslint": "~10.0.3",
+    "eslint": "catalog:",
     "eslint-plugin-format": "~2.0.1",
-    "eslint-plugin-jsonc": "~3.1.1",
-    "eslint-plugin-tailwindcss": "~3.18.2",
+    "eslint-plugin-jsonc": "~3.1.2",
+    "eslint-plugin-perfectionist": "~5.9.0",
+    "eslint-plugin-tailwindcss": "~4.0.0-alpha.2",
     "eslint-plugin-yml": "~3.3.1",
     "jose": "~6.2.1",
     "npm-run-all2": "~8.0.4",
     "nuxi": "~3.28.0",
     "prettier": "~3.8.1",
+    "prettier-package-json": "~2.8.0",
     "typescript": "~5.9.3",
+    "vite-plus": "catalog:",
     "vue": "~3.5.22",
     "vue-router": "~4.5.1",
-    "vue-tsc": "~3.1.0",
-    "vite-plus": "catalog:"
-  }
+    "vue-tsc": "~3.1.0"
+  },
+  "keywords": [
+    "audience-participation",
+    "conference-tool",
+    "educational",
+    "engagement",
+    "interactive",
+    "live-interaction",
+    "presentation-tool",
+    "presenter",
+    "quiz",
+    "results-display",
+    "stage-flow",
+    "voting",
+    "web-app",
+    "workshop"
+  ],
+  "engines": {
+    "node": "24.x",
+    "pnpm": "10.x"
+  },
+  "packageManager": "pnpm@10.33.0"
 }
