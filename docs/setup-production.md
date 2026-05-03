@@ -56,6 +56,7 @@ Set production values for:
 - `NUXT_ADMIN_USERNAME`
 - `NUXT_ADMIN_PASSWORD`
 - `NUXT_JWT_SECRET`
+- `NUXT_DRIZZLE_STUDIO_INTERNAL_PORT` when you need a non-default private Studio worker port
 
 ## Data Persistence
 
@@ -68,6 +69,7 @@ Set production values for:
 - Check API availability with `/api/questions`.
 - Read container or process logs from stdout.
 - Watch WebSocket connection counts in the admin connection endpoint when needed.
+- Verify `/admin/database` after login if you need database inspection in production.
 
 ## Backup Strategy
 

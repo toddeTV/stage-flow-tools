@@ -51,6 +51,15 @@ NUXT_ADMIN_PASSWORD=<your-strong-password>
 NUXT_JWT_SECRET=<paste-output-from-openssl>
 ```
 
+Optional override for the embedded Drizzle Studio worker port:
+
+```bash
+# In .env:
+NUXT_DRIZZLE_STUDIO_INTERNAL_PORT=64983
+```
+
+Keep this value private. The app binds the Studio worker to `127.0.0.1` inside the container and proxies it through the authenticated admin UI.
+
 ### 3. Configure Docker Compose
 
 Open the `docker-compose.yml` file and update the Traefik `Host` rule to match your domain:
@@ -74,6 +83,8 @@ docker compose up --build -d
 
 The application will be accessible at your configured domain. Traefik will automatically handle SSL certificate provisioning via Let's Encrypt.
 
+After login, the admin menu includes `/admin/database`, which opens Drizzle Studio inside the app through the protected proxy.
+
 ## Data Persistence
 
 The `docker-compose.yml` mounts one directory:
@@ -89,6 +100,7 @@ The Docker image uses a multi-stage build:
 - The `build` stage installs the full toolchain and runs `nuxt build`.
 - The `production` stage copies only the generated `.output` directory.
 - The container starts `node .output/server/index.mjs` directly.
+- The embedded Drizzle Studio worker is started lazily by Nitro on first access to `/admin/database`.
 
 The final image does not run a second package install step. Nuxt's production build already emits the standalone server output used by the container.
 
@@ -150,6 +162,7 @@ The `docker-compose.yml` file mounts `./.data:/app/.data`. All application data 
 - Always set a strong `NUXT_JWT_SECRET` (at least 48 bytes of randomness).
 - Change the default admin password before making the application publicly accessible.
 - The `NUXT_JWT_SECRET` is the only secret passed via environment variable in `docker-compose.yml`. Admin credentials can be set in `.env` and are read by the container at startup.
+- Keep `NUXT_DRIZZLE_STUDIO_INTERNAL_PORT` unset unless you need to avoid a local port clash inside the container runtime.
 - Traefik handles SSL termination. Internal traffic between Traefik and the container is unencrypted (port 3000) but stays within the Docker network.
 
 ## Using a Pre-Built Image
