@@ -7,7 +7,7 @@ Guide for deploying the quiz application to production.
 ### Production Build
 
 ```bash
-pnpm run build:ssr
+vp run build:ssr
 ```
 
 Creates optimized production bundle in `.output/` directory.
@@ -19,7 +19,7 @@ Creates optimized production bundle in `.output/` directory.
 See the [Cloudflare Deployment Guide](deployment-cloudflare.md) for a step-by-step tutorial covering manual deploys, automated CI/CD via GitHub Actions, and the push script for seeding quiz data.
 
 ```bash
-pnpm run deploy:cloudflare
+vp run deploy:cloudflare
 ```
 
 ### 2. Docker Container

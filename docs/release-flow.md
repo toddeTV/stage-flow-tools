@@ -47,7 +47,7 @@ Every push to `main` (including merged PRs and release merges) triggers the `dep
 After deployment, use the push script to seed quiz questions:
 
 ```bash
-pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json
+vp run deploy:push-to-cloudflare -- --questions ./my-questions.json
 ```
 
 See the [Cloudflare Deployment Guide](deployment-cloudflare.md#automated-deployment-via-github-actions-cicd) for GitHub secrets setup.

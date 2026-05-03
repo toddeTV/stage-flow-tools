@@ -152,7 +152,7 @@ npx wrangler kv key delete --binding=STAGE_FLOW_DATA "admin"
 Alternatively, use the push script to reset and replace data in one step (admin is overridden, never deleted):
 
 ```bash
-pnpm run deploy:push-to-cloudflare -- --questions ./my-questions.json --admin ./my-admin.json
+vp run deploy:push-to-cloudflare -- --questions ./my-questions.json --admin ./my-admin.json
 ```
 
 See [deployment-cloudflare.md](deployment-cloudflare.md#pushing-questions-from-local-to-cloudflare) for details.
