@@ -40,10 +40,10 @@ All data is accessed through `useStorage('data')` with these keys:
 
 On startup the plugin checks for `data/predefined-questions.json`.
 
-1. It renames the file to `data/predefined-questions.json.processing`.
-1. It parses the file.
-1. It merges unseen questions into stored quiz data.
-1. It deletes the `.processing` file after a successful import.
+1. Rename the file to `data/predefined-questions.json.processing`.
+1. Parse the file.
+1. Merge unseen questions into stored quiz data.
+1. Delete the `.processing` file after a successful import.
 
 If parsing fails or a validation rule blocks the import, the `.processing` file stays on disk for manual inspection.
 
