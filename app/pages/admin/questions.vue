@@ -109,6 +109,7 @@ const allQuestions = ref<Question[]>([])
 const questionFormSection = ref<HTMLElement | null>(null)
 const editingQuestionId = ref<string | null>(null)
 const isSavingQuestion = ref(false)
+const isResettingAnswers = ref(false)
 const questionForm = ref<QuestionForm>(createDefaultQuestionForm())
 const isEditMode = computed(() => editingQuestionId.value !== null)
 const formTitle = computed(() => isEditMode.value ? t('editQuestionTitle') : t('prepareNextQuestion'))
@@ -266,6 +267,33 @@ async function publishNextQuestion() {
   }
 }
 
+async function resetAnswers() {
+  if (!activeQuestion.value || isResettingAnswers.value) {
+    return
+  }
+
+  if (!window.confirm(t('confirmResetAnswers'))) {
+    return
+  }
+
+  isResettingAnswers.value = true
+
+  try {
+    await $fetch('/api/answers/reset', {
+      method: 'POST',
+    })
+
+    await loadQuestions()
+  }
+  catch (error: unknown) {
+    logger_error('Failed to reset answers from questions page', error)
+    alert(t('failedResetAnswers'))
+  }
+  finally {
+    isResettingAnswers.value = false
+  }
+}
+
 // Add option
 function addOption() {
   questionForm.value.answer_options.push({ text: '{\n  "en": ""\n}', emoji: '' })
@@ -316,6 +344,9 @@ function removeOption(index: number) {
               </NuxtLink>
               <UiButton @click="toggleLock">
                 {{ activeQuestion.is_locked ? t('unlockQuestion') : t('lockQuestion') }}
+              </UiButton>
+              <UiButton :disabled="isResettingAnswers" variant="danger" @click="resetAnswers">
+                {{ isResettingAnswers ? t('resettingAnswers') : t('resetAnswers') }}
               </UiButton>
               <UiButton variant="secondary" @click="publishNextQuestion">
                 {{ t('publishNext') }} →
@@ -476,8 +507,11 @@ en:
   viewLiveResults: View Live Results
   lockQuestion: Lock Question
   unlockQuestion: Unlock Question
+  resetAnswers: Reset Answers
+  resettingAnswers: Resetting...
   publishNext: Publish Next
   unpublishButton: Unpublish
+  confirmResetAnswers: Delete all submitted answers for current question?
   noActiveQuestion: No active question
   prepareNextQuestion: Prepare Next Question
   editQuestionTitle: Edit Question
@@ -507,6 +541,7 @@ en:
   failedUpdateQuestion: Failed to update question.
   failedPublishQuestion: Failed to publish question.
   failedToggleLock: Failed to toggle lock status.
+  failedResetAnswers: Failed to reset answers.
   failedUnpublish: Failed to unpublish active question.
   failedPublishNext: Failed to publish next question. There may be no unpublished questions left.
 de:
@@ -519,8 +554,11 @@ de:
   viewLiveResults: Live-Ergebnisse anzeigen
   lockQuestion: Frage sperren
   unlockQuestion: Frage entsperren
+  resetAnswers: Antworten zurücksetzen
+  resettingAnswers: Antworten werden zurückgesetzt...
   publishNext: Nächste veröffentlichen
   unpublishButton: Veröffentlichung zurückziehen
+  confirmResetAnswers: Alle abgegebenen Antworten für die aktuelle Frage löschen?
   noActiveQuestion: Keine aktive Frage
   prepareNextQuestion: Nächste Frage vorbereiten
   editQuestionTitle: Frage bearbeiten
@@ -550,6 +588,7 @@ de:
   failedUpdateQuestion: Frage konnte nicht aktualisiert werden.
   failedPublishQuestion: Frage konnte nicht veröffentlicht werden.
   failedToggleLock: Sperrstatus konnte nicht geändert werden.
+  failedResetAnswers: Antworten konnten nicht zurückgesetzt werden.
   failedUnpublish: Veröffentlichung konnte nicht zurückgezogen werden.
   failedPublishNext: >-
     Nächste Frage konnte nicht veröffentlicht werden.
@@ -564,8 +603,11 @@ ja:
   viewLiveResults: ライブ結果を表示
   lockQuestion: 質問をロック
   unlockQuestion: 質問のロックを解除
+  resetAnswers: 回答をリセット
+  resettingAnswers: リセット中...
   publishNext: 次を公開
   unpublishButton: 公開停止
+  confirmResetAnswers: 現在の質問の回答を全て削除しますか？
   noActiveQuestion: アクティブな質問はありません
   prepareNextQuestion: 次の質問を準備
   editQuestionTitle: 質問を編集
@@ -595,6 +637,7 @@ ja:
   failedUpdateQuestion: 質問の更新に失敗しました。
   failedPublishQuestion: 質問の公開に失敗しました。
   failedToggleLock: ロック状態の切り替えに失敗しました。
+  failedResetAnswers: 回答のリセットに失敗しました。
   failedUnpublish: 公開停止に失敗しました。
   failedPublishNext: 次の質問の公開に失敗しました。未公開の質問がない可能性があります。
 </i18n>
