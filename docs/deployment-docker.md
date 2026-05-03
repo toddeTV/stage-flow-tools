@@ -76,7 +76,12 @@ The application will be accessible at your configured domain. Traefik will autom
 
 ## Data Persistence
 
-The `docker-compose.yml` file mounts the local `./.data` directory into the container at `/app/.data`. The application stores quiz data in `/app/.data/db`, so this mount keeps questions, answers, and admin credentials on the host machine across restarts and rebuilds.
+The `docker-compose.yml` mounts two directories:
+
+- `./data` -> `/app/data` - input directory for `predefined-questions.json` (consumed on startup).
+- `./.data/db` -> `/app/.data/db` - Nitro filesystem storage where questions, answers, and admin credentials are persisted at runtime.
+
+Both mounts are required. Without the `.data/db` mount, all runtime data is lost when the container is removed or recreated.
 
 ## Maintenance
 
