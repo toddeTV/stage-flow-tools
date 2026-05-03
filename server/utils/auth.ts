@@ -1,6 +1,12 @@
 import { jwtVerify } from 'jose'
 import type { H3Event } from 'h3'
 
+type VerifiedAdminPayload = {
+  authMethod?: 'static-token'
+  isAdmin: true
+  username: string
+}
+
 /** Sets the admin_token cookie with protocol-aware security attributes. */
 export function setAdminCookie(event: H3Event, value: string, maxAge: number) {
   const isSecure = getRequestProtocol(event) === 'https'
@@ -14,12 +20,24 @@ export function setAdminCookie(event: H3Event, value: string, maxAge: number) {
 }
 
 /**
- * Extracts the JWT from cookies or headers.
+ * Extracts the admin auth token from cookies or headers.
  * @param event The H3 event object.
  * @returns The token string or undefined.
  */
 export function getToken(event: H3Event): string | undefined {
-  return getCookie(event, 'admin_token') || getHeader(event, 'authorization')?.replace('Bearer ', '')
+  return getHeader(event, 'authorization')?.replace('Bearer ', '') || getCookie(event, 'admin_token')
+}
+
+function getStaticAdminPayload(token: string, configuredToken: string): VerifiedAdminPayload | null {
+  if (!configuredToken || token !== configuredToken) {
+    return null
+  }
+
+  return {
+    authMethod: 'static-token',
+    isAdmin: true,
+    username: 'admin-token',
+  }
 }
 
 /**
@@ -36,6 +54,12 @@ export async function verifyAdmin(event: H3Event) {
       statusCode: 401,
       statusMessage: 'Unauthorized',
     })
+  }
+
+  const staticAdminPayload = getStaticAdminPayload(token, config.adminToken)
+
+  if (staticAdminPayload) {
+    return staticAdminPayload
   }
 
   try {

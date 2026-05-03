@@ -48,8 +48,11 @@ Set a strong admin password as well:
 # In .env:
 NUXT_ADMIN_USERNAME=admin
 NUXT_ADMIN_PASSWORD=<your-strong-password>
+NUXT_ADMIN_TOKEN=<optional-static-admin-token>
 NUXT_JWT_SECRET=<paste-output-from-openssl>
 ```
+
+Set `NUXT_ADMIN_TOKEN` only if external software needs direct admin API access with `Authorization: Bearer <token>`. Leave it empty to disable that path. Only one exact token is accepted.
 
 Optional override for the embedded Drizzle Studio worker port:
 

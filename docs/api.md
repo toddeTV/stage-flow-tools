@@ -8,6 +8,8 @@ REST API endpoints documentation.
 
 Login as administrator.
 
+This endpoint is for browser-style admin login with username and password. It sets the session cookie used by the admin UI.
+
 **Request:**
 
 ```json
@@ -18,7 +20,7 @@ Login as administrator.
 ```
 
 **Response:**
-Sets `admin_token` HTTP-only cookie and returns JWT token.
+Sets `admin_token` HTTP-only cookie and returns success.
 
 ### POST `/api/auth/logout`
 
@@ -41,15 +43,28 @@ Verify authentication token (admin only).
 - Cookie: `admin_token` (set automatically by login)
 - Or `Authorization: Bearer <token>`
 
+`Authorization: Bearer <token>` accepts two admin auth modes:
+
+- A valid admin JWT only when a client already has that token. `POST /api/auth/login` does not return the JWT in the response body; it sets the `admin_token` HTTP-only cookie for browser admin sessions.
+- The exact static token configured in `NUXT_ADMIN_TOKEN` for software-to-software admin access. External API clients should use this static token path.
+
 **Response:**
 
 ```json
 {
   "valid": true,
   "user": {
-    /* decoded JWT payload */
+    /* decoded JWT payload or static-token admin payload */
   }
 }
+```
+
+**Static token example:**
+
+```bash
+curl \
+  -H "Authorization: Bearer $NUXT_ADMIN_TOKEN" \
+  http://localhost:3000/api/auth/verify
 ```
 
 ## Database Admin
