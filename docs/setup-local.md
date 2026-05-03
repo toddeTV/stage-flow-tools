@@ -47,25 +47,24 @@ Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
 
 ### Storage Location
 
-During local development, data is stored in `.data/db/` (created automatically, gitignored):
+During local development, data is stored in `.data/db/stage-flow-tools.sqlite3` (created automatically, gitignored):
 
-- `questions` - Quiz questions
-- `answers` - User answers
-- `admin` - Admin credentials
+- `questions` and `answers` are stored in SQLite tables.
+- Admin credentials stay in runtime config.
 
-Predefined questions can be loaded from `data/predefined-questions.json` (see [predefined-questions.md](predefined-questions.md)).
+No bundled question set is shipped with the repository. Create questions through the admin UI.
 
 ### Reset Data
 
 ```bash
-rm -rf .data/db/
-# Application recreates defaults on next start
+rm -rf .data/
+# Restart the app to recreate the quiz database
 ```
 
 ### Backup Data
 
 ```bash
-cp -r .data/db/ data-backup-$(date +%Y%m%d)
+cp -r .data/ data-backup-$(date +%Y%m%d)
 ```
 
 ## Troubleshooting

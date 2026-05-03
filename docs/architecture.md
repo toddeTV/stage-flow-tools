@@ -18,7 +18,7 @@ System design and technical architecture of the quiz application.
 
 ### Storage
 
-- **Nitro `useStorage()`** - Filesystem-backed storage at `.data/db/`
+- **Drizzle ORM + SQLite** - Persistent quiz storage at `.data/db/stage-flow-tools.sqlite3`
 
 ## Application Structure
 
@@ -34,12 +34,12 @@ stage-flow-tools/
 │   └── app.vue    # Root component
 ├── server/        # Backend services
 │   ├── api/       # REST endpoints
+│   ├── database/  # Drizzle schema, migrations, SQLite config
 │   ├── routes/    # WebSocket handlers
 │   └── utils/     # Server utilities
 ├── shared/        # Shared code (client + server)
 │   └── utils/     # Shared utilities
-├── .data/db/      # Local storage (dev/Docker, gitignored)
-├── data/          # Predefined questions source (Node.js only)
+├── .data/         # Local SQLite storage root (dev/Docker, gitignored)
 └── docs/          # Project documentation
 ```
 
@@ -66,12 +66,12 @@ stage-flow-tools/
 
 ## Design Decisions
 
-### Why Nitro useStorage()?
+### Why Drizzle with SQLite?
 
-- **Low operational load** - No external database needed for the current single-instance model
-- **Zero setup for local work** - Filesystem storage works out of the box
+- **Atomic writes** - SQLite removes the old JSON-blob write risks
+- **Zero extra service** - No external database needed for the current single-instance model
 - **Docker-friendly** - Persistent mounts keep quiz data across restarts
-- **Adequate scale** - Good fit for presentation and workshop use
+- **Future path** - Schema stays close to a later D1-compatible migration path
 
 ### Why WebSockets?
 
