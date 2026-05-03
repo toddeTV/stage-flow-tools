@@ -45,8 +45,8 @@ Verify authentication token (admin only).
 
 `Authorization: Bearer <token>` accepts two admin auth modes:
 
-- A valid admin JWT only when a client already has that token. `POST /api/auth/login` does not return the JWT in the response body; it sets the `admin_token` HTTP-only cookie for browser admin sessions.
-- The exact static token configured in `NUXT_ADMIN_TOKEN` for software-to-software admin access. External API clients should use this static token path.
+- A JWT created by `POST /api/auth/login`
+- The exact static token configured in `NUXT_ADMIN_TOKEN` for software-to-software admin access
 
 **Response:**
 
@@ -76,6 +76,95 @@ Load the authenticated Drizzle Studio shell used by `/admin/database`.
 ### GET `/api/admin/drizzle-studio/app/<asset>`
 
 Load Drizzle Studio static assets through the authenticated proxy.
+
+### GET `/api/admin/presenter/overview`
+
+Get a high-level quiz overview for presenter software (admin only).
+
+This endpoint is meant for low-frequency use, such as a one-time fetch from presenter slides when a session starts.
+
+**Headers:**
+
+- Cookie: `admin_token`
+- Or `Authorization: Bearer <token>`
+
+**Response:**
+
+```json
+{
+  "totalQuestions": 3,
+  "questions": [
+    {
+      "id": "string",
+      "key": "string",
+      "question_text": {
+        "en": "string"
+      }
+    }
+  ]
+}
+```
+
+### GET `/api/admin/presenter/current-state`
+
+Get detailed presenter state for the active question (admin only).
+
+This endpoint is meant for polling, such as once per second from presenter slides.
+
+`totalUsers` means active WebSocket connections at request time.
+
+**Headers:**
+
+- Cookie: `admin_token`
+- Or `Authorization: Bearer <token>`
+
+**Response:**
+
+```json
+{
+  "hasActiveQuestion": true,
+  "totalUsers": 42,
+  "receivedAnswers": 15,
+  "receivedAnswersPercent": 36,
+  "currentQuestion": {
+    "id": "string",
+    "key": "string",
+    "index": 2,
+    "totalQuestions": 5,
+    "question_text": {
+      "en": "string"
+    },
+    "note": {
+      "en": "string"
+    },
+    "is_active": true,
+    "is_locked": false,
+    "createdAt": "2026-05-03T12:00:00.000Z",
+    "answer_options": [
+      {
+        "text": {
+          "en": "string"
+        },
+        "emoji": "🔥",
+        "count": 10,
+        "percent": 67
+      }
+    ]
+  }
+}
+```
+
+**Response (no active question):**
+
+```json
+{
+  "hasActiveQuestion": false,
+  "totalUsers": 42,
+  "receivedAnswers": 0,
+  "receivedAnswersPercent": 0,
+  "currentQuestion": null
+}
+```
 
 ### POST `/`
 
@@ -117,6 +206,8 @@ Get the currently active question (public). Returns a simplified version without
 ### POST `/api/questions/create`
 
 Create new question (admin only).
+
+English `answer_options[].text.en` values must be unique. Matching is case-insensitive.
 
 **Request:**
 

@@ -26,6 +26,7 @@ import {
   answers,
   questions,
 } from '../database/schema'
+import { buildQuestionOptionResults } from './quiz-results'
 import { getPeers } from './websocket'
 
 let storageInitialized = false
@@ -313,25 +314,9 @@ export async function getResultsForQuestion(
 
   const answerList = allAnswers || await getAnswersForQuestion(question.id)
 
-  const results: Record<string, { count: number, emoji?: string }> = {}
-  for (const option of question.answer_options) {
-    results[option.text.en] = {
-      count: 0,
-      emoji: option.emoji,
-    }
-  }
-
-  for (const answer of answerList) {
-    const selectedAnswer = answer.selected_answer.en
-
-    if (Object.prototype.hasOwnProperty.call(results, selectedAnswer)) {
-      results[selectedAnswer]!.count += 1
-    }
-  }
-
   return {
     question,
-    results,
+    results: buildQuestionOptionResults(question, answerList),
     totalVotes: answerList.length,
     totalConnections: (await getPeers()).length,
   }
