@@ -81,6 +81,8 @@ http://localhost:3000/admin/results?token=<token>&core&visibility=show
 
 Use `?token=` only when software needs to open a protected admin page in a browser or iframe. The route middleware forwards that token to `/api/auth/verify`, and successful verification sets the normal `admin_token` cookie for subsequent requests.
 
+Query tokens in URLs can leak through browser history, server logs, and referrer headers. Use this flow only for initial bootstrap, then remove the token from the URL immediately after `/api/auth/verify` establishes the normal `admin_token` cookie.
+
 ## Database Admin
 
 ### GET `/api/admin/drizzle-studio/app`
