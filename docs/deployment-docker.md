@@ -82,6 +82,16 @@ The `docker-compose.yml` mounts one directory:
 
 Without the `.data` mount, all runtime data is lost when the container is removed or recreated.
 
+## Image Layout
+
+The Docker image uses a multi-stage build:
+
+- The `build` stage installs the full toolchain and runs `nuxt build`.
+- The `production` stage copies only the generated `.output` directory.
+- The container starts `node .output/server/index.mjs` directly.
+
+The final image does not run a second package install step. Nuxt's production build already emits the standalone server output used by the container.
+
 ## Maintenance
 
 ### Updating the Application
