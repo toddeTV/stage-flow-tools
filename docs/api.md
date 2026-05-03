@@ -4,6 +4,12 @@ REST API endpoints documentation.
 
 ## Authentication
 
+Stage Flow Tools supports three admin authentication variants:
+
+1. Browser login with username and password, which creates the `admin_token` HTTP-only cookie.
+2. `Authorization: Bearer <token>` on admin APIs.
+3. `?token=<token>` on protected `/admin` pages, which verifies the token and then establishes the normal admin cookie for the browser session.
+
 ### POST `/api/auth/login`
 
 Login as administrator.
@@ -38,7 +44,7 @@ Logout the administrator. Clears the `admin_token` cookie.
 
 Verify authentication token (admin only).
 
-**Headers:**
+**Accepted auth inputs:**
 
 - Cookie: `admin_token` (set automatically by login)
 - Or `Authorization: Bearer <token>`
@@ -66,6 +72,14 @@ curl \
   -H "Authorization: Bearer $NUXT_ADMIN_TOKEN" \
   http://localhost:3000/api/auth/verify
 ```
+
+**Tokenized admin page example:**
+
+```text
+http://localhost:3000/admin/results?token=<token>&core&visibility=show
+```
+
+Use `?token=` only when software needs to open a protected admin page in a browser or iframe. The route middleware forwards that token to `/api/auth/verify`, and successful verification sets the normal `admin_token` cookie for subsequent requests.
 
 ## Database Admin
 
