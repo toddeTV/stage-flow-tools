@@ -1,32 +1,27 @@
-# project specific
-data
+# Docker build context allowlist for this project. We use a whitelist approach to ensure that only necessary files
+# are included in the Docker build context, which can help reduce build times and improve security by excluding
+# sensitive or unnecessary files.
 
-# Git
-.git
-.github
-.gitignore
+*
 
-# Node
-node_modules
+!package.json
+!pnpm-lock.yaml
+!.npmrc
+!nuxt.config.ts
+!i18n.config.ts
+!tsconfig.json
 
-# Build output
-.output
-.nuxt
+!.dockerignore
+!Dockerfile
 
-# IDE
-.vscode
+!app/
+!app/**
 
-# Docs
-docs
+!public/
+!public/**
 
-# Local files
-.env
+!server/
+!server/**
 
-# Log files
-pnpm-debug.log*
-
-# Docker
-Dockerfile
-docker-compose.yml
-docker-build.sh
-.dockerignore
+!shared/
+!shared/**
