@@ -137,7 +137,10 @@ export async function processPredefinedQuestions(predefinedQuestions: InputQuest
   }
 
   if (newQuestions.length > 0) {
-    await storage.setItem('questions', [...existingQuestions, ...newQuestions])
+    await storage.setItem('questions', [
+      ...existingQuestions,
+      ...newQuestions,
+    ])
     logger(`${newQuestions.length} new predefined questions loaded successfully.`)
   }
   else {
@@ -364,7 +367,10 @@ export async function getCurrentResults(): Promise<Results | null> {
 /** Removes expired entries from the cooldown map to prevent unbounded growth. */
 function pruneExpiredCooldowns(cooldownMs: number): void {
   const now = Date.now()
-  for (const [id, timestamp] of emojiCooldowns) {
+  for (const [
+    id,
+    timestamp,
+  ] of emojiCooldowns) {
     if (now - timestamp >= cooldownMs) {
       emojiCooldowns.delete(id)
     }

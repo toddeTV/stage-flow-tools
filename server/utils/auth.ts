@@ -40,7 +40,9 @@ export async function verifyAdmin(event: H3Event) {
 
   try {
     const secret = new TextEncoder().encode(config.jwtSecret)
-    const { payload } = await jwtVerify(token, secret, { algorithms: ['HS256'] })
+    const { payload } = await jwtVerify(token, secret, { algorithms: [
+      'HS256',
+    ] })
     return payload
   }
   catch {

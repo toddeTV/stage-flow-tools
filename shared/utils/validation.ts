@@ -17,5 +17,7 @@ export function isValidEmoji(emoji: string): boolean {
 
   // Check if the string is a single grapheme cluster and matches the broader emoji pattern.
   // This ensures complex emojis (like flags or family emojis) are counted as one.
-  return [...new Intl.Segmenter().segment(emoji)].length === 1 && emojiRegex.test(emoji)
+  return [
+    ...new Intl.Segmenter().segment(emoji),
+  ].length === 1 && emojiRegex.test(emoji)
 }

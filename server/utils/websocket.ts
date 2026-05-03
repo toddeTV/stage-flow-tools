@@ -40,11 +40,21 @@ export async function removePeer(peer: Peer) {
 export async function getPeers(channel?: WebSocketChannel): Promise<PeerInfo[]> {
   const result: PeerInfo[] = []
   const targetEntries = channel
-    ? [[channel, getChannelPeers(channel)] as const]
+    ? [
+      [
+        channel,
+        getChannelPeers(channel),
+      ] as const,
+    ]
     : Array.from(peers.entries())
 
-  for (const [ch, peerMap] of targetEntries) {
-    for (const [, peer] of peerMap) {
+  for (const [
+    ch,
+    peerMap,
+  ] of targetEntries) {
+    for (const [
+      , peer,
+    ] of peerMap) {
       const peerData = peer as unknown as Record<string, unknown>
       result.push({
         id: peer.id,
@@ -62,8 +72,8 @@ export function broadcast(event: string, data: unknown, channel?: WebSocketChann
   const targetPeers = channel
     ? getChannelPeers(channel).values()
     : Array.from(peers.values()).flatMap(
-        map => Array.from(map.values()),
-      )
+      map => Array.from(map.values()),
+    )
 
   for (const peer of targetPeers) {
     try {
