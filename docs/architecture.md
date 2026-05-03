@@ -99,7 +99,7 @@ stage-flow-tools/
 
 ### Admin Operations
 
-1. Admin authenticates (JWT)
+1. Admin authenticates (login cookie, bearer token, or tokenized admin page bootstrap)
 2. Creates or edits unpublished inactive questions
 3. Publishes question
 4. WebSocket notifies all clients
@@ -109,9 +109,12 @@ stage-flow-tools/
 
 ### Authentication
 
+- **Browser Login** - `/login` with username/password issues `admin_token` HTTP-only cookie
+- **Bearer Tokens** - Admin APIs accept `Authorization: Bearer <token>` via `verifyAdmin()`
+- **Tokenized Admin Pages** - `/admin/...?...&token=<token>` bootstraps the normal admin cookie for embedded browser contexts
 - **JWT Tokens** - Stateless authentication via `jose`
-- **HTTP-only Cookies** - Token storage
-- **Admin-only Routes** - Protected endpoints (async `verifyAdmin()`)
+- **HTTP-only Cookies** - Token storage for browser sessions
+- **Admin-only Routes** - Protected endpoints and pages use async verification middleware
 
 ### Data Validation
 

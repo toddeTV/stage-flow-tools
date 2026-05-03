@@ -267,6 +267,10 @@ async function publishNextQuestion() {
   }
 }
 
+/**
+ * Reset all answers for the active question after confirmation and reload questions.
+ * @returns Promise<void>
+ */
 async function resetAnswers() {
   if (!activeQuestion.value || isResettingAnswers.value) {
     return

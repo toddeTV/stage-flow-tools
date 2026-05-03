@@ -2,9 +2,20 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
   const timeout = 15000 // 15 seconds
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeout)
+  const token = typeof to.query.token === 'string' ? to.query.token : undefined
+  const fullPathWithoutToken = (() => {
+    const url = new URL(to.fullPath, 'http://local')
+    url.searchParams.delete('token')
+    return `${url.pathname}${url.search}${url.hash}`
+  })()
 
   try {
     const { error, status } = await useFetch('/api/auth/verify', {
+      headers: token
+        ? {
+          Authorization: `Bearer ${token}`,
+        }
+        : undefined,
       signal: controller.signal,
     })
 
@@ -14,6 +25,10 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
     if (error.value || status.value !== 'success') {
       throw new Error('Auth verification failed')
     }
+
+    if (token) {
+      return navigateTo(fullPathWithoutToken, { replace: true })
+    }
   }
   catch {
     // Always clear the timeout to prevent it from firing after error handling
@@ -21,7 +36,7 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
 
     // In case of any error (network, timeout, non-2xx), redirect to login
     // Validate and sanitize redirect path to prevent open redirect attacks
-    let redirectPath = to.fullPath
+    let redirectPath = fullPathWithoutToken
 
     // Only allow relative paths that start with a single '/'
     // Reject paths that start with '//' (protocol-relative URLs) or contain protocols

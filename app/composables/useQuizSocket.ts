@@ -9,6 +9,10 @@ export const useQuizSocket = (channel = 'default') => {
   const totalConnections = ref(0)
   const userId = useLocalStorage<string | null>('quiz-user-id', null)
 
+  /**
+   * Clear selected answer state and remove the client-side stored answer for a question.
+   * @param questionId Question identifier used for the session storage key.
+   */
   function clearStoredAnswer(questionId: string) {
     selectedAnswer.value = null
 
@@ -17,6 +21,11 @@ export const useQuizSocket = (channel = 'default') => {
     }
   }
 
+  /**
+   * Restore a stored answer for a question on the client and fall back to `null` when invalid.
+   * @param questionId Question identifier used for the session storage key.
+   * @returns void
+   */
   function restoreStoredAnswer(questionId: string) {
     if (!import.meta.client) {
       selectedAnswer.value = null

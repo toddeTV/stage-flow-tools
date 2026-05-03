@@ -205,6 +205,10 @@ async function unpublishActiveQuestion() {
   }
 }
 
+/**
+ * Reset all answers for the active results question after confirmation and refresh the view.
+ * @returns Promise<void>
+ */
 async function resetAnswers() {
   if (!results.value?.question || isResettingAnswers.value) return
 
