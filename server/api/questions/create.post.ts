@@ -88,6 +88,20 @@ export default defineEventHandler(async (event) => {
       }
     })
 
+  const normalizedAnswerOptionLabels = new Set<string>()
+  for (const option of answer_options) {
+    const normalizedEnglishLabel = option.text.en.toLowerCase()
+
+    if (normalizedAnswerOptionLabels.has(normalizedEnglishLabel)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Answer option English text values must be unique',
+      })
+    }
+
+    normalizedAnswerOptionLabels.add(normalizedEnglishLabel)
+  }
+
   if (answer_options.length < 2) {
     throw createError({
       statusCode: 400,

@@ -207,6 +207,8 @@ Get the currently active question (public). Returns a simplified version without
 
 Create new question (admin only).
 
+English `answer_options[].text.en` values must be unique. Matching is case-insensitive.
+
 **Request:**
 
 ```json
