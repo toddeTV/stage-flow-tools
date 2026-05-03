@@ -1,20 +1,15 @@
-version: "3.9"
-
+networks:
+  traefik-public:
+    external: true
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    image: stage-flow-tools
     container_name: stage-flow-tools
-    restart: unless-stopped
-    networks:
-      - traefik-public
-    volumes:
-      - ./data:/app/data
-      - ./.data/db:/app/.data/db
     environment:
       - NUXT_JWT_SECRET=${NUXT_JWT_SECRET}
+    image: stage-flow-tools
     labels:
       - traefik.enable=true
       - traefik.http.routers.stage-flow-tools.rule=Host(`quiz.your-domain.com`)
@@ -22,6 +17,10 @@ services:
       - traefik.http.services.stage-flow-tools.loadbalancer.server.port=3000
       - traefik.http.routers.stage-flow-tools.tls.certresolver=myresolver
 
-networks:
-  traefik-public:
-    external: true
+    networks:
+      - traefik-public
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+      - ./.data/db:/app/.data/db
+version: "3.9"
