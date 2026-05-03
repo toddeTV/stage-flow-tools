@@ -1,164 +1,84 @@
 # Production Deployment
 
-Guide for deploying the quiz application to production.
+Guide for running the quiz application in production.
 
-## Build Process
+## Supported Path
 
-### Production Build
+Docker is the supported production deployment path for this project.
+
+See [deployment-docker.md](deployment-docker.md) for the full server setup.
+
+## Build Output
 
 ```bash
 vp run build:ssr
 ```
 
-Creates optimized production bundle in `.output/` directory.
+This creates the production server bundle in `.output/`.
 
-## Deployment Options
+## Docker Deployment
 
-### 1. Cloudflare Workers (Primary)
+The repository already includes a `Dockerfile` and `docker-compose.yml`.
 
-See the [Cloudflare Deployment Guide](deployment-cloudflare.md) for a step-by-step tutorial covering manual deploys, automated CI/CD via GitHub Actions, and the push script for seeding quiz data.
+Production storage lives in `.data/db/`, so mount `/app/.data` to persistent host storage.
 
 ```bash
-vp run deploy:cloudflare
+docker compose up --build -d
 ```
 
-### 2. Docker Container
+## Secondary Self-Hosted Runtime
 
-See the [Docker Deployment Guide](deployment-docker.md).
+If Docker is not available in your environment, you can run the built Node.js server directly.
 
-**Dockerfile example:**
+Requirements:
 
-```dockerfile
-FROM node:24-alpine
-WORKDIR /app
-COPY .output .output
-EXPOSE 3000
-CMD ["node", ".output/server/index.mjs"]
+- Node.js `24.x`
+- A process manager such as `pm2`
+- Persistent storage for `.data/db/`
+
+Example:
+
+```bash
+vp run build:ssr
+pm2 start .output/server/index.mjs --name stage-flow-tools
 ```
-
-> Mount `/app/.data/db` to a persistent host path or named volume to preserve quiz data across container restarts. Without this, data is lost when the container is recreated.
-
-### 3. Node.js Server (VPS/Dedicated)
-
-**Requirements:**
-
-- Node.js 24.x
-- PM2 or similar process manager
-
-**Steps:**
-
-1. Build application
-2. Copy `.output/` to server
-3. Set environment variables
-4. Start with PM2:
-   ```bash
-   pm2 start .output/server/index.mjs --name quiz-app
-   ```
-
-### 4. Platform-as-a-Service
-
-**Vercel:**
-
-- Note: File storage is ephemeral
-- Consider external database for persistence
-
-**Railway/Render:**
-
-- Full Node.js support
-- Persistent file storage available
 
 ## Environment Configuration
 
-### Production Variables
-
-**Generate a strong JWT secret:**
+Generate a strong JWT secret:
 
 ```bash
 openssl rand -base64 48
 ```
 
-Store the generated secret in your environment management system or secrets manager to fill `NUXT_JWT_SECRET` in production (e.g., AWS Secrets Manager, HashiCorp Vault, Kubernetes Secrets, or your platform's environment variable manager).
+Set production values for:
 
-### Security Considerations
-
-- **Strong Passwords**: Use complex admin credentials
-- **JWT Secret**: Generate secure random string using `openssl rand -base64 48` and store it securely
-- **Secret Management**: Never commit secrets to source control; use environment management or a secrets manager
-- **HTTPS**: Always use SSL in production
-- **Firewall**: Configure appropriate rules
+- `NUXT_ADMIN_USERNAME`
+- `NUXT_ADMIN_PASSWORD`
+- `NUXT_JWT_SECRET`
 
 ## Data Persistence
 
-### Cloudflare Workers
-
-Data is stored in Cloudflare KV - persists across deployments, globally replicated.
-
-### Docker / Node.js
-
-Data is stored in `.data/db/` on the local filesystem.
-
-**Ephemeral Platforms** (Vercel, some PaaS):
-
-- Data resets on redeploy
-- Not suitable for production quiz data
-
-**Persistent Platforms** (VPS, dedicated servers, Docker with a mounted volume):
-
-- Data persists in `.data/db/` across restarts when `/app/.data/db` is backed by persistent storage
-- Regular backups recommended
-
-### Migration to Database
-
-For high-availability production:
-
-1. Consider PostgreSQL/MySQL
-2. Use cloud database services
-3. Implement proper backup strategy
+- Quiz data is stored on the filesystem in `.data/db/`.
+- Docker deployments must keep `/app/.data` on a persistent mount.
+- Direct Node.js deployments must keep the project `.data/` directory on persistent disk.
 
 ## Monitoring
 
-### Health Check Endpoint
-
-Access `/api/questions` to verify API availability.
-
-### Logs
-
-- Application logs to stdout
-- Use platform logging services
-- Monitor WebSocket connections
-
-## Scaling Considerations
-
-### Single Instance
-
-Current architecture supports:
-
-- ~100-500 concurrent users
-- One active question at a time
-- File-based storage
-
-### Multi-Instance
-
-For larger scale:
-
-- Implement Redis for session/WebSocket sync
-- Use external database
-- Load balancer configuration
+- Check API availability with `/api/questions`.
+- Read container or process logs from stdout.
+- Watch WebSocket connection counts in the admin connection endpoint when needed.
 
 ## Backup Strategy
 
-### Automated Backups
-
-Schedule cron job (Docker / Node.js):
-
-```bash
-0 */6 * * * cp -r /app/.data/db /backups/data-$(date +\%Y\%m\%d-\%H\%M)
-```
-
-### Manual Backup
-
-Before updates:
+Manual backup:
 
 ```bash
 tar -czf quiz-backup-$(date +%Y%m%d).tar.gz .data/db/
+```
+
+Example cron job:
+
+```bash
+0 */6 * * * cp -r /app/.data/db /backups/data-$(date +\%Y\%m\%d-\%H\%M)
 ```

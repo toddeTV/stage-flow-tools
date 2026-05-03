@@ -18,7 +18,7 @@ System design and technical architecture of the quiz application.
 
 ### Storage
 
-- **Nitro `useStorage()`** - Pluggable storage with driver abstraction (filesystem for dev/Docker, Cloudflare KV for Workers)
+- **Nitro `useStorage()`** - Filesystem-backed storage at `.data/db/`
 
 ## Application Structure
 
@@ -68,10 +68,10 @@ stage-flow-tools/
 
 ### Why Nitro useStorage()?
 
-- **Driver Abstraction** - Same code runs on filesystem (dev/Docker) and Cloudflare KV (Workers)
-- **Zero Config for Dev** - Filesystem driver works out of the box via `devStorage`
-- **Cloud-Ready** - Swap to Cloudflare KV by setting `NITRO_PRESET=cloudflare-module`
-- **Adequate Scale** - Perfect for presentation use case
+- **Low operational load** - No external database needed for the current single-instance model
+- **Zero setup for local work** - Filesystem storage works out of the box
+- **Docker-friendly** - Persistent mounts keep quiz data across restarts
+- **Adequate scale** - Good fit for presentation and workshop use
 
 ### Why WebSockets?
 
@@ -109,7 +109,7 @@ stage-flow-tools/
 
 ### Authentication
 
-- **JWT Tokens** - Stateless authentication via `jose` library (Web Crypto API, works in Workers and Node.js)
+- **JWT Tokens** - Stateless authentication via `jose`
 - **HTTP-only Cookies** - Token storage
 - **Admin-only Routes** - Protected endpoints (async `verifyAdmin()`)
 

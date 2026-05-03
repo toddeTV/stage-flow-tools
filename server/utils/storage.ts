@@ -4,6 +4,61 @@ import type { Question, Results, Answer, InputQuestion } from '~/types'
 
 const storage = useStorage('data')
 
+/** Safely read a storage item as an array. Handles raw strings and corrupted JSON from the fs driver. */
+async function getArrayItem<T>(key: string, strict = false): Promise<T[]> {
+  let value: unknown = await storage.getItem<T[]>(key)
+  // The fs driver may return a raw string when the file contains invalid JSON
+  // (e.g. trailing characters from a non-truncated overwrite).
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    try {
+      value = JSON.parse(trimmed)
+    }
+    catch {
+      // Try to recover: strip trailing junk after the first valid JSON array
+      if (trimmed.startsWith('[')) {
+        let depth = 0
+        let end = -1
+        for (let i = 0; i < trimmed.length; i++) {
+          if (trimmed[i] === '[') {
+            depth++
+          }
+          else if (trimmed[i] === ']') {
+            depth--
+          }
+          if (depth === 0) {
+            end = i + 1
+            break
+          }
+        }
+        if (end > 0) {
+          try {
+            value = JSON.parse(trimmed.slice(0, end))
+          }
+          catch {
+            value = null
+          }
+        }
+        else {
+          value = null
+        }
+      }
+      else {
+        value = null
+      }
+    }
+  }
+  if (Array.isArray(value)) {
+    return value as T[]
+  }
+
+  if (strict) {
+    throw new Error(`StorageCorruptionError: unreadable array for key ${key}`)
+  }
+
+  return []
+}
+
 // In-memory store for emoji cooldowns
 const emojiCooldowns = new Map<string, number>()
 
@@ -61,7 +116,7 @@ export async function processPredefinedQuestions(predefinedQuestions: InputQuest
     }
   }
 
-  const existingQuestions = await storage.getItem<Question[]>('questions') || []
+  const existingQuestions = await getArrayItem<Question>('questions', true)
   const existingQuestionTexts = new Set(existingQuestions.map(q => q.question_text.en))
 
   const newQuestions: Question[] = []
@@ -93,7 +148,7 @@ export async function processPredefinedQuestions(predefinedQuestions: InputQuest
 // Question operations
 export async function getQuestions(): Promise<Question[]> {
   await initStorage()
-  return await storage.getItem<Question[]>('questions') || []
+  return await getArrayItem<Question>('questions')
 }
 
 export async function saveQuestions(questions: Question[]): Promise<void> {
@@ -110,7 +165,7 @@ export async function createQuestion(
   questionData: Omit<Question, 'id' | 'is_active' | 'is_locked' | 'createdAt' | 'alreadyPublished'>,
 ): Promise<Question> {
   await initStorage()
-  const questions = await storage.getItem<Question[]>('questions') || []
+  const questions = await getArrayItem<Question>('questions', true)
   const id = createId()
   const resolvedKey = questionData.key || id
 
@@ -133,7 +188,7 @@ export async function createQuestion(
 
 export async function publishQuestion(key: string): Promise<Question | undefined> {
   await initStorage()
-  const questions = await storage.getItem<Question[]>('questions') || []
+  const questions = await getArrayItem<Question>('questions', true)
 
   // Deactivate all questions
   questions.forEach((q) => {
@@ -157,7 +212,7 @@ export async function publishQuestion(key: string): Promise<Question | undefined
 /** Deactivate the active question (answers are preserved for potential re-publishing). */
 export async function unpublishActiveQuestion(): Promise<Question | undefined> {
   await initStorage()
-  const questions = await storage.getItem<Question[]>('questions') || []
+  const questions = await getArrayItem<Question>('questions', true)
   const activeQuestion = questions.find(q => q.is_active)
 
   if (activeQuestion) {
@@ -170,7 +225,7 @@ export async function unpublishActiveQuestion(): Promise<Question | undefined> {
 
 export async function toggleQuestionLock(questionId: string): Promise<Question | undefined> {
   await initStorage()
-  const questions = await storage.getItem<Question[]>('questions') || []
+  const questions = await getArrayItem<Question>('questions', true)
   const question = questions.find(q => q.id === questionId)
 
   if (question) {
@@ -184,7 +239,7 @@ export async function toggleQuestionLock(questionId: string): Promise<Question |
 // Answer operations
 export async function getAnswers(): Promise<Answer[]> {
   await initStorage()
-  return await storage.getItem<Answer[]>('answers') || []
+  return await getArrayItem<Answer>('answers')
 }
 
 export async function saveAnswers(answers: Answer[]): Promise<void> {
@@ -205,7 +260,7 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
     throw new Error('Invalid answer option')
   }
 
-  const answers = await storage.getItem<Answer[]>('answers') || []
+  const answers = await getArrayItem<Answer>('answers', true)
 
   // Check if user already answered this question
   const existingIndex = answers.findIndex(
@@ -245,7 +300,7 @@ export async function getAnswersForQuestion(questionId: string): Promise<Answer[
 
 export async function retractAnswer(userId: string, questionId: string): Promise<Answer[]> {
   await initStorage()
-  const answers = await storage.getItem<Answer[]>('answers') || []
+  const answers = await getArrayItem<Answer>('answers', true)
   const updatedAnswers = answers.filter(
     a => !(a.user_id === userId && a.question_id === questionId),
   )

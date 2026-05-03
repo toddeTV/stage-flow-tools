@@ -3,21 +3,53 @@ import type { InputQuestion } from '~/types'
 
 /**
  * Nitro plugin that runs on server startup.
- * Initializes storage and loads predefined questions from the filesystem (Node.js only).
- * On Cloudflare, predefined questions are seeded via Wrangler CLI into KV storage.
+ * Initializes storage and loads predefined questions from the filesystem.
  */
 export default defineNitroPlugin(async () => {
   // Initialize storage defaults
   await initStorage()
 
-  // Load predefined questions from filesystem (Node.js / Docker only)
+  // Load predefined questions from filesystem when present.
   try {
     const fs = await import('node:fs').then(m => m.promises)
     const predefinedFile = join(process.cwd(), 'data', 'predefined-questions.json')
     const processingFile = `${predefinedFile}.processing`
 
-    // Step 1: Rename the file to mark it as being processed
-    await fs.rename(predefinedFile, processingFile)
+    // Step 1: Reuse an existing processing file before attempting a rename.
+    try {
+      await fs.access(processingFile)
+
+      try {
+        await fs.access(predefinedFile)
+        logger_error(
+          `Both ${predefinedFile} and ${processingFile} exist.`
+          + ' Resolve the conflict and keep only one file before restart.',
+        )
+        return
+      }
+      catch (sourceCheckError: unknown) {
+        if ((sourceCheckError as NodeJS.ErrnoException).code !== 'ENOENT') {
+          throw sourceCheckError
+        }
+      }
+    }
+    catch (error: unknown) {
+      const errno = error as NodeJS.ErrnoException
+      if (errno.code !== 'ENOENT') {
+        throw error
+      }
+
+      try {
+        await fs.rename(predefinedFile, processingFile)
+      }
+      catch (renameError: unknown) {
+        if ((renameError as NodeJS.ErrnoException).code === 'ENOENT') {
+          return
+        }
+
+        throw renameError
+      }
+    }
 
     // Step 2: Read and parse the processing file
     const rawData = await fs.readFile(processingFile, 'utf-8')
@@ -38,21 +70,6 @@ export default defineNitroPlugin(async () => {
     await fs.unlink(processingFile)
   }
   catch (error: unknown) {
-    // On Cloudflare or when no predefined file exists, this is expected to fail silently
-    if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
-      // No predefined questions file - this is fine
-    }
-    else if (
-      error instanceof Error && (
-        error.message?.includes('No such module')
-        || error.message?.includes('not supported')
-        || error.message?.includes('not implemented')
-      )
-    ) {
-      // Node.js fs module not available (Cloudflare Workers, edge runtimes) - this is fine
-    }
-    else {
-      logger_error('Error loading predefined questions from file:', error)
-    }
+    logger_error('Error loading predefined questions from file:', error)
   }
 })

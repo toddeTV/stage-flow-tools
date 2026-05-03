@@ -1,12 +1,12 @@
 # Docker Deployment Guide
 
-Deploy the application on your own Linux server using Docker Compose and a Traefik reverse proxy. This is the self-hosted option - you control the infrastructure, and all data stays on your machine.
+Deploy the application on your own Linux server using Docker Compose and a Traefik reverse proxy. This is the supported production path for the project.
 
 ## Why Docker?
 
 - **Full control** - your server, your data, your rules.
 - **Works everywhere** - any Linux server with Docker installed.
-- **Data persistence** - JSON files stored directly on disk via volume mounts.
+- **Data persistence** - quiz data stored on disk through a persistent volume mount.
 - **Corporate-friendly** - runs behind firewalls and VPNs without external dependencies.
 - **Ready to use** - the current codebase runs natively on Node.js, no migration needed.
 
@@ -76,7 +76,12 @@ The application will be accessible at your configured domain. Traefik will autom
 
 ## Data Persistence
 
-The `docker-compose.yml` file is configured to mount the local `./data` directory into the container at `/app/data`. This ensures that all application data (questions, answers, etc.) is persisted on the host machine, even if the container is removed or recreated.
+The `docker-compose.yml` mounts two directories:
+
+- `./data` -> `/app/data` - input directory for `predefined-questions.json` (consumed on startup).
+- `./.data/db` -> `/app/.data/db` - Nitro filesystem storage where questions, answers, and admin credentials are persisted at runtime.
+
+Both mounts are required. Without the `.data/db` mount, all runtime data is lost when the container is removed or recreated.
 
 ## Maintenance
 
@@ -125,10 +130,10 @@ The `docker-compose.yml` labels configure Traefik routing:
 
 ### Data persistence
 
-The `docker-compose.yml` mounts `./data:/app/data`, mapping the host's `./data` directory into the container. All application data (questions, answers, admin credentials) is stored as JSON files in this directory. This means:
+The `docker-compose.yml` file mounts `./.data/db:/app/.data/db`. All application data is stored under `/app/.data/db` inside the container. This means:
 
 - Data survives container restarts, rebuilds, and updates.
-- You can back up data by copying the `./data` directory.
+- You can back up data by copying the `./.data` directory.
 - You can inspect or edit data files directly on the host.
 
 ### Security considerations

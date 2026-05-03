@@ -91,7 +91,6 @@ reviews:
 
         Real-time quiz and interaction tool for live presentations by Thorsten Seyschab (username: toddeTV).
         The project is a **template** - other users can fork/clone it to run their own live quiz instances.
-        The author deploys a demo instance via Cloudflare.
         Repository at https://github.com/toddeTV/stage-flow-tools.
 
         ### Tech Stack
@@ -100,8 +99,8 @@ reviews:
         ESLint handles linting and formatting (see `eslint.config.mjs`). Run `vp run test:lint-format` to check, `vp run fix:lint` to auto-fix.
         Runtime env vars configured via `.env` file. See `.env.example` for all available variables.
         SPA mode (`ssr: false`) with Nitro server for API + WebSockets.
-        Deployment: Dual options - (1) Cloudflare Workers with KV storage (primary, build preset `cloudflare-module`), (2) Docker container via Docker Compose with Traefik reverse proxy (secondary, for self-hosted setups).
-        CI/CD: Automated releases with GitHub Actions and Google `release-please` bot. Conventional Commits required. Docker images published to GitHub Container Registry (`ghcr.io`). Cloudflare Workers auto-deployed on push to `main` via `deploy-cloudflare.yml`; `questions` and `answers` are reset after each deploy while `admin` is preserved. See `release-please-config.json` for changelog section config.
+        Deployment: Docker container via Docker Compose with Traefik reverse proxy is the supported production path. Direct Node.js runtime is a secondary self-hosted fallback.
+        CI/CD: Automated releases with GitHub Actions and Google `release-please` bot. Conventional Commits required. Docker images are published to GitHub Container Registry (`ghcr.io`). See `release-please-config.json` for changelog section config.
         i18n: `@nuxtjs/i18n` module (being added). Prefer `<i18n>` blocks in Vue SFCs. Global files only for keys used in 2+ components.
 
         ### Directory Layout
@@ -147,7 +146,7 @@ reviews:
         - Extract repeated Tailwind class strings in same component into CSS classes.
 
         ### Data Model
-        - Nitro `useStorage('data')` with pluggable drivers (filesystem for dev/Docker, Cloudflare KV for Workers).
+        - Nitro `useStorage('data')` with filesystem-backed storage at `.data/db/`.
         - All storage operations in `server/utils/storage.ts`. Initialization in `server/plugins/init-storage.ts`.
         - IDs generated with `@paralleldrive/cuid2`.
 
