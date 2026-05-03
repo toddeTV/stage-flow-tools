@@ -76,12 +76,11 @@ The application will be accessible at your configured domain. Traefik will autom
 
 ## Data Persistence
 
-The `docker-compose.yml` mounts two directories:
+The `docker-compose.yml` mounts one directory:
 
-- `./data` -> `/app/data` - input directory for `predefined-questions.json` (consumed on startup).
-- `./.data/db` -> `/app/.data/db` - Nitro filesystem storage where questions, answers, and admin credentials are persisted at runtime.
+- `./.data` -> `/app/.data` - SQLite database storage for quiz questions and answers.
 
-Both mounts are required. Without the `.data/db` mount, all runtime data is lost when the container is removed or recreated.
+Without the `.data` mount, all runtime data is lost when the container is removed or recreated.
 
 ## Maintenance
 
@@ -130,11 +129,11 @@ The `docker-compose.yml` labels configure Traefik routing:
 
 ### Data persistence
 
-The `docker-compose.yml` file mounts `./.data/db:/app/.data/db`. All application data is stored under `/app/.data/db` inside the container. This means:
+The `docker-compose.yml` file mounts `./.data:/app/.data`. All application data is stored under `/app/.data` inside the container. This means:
 
 - Data survives container restarts, rebuilds, and updates.
 - You can back up data by copying the `./.data` directory.
-- You can inspect or edit data files directly on the host.
+- You can inspect the SQLite database file directly on the host.
 
 ### Security considerations
 

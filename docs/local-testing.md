@@ -26,13 +26,13 @@ Ensure the `NUXT_JWT_SECRET` and other variables are set correctly in this file.
 
 ### Command
 
-To test the built image, run the following command. It mounts the local `.env` file and the `data` directory into the container.
+To test the built image, run the following command. It mounts the local `.env` file and the `.data` directory into the container.
 
 ```bash
 docker run --rm -it \
   -p 3000:3000 \
   --env-file ./.env \
-  -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/.data:/app/.data" \
   --name test-stage-flow \
   stage-flow-tools
 ```
