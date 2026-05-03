@@ -1,6 +1,5 @@
 # project specific
 data
-wrangler.toml
 
 # Nuxt dev/build outputs
 .output
