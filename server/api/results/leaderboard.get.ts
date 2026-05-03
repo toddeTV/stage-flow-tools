@@ -44,7 +44,9 @@ export default defineEventHandler(async (event) => {
   }
 
   // Sort descending by correctAnswers
-  const sorted = [...userScores.entries()]
+  const sorted = [
+    ...userScores.entries(),
+  ]
     .sort((a, b) => b[1].correctAnswers - a[1].correctAnswers)
 
   // Apply dense ranking
@@ -57,7 +59,10 @@ export default defineEventHandler(async (event) => {
 
   let currentRank = 0
   let previousScore = -1
-  for (const [userId, data] of sorted) {
+  for (const [
+    userId,
+    data,
+  ] of sorted) {
     if (data.correctAnswers !== previousScore) {
       currentRank += 1
       previousScore = data.correctAnswers

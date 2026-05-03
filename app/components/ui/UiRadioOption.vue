@@ -28,7 +28,7 @@ function handleChange() {
   >
     <input
       :checked="modelValue === value"
-      class="mr-4 h-5 w-5"
+      class="mr-4 size-5"
       :class="modelValue === value ? 'accent-white' : 'accent-black'"
       :disabled="disabled"
       type="radio"

@@ -3,7 +3,7 @@ const { data: connections, refresh: refreshConnections } = useFetch('/api/websoc
 </script>
 
 <template>
-  <div class="fixed bottom-0 left-0 right-0 max-h-52 overflow-y-auto border-t border-gray-300 bg-gray-100 p-4">
+  <div class="fixed inset-x-0 bottom-0 max-h-52 overflow-y-auto border-t border-gray-300 bg-gray-100 p-4">
     <h3 class="mb-2 font-bold">
       Active WebSocket Connections
     </h3>

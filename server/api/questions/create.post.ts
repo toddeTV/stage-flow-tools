@@ -26,7 +26,10 @@ export default defineEventHandler(async (event) => {
     })
   }
   // Validate all locale values are strings
-  for (const [lang, value] of Object.entries(raw_question_text)) {
+  for (const [
+    lang,
+    value,
+  ] of Object.entries(raw_question_text)) {
     if (typeof value !== 'string') {
       throw createError({
         statusCode: 400,
@@ -35,7 +38,13 @@ export default defineEventHandler(async (event) => {
     }
   }
   const question_text = Object.fromEntries(
-    Object.entries(raw_question_text).map(([lang, value]) => [lang, (value as string).trim()]),
+    Object.entries(raw_question_text).map(([
+      lang,
+      value,
+    ]) => [
+      lang,
+      (value as string).trim(),
+    ]),
   ) as LocalizedString
 
   // Validate and sanitize answer_options
@@ -54,7 +63,10 @@ export default defineEventHandler(async (event) => {
           statusMessage: 'Each answer option must have a non-empty English text',
         })
       }
-      for (const [lang, value] of Object.entries(option.text)) {
+      for (const [
+        lang,
+        value,
+      ] of Object.entries(option.text)) {
         if (typeof value !== 'string') {
           throw createError({
             statusCode: 400,
@@ -64,7 +76,13 @@ export default defineEventHandler(async (event) => {
       }
       return {
         text: Object.fromEntries(
-          Object.entries(option.text).map(([lang, value]) => [lang, (value as string).trim()]),
+          Object.entries(option.text).map(([
+            lang,
+            value,
+          ]) => [
+            lang,
+            (value as string).trim(),
+          ]),
         ) as LocalizedString,
         emoji: typeof option.emoji === 'string' ? option.emoji.trim() : undefined,
       }
@@ -80,7 +98,10 @@ export default defineEventHandler(async (event) => {
   let note: LocalizedString | undefined
   if (typeof raw_note === 'object' && raw_note !== null && !Array.isArray(raw_note)) {
     const validNotes: Record<string, string> & { en?: string } = {}
-    for (const [lang, value] of Object.entries(raw_note)) {
+    for (const [
+      lang,
+      value,
+    ] of Object.entries(raw_note)) {
       if (typeof value !== 'string') {
         throw createError({
           statusCode: 400,

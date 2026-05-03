@@ -170,7 +170,14 @@ async function submitEmoji() {
   }
 }
 
-const quickEmojis = ['👍', '❤️', '😂', '🤔', '👏', '❓']
+const quickEmojis = [
+  '👍',
+  '❤️',
+  '😂',
+  '🤔',
+  '👏',
+  '❓',
+]
 
 async function sendQuickEmoji(emoji: string) {
   if (isEmojiCooldown.value) return
@@ -184,7 +191,7 @@ async function sendQuickEmoji(emoji: string) {
     <UiPageTitle>{{ t('pageTitle') }}</UiPageTitle>
 
     <!-- Nickname Prompt -->
-    <div v-if="!userNickname" class="mx-auto max-w-lg border-[4px] border-black bg-white p-10 text-center">
+    <div v-if="!userNickname" class="mx-auto max-w-lg border-4 border-black bg-white p-10 text-center">
       <h2 class="mb-4 text-3xl">
         {{ t('welcome') }}
       </h2>
@@ -207,7 +214,7 @@ async function sendQuickEmoji(emoji: string) {
     <!-- With Nickname -->
     <div v-else class="flex flex-col gap-8">
       <!-- Display Nickname with change function -->
-      <div class="flex items-center justify-between border-[4px] border-black bg-white p-4">
+      <div class="flex items-center justify-between border-4 border-black bg-white p-4">
         <span>{{ t('playingAs') }} <strong class="text-lg">{{ userNickname }}</strong></span>
         <UiButton @click="changeNickname">
           {{ t('changeButton') }}
@@ -215,7 +222,7 @@ async function sendQuickEmoji(emoji: string) {
       </div>
 
       <!-- Emoji Submission -->
-      <div class="border-[4px] border-black bg-white p-6">
+      <div class="border-4 border-black bg-white p-6">
         <div class="flex flex-wrap items-center justify-center gap-3">
           <button
             v-for="emoji in quickEmojis"
@@ -231,7 +238,7 @@ async function sendQuickEmoji(emoji: string) {
           <form class="flex items-center" @submit.prevent="submitEmoji">
             <UiInput
               v-model="emojiInput"
-              class="h-16 w-16 flex-shrink-0 border-r-0 text-center text-2xl"
+              class="size-16 flex-shrink-0 border-r-0 text-center text-2xl"
               placeholder="?"
             />
             <UiButton class="h-16" :disabled="isEmojiCooldown" type="submit">
@@ -243,7 +250,7 @@ async function sendQuickEmoji(emoji: string) {
       </div>
 
       <!-- Active Question -->
-      <div v-if="activeQuestion" class="border-[4px] border-black bg-white p-8">
+      <div v-if="activeQuestion" class="border-4 border-black bg-white p-8">
         <div class="mb-4 flex items-center justify-between">
           <UiButton size="small" variant="secondary" @click="refreshQuestion">
             🔄 {{ t('refreshButton') }}
@@ -288,7 +295,7 @@ async function sendQuickEmoji(emoji: string) {
       </div>
 
       <!-- No Active Question -->
-      <div v-else class="border-[4px] border-black bg-white px-8 py-16 text-center">
+      <div v-else class="border-4 border-black bg-white px-8 py-16 text-center">
         <h2 class="mb-4 text-3xl">
           {{ t('waitingForQuestion') }}
         </h2>
@@ -296,9 +303,9 @@ async function sendQuickEmoji(emoji: string) {
           {{ t('presenterWillStart') }}
         </p>
         <div class="flex justify-center gap-2.5">
-          <span class="h-4 w-4 animate-pulse bg-black" />
-          <span class="h-4 w-4 animate-pulse bg-black [animation-delay:0.2s]" />
-          <span class="h-4 w-4 animate-pulse bg-black [animation-delay:0.4s]" />
+          <span class="size-4 animate-pulse bg-black" />
+          <span class="size-4 animate-pulse bg-black [animation-delay:0.2s]" />
+          <span class="size-4 animate-pulse bg-black [animation-delay:0.4s]" />
         </div>
       </div>
     </div>
