@@ -183,12 +183,6 @@ ws.onclose = () => {
 
 ## Performance Optimization
 
-### Cloudflare Workers Compatibility
-
-WebSocket connections work on Cloudflare Workers using the `cloudflare-module` Nitro preset. The Worker runs as a single isolate, so in-memory peer tracking (the `peers` Map) persists across requests and WebSocket messages within the same isolate. No Durable Objects are needed for this use case.
-
-> **Note:** If the isolate is evicted (e.g., due to inactivity or redeployment), in-memory peer data is lost. Active WebSocket connections will be terminated and clients will need to reconnect.
-
 ### Message Batching
 
 - Group results updates
@@ -200,3 +194,9 @@ WebSocket connections work on Cloudflare Workers using the `cloudflare-module` N
 - Maintain peer set
 - Efficient broadcast
 - Clean disconnection handling
+
+### Runtime Notes
+
+- Peer tracking stays in server memory.
+- Restarting the Node.js process or Docker container drops active connections.
+- Clients reconnect through the existing browser-side reconnect logic.
