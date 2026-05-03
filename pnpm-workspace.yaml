@@ -1,12 +1,12 @@
 allowBuilds:
+  better-sqlite3: true
   esbuild: false
 
 catalog:
   # pin ESLint to v9, as `"eslint-plugin-tailwindcss": "~4.0.0-alpha.2",` has problems with eslint v10
   eslint: ~9.39.4
 
-  # vite-plus ecosystem, all same version to avoid mismatches
-  vite: npm:@voidzero-dev/vite-plus-core@~0.1.19
+  # vite-plus ecosystem packages only; Nuxt must keep resolving upstream `vite`
   vite-plus: ~0.1.19
   vitest: npm:@voidzero-dev/vite-plus-test@~0.1.19
 
@@ -14,7 +14,6 @@ overrides:
   # TODO check if this is still needed after dump all versions to latest
   crossws: 0.4.1
 
-  vite: "catalog:"
   vitest: "catalog:"
 
 shellEmulator: true

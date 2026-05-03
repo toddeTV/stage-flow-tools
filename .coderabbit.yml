@@ -94,7 +94,7 @@ reviews:
         Repository at https://github.com/toddeTV/stage-flow-tools.
 
         ### Tech Stack
-        Nuxt 4, TypeScript (strict, no `any`), Vue 3 Composition API, Tailwind CSS v4, WebSockets (Nitro), JWT authentication (`jose`), Nitro `useStorage()` with pluggable drivers.
+        Nuxt 4, TypeScript (strict, no `any`), Vue 3 Composition API, Tailwind CSS v4, WebSockets (Nitro), JWT authentication (`jose`), Drizzle ORM with SQLite.
         Package manager workflow: Vite+ via `vp`. Use `vp` commands instead of package-manager-specific commands.
         ESLint handles linting and formatting (see `eslint.config.mjs`). Run `vp run test:lint-format` to check, `vp run fix:lint` to auto-fix.
         Runtime env vars configured via `.env` file. See `.env.example` for all available variables.
@@ -111,12 +111,12 @@ reviews:
         - `app/middleware/` - Route middleware (auth)
         - `server/` - Backend (Nitro server)
         - `server/api/` - REST API endpoints (answers, auth, emojis, questions, results)
-        - `server/plugins/` - Nitro plugins (init-storage.ts)
+        - `server/plugins/` - Nitro plugins
         - `server/routes/_ws/` - WebSocket handler
         - `server/utils/` - Server utilities (auth, logger, storage, websocket)
+        - `server/database/` - Drizzle schema, migrations, SQLite config
         - `shared/utils/` - Code shared between client and server (logger, validation)
-        - `.data/db/` - Local storage (dev/Docker, gitignored)
-        - `data/` - Predefined questions source (Node.js only)
+        - `.data/` - Local SQLite storage root (dev/Docker, gitignored)
         - `docs/` - Public project documentation
 
         ### Code Conventions
@@ -146,8 +146,8 @@ reviews:
         - Extract repeated Tailwind class strings in same component into CSS classes.
 
         ### Data Model
-        - Nitro `useStorage('data')` with filesystem-backed storage at `.data/db/`.
-        - All storage operations in `server/utils/storage.ts`. Initialization in `server/plugins/init-storage.ts`.
+        - Drizzle ORM with SQLite stored at `.data/db/stage-flow-tools.sqlite3`.
+        - All quiz persistence flows through `server/utils/storage.ts` and `server/database/schema.ts`.
         - IDs generated with `@paralleldrive/cuid2`.
 
         ### WebSockets

@@ -12,7 +12,7 @@ Use Docker Compose on a Linux host with a reverse proxy such as Traefik.
 
 ## Runtime Notes
 
-- Application data is stored on the filesystem at `.data/db/`.
+- Application data is stored in SQLite at `.data/db/stage-flow-tools.sqlite3`.
 - WebSocket state stays in process memory.
 - Production deployments need a persistent mount for `/app/.data`.
 

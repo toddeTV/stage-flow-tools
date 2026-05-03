@@ -20,7 +20,7 @@ This creates the production server bundle in `.output/`.
 
 The repository already includes a `Dockerfile` and `docker-compose.yml`.
 
-Production storage lives in `.data/db/`, so mount `/app/.data` to persistent host storage.
+Production storage lives in `.data/db/stage-flow-tools.sqlite3`, so mount `/app/.data` to persistent host storage.
 
 ```bash
 docker compose up --build -d
@@ -34,7 +34,7 @@ Requirements:
 
 - Node.js `24.x`
 - A process manager such as `pm2`
-- Persistent storage for `.data/db/`
+- Persistent storage for `.data/`
 
 Example:
 
@@ -59,7 +59,7 @@ Set production values for:
 
 ## Data Persistence
 
-- Quiz data is stored on the filesystem in `.data/db/`.
+- Quiz data is stored in SQLite at `.data/db/stage-flow-tools.sqlite3`.
 - Docker deployments must keep `/app/.data` on a persistent mount.
 - Direct Node.js deployments must keep the project `.data/` directory on persistent disk.
 
@@ -74,11 +74,5 @@ Set production values for:
 Manual backup:
 
 ```bash
-tar -czf quiz-backup-$(date +%Y%m%d).tar.gz .data/db/
-```
-
-Example cron job:
-
-```bash
-0 */6 * * * cp -r /app/.data/db /backups/data-$(date +\%Y\%m\%d-\%H\%M)
+tar -czf quiz-backup-$(date +%Y%m%d).tar.gz .data/
 ```

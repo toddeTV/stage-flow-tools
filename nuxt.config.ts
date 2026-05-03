@@ -14,14 +14,8 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
   },
 
   nitro: {
-    devStorage: {
-      data: { base: './.data/db', driver: 'fs' },
-    },
     experimental: {
       websocket: true,
-    },
-    storage: {
-      data: { base: './.data/db', driver: 'fs' },
     },
   },
 
@@ -53,6 +47,14 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
 
   typescript: {
     shim: false,
+  },
+
+  vite: {
+    optimizeDeps: {
+      include: [
+        '@paralleldrive/cuid2',
+      ],
+    },
   },
 }
 

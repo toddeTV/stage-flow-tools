@@ -8,76 +8,63 @@ interface PeerInfo {
   userId?: string
 }
 
-const peers = new Map<WebSocketChannel, Map<string, Peer>>() // Channel -> Peer ID -> Peer
+interface PeerSession {
+  channel: WebSocketChannel
+  peer: Peer
+  url: string
+  userId?: string
+}
 
-export function getChannelPeers(channel: WebSocketChannel): Map<string, Peer> {
-  if (!peers.has(channel)) {
-    peers.set(channel, new Map<string, Peer>())
-  }
-  return peers.get(channel)!
+interface ResultsBufferState {
+  latest?: Results
+  timeoutId?: ReturnType<typeof setTimeout>
+}
+
+const peerSessions = new Map<string, PeerSession>()
+const resultsBuffers = new Map<WebSocketChannel, ResultsBufferState>()
+
+function getSessions(channel?: WebSocketChannel): PeerSession[] {
+  const sessions = Array.from(peerSessions.values())
+
+  return channel
+    ? sessions.filter(session => session.channel === channel)
+    : sessions
 }
 
 export async function addPeer(peer: Peer, channel: WebSocketChannel, url: string, userId?: string) {
-  ;(peer as unknown as Record<string, unknown>).userId = userId
-  ;(peer as unknown as Record<string, unknown>).channel = channel
-  ;(peer as unknown as Record<string, unknown>).url = url
-  getChannelPeers(channel).set(peer.id, peer)
+  peerSessions.set(peer.id, {
+    channel,
+    peer,
+    url,
+    userId,
+  })
+
   await broadcastConnections()
 }
 
 export async function removePeer(peer: Peer) {
-  const channel = (peer as unknown as Record<string, unknown>).channel as WebSocketChannel | undefined
-  if (channel) {
-    getChannelPeers(channel).delete(peer.id)
-    if (getChannelPeers(channel).size === 0) {
-      peers.delete(channel)
-    }
-  }
+  peerSessions.delete(peer.id)
+
   await broadcastConnections()
 }
 
 /** Returns peer info derived from the in-memory peer map. */
 export async function getPeers(channel?: WebSocketChannel): Promise<PeerInfo[]> {
-  const result: PeerInfo[] = []
-  const targetEntries = channel
-    ? [
-      [
-        channel,
-        getChannelPeers(channel),
-      ] as const,
-    ]
-    : Array.from(peers.entries())
-
-  for (const [
-    ch,
-    peerMap,
-  ] of targetEntries) {
-    for (const [
-      , peer,
-    ] of peerMap) {
-      const peerData = peer as unknown as Record<string, unknown>
-      result.push({
-        id: peer.id,
-        url: (peerData.url as string) || '',
-        channel: ch,
-        userId: peerData.userId as string | undefined,
-      })
-    }
-  }
-  return result
+  return getSessions(channel).map(session => ({
+    id: session.peer.id,
+    url: session.url,
+    channel: session.channel,
+    userId: session.userId,
+  }))
 }
 
 export function broadcast(event: string, data: unknown, channel?: WebSocketChannel) {
   const message = JSON.stringify({ event, data })
-  const targetPeers = channel
-    ? getChannelPeers(channel).values()
-    : Array.from(peers.values()).flatMap(
-      map => Array.from(map.values()),
-    )
+  const targetSessions = getSessions(channel)
 
-  for (const peer of targetPeers) {
+  for (const session of targetSessions) {
     try {
-      peer.send(message)
+      session.peer.send(message)
     }
     catch (error: unknown) {
       logger_error('Broadcast error:', error)
@@ -87,15 +74,13 @@ export function broadcast(event: string, data: unknown, channel?: WebSocketChann
 
 export function sendToUser(userId: string, event: string, data: unknown, channel?: WebSocketChannel): boolean {
   const message = JSON.stringify({ event, data })
-  const targetPeers = channel
-    ? Array.from(getChannelPeers(channel).values())
-    : Array.from(peers.values()).flatMap(map => Array.from(map.values()))
+  const targetSessions = getSessions(channel)
 
   let delivered = false
-  for (const peer of targetPeers) {
-    if ((peer as unknown as Record<string, unknown>).userId === userId) {
+  for (const session of targetSessions) {
+    if (session.userId === userId) {
       try {
-        peer.send(message)
+        session.peer.send(message)
         delivered = true
       }
       catch (error: unknown) {
@@ -111,20 +96,19 @@ export async function broadcastConnections() {
   broadcast('connections-update', { totalConnections: allPeers.length })
 }
 
-// Bundled results update
-let resultsBuffer: Results[] = []
-let resultsTimeout: ReturnType<typeof setTimeout> | null = null
-
 export function scheduleResultsUpdate(data: Results, channel: WebSocketChannel) {
-  resultsBuffer.push(data)
+  const state = resultsBuffers.get(channel) || {}
+  state.latest = data
 
-  if (!resultsTimeout) {
-    resultsTimeout = setTimeout(() => {
-      if (resultsBuffer.length > 0) {
-        broadcast('results-update', resultsBuffer[resultsBuffer.length - 1], channel)
-        resultsBuffer = []
+  if (!state.timeoutId) {
+    state.timeoutId = setTimeout(() => {
+      if (state.latest) {
+        broadcast('results-update', state.latest, channel)
       }
-      resultsTimeout = null
-    }, 2000) // Bundle updates every 2 seconds
+
+      resultsBuffers.delete(channel)
+    }, 2000)
   }
+
+  resultsBuffers.set(channel, state)
 }
