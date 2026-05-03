@@ -19,18 +19,27 @@ export function setAdminCookie(event: H3Event, value: string, maxAge: number) {
   })
 }
 
+/** Extracts a bearer token from the Authorization header. */
+function getBearerToken(event: H3Event): string | undefined {
+  const authorization = getHeader(event, 'authorization')
+  const match = authorization?.match(/^Bearer\s+(.+)$/i)
+  const token = match?.[1]?.trim()
+
+  return token || undefined
+}
+
 /**
  * Extracts the admin auth token from cookies or headers.
  * @param event The H3 event object.
  * @returns The token string or undefined.
  */
 export function getToken(event: H3Event): string | undefined {
-  return getHeader(event, 'authorization')?.replace('Bearer ', '') || getCookie(event, 'admin_token')
+  return getBearerToken(event) || getCookie(event, 'admin_token')
 }
 
 /** Persists a verified header token into the standard admin cookie for subsequent browser requests. */
 export function syncAdminCookieFromHeaderToken(event: H3Event, maxAge = 60 * 60 * 24) {
-  const headerToken = getHeader(event, 'authorization')?.replace('Bearer ', '')
+  const headerToken = getBearerToken(event)
 
   if (!headerToken || getCookie(event, 'admin_token') === headerToken) {
     return
