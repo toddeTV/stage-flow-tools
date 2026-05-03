@@ -4,6 +4,8 @@ import {
   getDrizzleStudioInternalRpcUrl,
 } from '../utils/drizzle-studio'
 
+const DRIZZLE_STUDIO_RPC_TIMEOUT_MS = 10000
+
 const FORWARDED_HEADERS = [
   'cache-control',
   'content-type',
@@ -25,6 +27,7 @@ export default defineEventHandler(async (event) => {
   try {
     response = await fetch(getDrizzleStudioInternalRpcUrl(event), {
       method: 'POST',
+      signal: AbortSignal.timeout(DRIZZLE_STUDIO_RPC_TIMEOUT_MS),
       headers: {
         'accept': getHeader(event, 'accept') || 'application/json',
         'content-type': getHeader(event, 'content-type') || 'application/json',
@@ -33,9 +36,13 @@ export default defineEventHandler(async (event) => {
     })
   }
   catch (error) {
+    const isAbort = error instanceof Error && error.name === 'AbortError'
+
     throw createError({
-      statusCode: 502,
-      statusMessage: 'Failed to reach the Drizzle Studio proxy',
+      statusCode: isAbort ? 504 : 502,
+      statusMessage: isAbort
+        ? 'Timed out reaching the Drizzle Studio proxy'
+        : 'Failed to reach the Drizzle Studio proxy',
       data: error instanceof Error ? { message: error.message } : undefined,
     })
   }
