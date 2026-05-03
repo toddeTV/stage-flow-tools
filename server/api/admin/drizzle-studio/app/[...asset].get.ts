@@ -21,6 +21,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const pathSegments = assetPath.split('/')
+
+  if (pathSegments.some(segment => segment === '.' || segment === '..')) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Invalid Drizzle Studio asset path',
+    })
+  }
+
   const requestUrl = getRequestURL(event)
   const upstreamUrl = `${DRIZZLE_STUDIO_APP_ORIGIN}/${assetPath}${requestUrl.search}`
   let response: Response
