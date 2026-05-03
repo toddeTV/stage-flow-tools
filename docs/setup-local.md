@@ -51,7 +51,7 @@ Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
 - `vp run preview` - Preview production build
 - `vp run test` - Run all checks (lint + types)
 - `vp run test:lint-format` - Lint and format check via ESLint
-- `vp run test:types` - Run TypeScript checks
+- `vp run test:type` - Run TypeScript checks
 - `vp run fix:lint` - Auto-fix lint and format issues
 
 ## Data Management

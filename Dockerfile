@@ -9,6 +9,7 @@ WORKDIR /app
 # Install Vite+ CLI
 RUN apk add --no-cache bash curl
 ENV VP_HOME=/root/.vite-plus
+ENV VP_VERSION=0.1.19
 ENV PATH=${VP_HOME}/bin:${PATH}
 RUN VP_NODE_MANAGER=no curl -fsSL https://vite.plus | bash
 
@@ -38,6 +39,7 @@ WORKDIR /app
 # Install Vite+ CLI
 RUN apk add --no-cache bash curl
 ENV VP_HOME=/root/.vite-plus
+ENV VP_VERSION=0.1.19
 ENV PATH=${VP_HOME}/bin:${PATH}
 RUN VP_NODE_MANAGER=no curl -fsSL https://vite.plus | bash
 
