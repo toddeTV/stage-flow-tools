@@ -49,6 +49,10 @@ For detailed information, see the [`/docs`](docs/) folder:
 ### Current Core Team Members
 
 - [Thorsten Seyschab](https://todde.tv) as Project Founder & Lead.
+  - [GitHub](https://github.com/toddeTV/)
+  - [X (Twitter)](https://x.com/toddeTV)
+  - [Bluesky](https://bsky.app/profile/todde.tv)
+  - [LinkedIn](https://www.linkedin.com/in/toddetv/)
 
 ### Acknowledgments
 
@@ -65,7 +69,7 @@ _(Projects that provided valuable inspiration or resources.)_
 **Additional Tools:**<br>
 _(excluding those listed in `./package.json`)_
 
-- [CodeRabbit](https://www.coderabbit.ai/) was used as an AI code review assistant to help improve code quality and maintain best practices.
+- [CodeRabbit AI](https://www.coderabbit.ai/) was used as an AI code review assistant to help improve code quality and maintain best practices.
 
 **Assets & Materials Used:**<br>
 _(including images & 3D models; mostly only those requiring attribution)_
@@ -74,7 +78,7 @@ _(including images & 3D models; mostly only those requiring attribution)_
 
 ## License
 
-Copyright (c) 2025-present, [Thorsten Seyschab](https://todde.tv)
+**Copyright (c) 2026-present, [Thorsten Seyschab](https://todde.tv)**
 
 This project, including original code and assets, is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)). Under this license, others are allowed to remix, adapt, and build upon this work, provided they credit the project founder and license any derivative works under the same terms.
 
