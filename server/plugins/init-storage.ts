@@ -18,6 +18,20 @@ export default defineNitroPlugin(async () => {
     // Step 1: Reuse an existing processing file before attempting a rename.
     try {
       await fs.access(processingFile)
+
+      try {
+        await fs.access(predefinedFile)
+        logger_error(
+          `Both ${predefinedFile} and ${processingFile} exist.`
+          + ' Resolve the conflict and keep only one file before restart.',
+        )
+        return
+      }
+      catch (sourceCheckError: unknown) {
+        if ((sourceCheckError as NodeJS.ErrnoException).code !== 'ENOENT') {
+          throw sourceCheckError
+        }
+      }
     }
     catch (error: unknown) {
       const errno = error as NodeJS.ErrnoException
