@@ -100,7 +100,7 @@ stage-flow-tools/
 ### Admin Operations
 
 1. Admin authenticates (JWT)
-2. Creates question
+2. Creates or edits unpublished inactive questions
 3. Publishes question
 4. WebSocket notifies all clients
 5. Controls lock status
