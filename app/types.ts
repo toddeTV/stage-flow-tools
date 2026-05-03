@@ -37,6 +37,45 @@ export interface Results {
   totalConnections: number
 }
 
+export interface PresenterQuestionOverviewItem {
+  id: string
+  key: string
+  question_text: LocalizedString
+}
+
+export interface PresenterQuestionsOverview {
+  totalQuestions: number
+  questions: PresenterQuestionOverviewItem[]
+}
+
+export interface PresenterCurrentStateAnswerOption {
+  text: LocalizedString
+  emoji?: string
+  count: number
+  percent: number
+}
+
+export interface PresenterCurrentQuestion {
+  id: string
+  key: string
+  index: number
+  totalQuestions: number
+  question_text: LocalizedString
+  note?: LocalizedString
+  is_active: boolean
+  is_locked: boolean
+  createdAt: string
+  answer_options: PresenterCurrentStateAnswerOption[]
+}
+
+export interface PresenterCurrentState {
+  hasActiveQuestion: boolean
+  totalUsers: number
+  receivedAnswers: number
+  receivedAnswersPercent: number
+  currentQuestion: PresenterCurrentQuestion | null
+}
+
 export enum WebSocketChannel {
   DEFAULT = 'default',
   RESULTS = 'results',
