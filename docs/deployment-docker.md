@@ -130,7 +130,7 @@ The `docker-compose.yml` labels configure Traefik routing:
 
 ### Data persistence
 
-The `docker-compose.yml` file mounts `./.data:/app/.data`. All application data is stored under `/app/.data/db` inside the container. This means:
+The `docker-compose.yml` file mounts `./.data/db:/app/.data/db`. All application data is stored under `/app/.data/db` inside the container. This means:
 
 - Data survives container restarts, rebuilds, and updates.
 - You can back up data by copying the `./.data` directory.
