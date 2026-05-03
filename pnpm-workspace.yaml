@@ -2,6 +2,9 @@ allowBuilds:
   esbuild: false
 
 catalog:
+  # pin ESLint to v9, as `"eslint-plugin-tailwindcss": "~4.0.0-alpha.2",` has problems with eslint v10
+  eslint: ~9.39.4
+
   # vite-plus ecosystem, all same version to avoid mismatches
   vite: npm:@voidzero-dev/vite-plus-core@~0.1.19
   vite-plus: ~0.1.19
