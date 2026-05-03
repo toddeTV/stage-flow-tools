@@ -40,6 +40,8 @@
     "test:type": "nuxt typecheck"
   },
   "dependencies": {
+    "better-sqlite3": "~12.9.0",
+    "drizzle-orm": "~0.45.2",
     "nuxt": "~4.1.2",
     "vue": "~3.5.22"
   },
@@ -52,12 +54,10 @@
     "@types/better-sqlite3": "~7.6.13",
     "@vueuse/core": "~13.9.0",
     "@vueuse/nuxt": "~13.9.0",
-    "better-sqlite3": "~12.9.0",
     "concurrently": "~9.2.1",
     "cross-env": "~10.1.0",
     "crossws": "~0.4.1",
     "drizzle-kit": "~0.31.10",
-    "drizzle-orm": "~0.45.2",
     "eslint": "catalog:",
     "eslint-plugin-format": "~2.0.1",
     "eslint-plugin-jsonc": "~3.1.2",
