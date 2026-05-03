@@ -1,42 +1,17 @@
 import { version } from './package.json'
+import type { ConfigLayerMeta, InputConfig } from 'c12'
+import type { NuxtConfig } from 'nuxt/schema'
 
-// https://nuxt.com/docs/api/configuration/nuxt-config
-export default defineNuxtConfig({
-
+const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
   compatibilityDate: '2025-07-15',
 
   css: [
-    '~/assets/css/main.css',
+    '~/assets/css/main.css', // including TailwindCSS
   ],
 
   devtools: {
     enabled: true,
   },
-
-  eslint: { // for `@nuxt/eslint`
-    config: {
-      stylistic: {
-        indent: 2,
-        quotes: 'single',
-      },
-    },
-  },
-
-  i18n: {
-    defaultLocale: 'en',
-    locales: [
-      { code: 'en', language: 'en-US', name: 'English' },
-      { code: 'de', language: 'de-DE', name: 'Deutsch' },
-      { code: 'ja', language: 'ja-JP', name: '日本語' },
-    ],
-    vueI18n: './i18n.config.ts', // Using a separate file for better organization
-  },
-  modules: [
-    '@nuxt/eslint',
-    '@nuxtjs/i18n',
-    '@nuxtjs/tailwindcss',
-    '@vueuse/nuxt',
-  ],
 
   nitro: {
     devStorage: {
@@ -79,4 +54,37 @@ export default defineNuxtConfig({
   typescript: {
     shim: false,
   },
+}
+
+const configModules: InputConfig<NuxtConfig, ConfigLayerMeta> = {
+  eslint: { // for `@nuxt/eslint`
+    config: {
+      stylistic: {
+        indent: 2,
+        quotes: 'single',
+      },
+    },
+  },
+
+  i18n: {
+    defaultLocale: 'en',
+    locales: [
+      { code: 'en', language: 'en-US', name: 'English' },
+      { code: 'de', language: 'de-DE', name: 'Deutsch' },
+      { code: 'ja', language: 'ja-JP', name: '日本語' },
+    ],
+    vueI18n: './i18n.config.ts', // Using a separate file for better organization
+  },
+}
+
+export default defineNuxtConfig({
+  modules: [
+    '@nuxt/eslint',
+    '@nuxtjs/i18n',
+    '@nuxtjs/tailwindcss',
+    '@vueuse/nuxt',
+  ],
+
+  ...configBase,
+  ...configModules,
 })
