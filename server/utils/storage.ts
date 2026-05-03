@@ -225,6 +225,14 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
     throw new Error('Question not found')
   }
 
+  if (!question.is_active) {
+    throw new Error('Question is not active')
+  }
+
+  if (question.is_locked) {
+    throw new Error('Question is locked')
+  }
+
   if (!question.answer_options.some(option => option.text.en === answerData.selected_answer.en)) {
     throw new Error('Invalid answer option')
   }
