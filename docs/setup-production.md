@@ -55,11 +55,19 @@ Set production values for:
 
 - `NUXT_ADMIN_USERNAME`
 - `NUXT_ADMIN_PASSWORD`
-- `NUXT_ADMIN_TOKEN` when external software needs direct admin bearer-token access
+- `NUXT_ADMIN_TOKEN` when external software needs admin bearer-token access or tokenized `/admin?...` page access
 - `NUXT_JWT_SECRET`
 - `NUXT_DRIZZLE_STUDIO_INTERNAL_PORT` when you need a non-default private Studio worker port
 
 Leave `NUXT_ADMIN_TOKEN` empty if you do not want static admin-token authentication. If you set it, keep it secret and rotate it by updating the environment and redeploying.
+
+Admin authentication variants in production:
+
+1. Human admins log in through `/login` with `NUXT_ADMIN_USERNAME` and `NUXT_ADMIN_PASSWORD`.
+2. External software can call admin APIs with `Authorization: Bearer <token>`.
+3. External software can open protected `/admin` pages with `?token=<token>` when an iframe or browser context is required.
+
+Prefer variant 1 for people, variant 2 for server-to-server API calls, and variant 3 only for embedded admin pages that cannot attach custom HTTP headers.
 
 ## Data Persistence
 

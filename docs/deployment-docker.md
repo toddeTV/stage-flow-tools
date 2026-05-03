@@ -52,7 +52,13 @@ NUXT_ADMIN_TOKEN=<optional-static-admin-token>
 NUXT_JWT_SECRET=<paste-output-from-openssl>
 ```
 
-Set `NUXT_ADMIN_TOKEN` only if external software needs direct admin API access with `Authorization: Bearer <token>`. Leave it empty to disable that path. Only one exact token is accepted.
+Set `NUXT_ADMIN_TOKEN` only if external software needs either direct admin API access with `Authorization: Bearer <token>` or protected admin page access with `?token=<token>`. Leave it empty to disable that path. Only one exact token is accepted.
+
+Admin authentication variants:
+
+1. `/login` with `NUXT_ADMIN_USERNAME` and `NUXT_ADMIN_PASSWORD` for normal human admin access.
+2. `Authorization: Bearer <token>` for software calling admin APIs.
+3. `/admin/...?...&token=<token>` for embedded admin pages that must authenticate a browser or iframe session before follow-up requests use the normal cookie.
 
 Optional override for the embedded Drizzle Studio worker port:
 
