@@ -2,9 +2,15 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
   const timeout = 15000 // 15 seconds
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeout)
+  const token = typeof to.query.token === 'string' ? to.query.token : undefined
 
   try {
     const { error, status } = await useFetch('/api/auth/verify', {
+      headers: token
+        ? {
+          Authorization: `Bearer ${token}`,
+        }
+        : undefined,
       signal: controller.signal,
     })
 

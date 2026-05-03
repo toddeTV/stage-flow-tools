@@ -28,6 +28,17 @@ export function getToken(event: H3Event): string | undefined {
   return getHeader(event, 'authorization')?.replace('Bearer ', '') || getCookie(event, 'admin_token')
 }
 
+/** Persists a verified header token into the standard admin cookie for subsequent browser requests. */
+export function syncAdminCookieFromHeaderToken(event: H3Event, maxAge = 60 * 60 * 24) {
+  const headerToken = getHeader(event, 'authorization')?.replace('Bearer ', '')
+
+  if (!headerToken || getCookie(event, 'admin_token') === headerToken) {
+    return
+  }
+
+  setAdminCookie(event, headerToken, maxAge)
+}
+
 function getStaticAdminPayload(token: string, configuredToken: string): VerifiedAdminPayload | null {
   if (!configuredToken || token !== configuredToken) {
     return null
