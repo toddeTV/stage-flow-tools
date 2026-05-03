@@ -43,17 +43,6 @@ openssl rand -base64 48
 
 Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
 
-## Development Commands
-
-- `vp run dev` - Start development server
-- `vp run build:ssr` - Build for production (server-rendered)
-- `vp run build:ssg` - Static site generation build
-- `vp run preview` - Preview production build
-- `vp run test` - Run all checks (lint + types)
-- `vp run test:lint-format` - Lint and format check via ESLint
-- `vp run test:type` - Run TypeScript checks
-- `vp run fix:lint` - Auto-fix lint and format issues
-
 ## Data Management
 
 ### Storage Location
