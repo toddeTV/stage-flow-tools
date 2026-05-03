@@ -52,8 +52,6 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
   vite: {
     optimizeDeps: {
       include: [
-        '@vue/devtools-core',
-        '@vue/devtools-kit',
         '@paralleldrive/cuid2',
       ],
     },
