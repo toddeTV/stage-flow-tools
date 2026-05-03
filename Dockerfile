@@ -18,7 +18,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Install dependencies without lifecycle scripts before copying the full source tree.
 # The repo uses a postinstall hook (`nuxt prepare`), which needs project files not present yet.
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store vp install --frozen-lockfile --ignore-scripts
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store vp run install:clean -- --ignore-scripts
 
 # Copy the rest of the application source code
 COPY . .
@@ -50,7 +50,7 @@ COPY --from=build /app/.output ./.output
 COPY --from=build /app/package.json ./
 COPY --from=build /app/pnpm-lock.yaml ./
 COPY --from=build /app/pnpm-workspace.yaml ./
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store vp install --prod --frozen-lockfile --ignore-scripts
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store vp run install:clean -- --prod --ignore-scripts
 
 # Expose the port the app runs on
 EXPOSE 3000

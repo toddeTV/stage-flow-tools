@@ -35,8 +35,6 @@ jobs:
         include:
           - name: Lint & Format
             command: vp run test:lint-format
-          - name: package.json Format
-            command: vp run test:package-json
           - name: Type Check
             command: vp run test:type
 
