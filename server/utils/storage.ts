@@ -3,6 +3,7 @@ import {
   asc,
   desc,
   eq,
+  ne,
   or,
 } from 'drizzle-orm'
 import type { H3Event } from 'h3'
@@ -117,6 +118,58 @@ export async function createQuestion(
   getDatabase().insert(questions).values(row).run()
 
   return deserializeQuestion(row)
+}
+
+/** Updates a non-active, never-published question and returns the stored row. */
+export async function updateQuestion(
+  questionId: string,
+  updates: Pick<InputQuestion, 'key' | 'question_text' | 'answer_options' | 'note'>,
+): Promise<Question | undefined> {
+  await initStorage()
+
+  const question = getQuestionById(questionId)
+
+  if (!question) {
+    return undefined
+  }
+
+  if (question.is_active) {
+    throw new Error('Active questions cannot be edited')
+  }
+
+  if (question.alreadyPublished) {
+    throw new Error('Published questions cannot be edited')
+  }
+
+  const updatedQuestion = {
+    ...question,
+    ...updates,
+  } satisfies Question
+
+  const existingQuestion = getDatabase()
+    .select({ id: questions.id })
+    .from(questions)
+    .where(and(eq(questions.key, updatedQuestion.key), ne(questions.id, questionId)))
+    .get()
+
+  if (existingQuestion) {
+    throw new Error(`A question with key "${updatedQuestion.key}" already exists`)
+  }
+
+  const updatedRow = createStoredQuestionInsert(updatedQuestion)
+
+  getDatabase()
+    .update(questions)
+    .set({
+      key: updatedRow.key,
+      questionText: updatedRow.questionText,
+      answerOptions: updatedRow.answerOptions,
+      note: updatedRow.note,
+    })
+    .where(eq(questions.id, questionId))
+    .run()
+
+  return getQuestionById(questionId)
 }
 
 export async function publishQuestion(questionIdentifier: string): Promise<Question | undefined> {

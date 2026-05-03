@@ -225,6 +225,34 @@ English `answer_options[].text.en` values must be unique. Matching is case-insen
 }
 ```
 
+### POST `/api/questions/update`
+
+Update an existing unpublished and inactive question (admin only).
+
+Editable fields are `key`, `question_text`, `answer_options`, and `note`.
+Active questions and already-published questions return `409`.
+
+English `answer_options[].text.en` values must be unique. Matching is case-insensitive.
+
+**Request:**
+
+```json
+{
+  "questionId": "string",
+  "key": "string (optional, unique identifier)",
+  "question_text": { "en": "string", "de": "string (optional)" },
+  "answer_options": [
+    {
+      "text": { "en": "string", "de": "string (optional)" },
+      "emoji": "string (optional)"
+    }
+  ],
+  "note": { "en": "string (optional)" }
+}
+```
+
+**Response:** Updated question object.
+
 ### POST `/api/questions/publish`
 
 Publish question as active by key (admin only). Clears existing answers and broadcasts to all WebSocket clients.
