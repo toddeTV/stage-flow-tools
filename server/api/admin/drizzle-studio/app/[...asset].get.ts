@@ -1,6 +1,7 @@
 import { verifyAdmin } from '../../../../utils/auth'
 
 const DRIZZLE_STUDIO_APP_ORIGIN = 'https://local.drizzle.studio'
+const DRIZZLE_STUDIO_ASSET_FETCH_TIMEOUT_MS = 8000
 const FORWARDED_HEADERS = [
   'cache-control',
   'content-type',
@@ -22,7 +23,24 @@ export default defineEventHandler(async (event) => {
 
   const requestUrl = getRequestURL(event)
   const upstreamUrl = `${DRIZZLE_STUDIO_APP_ORIGIN}/${assetPath}${requestUrl.search}`
-  const response = await fetch(upstreamUrl)
+  let response: Response
+
+  try {
+    response = await fetch(upstreamUrl, {
+      signal: AbortSignal.timeout(DRIZZLE_STUDIO_ASSET_FETCH_TIMEOUT_MS),
+    })
+  }
+  catch (error) {
+    const isAbort = error instanceof Error && error.name === 'AbortError'
+
+    throw createError({
+      statusCode: isAbort ? 504 : 502,
+      statusMessage: isAbort
+        ? `Timed out loading Drizzle Studio asset: ${assetPath}`
+        : 'Failed to reach Drizzle Studio asset upstream',
+      data: error instanceof Error ? { message: error.message } : undefined,
+    })
+  }
 
   if (!response.ok) {
     throw createError({
