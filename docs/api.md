@@ -345,6 +345,25 @@ Retract a user's answer.
 }
 ```
 
+### POST `/api/answers/reset`
+
+Clear all submitted answers for current active question (admin only).
+
+This endpoint derives target question from current active question. Request body is empty.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "questionId": "string"
+}
+```
+
+**Error cases:**
+
+- `404` - no active question
+
 ## Emojis
 
 ### POST `/api/emojis/submit`

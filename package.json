@@ -65,7 +65,6 @@
     "eslint-plugin-tailwindcss": "~4.0.0-alpha.2",
     "eslint-plugin-yml": "~3.3.1",
     "jose": "~6.2.1",
-    "npm-run-all2": "~8.0.4",
     "nuxi": "~3.28.0",
     "prettier": "~3.8.1",
     "prettier-package-json": "~2.8.0",

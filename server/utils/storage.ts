@@ -345,6 +345,16 @@ export async function retractAnswer(userId: string, questionId: string): Promise
   return getAnswersForQuestion(questionId)
 }
 
+/** Deletes all stored answers for one question. */
+export async function clearAnswersForQuestion(questionId: string): Promise<void> {
+  await initStorage()
+
+  getDatabase()
+    .delete(answers)
+    .where(eq(answers.questionId, questionId))
+    .run()
+}
+
 // Admin operations
 export async function validateAdmin(username: string, password: string, event?: H3Event): Promise<boolean> {
   const config = event ? useRuntimeConfig(event) : useRuntimeConfig()
