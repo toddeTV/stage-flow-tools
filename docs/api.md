@@ -52,6 +52,20 @@ Verify authentication token (admin only).
 }
 ```
 
+## Database Admin
+
+### GET `/api/admin/drizzle-studio/app`
+
+Load the authenticated Drizzle Studio shell used by `/admin/database`.
+
+### GET `/api/admin/drizzle-studio/app/<asset>`
+
+Load Drizzle Studio static assets through the authenticated proxy.
+
+### POST `/`
+
+Internal admin-only Drizzle Studio RPC compatibility endpoint used by the embedded frame. Treat this as internal transport, not a public integration API.
+
 ## Questions
 
 ### GET `/api/questions`

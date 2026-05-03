@@ -22,7 +22,8 @@ Configuration in `nuxt.config.ts`:
 
 ## Initialization
 
-- `initStorage()` in `server/utils/storage.ts` applies pending Drizzle migrations on first storage access.
+- `server/plugins/migrations.ts` applies pending Drizzle migrations when the Nitro server starts.
+- `initStorage()` in `server/utils/storage.ts` initializes the shared SQLite client after startup.
 - No bundled seed data is included in the repository.
 - Emoji cooldown state stays in server memory and is not part of persisted storage.
 
@@ -40,7 +41,7 @@ Reset all stored quiz data:
 rm -rf .data/
 ```
 
-The next runtime access recreates the SQLite database file.
+The next server start recreates the SQLite database file.
 
 ## Production Mounts
 

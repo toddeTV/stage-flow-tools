@@ -14,6 +14,7 @@ const subPages = computed(() => [
   { path: '/admin/results', label: t('results'), description: t('resultsDesc') },
   { path: '/admin/leaderboard', label: t('leaderboard'), description: t('leaderboardDesc') },
   { path: '/admin/emojis', label: t('emojis'), description: t('emojisDesc') },
+  { path: '/admin/database', label: t('database'), description: t('databaseDesc') },
 ])
 
 const logoutError = ref(false)
@@ -74,6 +75,8 @@ en:
   leaderboardDesc: Aggregated player scores across all published questions.
   emojis: Emoji Overlay
   emojisDesc: Floating emoji reactions overlay for presentations.
+  database: Database
+  databaseDesc: Open Drizzle Studio in a protected admin frame.
   logout: Logout
   logoutError: Logout failed. Please try again.
 de:
@@ -86,6 +89,8 @@ de:
   leaderboardDesc: Gesammelte Spielerpunktzahlen aller veröffentlichten Fragen.
   emojis: Emoji-Overlay
   emojisDesc: Schwebende Emoji-Reaktionen als Overlay für Präsentationen.
+  database: Datenbank
+  databaseDesc: Drizzle Studio in einem geschützten Admin-Frame öffnen.
   logout: Abmelden
   logoutError: Abmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.
 ja:
@@ -98,6 +103,8 @@ ja:
   leaderboardDesc: 公開された全質問の累計プレイヤースコア。
   emojis: 絵文字オーバーレイ
   emojisDesc: プレゼンテーション用の浮遊する絵文字リアクションオーバーレイ。
+  database: データベース
+  databaseDesc: 保護された管理フレームで Drizzle Studio を開きます。
   logout: ログアウト
   logoutError: ログアウトに失敗しました。もう一度お試しください。
 </i18n>

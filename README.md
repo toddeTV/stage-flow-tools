@@ -28,6 +28,7 @@ Perfect for:
 - **`/admin/results`** - Live results display
 - **`/admin/leaderboard`** - Player leaderboard
 - **`/admin/emojis`** - Floating emoji overlay
+- **`/admin/database`** - Embedded Drizzle Studio for database inspection
 
 ## Documentation
 

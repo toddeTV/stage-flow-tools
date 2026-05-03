@@ -23,6 +23,7 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
     // Private keys (only available server-side)
     adminPassword: '123',
     adminUsername: 'admin',
+    drizzleStudioInternalPort: '64983',
     jwtSecret: 'tryUJ0zQbstPbTOrezme+Fv+KndzDNRx5lmSeelr2ial2/2yV8HqLeQ2felJafqf',
 
     // Public keys (available on both client and server)
