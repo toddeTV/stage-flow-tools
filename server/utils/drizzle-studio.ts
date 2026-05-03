@@ -6,6 +6,7 @@ import { getLocalDatabasePath } from '../database/local-config'
 const DRIZZLE_STUDIO_INTERNAL_HOST = '127.0.0.1'
 const DEFAULT_DRIZZLE_STUDIO_INTERNAL_PORT = 64983
 const DRIZZLE_STUDIO_STARTUP_TIMEOUT_MS = 15000
+const DRIZZLE_STUDIO_STARTUP_REQUEST_TIMEOUT_MS = 2000
 const DRIZZLE_STUDIO_STARTUP_POLL_MS = 250
 
 declare global {
@@ -40,8 +41,12 @@ async function waitForDrizzleStudio(event: H3Event) {
 
   while (Date.now() < deadline) {
     try {
+      const remainingMs = deadline - Date.now()
       const response = await fetch(url, {
         method: 'POST',
+        signal: AbortSignal.timeout(
+          Math.max(1, Math.min(DRIZZLE_STUDIO_STARTUP_REQUEST_TIMEOUT_MS, remainingMs)),
+        ),
         headers: {
           'accept': 'application/json',
           'content-type': 'application/json',
