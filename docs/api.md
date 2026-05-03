@@ -45,8 +45,8 @@ Verify authentication token (admin only).
 
 `Authorization: Bearer <token>` accepts two admin auth modes:
 
-- A JWT created by `POST /api/auth/login`
-- The exact static token configured in `NUXT_ADMIN_TOKEN` for software-to-software admin access
+- A valid admin JWT only when a client already has that token. `POST /api/auth/login` does not return the JWT in the response body; it sets the `admin_token` HTTP-only cookie for browser admin sessions.
+- The exact static token configured in `NUXT_ADMIN_TOKEN` for software-to-software admin access. External API clients should use this static token path.
 
 **Response:**
 
