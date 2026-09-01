@@ -1,48 +1,28 @@
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import pluginTailwindCSS from 'eslint-plugin-tailwindcss'
-import tailwindApplyOrderPlugin from './eslint.tailwind-apply-order.mjs'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const tailwindCssEntryPath = resolve(__dirname, 'app/assets/css/main.css')
-const tailwindConfig = {}
+import pluginBetterTailwindcss from 'eslint-plugin-better-tailwindcss'
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export const tailwindConfigs = [
-  ...pluginTailwindCSS.configs['flat/recommended'],
-  {
-    settings: {
-      tailwindcss: {
-        config: tailwindConfig,
-        cssFiles: [
-          tailwindCssEntryPath,
-        ],
-      },
-    },
-  },
   {
     files: [
-      '**/*.{js,mjs,ts,vue}',
-    ],
-    rules: {
-      'tailwindcss/classnames-order': 'error',
-      'tailwindcss/no-custom-classname': 'off',
-    },
-  },
-  {
-    files: [
-      '**/*.css',
+      '**/*.{css,js,mjs,ts,vue}',
     ],
     plugins: {
-      'tailwindcss-local': tailwindApplyOrderPlugin,
+      'better-tailwindcss': pluginBetterTailwindcss,
+    },
+    settings: {
+      'better-tailwindcss': {
+        entryPoint: 'app/assets/css/main.css',
+      },
     },
     rules: {
-      'tailwindcss-local/apply-classnames-order': [
+      'better-tailwindcss/enforce-consistent-class-order': [
         'error',
         {
-          config: tailwindConfig,
+          order: 'official',
         },
       ],
+      'better-tailwindcss/enforce-consistent-important-position': 'error',
+      'better-tailwindcss/no-deprecated-classes': 'error',
     },
   },
 ]
