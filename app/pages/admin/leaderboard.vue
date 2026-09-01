@@ -90,7 +90,7 @@ onMounted(() => {
 
       <table v-else class="w-full border-collapse">
         <thead>
-          <tr class="border-b-[3px] border-black text-left uppercase tracking-wide">
+          <tr class="border-b-[3px] border-black text-left tracking-wide uppercase">
             <th class="p-3 text-center">
               {{ t('rank') }}
             </th>
@@ -159,7 +159,7 @@ ja:
 </i18n>
 
 <style scoped>
-@reference "tailwindcss";
+@reference "../../assets/css/main.css";
 
 .status-message {
   @apply py-10 text-center text-lg uppercase tracking-wide text-gray-400;

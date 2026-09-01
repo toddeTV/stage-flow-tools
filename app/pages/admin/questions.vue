@@ -647,7 +647,7 @@ ja:
 </i18n>
 
 <style scoped>
-@reference "tailwindcss";
+@reference "../../assets/css/main.css";
 
 .section-heading {
   @apply mb-5 border-b-[3px] border-black pb-2.5 text-3xl uppercase;

@@ -12,10 +12,10 @@ const props = computed(() => ({
 
 <template>
   <div class="flex min-h-screen flex-col" :class="{ 'has-background': props.background }">
-    <div v-if="props.localeSwitcher" class="absolute right-2 top-2 z-10">
+    <div v-if="props.localeSwitcher" class="absolute top-2 right-2 z-10">
       <UiLocaleSwitcher />
     </div>
-    <main class="flex-grow">
+    <main class="grow">
       <slot />
     </main>
     <AppFooter v-if="props.footer" />
@@ -24,7 +24,7 @@ const props = computed(() => ({
 </template>
 
 <style scoped>
-@reference "tailwindcss";
+@reference "../assets/css/main.css";
 
 .has-background {
   @apply bg-gray-100;
