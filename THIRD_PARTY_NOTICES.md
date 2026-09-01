@@ -6,14 +6,34 @@ This is an inventory, not a complete redistribution license bundle.
 
 Project source code remains governed by `LICENSE`. Third-party packages remain governed by their own license terms.
 
-Package count: 30
+Package count: 34
 
 ## Packages
 
+### @eslint/css
+
+- Declared as: devDependencies (~1.4.0)
+- Installed version: 1.4.0
+- License: Apache-2.0
+- Repository: git+https://github.com/eslint/css.git
+- Homepage: https://github.com/eslint/css#readme
+- Included license files: LICENSE
+- Included notice files: none found
+
+### @eslint/js
+
+- Declared as: devDependencies (~10.0.1)
+- Installed version: 10.0.1
+- License: MIT
+- Repository: https://github.com/eslint/eslint.git
+- Homepage: https://eslint.org
+- Included license files: LICENSE
+- Included notice files: none found
+
 ### @nuxt/eslint
 
-- Declared as: devDependencies (~1.15.2)
-- Installed version: 1.15.2
+- Declared as: devDependencies (~1.17.0)
+- Installed version: 1.17.0
 - License: MIT
 - Repository: git+https://github.com/nuxt/eslint.git
 - Included license files: LICENSE
@@ -21,27 +41,18 @@ Package count: 30
 
 ### @nuxtjs/i18n
 
-- Declared as: devDependencies (~10.1.1)
-- Installed version: 10.1.2
+- Declared as: devDependencies (~10.6.0)
+- Installed version: 10.6.0
 - License: MIT
 - Repository: git+https://github.com/nuxt-modules/i18n.git
 - Homepage: https://i18n.nuxtjs.org
 - Included license files: LICENSE
 - Included notice files: none found
 
-### @nuxtjs/tailwindcss
-
-- Declared as: devDependencies (~6.14.0)
-- Installed version: 6.14.0
-- License: MIT
-- Repository: nuxt-modules/tailwindcss
-- Included license files: LICENSE
-- Included notice files: none found
-
 ### @paralleldrive/cuid2
 
-- Declared as: devDependencies (~2.2.2)
-- Installed version: 2.2.2
+- Declared as: devDependencies (~3.3.0)
+- Installed version: 3.3.0
 - License: MIT
 - Repository: git+https://github.com/ericelliott/cuid2.git
 - Homepage: https://github.com/ericelliott/cuid2#readme
@@ -58,10 +69,20 @@ Package count: 30
 - Included license files: LICENSE
 - Included notice files: none found
 
+### @tailwindcss/vite
+
+- Declared as: devDependencies (~4.3.3)
+- Installed version: 4.3.3
+- License: MIT
+- Repository: https://github.com/tailwindlabs/tailwindcss.git
+- Homepage: https://tailwindcss.com
+- Included license files: LICENSE
+- Included notice files: none found
+
 ### @types/better-sqlite3
 
-- Declared as: devDependencies (~7.6.13)
-- Installed version: 7.6.13
+- Declared as: devDependencies (~9.6.0)
+- Installed version: 9.6.0
 - License: MIT
 - Repository: https://github.com/DefinitelyTyped/DefinitelyTyped.git
 - Homepage: https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/better-sqlite3
@@ -70,8 +91,8 @@ Package count: 30
 
 ### @vueuse/core
 
-- Declared as: devDependencies (~13.9.0)
-- Installed version: 13.9.0
+- Declared as: devDependencies (~14.4.0)
+- Installed version: 14.4.0
 - License: MIT
 - Repository: git+https://github.com/vueuse/vueuse.git
 - Homepage: https://github.com/vueuse/vueuse#readme
@@ -80,8 +101,8 @@ Package count: 30
 
 ### @vueuse/nuxt
 
-- Declared as: devDependencies (~13.9.0)
-- Installed version: 13.9.0
+- Declared as: devDependencies (~14.4.0)
+- Installed version: 14.4.0
 - License: MIT
 - Repository: git+https://github.com/vueuse/vueuse.git
 - Homepage: https://github.com/vueuse/vueuse/tree/main/packages/nuxt#readme
@@ -90,8 +111,8 @@ Package count: 30
 
 ### better-sqlite3
 
-- Declared as: devDependencies (~12.9.0)
-- Installed version: 12.9.0
+- Declared as: devDependencies (~13.0.3)
+- Installed version: 13.0.3
 - License: MIT
 - Repository: git://github.com/WiseLibs/better-sqlite3.git
 - Homepage: http://github.com/WiseLibs/better-sqlite3
@@ -100,8 +121,8 @@ Package count: 30
 
 ### concurrently
 
-- Declared as: devDependencies (~9.2.1)
-- Installed version: 9.2.1
+- Declared as: devDependencies (~10.0.5)
+- Installed version: 10.0.5
 - License: MIT
 - Repository: https://github.com/open-cli-tools/concurrently.git
 - Included license files: LICENSE
@@ -119,8 +140,8 @@ Package count: 30
 
 ### crossws
 
-- Declared as: devDependencies (~0.4.1)
-- Installed version: 0.4.1
+- Declared as: devDependencies (0.3.5)
+- Installed version: 0.3.5
 - License: MIT
 - Repository: h3js/crossws
 - Homepage: https://crossws.h3.dev
@@ -149,11 +170,20 @@ Package count: 30
 
 ### eslint
 
-- Declared as: devDependencies (catalog:)
-- Installed version: 9.39.4
+- Declared as: devDependencies (10.9.1)
+- Installed version: 10.9.1
 - License: MIT
 - Repository: eslint/eslint
 - Homepage: https://eslint.org
+- Included license files: LICENSE
+- Included notice files: none found
+
+### eslint-plugin-better-tailwindcss
+
+- Declared as: devDependencies (~4.7.0)
+- Installed version: 4.7.0
+- License: MIT
+- Repository: git+https://github.com/schoero/eslint-plugin-better-tailwindcss.git
 - Included license files: LICENSE
 - Included notice files: none found
 
@@ -169,8 +199,8 @@ Package count: 30
 
 ### eslint-plugin-jsonc
 
-- Declared as: devDependencies (~3.1.2)
-- Installed version: 3.1.2
+- Declared as: devDependencies (~3.4.2)
+- Installed version: 3.4.2
 - License: MIT
 - Repository: git+https://github.com/ota-meshi/eslint-plugin-jsonc.git
 - Homepage: https://ota-meshi.github.io/eslint-plugin-jsonc/
@@ -179,28 +209,18 @@ Package count: 30
 
 ### eslint-plugin-perfectionist
 
-- Declared as: devDependencies (~5.9.0)
-- Installed version: 5.9.0
+- Declared as: devDependencies (~5.11.0)
+- Installed version: 5.11.0
 - License: MIT
 - Repository: azat-io/eslint-plugin-perfectionist
 - Homepage: https://perfectionist.dev
 - Included license files: license.md
 - Included notice files: none found
 
-### eslint-plugin-tailwindcss
-
-- Declared as: devDependencies (~4.0.0-alpha.2)
-- Installed version: 4.0.0-beta.0
-- License: MIT
-- Repository: https://github.com/francoismassart/eslint-plugin-tailwindcss
-- Homepage: https://github.com/francoismassart/eslint-plugin-tailwindcss
-- Included license files: LICENSE
-- Included notice files: none found
-
 ### eslint-plugin-yml
 
-- Declared as: devDependencies (~3.3.1)
-- Installed version: 3.3.1
+- Declared as: devDependencies (~3.8.1)
+- Installed version: 3.8.1
 - License: MIT
 - Repository: git+https://github.com/ota-meshi/eslint-plugin-yml.git
 - Homepage: https://ota-meshi.github.io/eslint-plugin-yml/
@@ -209,8 +229,8 @@ Package count: 30
 
 ### jose
 
-- Declared as: devDependencies (~6.2.1)
-- Installed version: 6.2.1
+- Declared as: devDependencies (~6.2.10)
+- Installed version: 6.2.10
 - License: MIT
 - Repository: panva/jose
 - Homepage: https://github.com/panva/jose
@@ -219,17 +239,17 @@ Package count: 30
 
 ### nuxi
 
-- Declared as: devDependencies (~3.28.0)
-- Installed version: 3.28.0
+- Declared as: devDependencies (~3.37.0)
+- Installed version: 3.37.0
 - License: MIT
 - Repository: git+https://github.com/nuxt/cli.git
-- Included license files: none found
+- Included license files: LICENSE
 - Included notice files: none found
 
 ### nuxt
 
-- Declared as: dependencies (~4.1.2)
-- Installed version: 4.1.3
+- Declared as: dependencies (~4.5.2)
+- Installed version: 4.5.2
 - License: MIT
 - Repository: git+https://github.com/nuxt/nuxt.git
 - Homepage: https://nuxt.com
@@ -238,8 +258,8 @@ Package count: 30
 
 ### prettier
 
-- Declared as: devDependencies (~3.8.1)
-- Installed version: 3.8.1
+- Declared as: devDependencies (~3.9.6)
+- Installed version: 3.9.6
 - License: MIT
 - Repository: prettier/prettier
 - Homepage: https://prettier.io
@@ -255,6 +275,25 @@ Package count: 30
 - Included license files: none found
 - Included notice files: none found
 
+### tailwind-csstree
+
+- Declared as: devDependencies (~0.3.3)
+- Installed version: 0.3.3
+- License: Apache-2.0
+- Repository: git+https://github.com/humanwhocodes/tailwind-csstree.git
+- Included license files: LICENSE
+- Included notice files: none found
+
+### tailwindcss
+
+- Declared as: devDependencies (~4.3.3)
+- Installed version: 4.3.3
+- License: MIT
+- Repository: https://github.com/tailwindlabs/tailwindcss.git
+- Homepage: https://tailwindcss.com
+- Included license files: LICENSE
+- Included notice files: none found
+
 ### tsx
 
 - Declared as: devDependencies (~4.23.13)
@@ -267,8 +306,8 @@ Package count: 30
 
 ### typescript
 
-- Declared as: devDependencies (~5.9.3)
-- Installed version: 5.9.3
+- Declared as: devDependencies (~6.0.3)
+- Installed version: 6.0.3
 - License: Apache-2.0
 - Repository: https://github.com/microsoft/TypeScript.git
 - Homepage: https://www.typescriptlang.org/
@@ -278,7 +317,7 @@ Package count: 30
 ### vite-plus
 
 - Declared as: devDependencies (catalog:)
-- Installed version: 0.1.20
+- Installed version: 0.3.0
 - License: MIT
 - Repository: git+https://github.com/voidzero-dev/vite-plus.git
 - Homepage: https://viteplus.dev/guide
@@ -287,18 +326,18 @@ Package count: 30
 
 ### vue
 
-- Declared as: dependencies (~3.5.22)
-- Installed version: 3.5.30
+- Declared as: dependencies (~3.5.42)
+- Installed version: 3.5.42
 - License: MIT
 - Repository: git+https://github.com/vuejs/core.git
-- Homepage: https://github.com/vuejs/core/tree/main/packages/vue#readme
+- Homepage: https://vuejs.org/
 - Included license files: LICENSE
 - Included notice files: none found
 
 ### vue-tsc
 
-- Declared as: devDependencies (~3.1.0)
-- Installed version: 3.1.8
+- Declared as: devDependencies (~3.3.11)
+- Installed version: 3.3.11
 - License: MIT
 - Repository: https://github.com/vuejs/language-tools.git
 - Included license files: LICENSE
