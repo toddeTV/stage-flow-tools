@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite'
 import { version } from './package.json'
 import type { ConfigLayerMeta, InputConfig } from 'c12'
 import type { NuxtConfig } from 'nuxt/schema'
@@ -44,9 +45,6 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
 
   ssr: false,
 
-  tailwindcss: { // for Nuxt module `@nuxtjs/tailwindcss`
-  },
-
   typescript: {
     shim: false,
   },
@@ -57,16 +55,16 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
         '@paralleldrive/cuid2',
       ],
     },
+    plugins: [
+      tailwindcss(),
+    ],
   },
 }
 
 const configModules: InputConfig<NuxtConfig, ConfigLayerMeta> = {
   eslint: { // for `@nuxt/eslint`
     config: {
-      stylistic: {
-        indent: 2,
-        quotes: 'single',
-      },
+      stylistic: false,
     },
   },
 
@@ -77,7 +75,6 @@ const configModules: InputConfig<NuxtConfig, ConfigLayerMeta> = {
       { code: 'de', language: 'de-DE', name: 'Deutsch' },
       { code: 'ja', language: 'ja-JP', name: '日本語' },
     ],
-    vueI18n: './i18n.config.ts', // Using a separate file for better organization
   },
 }
 
@@ -85,7 +82,6 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxtjs/i18n',
-    '@nuxtjs/tailwindcss',
     '@vueuse/nuxt',
   ],
 
