@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { pickRandomItem } from '~/utils/pickRandomItem'
+
 definePageMeta({
   layout: 'default',
   middleware: 'auth',
@@ -25,9 +27,40 @@ const isLoading = ref(false)
 const hasError = ref(false)
 const leaderboard = ref<LeaderboardEntry[]>([])
 const totalQuestionsWithCorrectAnswers = ref(0)
+const isWinnerModalOpen = ref(false)
+const selectedWinner = ref<LeaderboardEntry>()
+const winnerDialog = ref<HTMLDialogElement>()
+
+const topRankedEntries = computed(() => leaderboard.value.filter(entry => entry.rank === 1))
+
+function resetWinnerModal() {
+  isWinnerModalOpen.value = false
+  selectedWinner.value = undefined
+}
+
+function closeWinnerModal() {
+  if (winnerDialog.value?.open) {
+    winnerDialog.value.close()
+    return
+  }
+
+  resetWinnerModal()
+}
+
+function drawWinner() {
+  if (isWinnerModalOpen.value) return
+
+  const winner = pickRandomItem(topRankedEntries.value)
+  if (!winner) return
+
+  selectedWinner.value = winner
+  isWinnerModalOpen.value = true
+  nextTick(() => winnerDialog.value?.showModal())
+}
 
 /** Fetch leaderboard data from the API. */
 async function fetchLeaderboard() {
+  closeWinnerModal()
   isLoading.value = true
   hasError.value = false
   try {
@@ -55,18 +88,27 @@ onMounted(() => {
   <div class="mx-auto max-w-3xl p-5">
     <UiPageTitle>{{ t('title') }}</UiPageTitle>
 
-    <div class="mb-5 flex items-center justify-between">
+    <div class="mb-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
       <p class="text-sm text-gray-500">
         {{ t('scoredQuestions', { count: totalQuestionsWithCorrectAnswers }) }}
       </p>
-      <UiButton
-        :disabled="isLoading"
-        size="small"
-        variant="secondary"
-        @click="fetchLeaderboard"
-      >
-        {{ t('refresh') }}
-      </UiButton>
+      <div class="flex gap-2">
+        <UiButton
+          :disabled="isLoading || isWinnerModalOpen || topRankedEntries.length === 0"
+          size="small"
+          @click="drawWinner"
+        >
+          {{ t('drawWinner') }}
+        </UiButton>
+        <UiButton
+          :disabled="isLoading"
+          size="small"
+          variant="secondary"
+          @click="fetchLeaderboard"
+        >
+          {{ t('refresh') }}
+        </UiButton>
+      </div>
     </div>
 
     <UiSection>
@@ -122,6 +164,52 @@ onMounted(() => {
         </tbody>
       </table>
     </UiSection>
+
+    <dialog
+      v-if="isWinnerModalOpen && selectedWinner"
+      ref="winnerDialog"
+      aria-describedby="winner-modal-description"
+      aria-labelledby="winner-modal-title"
+      class="m-auto max-h-[calc(100dvh-2.5rem)] w-[calc(100%-2.5rem)] max-w-md
+        border-[3px] border-black bg-white p-6 text-black backdrop:bg-black/50"
+      @click.self="closeWinnerModal"
+      @close="resetWinnerModal"
+    >
+      <p class="text-sm font-bold tracking-wide uppercase">
+        {{ t('winner') }}
+      </p>
+      <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
+        {{ selectedWinner.nickname }}
+      </h2>
+      <p id="winner-modal-description" class="mt-4 text-sm text-gray-600">
+        {{ t('winnerHint') }}
+      </p>
+
+      <dl class="mt-6 grid grid-cols-2 gap-3">
+        <div class="winner-stat">
+          <dt class="winner-stat-label">
+            {{ t('rank') }}
+          </dt>
+          <dd class="winner-stat-value">
+            {{ selectedWinner.rank }}
+          </dd>
+        </div>
+        <div class="winner-stat">
+          <dt class="winner-stat-label">
+            {{ t('correctAnswers') }}
+          </dt>
+          <dd class="winner-stat-value">
+            {{ selectedWinner.correctAnswers }}
+          </dd>
+        </div>
+      </dl>
+
+      <div class="mt-6 flex justify-end">
+        <UiButton @click="closeWinnerModal">
+          {{ t('close') }}
+        </UiButton>
+      </div>
+    </dialog>
   </div>
 </template>
 
@@ -131,6 +219,10 @@ en:
   rank: Rank
   player: Player
   correctAnswers: Correct
+  drawWinner: Draw winner
+  winner: Winner
+  winnerHint: This draw is shown only here. Attendees are not notified.
+  close: Close
   refresh: Refresh
   loading: Loading...
   empty: No answers submitted yet.
@@ -141,6 +233,10 @@ de:
   rank: Rang
   player: Spieler
   correctAnswers: Richtig
+  drawWinner: Gewinner ziehen
+  winner: Gewinner
+  winnerHint: Diese Auslosung wird nur hier angezeigt. Teilnehmende werden nicht benachrichtigt.
+  close: Schließen
   refresh: Aktualisieren
   loading: Laden...
   empty: Noch keine Antworten eingereicht.
@@ -151,6 +247,10 @@ ja:
   rank: 順位
   player: プレイヤー
   correctAnswers: 正解
+  drawWinner: 当選者を選ぶ
+  winner: 当選者
+  winnerHint: この抽選はここにのみ表示され、参加者には通知されません。
+  close: 閉じる
   refresh: 更新
   loading: 読み込み中...
   empty: まだ回答が提出されていません。
@@ -163,5 +263,17 @@ ja:
 
 .status-message {
   @apply py-10 text-center text-lg uppercase tracking-wide text-gray-400;
+}
+
+.winner-stat {
+  @apply border-2 border-black p-3;
+}
+
+.winner-stat-label {
+  @apply text-xs font-bold tracking-wide uppercase;
+}
+
+.winner-stat-value {
+  @apply mt-1 text-2xl font-bold;
 }
 </style>
