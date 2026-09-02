@@ -70,7 +70,7 @@ _(Projects that provided valuable inspiration or resources.)_
 **Additional Tools:**<br>
 _(excluding those listed in `./package.json`)_
 
-- [CodeRabbit AI](https://www.coderabbit.ai/) was used as an AI code review assistant to help improve code quality and maintain best practices.
+- \[currently none\]
 
 **Assets & Materials Used:**<br>
 _(including images & 3D models; mostly only those requiring attribution)_
