@@ -25,6 +25,8 @@ interface LeaderboardResponse {
 }
 
 type WinnerModalPhase = 'ready' | 'drawing' | 'revealed'
+type ConfettiModule = { default: typeof import('canvas-confetti') }
+type ConfettiInstance = ReturnType<ConfettiModule['default']['create']>
 
 const isLoading = ref(false)
 const hasError = ref(false)
@@ -35,7 +37,10 @@ const isWinnerModalOpen = ref(false)
 const winnerModalPhase = ref<WinnerModalPhase>('ready')
 const selectedWinner = ref<LeaderboardEntry>()
 const winnerDialog = ref<HTMLDialogElement>()
+const winnerConfettiCanvas = ref<HTMLCanvasElement>()
 let winnerTimer: ReturnType<typeof setTimeout> | undefined
+let confettiModule: Promise<ConfettiModule> | undefined
+let winnerConfetti: ConfettiInstance | undefined
 
 const topRankedEntries = computed(() => leaderboard.value.filter(entry => entry.rank === 1))
 
@@ -46,8 +51,71 @@ function clearWinnerTimer() {
   winnerTimer = undefined
 }
 
+function clearWinnerConfetti() {
+  winnerConfetti?.reset()
+  winnerConfetti = undefined
+}
+
+function loadConfetti() {
+  confettiModule ??= import('canvas-confetti')
+  return confettiModule
+}
+
+async function celebrateWinner() {
+  const canvas = winnerConfettiCanvas.value
+  if (!canvas) return
+
+  const { default: confetti } = await loadConfetti()
+  if (!isWinnerModalOpen.value || winnerConfettiCanvas.value !== canvas) return
+
+  clearWinnerConfetti()
+  winnerConfetti = confetti.create(canvas, {
+    disableForReducedMotion: true,
+    resize: true,
+    useWorker: true,
+  })
+
+  const options = {
+    colors: [
+      '#facc15',
+      '#22c55e',
+      '#3b82f6',
+      '#a855f7',
+      '#ec4899',
+    ],
+    scalar: 1.3,
+    ticks: 360,
+  }
+
+  void winnerConfetti({
+    ...options,
+    angle: 60,
+    origin: { x: 0.05, y: 0.7 },
+    particleCount: 180,
+    spread: 75,
+    startVelocity: 60,
+  })
+  void winnerConfetti({
+    ...options,
+    angle: 120,
+    origin: { x: 0.95, y: 0.7 },
+    particleCount: 180,
+    spread: 75,
+    startVelocity: 60,
+  })
+  void winnerConfetti({
+    ...options,
+    angle: 90,
+    origin: { x: 0.5, y: 0.65 },
+    particleCount: 120,
+    spread: 100,
+    startVelocity: 45,
+  })
+}
+
 function resetWinnerModal() {
   clearWinnerTimer()
+  clearWinnerConfetti()
   isWinnerModalOpen.value = false
   winnerModalPhase.value = 'ready'
   selectedWinner.value = undefined
@@ -74,6 +142,7 @@ function startWinnerDraw() {
   if (winnerModalPhase.value !== 'ready') return
 
   winnerModalPhase.value = 'drawing'
+  void loadConfetti()
   winnerTimer = setTimeout(() => {
     winnerTimer = undefined
     const winner = pickRandomItem(topRankedEntries.value)
@@ -85,6 +154,7 @@ function startWinnerDraw() {
 
     selectedWinner.value = winner
     winnerModalPhase.value = 'revealed'
+    void celebrateWinner()
   }, 750)
 }
 
@@ -117,6 +187,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearWinnerTimer()
+  clearWinnerConfetti()
 })
 </script>
 
@@ -212,73 +283,82 @@ onBeforeUnmount(() => {
       @click.self="closeWinnerModal"
       @close="resetWinnerModal"
     >
-      <p class="text-sm font-bold tracking-wide uppercase">
-        {{ t('winner') }}
-      </p>
+      <canvas
+        ref="winnerConfettiCanvas"
+        aria-hidden="true"
+        class="pointer-events-none fixed inset-0 z-10 h-dvh w-dvw"
+      />
 
-      <template v-if="winnerModalPhase === 'ready'">
-        <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
-          {{ t('drawWinner') }}
-        </h2>
+      <div class="relative z-20">
+        <p class="text-sm font-bold tracking-wide uppercase">
+          {{ t('winner') }}
+        </p>
 
-        <div class="mt-6">
-          <UiButton @click="startWinnerDraw">
+        <template v-if="winnerModalPhase === 'ready'">
+          <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
             {{ t('drawWinner') }}
-          </UiButton>
-          <p id="winner-modal-description" class="mt-3 text-sm text-gray-600">
-            {{ t('winnerDrawHint') }}
-          </p>
-        </div>
-      </template>
+          </h2>
 
-      <template v-else-if="winnerModalPhase === 'drawing'">
-        <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
-          {{ t('drawingWinner') }}
-        </h2>
+          <div class="mt-6">
+            <UiButton @click="startWinnerDraw">
+              {{ t('drawWinner') }}
+            </UiButton>
+            <p id="winner-modal-description" class="mt-3 text-sm text-gray-600">
+              {{ t('winnerDrawHint') }}
+            </p>
+          </div>
+        </template>
 
-        <div aria-live="polite" class="mt-6 border-[3px] border-black bg-gray-100 p-8 text-center" role="status">
-          <div
-            aria-hidden="true"
-            class="mx-auto size-16 animate-spin border-[6px] border-black border-t-gray-300 motion-reduce:animate-none"
-          />
-          <p class="mt-4 text-sm font-bold tracking-wide uppercase">
+        <template v-else-if="winnerModalPhase === 'drawing'">
+          <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
             {{ t('drawingWinner') }}
-          </p>
+          </h2>
+
+          <div aria-live="polite" class="mt-6 border-[3px] border-black bg-gray-100 p-8 text-center" role="status">
+            <div
+              aria-hidden="true"
+              class="mx-auto size-16 animate-spin border-[6px] border-black border-t-gray-300
+                motion-reduce:animate-none"
+            />
+            <p class="mt-4 text-sm font-bold tracking-wide uppercase">
+              {{ t('drawingWinner') }}
+            </p>
+          </div>
+        </template>
+
+        <template v-else-if="selectedWinner">
+          <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
+            {{ selectedWinner.nickname }}
+          </h2>
+
+          <dl class="mt-6 grid grid-cols-2 gap-3">
+            <div class="winner-stat">
+              <dt class="winner-stat-label">
+                {{ t('rank') }}
+              </dt>
+              <dd class="winner-stat-value">
+                {{ selectedWinner.rank }}
+              </dd>
+            </div>
+            <div class="winner-stat">
+              <dt class="winner-stat-label">
+                {{ t('correctAnswers') }}
+              </dt>
+              <dd class="winner-stat-value">
+                {{ selectedWinner.correctAnswers }}
+                <span class="ml-1 text-lg font-normal text-gray-400">
+                  / {{ totalPublishedQuestions }}
+                </span>
+              </dd>
+            </div>
+          </dl>
+        </template>
+
+        <div class="mt-6 flex justify-end">
+          <UiButton variant="secondary" @click="closeWinnerModal">
+            {{ t('close') }}
+          </UiButton>
         </div>
-      </template>
-
-      <template v-else-if="selectedWinner">
-        <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
-          {{ selectedWinner.nickname }}
-        </h2>
-
-        <dl class="mt-6 grid grid-cols-2 gap-3">
-          <div class="winner-stat">
-            <dt class="winner-stat-label">
-              {{ t('rank') }}
-            </dt>
-            <dd class="winner-stat-value">
-              {{ selectedWinner.rank }}
-            </dd>
-          </div>
-          <div class="winner-stat">
-            <dt class="winner-stat-label">
-              {{ t('correctAnswers') }}
-            </dt>
-            <dd class="winner-stat-value">
-              {{ selectedWinner.correctAnswers }}
-              <span class="ml-1 text-lg font-normal text-gray-400">
-                / {{ totalPublishedQuestions }}
-              </span>
-            </dd>
-          </div>
-        </dl>
-      </template>
-
-      <div class="mt-6 flex justify-end">
-        <UiButton variant="secondary" @click="closeWinnerModal">
-          {{ t('close') }}
-        </UiButton>
       </div>
     </dialog>
   </div>

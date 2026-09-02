@@ -6,7 +6,7 @@ This is an inventory, not a complete redistribution license bundle.
 
 Project source code remains governed by `LICENSE`. Third-party packages remain governed by their own license terms.
 
-Package count: 34
+Package count: 36
 
 ## Packages
 
@@ -89,6 +89,16 @@ Package count: 34
 - Included license files: LICENSE
 - Included notice files: none found
 
+### @types/canvas-confetti
+
+- Declared as: devDependencies (~1.9.0)
+- Installed version: 1.9.0
+- License: MIT
+- Repository: https://github.com/DefinitelyTyped/DefinitelyTyped.git
+- Homepage: https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/canvas-confetti
+- Included license files: LICENSE
+- Included notice files: none found
+
 ### @vueuse/core
 
 - Declared as: devDependencies (~14.4.0)
@@ -116,6 +126,16 @@ Package count: 34
 - License: MIT
 - Repository: git://github.com/WiseLibs/better-sqlite3.git
 - Homepage: http://github.com/WiseLibs/better-sqlite3
+- Included license files: LICENSE
+- Included notice files: none found
+
+### canvas-confetti
+
+- Declared as: devDependencies (~1.9.4)
+- Installed version: 1.9.4
+- License: ISC
+- Repository: git+https://github.com/catdad/canvas-confetti.git
+- Homepage: https://github.com/catdad/canvas-confetti#readme
 - Included license files: LICENSE
 - Included notice files: none found
 
