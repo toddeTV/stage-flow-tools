@@ -1,13 +1,11 @@
 # Nuxt dev/build outputs
 .output
-.data
 .nuxt
 .nitro
-.cache
-dist
-.vite-hooks
 
 # Node dependencies
+.vite-hooks
+dist
 node_modules
 
 # Logs
@@ -20,6 +18,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Misc
+.cache
+.data
+/tmp/
 .DS_Store
 .fleet
 .fleetrm
@@ -35,6 +36,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+.dev.vars
+.dev.vars.*
 
 # Local editor settings (IDEs)
 .vscode
