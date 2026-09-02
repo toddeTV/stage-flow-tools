@@ -118,6 +118,12 @@ describe('third-party notices hook', () => {
       message,
     ])).not.toThrow()
 
+    writeFileSync(message, 'security: patch token validation\n')
+    expect(() => execFileSync('sh', [
+      hook,
+      message,
+    ])).not.toThrow()
+
     writeFileSync(message, 'feat(scope): reject slow hooks\n')
     expect(() => execFileSync('sh', [
       hook,

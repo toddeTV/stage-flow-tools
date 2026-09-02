@@ -120,7 +120,7 @@ if ! awk '
     subject = $0
   }
   END {
-    validTypes = "(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)"
+    validTypes = "(build|chore|ci|docs|feat|fix|perf|refactor|revert|security|style|test)"
     exit !(count == 1 && subject ~ ("^" validTypes ": [^[:space:]].*$"))
   }
 ' "$1"; then
