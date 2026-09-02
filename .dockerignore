@@ -9,7 +9,8 @@
 !pnpm-workspace.yaml
 !.npmrc
 !nuxt.config.ts
-!i18n.config.ts
+!i18n/
+!i18n/**
 !tsconfig.json
 
 !.dockerignore
