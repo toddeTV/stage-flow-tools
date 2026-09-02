@@ -35,6 +35,8 @@ jobs:
         include:
           - name: Lint & Format
             command: vp run test:lint-format
+          - name: Package JSON
+            command: vp run test:package-json
           - name: Type Check
             command: vp run test:type
           - name: Third-Party Notices

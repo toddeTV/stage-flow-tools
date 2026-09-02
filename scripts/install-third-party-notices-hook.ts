@@ -12,6 +12,7 @@ const scriptPath = fileURLToPath(import.meta.url)
 const repoRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const noticesManualCommand = 'vp run notices:generate'
 const noticesTrackedOutput = 'THIRD_PARTY_NOTICES.md'
+export const commitMessageHookMarker = 'stage-flow-tools-conventional-commit-hook'
 export const noticesTriggerInputs = [
   'package.json',
   'pnpm-lock.yaml',
@@ -28,6 +29,7 @@ export const noticesHookMarker = 'stage-flow-tools-third-party-notices-hook'
 export type NoticeHookPaths = {
   hookDispatcherRoot: string
   hooksRoot: string
+  commitMessageHook: string
   preCommitDispatcher: string
   preCommitHook: string
 }
@@ -42,6 +44,7 @@ const createNoticeHookPaths = (root: string): NoticeHookPaths => {
   const hookDispatcherRoot = resolve(hooksRoot, '_')
 
   return {
+    commitMessageHook: resolve(hooksRoot, 'commit-msg'),
     hookDispatcherRoot,
     hooksRoot,
     preCommitDispatcher: resolve(hookDispatcherRoot, 'pre-commit'),
@@ -108,27 +111,56 @@ fi
 run_staged
 `
 
+export const commitMessageHookContent = (): string => `#!/bin/sh
+# ${commitMessageHookMarker}: commit-msg
+if ! awk '
+  /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+  {
+    count += 1
+    subject = $0
+  }
+  END {
+    validTypes = "(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)"
+    exit !(count == 1 && subject ~ ("^" validTypes ": [^[:space:]].*$"))
+  }
+' "$1"; then
+  echo "Commit message must be one Conventional Commit subject without a scope: <type>: <subject>." >&2
+  exit 1
+fi
+`
+
 export const installThirdPartyNoticesHook = (root = repoRoot): void => {
   assertVitePlusHooksInstalled(root)
 
   const paths = createNoticeHookPaths(root)
 
   mkdirSync(paths.hooksRoot, { recursive: true })
+  writeFileSync(paths.commitMessageHook, commitMessageHookContent(), { mode: 0o755 })
   writeFileSync(paths.preCommitHook, preCommitHookContent(), { mode: 0o755 })
+  chmodSync(paths.commitMessageHook, 0o755)
   chmodSync(paths.preCommitHook, 0o755)
-  console.log('installed third-party notice Vite+ hook: .vite-hooks/pre-commit')
+  console.log('installed Vite+ commit hooks: .vite-hooks/commit-msg, .vite-hooks/pre-commit')
 }
 
 export const thirdPartyNoticesHookStatusChecks = (
   root = repoRoot,
 ): NoticeHookStatusCheck[] => {
   const paths = createNoticeHookPaths(root)
+  const commitMessageContent = readTextIfExists(paths.commitMessageHook)
   const preCommitContent = readTextIfExists(paths.preCommitHook)
 
   return [
     {
       ok: existsSync(paths.preCommitDispatcher),
       text: '.vite-hooks/_/pre-commit dispatcher exists',
+    },
+    {
+      ok: commitMessageContent.includes(commitMessageHookMarker),
+      text: '.vite-hooks/commit-msg contains Conventional Commit marker',
+    },
+    {
+      ok: commitMessageContent.includes('one Conventional Commit subject without a scope'),
+      text: '.vite-hooks/commit-msg enforces one scoped-free Conventional Commit subject',
     },
     {
       ok: preCommitContent.includes(noticesHookMarker),

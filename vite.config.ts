@@ -2,16 +2,14 @@ import { defineConfig } from 'vite-plus'
 
 export default defineConfig({
   staged: {
-    '*': [
-      'vp run test:lint-format',
+    '**/*.{css,html,js,mjs,cjs,ts,mts,cts,vue,json,jsonc,yaml,yml,md}': [
+      'vp exec eslint',
+    ],
+    '.coderabbit.yml': [
+      'vp exec eslint',
     ],
     'package.json': [
       'vp run test:package-json',
-    ],
-    '*.{ts,vue}': [
-      // Wrapped in `sh -c` so Vite+ staged doesn't append file paths;
-      // `nuxt typecheck` is project-wide and fails when given individual files.
-      'sh -c "vp run test:type"',
     ],
   },
   run: {

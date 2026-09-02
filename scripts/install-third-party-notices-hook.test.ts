@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import {
   mkdirSync,
   mkdtempSync,
@@ -19,6 +20,8 @@ import {
 
 import {
   assertVitePlusHooksInstalled,
+  commitMessageHookContent,
+  commitMessageHookMarker,
   installThirdPartyNoticesHook,
   noticesHookMarker,
   noticesTriggerPattern,
@@ -73,27 +76,59 @@ describe('third-party notices hook', () => {
     )
   })
 
-  it('installs the generated hook after the Vite+ dispatcher', () => {
+  it('installs the generated hooks after the Vite+ dispatcher', () => {
     const root = createTemporaryRoot()
 
     installVitePlusPreCommitDispatcher(root)
     installThirdPartyNoticesHook(root)
 
-    const content = preCommitHookContent()
-    const installedContent = readFileSync(resolve(root, '.vite-hooks/pre-commit'), 'utf8')
+    const preCommitContent = preCommitHookContent()
+    const commitMessageContent = commitMessageHookContent()
+    const installedPreCommitContent = readFileSync(resolve(root, '.vite-hooks/pre-commit'), 'utf8')
+    const installedCommitMessageContent = readFileSync(resolve(root, '.vite-hooks/commit-msg'), 'utf8')
 
-    expect(content).toContain(noticesHookMarker)
-    expect(content).toContain('vp run notices:generate')
-    expect(content).toContain('git add -- THIRD_PARTY_NOTICES.md')
-    expect(content).toContain('package.json')
-    expect(content).toContain('pnpm-lock.yaml')
-    expect(content).toContain('pnpm-workspace.yaml')
-    expect(content).toContain('scripts/write-third-party-notices.ts')
-    expect(content).toContain('vp staged')
-    expect(installedContent).toBe(content)
-    expect(content.match(/git add -- [^\n]+/gu)).toEqual([
+    expect(preCommitContent).toContain(noticesHookMarker)
+    expect(preCommitContent).toContain('vp run notices:generate')
+    expect(preCommitContent).toContain('git add -- THIRD_PARTY_NOTICES.md')
+    expect(preCommitContent).toContain('package.json')
+    expect(preCommitContent).toContain('pnpm-lock.yaml')
+    expect(preCommitContent).toContain('pnpm-workspace.yaml')
+    expect(preCommitContent).toContain('scripts/write-third-party-notices.ts')
+    expect(preCommitContent).toContain('vp staged')
+    expect(commitMessageContent).toContain(commitMessageHookMarker)
+    expect(installedPreCommitContent).toBe(preCommitContent)
+    expect(installedCommitMessageContent).toBe(commitMessageContent)
+    expect(preCommitContent.match(/git add -- [^\n]+/gu)).toEqual([
       'git add -- THIRD_PARTY_NOTICES.md',
     ])
+  })
+
+  it('accepts one scope-free Conventional Commit subject only', () => {
+    const root = createTemporaryRoot()
+
+    installVitePlusPreCommitDispatcher(root)
+    installThirdPartyNoticesHook(root)
+
+    const hook = resolve(root, '.vite-hooks/commit-msg')
+    const message = resolve(root, 'commit-message')
+
+    writeFileSync(message, 'feat: add quick hooks\n')
+    expect(() => execFileSync('sh', [
+      hook,
+      message,
+    ])).not.toThrow()
+
+    writeFileSync(message, 'feat(scope): reject slow hooks\n')
+    expect(() => execFileSync('sh', [
+      hook,
+      message,
+    ], { stdio: 'pipe' })).toThrow()
+
+    writeFileSync(message, 'feat: allow this\n\nExplain more\n')
+    expect(() => execFileSync('sh', [
+      hook,
+      message,
+    ], { stdio: 'pipe' })).toThrow()
   })
 
   it('triggers only for package declarations, lockfiles, or generator changes', () => {
@@ -131,6 +166,14 @@ describe('third-party notices hook', () => {
       {
         ok: true,
         text: '.vite-hooks/_/pre-commit dispatcher exists',
+      },
+      {
+        ok: true,
+        text: '.vite-hooks/commit-msg contains Conventional Commit marker',
+      },
+      {
+        ok: true,
+        text: '.vite-hooks/commit-msg enforces one scoped-free Conventional Commit subject',
       },
       {
         ok: true,
