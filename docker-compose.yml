@@ -7,26 +7,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: stage-flow-tools
     container_name: stage-flow-tools
+    restart: unless-stopped
     environment:
       - foo=bar
       # put all variables from `.env` here
-    image: stage-flow-tools
+    volumes:
+      - ./data:/app/.data
+    networks:
+      - traefik-public
     labels:
       - traefik.enable=true
+      - traefik.http.services.stage-flow-tools.loadbalancer.server.port=3000
       - traefik.http.routers.stage-flow-tools.rule=Host(`quiz.your-domain.com`)
       - traefik.http.routers.stage-flow-tools.entrypoints=websecure
-      - traefik.http.services.stage-flow-tools.loadbalancer.server.port=3000
       - traefik.http.routers.stage-flow-tools.tls.certresolver=myresolver
       - traefik.http.middlewares.stage-flow-tools-cors.headers.accesscontrolalloworiginlist=http://localhost:3030
       - traefik.http.middlewares.stage-flow-tools-cors.headers.accesscontrolallowmethods=GET,POST,OPTIONS
       - traefik.http.middlewares.stage-flow-tools-cors.headers.accesscontrolallowheaders=Authorization,Content-Type
       - traefik.http.middlewares.stage-flow-tools-cors.headers.addvaryheader=true
       - traefik.http.routers.stage-flow-tools.middlewares=stage-flow-tools-cors
-    networks:
-      - traefik-public
-    restart: unless-stopped
-    volumes:
-      - ./data:/app/.data
-
-version: "3.9"
