@@ -79,7 +79,7 @@ _(including images & 3D models; mostly only those requiring attribution)_
 
 ## License
 
-Copyright (c) 2025-present [Thorsten Seyschab](https://todde.tv).
+Copyright (c) 2025-present Thorsten Seyschab ([https://todde.tv/](https://todde.tv)).
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0). See [LICENSE](/LICENSE) and [NOTICE](/NOTICE).
 
