@@ -39,6 +39,8 @@ jobs:
             command: vp run test:type
           - name: Third-Party Notices
             command: vp run test:notices
+          - name: Unit Tests
+            command: vp run test:unit
 
     steps:
       # Check out the repository
