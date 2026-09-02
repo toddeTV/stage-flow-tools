@@ -2,7 +2,7 @@
   "name": "@todde.tv/stage-flow-tools",
   "version": "1.0.0-rc.0",
   "description": "Real-time quiz and interaction tool for live presentations. Features include admin-controlled quiz flow, live results, and instant audience participation. Boost engagement on stage - at conferences, sessions, and workshops.",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "Apache-2.0",
   "author": "Thorsten Seyschab <hello@todde.tv> (https://todde.tv/)",
   "contributors": [
     "Thorsten Seyschab <hello@todde.tv> (https://todde.tv/)"
@@ -29,15 +29,23 @@
     "fix": "vp run fix:lint-format && vp run fix:package-json",
     "fix:lint-format": "vp exec eslint . --fix",
     "fix:package-json": "vp exec prettier-package-json --write package.json",
+    "hooks:install": "vp run hooks:install:vite-plus && vp run notices:hook:install",
+    "hooks:install:vite-plus": "vp config --hooks-only",
     "postinstall": "nuxt prepare",
     "install:clean": "vp install --frozen-lockfile --prefer-offline",
-    "prepare": "vp config --hooks-only",
+    "notices:generate": "vp exec tsx scripts/write-third-party-notices.ts",
+    "notices:hook:install": "vp exec tsx scripts/install-third-party-notices-hook.ts install",
+    "notices:hook:status": "vp exec tsx scripts/install-third-party-notices-hook.ts status",
+    "notices:validate": "vp exec tsx scripts/write-third-party-notices.ts --check",
+    "prepare": "vp run hooks:install",
     "preview:ssg": "vp dlx serve .output/public",
     "preview:ssr": "nuxt preview",
-    "test": "concurrently --names \"test:lint-format,test:package-json,test:type\" \"vp exec eslint .\" \"vp exec prettier-package-json --list-different package.json\" \"nuxt typecheck\"",
+    "test": "concurrently --names \"test:lint-format,test:package-json,test:notices,test:type\" \"vp exec eslint .\" \"vp exec prettier-package-json --list-different package.json\" \"vp run test:notices\" \"nuxt typecheck\"",
     "test:lint-format": "vp exec eslint .",
+    "test:notices": "vp run notices:validate",
     "test:package-json": "vp exec prettier-package-json --list-different package.json",
-    "test:type": "nuxt typecheck"
+    "test:type": "nuxt typecheck",
+    "test:unit": "vp test run app server shared scripts"
   },
   "dependencies": {
     "nuxt": "~4.1.2",
@@ -68,6 +76,7 @@
     "nuxi": "~3.28.0",
     "prettier": "~3.8.1",
     "prettier-package-json": "~2.8.0",
+    "tsx": "~4.23.13",
     "typescript": "~5.9.3",
     "vite-plus": "catalog:",
     "vue-tsc": "~3.1.0"

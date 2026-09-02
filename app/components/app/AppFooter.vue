@@ -1,16 +1,12 @@
 <script setup lang="ts">
 const config = useRuntimeConfig()
 const appVersion = config.public.version
-
-const yearStart = 2025
-const yearCurrent = new Date().getFullYear()
-const yearSpan = yearStart === yearCurrent ? yearStart : `${yearStart} - ${yearCurrent}`
 </script>
 
 <template>
   <footer class="flex flex-col items-center justify-between gap-4 p-4 text-sm md:flex-row md:gap-0">
     <div class="text-center md:text-left">
-      Copyright © {{ yearSpan }},
+      Copyright (c) 2025-present,
       <NuxtLink
         aria-label="Website of Thorsten Seyschab"
         class="underline"
@@ -18,7 +14,6 @@ const yearSpan = yearStart === yearCurrent ? yearStart : `${yearStart} - ${yearC
         to="https://todde.tv/"
       >
         Thorsten Seyschab</NuxtLink>.
-      All rights reserved.
     </div>
     <div class="flex items-center space-x-4">
       <span>v{{ appVersion }}</span>
