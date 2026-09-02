@@ -51,7 +51,7 @@ jobs:
       - name: Setup Vite+
         uses: voidzero-dev/setup-vp@v1
         with:
-          version: 0.1.19
+          version: 0.3.0
           node-version: "24"
           cache: true
           run-install: false
@@ -59,7 +59,7 @@ jobs:
       # Install project dependencies with automatic `nuxt prepare` at the end.
       # Thanks to the cache, this step is extremely fast on subsequent runs.
       - name: Install dependencies
-        run: vp run install:clean
+        run: vp run install:clean:frozen
 
       # Execute the specific check command from the matrix
       - name: Run Check

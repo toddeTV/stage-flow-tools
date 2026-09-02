@@ -9,7 +9,7 @@ WORKDIR /app
 # Install Vite+ CLI
 RUN apk add --no-cache bash curl
 ENV VP_HOME=/root/.vite-plus
-ENV VP_VERSION=0.1.19
+ENV VP_VERSION=0.3.0
 ENV PATH=${VP_HOME}/bin:${PATH}
 RUN VP_NODE_MANAGER=no curl -fsSL https://vite.plus | bash
 
@@ -18,7 +18,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Install dependencies without lifecycle scripts before copying the full source tree.
 # The repo uses a postinstall hook (`nuxt prepare`), which needs project files not present yet.
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store vp run install:clean -- --ignore-scripts
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store vp run install:clean:frozen -- --ignore-scripts
 
 # Copy the rest of the application source code
 COPY . .
