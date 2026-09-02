@@ -53,6 +53,18 @@ afterEach(() => {
 })
 
 describe('third-party notices hook', () => {
+  it('exposes the documented dispatcher recovery commands', () => {
+    const packageJson = JSON.parse(
+      readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+    ) as { scripts: Record<string, string> }
+
+    expect(packageJson.scripts).toMatchObject({
+      'hooks:install': 'vp run hooks:install:vite-plus && vp run notices:hook:install',
+      'hooks:install:vite-plus': 'vp config --hooks-only',
+      'prepare': 'vp run hooks:install',
+    })
+  })
+
   it('requires the Vite+ pre-commit dispatcher', () => {
     const root = createTemporaryRoot()
 
