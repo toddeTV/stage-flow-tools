@@ -17,7 +17,7 @@ services:
     #   - NUXT_JWT_SECRET=...
     #   - ...
     volumes:
-      - ./data:/app/.data
+      - ./.data:/app/.data
     networks:
       - traefik-public
     labels:
