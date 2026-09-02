@@ -1,0 +1,117 @@
+description: Set up system Node and resilient, cached Vite+ CI bootstrap.
+name: Setup Node and Vite+
+outputs:
+  used-cached-fallback:
+    description: Whether Vite+ setup recovered from the bootstrap cache after installer failure.
+    value: ${{ steps.validate-vite-plus-bootstrap-fallback.outputs.used-cached-fallback }}
+
+runs:
+  steps:
+    # GitHub-managed Node prevents Vite+ from downloading a runtime from nodejs.org.
+    - id: setup-node
+      name: Setup Node.js
+      # actions/setup-node@v7
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      with:
+        node-version: "24"
+        package-manager-cache: false
+
+    # Cache Vite+ global bootstrap state separately from its dependency store.
+    - continue-on-error: true
+      id: vite-plus-bootstrap-cache
+      name: Restore Vite+ Bootstrap Cache
+      # actions/cache/restore@v6.1.0
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        key: vite-plus-bootstrap-v1-${{ runner.os }}-${{ runner.arch }}-vp-0.3.0-node-${{ steps.setup-node.outputs.node-version }}
+        path: ~/.vite-plus
+
+    # A cache can recover an installer failure only when it is complete and version-compatible.
+    - id: validate-vite-plus-bootstrap-cache
+      if: ${{ steps.vite-plus-bootstrap-cache.outputs.cache-hit == 'true' }}
+      name: Validate Cached Vite+ Bootstrap
+      run: |
+        cached_vite_plus_bin="$HOME/.vite-plus/bin/vp"
+
+        if test -x "$cached_vite_plus_bin" \
+          && cached_vite_plus_version="$("$cached_vite_plus_bin" --version)" \
+          && test "${cached_vite_plus_version%%$'\n'*}" = 'vp v0.3.0'; then
+          echo "$HOME/.vite-plus/bin" >> "$GITHUB_PATH"
+          echo 'valid=true' >> "$GITHUB_OUTPUT"
+        else
+          echo 'valid=false' >> "$GITHUB_OUTPUT"
+        fi
+      shell: bash
+
+    # Keep Vite+ system-first: setup-node owns the CI runtime, Vite+ owns tooling and pnpm.
+    - continue-on-error: true
+      env:
+        VP_NODE_MANAGER: no
+      id: setup-vite-plus
+      name: Setup Vite+
+      # voidzero-dev/setup-vp@v1
+      uses: voidzero-dev/setup-vp@35171c92dd08b67d5a9d3f2a4327800e58396f2a
+      with:
+        cache: true
+        run-install: false
+        version: 0.3.0
+
+    # The installer can partially overwrite Vite+ state before it fails, so restore the exact cache again.
+    - if: ${{ steps.setup-vite-plus.outcome == 'failure' && steps.validate-vite-plus-bootstrap-cache.outputs.valid == 'true' }}
+      name: Clean Failed Vite+ Bootstrap
+      run: |
+        vite_plus_home="$HOME/.vite-plus"
+        test -d "$vite_plus_home"
+        test "$(basename "$vite_plus_home")" = '.vite-plus'
+        rm -rf -- "$vite_plus_home"
+      shell: bash
+
+    - id: restore-vite-plus-bootstrap-fallback
+      if: ${{ steps.setup-vite-plus.outcome == 'failure' && steps.validate-vite-plus-bootstrap-cache.outputs.valid == 'true' }}
+      name: Restore Cached Vite+ Bootstrap After Setup Failure
+      # actions/cache/restore@v6.1.0
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        key: vite-plus-bootstrap-v1-${{ runner.os }}-${{ runner.arch }}-vp-0.3.0-node-${{ steps.setup-node.outputs.node-version }}
+        path: ~/.vite-plus
+
+    - id: validate-vite-plus-bootstrap-fallback
+      if: ${{ steps.setup-vite-plus.outcome == 'failure' && steps.validate-vite-plus-bootstrap-cache.outputs.valid == 'true' }}
+      name: Validate Cached Vite+ Bootstrap Fallback
+      run: |
+        test '${{ steps.restore-vite-plus-bootstrap-fallback.outputs.cache-hit }}' = 'true'
+        fallback_vite_plus_bin="$HOME/.vite-plus/bin/vp"
+        test -x "$fallback_vite_plus_bin"
+        fallback_vite_plus_version="$("$fallback_vite_plus_bin" --version)"
+        test "${fallback_vite_plus_version%%$'\n'*}" = 'vp v0.3.0'
+        echo "$HOME/.vite-plus/bin" >> "$GITHUB_PATH"
+        echo 'used-cached-fallback=true' >> "$GITHUB_OUTPUT"
+        echo '::warning::Vite+ setup failed; continuing with the validated bootstrap cache.'
+      shell: bash
+
+    - if: ${{ steps.setup-vite-plus.outcome == 'failure' && steps.validate-vite-plus-bootstrap-cache.outputs.valid != 'true' }}
+      name: Fail Without a Valid Cached Vite+ Bootstrap
+      run: exit 1
+      shell: bash
+
+    # Confirm Vite+ keeps GitHub-managed Node on PATH.
+    - name: Verify Vite+ System Node
+      run: |
+        vp env off
+        vp --version
+        actual_node_version=$(node --version)
+        expected_node_version=${{ steps.setup-node.outputs.node-version }}
+        test "${actual_node_version#v}" = "${expected_node_version#v}"
+      shell: bash
+
+    # The caller invokes this action before any project token or deployment secret.
+    - continue-on-error: true
+      if: ${{ steps.vite-plus-bootstrap-cache.outputs.cache-hit != 'true' && steps.setup-vite-plus.outcome == 'success' }}
+      name: Save Vite+ Bootstrap Cache
+      # actions/cache/save@v6.1.0
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        key: vite-plus-bootstrap-v1-${{ runner.os }}-${{ runner.arch }}-vp-0.3.0-node-${{ steps.setup-node.outputs.node-version }}
+        path: ~/.vite-plus
+
+  using: composite
