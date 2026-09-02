@@ -24,19 +24,32 @@ interface LeaderboardResponse {
   totalQuestionsWithCorrectAnswers: number
 }
 
+type WinnerModalPhase = 'ready' | 'drawing' | 'revealed'
+
 const isLoading = ref(false)
 const hasError = ref(false)
 const leaderboard = ref<LeaderboardEntry[]>([])
 const totalPublishedQuestions = ref(0)
 const totalQuestionsWithCorrectAnswers = ref(0)
 const isWinnerModalOpen = ref(false)
+const winnerModalPhase = ref<WinnerModalPhase>('ready')
 const selectedWinner = ref<LeaderboardEntry>()
 const winnerDialog = ref<HTMLDialogElement>()
+let winnerTimer: ReturnType<typeof setTimeout> | undefined
 
 const topRankedEntries = computed(() => leaderboard.value.filter(entry => entry.rank === 1))
 
+function clearWinnerTimer() {
+  if (winnerTimer === undefined) return
+
+  clearTimeout(winnerTimer)
+  winnerTimer = undefined
+}
+
 function resetWinnerModal() {
+  clearWinnerTimer()
   isWinnerModalOpen.value = false
+  winnerModalPhase.value = 'ready'
   selectedWinner.value = undefined
 }
 
@@ -49,15 +62,30 @@ function closeWinnerModal() {
   resetWinnerModal()
 }
 
-function drawWinner() {
-  if (isWinnerModalOpen.value) return
+function openWinnerModal() {
+  if (isWinnerModalOpen.value || topRankedEntries.value.length === 0) return
 
-  const winner = pickRandomItem(topRankedEntries.value)
-  if (!winner) return
-
-  selectedWinner.value = winner
+  winnerModalPhase.value = 'ready'
   isWinnerModalOpen.value = true
   nextTick(() => winnerDialog.value?.showModal())
+}
+
+function startWinnerDraw() {
+  if (winnerModalPhase.value !== 'ready') return
+
+  winnerModalPhase.value = 'drawing'
+  winnerTimer = setTimeout(() => {
+    winnerTimer = undefined
+    const winner = pickRandomItem(topRankedEntries.value)
+
+    if (!winner) {
+      closeWinnerModal()
+      return
+    }
+
+    selectedWinner.value = winner
+    winnerModalPhase.value = 'revealed'
+  }, 750)
 }
 
 /** Fetch leaderboard data from the API. */
@@ -86,6 +114,10 @@ async function fetchLeaderboard() {
 onMounted(() => {
   fetchLeaderboard()
 })
+
+onBeforeUnmount(() => {
+  clearWinnerTimer()
+})
 </script>
 
 <template>
@@ -100,7 +132,7 @@ onMounted(() => {
         <UiButton
           :disabled="isLoading || isWinnerModalOpen || topRankedEntries.length === 0"
           size="small"
-          @click="drawWinner"
+          @click="openWinnerModal"
         >
           {{ t('drawWinner') }}
         </UiButton>
@@ -170,9 +202,10 @@ onMounted(() => {
     </UiSection>
 
     <dialog
-      v-if="isWinnerModalOpen && selectedWinner"
+      v-if="isWinnerModalOpen"
       ref="winnerDialog"
-      aria-describedby="winner-modal-description"
+      :aria-busy="winnerModalPhase === 'drawing'"
+      :aria-describedby="winnerModalPhase === 'ready' ? 'winner-modal-description' : undefined"
       aria-labelledby="winner-modal-title"
       class="m-auto max-h-[calc(100dvh-2.5rem)] w-[calc(100%-2.5rem)] max-w-md
         border-[3px] border-black bg-white p-6 text-black backdrop:bg-black/50"
@@ -182,34 +215,68 @@ onMounted(() => {
       <p class="text-sm font-bold tracking-wide uppercase">
         {{ t('winner') }}
       </p>
-      <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
-        {{ selectedWinner.nickname }}
-      </h2>
 
-      <dl class="mt-6 grid grid-cols-2 gap-3">
-        <div class="winner-stat">
-          <dt class="winner-stat-label">
-            {{ t('rank') }}
-          </dt>
-          <dd class="winner-stat-value">
-            {{ selectedWinner.rank }}
-          </dd>
+      <template v-if="winnerModalPhase === 'ready'">
+        <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
+          {{ t('drawWinner') }}
+        </h2>
+
+        <div class="mt-6">
+          <UiButton @click="startWinnerDraw">
+            {{ t('drawWinner') }}
+          </UiButton>
+          <p id="winner-modal-description" class="mt-3 text-sm text-gray-600">
+            {{ t('winnerDrawHint') }}
+          </p>
         </div>
-        <div class="winner-stat">
-          <dt class="winner-stat-label">
-            {{ t('correctAnswers') }}
-          </dt>
-          <dd class="winner-stat-value">
-            {{ selectedWinner.correctAnswers }}
-            <span class="ml-1 text-lg font-normal text-gray-400">
-              / {{ totalPublishedQuestions }}
-            </span>
-          </dd>
+      </template>
+
+      <template v-else-if="winnerModalPhase === 'drawing'">
+        <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
+          {{ t('drawingWinner') }}
+        </h2>
+
+        <div aria-live="polite" class="mt-6 border-[3px] border-black bg-gray-100 p-8 text-center" role="status">
+          <div
+            aria-hidden="true"
+            class="mx-auto size-16 animate-spin border-[6px] border-black border-t-gray-300 motion-reduce:animate-none"
+          />
+          <p class="mt-4 text-sm font-bold tracking-wide uppercase">
+            {{ t('drawingWinner') }}
+          </p>
         </div>
-      </dl>
+      </template>
+
+      <template v-else-if="selectedWinner">
+        <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
+          {{ selectedWinner.nickname }}
+        </h2>
+
+        <dl class="mt-6 grid grid-cols-2 gap-3">
+          <div class="winner-stat">
+            <dt class="winner-stat-label">
+              {{ t('rank') }}
+            </dt>
+            <dd class="winner-stat-value">
+              {{ selectedWinner.rank }}
+            </dd>
+          </div>
+          <div class="winner-stat">
+            <dt class="winner-stat-label">
+              {{ t('correctAnswers') }}
+            </dt>
+            <dd class="winner-stat-value">
+              {{ selectedWinner.correctAnswers }}
+              <span class="ml-1 text-lg font-normal text-gray-400">
+                / {{ totalPublishedQuestions }}
+              </span>
+            </dd>
+          </div>
+        </dl>
+      </template>
 
       <div class="mt-6 flex justify-end">
-        <UiButton @click="closeWinnerModal">
+        <UiButton variant="secondary" @click="closeWinnerModal">
           {{ t('close') }}
         </UiButton>
       </div>
@@ -225,6 +292,8 @@ en:
   correctAnswers: Correct
   drawWinner: Draw winner
   winner: Winner
+  winnerDrawHint: The person with the most correct answers will be drawn. Ties are decided at random.
+  drawingWinner: Drawing winner...
   close: Close
   refresh: Refresh
   loading: Loading...
@@ -238,6 +307,8 @@ de:
   correctAnswers: Richtig
   drawWinner: Gewinner ziehen
   winner: Gewinner
+  winnerDrawHint: Die Person mit den meisten richtigen Antworten wird gezogen. Bei Gleichstand entscheidet der Zufall.
+  drawingWinner: Auslosung läuft...
   close: Schließen
   refresh: Aktualisieren
   loading: Laden...
@@ -251,6 +322,8 @@ ja:
   correctAnswers: 正解
   drawWinner: 当選者を選ぶ
   winner: 当選者
+  winnerDrawHint: 最も多く正解した参加者から選びます。同点の場合はランダムに選ばれます。
+  drawingWinner: 抽選中...
   close: 閉じる
   refresh: 更新
   loading: 読み込み中...
