@@ -20,12 +20,14 @@ interface LeaderboardEntry {
 
 interface LeaderboardResponse {
   leaderboard: LeaderboardEntry[]
+  totalPublishedQuestions: number
   totalQuestionsWithCorrectAnswers: number
 }
 
 const isLoading = ref(false)
 const hasError = ref(false)
 const leaderboard = ref<LeaderboardEntry[]>([])
+const totalPublishedQuestions = ref(0)
 const totalQuestionsWithCorrectAnswers = ref(0)
 const isWinnerModalOpen = ref(false)
 const selectedWinner = ref<LeaderboardEntry>()
@@ -66,12 +68,14 @@ async function fetchLeaderboard() {
   try {
     const data = await $fetch<LeaderboardResponse>('/api/results/leaderboard')
     leaderboard.value = data.leaderboard
+    totalPublishedQuestions.value = data.totalPublishedQuestions
     totalQuestionsWithCorrectAnswers.value = data.totalQuestionsWithCorrectAnswers
   }
   catch (error: unknown) {
     logger_error('Failed to fetch leaderboard', error)
     hasError.value = true
     leaderboard.value = []
+    totalPublishedQuestions.value = 0
     totalQuestionsWithCorrectAnswers.value = 0
   }
   finally {
@@ -197,6 +201,9 @@ onMounted(() => {
           </dt>
           <dd class="winner-stat-value">
             {{ selectedWinner.correctAnswers }}
+            <span class="ml-1 text-lg font-normal text-gray-400">
+              / {{ totalPublishedQuestions }}
+            </span>
           </dd>
         </div>
       </dl>

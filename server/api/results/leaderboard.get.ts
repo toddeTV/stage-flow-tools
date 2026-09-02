@@ -77,6 +77,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     leaderboard,
+    totalPublishedQuestions: publishedQuestions.length,
     totalQuestionsWithCorrectAnswers: correctAnswersByQuestion.size,
   }
 })

@@ -448,6 +448,7 @@ Get aggregated player leaderboard across all published questions (admin only). A
       "correctAnswers": 5
     }
   ],
+  "totalPublishedQuestions": 12,
   "totalQuestionsWithCorrectAnswers": 10
 }
 ```
