@@ -36,10 +36,7 @@ dist-ssr
 .env.*
 !.env.example
 
-# no IDE and LLM/AI settings
-AGENTS.md
-CLAUDE.md
-.claude
+# Local editor settings (IDEs)
+.vscode
 .cursor
 .idea
-.vscode
