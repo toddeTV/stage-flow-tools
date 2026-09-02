@@ -24,7 +24,7 @@ Configuration in `nuxt.config.ts`:
 
 - `server/plugins/migrations.ts` applies pending Drizzle migrations when the Nitro server starts.
 - `initStorage()` in `server/utils/storage.ts` initializes the shared SQLite client after startup.
-- No bundled seed data is included in the repository.
+- `vp run ops:seed:dev` applies local migrations and adds two development-only example questions to a fresh database.
 - Emoji cooldown state stays in server memory and is not part of persisted storage.
 
 ## Maintenance

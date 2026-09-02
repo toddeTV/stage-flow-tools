@@ -38,6 +38,7 @@
     "notices:hook:install": "vp exec tsx scripts/install-third-party-notices-hook.ts install",
     "notices:hook:status": "vp exec tsx scripts/install-third-party-notices-hook.ts status",
     "notices:validate": "vp exec tsx scripts/write-third-party-notices.ts --check",
+    "ops:seed:dev": "vp exec tsx scripts/ops-seed.ts --target dev",
     "prepare": "vp run hooks:install",
     "preview:ssg": "vp dlx serve .output/public",
     "preview:ssr": "nuxt preview",
