@@ -1,16 +1,25 @@
 {
-  "changelog-sections": [
-    { "section": "✨ Features", "type": "feat" },
-    { "section": "🐛 Bug Fixes", "type": "fix" },
-    { "section": "⚡ Performance Improvements", "type": "perf" },
-    { "section": "⏪ Reverts", "type": "revert" },
-    { "section": "🧹 Miscellaneous Chores", "type": "chore" },
-    { "section": "📚 Documentation", "type": "docs" },
-    { "section": "🔨 Code Refactoring", "type": "refactor" }
-  ],
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "packages": {
     ".": {
-      "package-name": "stage-flow-tools"
+      "changelog-sections": [
+        { "hidden": false, "section": "Features (feat)", "type": "feat" },
+        { "hidden": false, "section": "Bug Fixes (fix)", "type": "fix" },
+        { "hidden": false, "section": "Security (security)", "type": "security" },
+        { "hidden": false, "section": "Performance (perf)", "type": "perf" },
+        { "hidden": false, "section": "Refactoring (refactor)", "type": "refactor" },
+        { "hidden": false, "section": "Tests (test)", "type": "test" },
+        { "hidden": false, "section": "Documentation (docs)", "type": "docs" },
+        { "hidden": false, "section": "Build & Dependencies (build)", "type": "build" },
+        { "hidden": false, "section": "Continuous Integration (ci)", "type": "ci" },
+        { "hidden": false, "section": "Formatting (style)", "type": "style" },
+        { "hidden": false, "section": "Reverts (revert)", "type": "revert" },
+        { "hidden": false, "section": "Maintenance (chore)", "type": "chore" }
+      ],
+      "include-component-in-tag": false,
+      "include-v-in-tag": true,
+      "pull-request-title-pattern": "chore: release v${version}",
+      "release-type": "node"
     }
   }
 }
