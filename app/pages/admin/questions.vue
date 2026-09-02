@@ -120,7 +120,7 @@ const { data: fetchedQuestions, error: fetchError, refresh: loadQuestions } = us
 
 watch(fetchedQuestions, (newQuestions) => {
   if (newQuestions && Array.isArray(newQuestions)) {
-    allQuestions.value = newQuestions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    allQuestions.value = newQuestions.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     activeQuestion.value = newQuestions.find(q => q.is_active) || null
 
     if (editingQuestionId.value) {
