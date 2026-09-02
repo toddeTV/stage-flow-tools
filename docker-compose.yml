@@ -10,9 +10,12 @@ services:
     image: stage-flow-tools
     container_name: stage-flow-tools
     restart: unless-stopped
-    environment:
-      - foo=bar
-      # put all variables from `.env` here
+    # Choose one and uncomment:
+    # env_file:
+    #   - .env
+    # environment:
+    #   - NUXT_JWT_SECRET=...
+    #   - ...
     volumes:
       - ./data:/app/.data
     networks:
