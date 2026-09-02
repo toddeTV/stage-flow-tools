@@ -95,6 +95,20 @@ describe('third-party notices hook', () => {
     expect(trigger.test('scripts/install-third-party-notices-hook.ts')).toBe(false)
   })
 
+  it('blocks notice generation when a trigger input has unstaged changes', () => {
+    const content = preCommitHookContent()
+    const guardIndex = content.indexOf('UNSTAGED_TRIGGER=$(git diff --name-only --')
+    const generatorIndex = content.indexOf('vp run notices:generate')
+
+    expect(content).toContain(
+      'git diff --name-only -- package.json pnpm-lock.yaml pnpm-workspace.yaml scripts/write-third-party-notices.ts',
+    )
+    expect(content).toContain('Refusing to refresh notices with unstaged trigger inputs.')
+    expect(content).toContain('Stage, stash, or discard those changes, then retry.')
+    expect(guardIndex).toBeGreaterThan(-1)
+    expect(guardIndex).toBeLessThan(generatorIndex)
+  })
+
   it('reports every installed hook requirement as ready', () => {
     const root = createTemporaryRoot()
 

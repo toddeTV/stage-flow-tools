@@ -21,6 +21,7 @@ export const noticesTriggerInputs = [
 export const noticesTriggerPattern = noticesTriggerInputs
   .map(path => path.replaceAll('.', '\\.'))
   .join('|')
+const noticesTriggerArguments = noticesTriggerInputs.join(' ')
 
 export const noticesHookMarker = 'stage-flow-tools-third-party-notices-hook'
 
@@ -92,6 +93,12 @@ fi
 
 # Third-party notice triggers: ${noticesTriggerInputs.join(' ')}
 NOTICE_TRIGGER=$(echo "$STAGED" | grep -E '^(${noticesTriggerPattern})$' || true)
+UNSTAGED_TRIGGER=$(git diff --name-only -- ${noticesTriggerArguments} | grep -E '^(${noticesTriggerPattern})$' || true)
+if [ -n "$NOTICE_TRIGGER" ] && [ -n "$UNSTAGED_TRIGGER" ]; then
+    echo "[notices hook] Refusing to refresh notices with unstaged trigger inputs." >&2
+    echo "[notices hook] Stage, stash, or discard those changes, then retry." >&2
+    exit 1
+fi
 if [ -n "$NOTICE_TRIGGER" ]; then
     echo "[notices hook] Refreshing third-party notices before commit..." >&2
     ${noticesManualCommand}
@@ -182,7 +189,8 @@ const isMainModule = (): boolean => (
 if (isMainModule()) {
   try {
     main()
-  } catch (error) {
+  }
+  catch (error) {
     const message = error instanceof Error ? error.message : String(error)
 
     console.error(message)
