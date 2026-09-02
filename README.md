@@ -79,16 +79,10 @@ _(including images & 3D models; mostly only those requiring attribution)_
 
 ## License
 
-**Copyright (c) 2026-present, [Thorsten Seyschab](https://todde.tv)**
+Copyright (c) 2025-present [Thorsten Seyschab](https://todde.tv).
 
-This project, including original code and assets, is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)). Under this license, others are allowed to remix, adapt, and build upon this work, provided they credit the project founder and license any derivative works under the same terms.
+Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0). See [LICENSE](/LICENSE) and [NOTICE](/NOTICE).
 
-This project utilizes third-party libraries and other materials. These components are the property of their respective owners and are licensed under their own terms. A list of these can be found in the [_Contribution & Attribution_](#contribution--attribution) section in this document above, in the [package.json](/package.json) and in the project's documentation.
+### Third-Party Libraries
 
-The project founder reserves the right to modify the terms of this license or to offer different licensing arrangements for specific use cases.
-
-Please refer to the [LICENSE.md](/LICENSE.md) file for full details.
-
-### Need a Different License?
-
-If you are interested in discussing a different licensing arrangement for individual use cases, please feel free to reach out. Custom licensing may be available, but it is not guaranteed.
+This project utilizes third-party libraries and other materials. These components are the property of their respective owners and are licensed under their own terms. Direct package dependency notices are generated in [THIRD_PARTY_NOTICES.md](/THIRD_PARTY_NOTICES.md); additional human acknowledgments remain in the [_Contribution & Attribution_](#contribution--attribution) section above.
