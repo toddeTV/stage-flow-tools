@@ -31,13 +31,19 @@
     "fix:package-json": "vp exec prettier-package-json --write package.json",
     "postinstall": "nuxt prepare",
     "install:clean": "vp install --frozen-lockfile --prefer-offline",
+    "notices:generate": "vp exec tsx scripts/write-third-party-notices.ts",
+    "notices:hook:install": "vp exec tsx scripts/install-third-party-notices-hook.ts install",
+    "notices:hook:status": "vp exec tsx scripts/install-third-party-notices-hook.ts status",
+    "notices:validate": "vp exec tsx scripts/write-third-party-notices.ts --check",
     "prepare": "vp config --hooks-only",
     "preview:ssg": "vp dlx serve .output/public",
     "preview:ssr": "nuxt preview",
-    "test": "concurrently --names \"test:lint-format,test:package-json,test:type\" \"vp exec eslint .\" \"vp exec prettier-package-json --list-different package.json\" \"nuxt typecheck\"",
+    "test": "concurrently --names \"test:lint-format,test:package-json,test:notices,test:type\" \"vp exec eslint .\" \"vp exec prettier-package-json --list-different package.json\" \"vp run test:notices\" \"nuxt typecheck\"",
     "test:lint-format": "vp exec eslint .",
+    "test:notices": "vp run notices:validate",
     "test:package-json": "vp exec prettier-package-json --list-different package.json",
-    "test:type": "nuxt typecheck"
+    "test:type": "nuxt typecheck",
+    "test:unit": "vp test run app server shared scripts"
   },
   "dependencies": {
     "nuxt": "~4.1.2",
@@ -68,6 +74,7 @@
     "nuxi": "~3.28.0",
     "prettier": "~3.8.1",
     "prettier-package-json": "~2.8.0",
+    "tsx": "~4.23.13",
     "typescript": "~5.9.3",
     "vite-plus": "catalog:",
     "vue-tsc": "~3.1.0"

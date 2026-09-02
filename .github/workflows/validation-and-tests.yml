@@ -37,6 +37,8 @@ jobs:
             command: vp run test:lint-format
           - name: Type Check
             command: vp run test:type
+          - name: Third-Party Notices
+            command: vp run test:notices
 
     steps:
       # Check out the repository
