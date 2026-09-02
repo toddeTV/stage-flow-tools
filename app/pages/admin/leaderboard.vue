@@ -181,9 +181,6 @@ onMounted(() => {
       <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
         {{ selectedWinner.nickname }}
       </h2>
-      <p id="winner-modal-description" class="mt-4 text-sm text-gray-600">
-        {{ t('winnerHint') }}
-      </p>
 
       <dl class="mt-6 grid grid-cols-2 gap-3">
         <div class="winner-stat">
@@ -221,7 +218,6 @@ en:
   correctAnswers: Correct
   drawWinner: Draw winner
   winner: Winner
-  winnerHint: This draw is shown only here. Attendees are not notified.
   close: Close
   refresh: Refresh
   loading: Loading...
@@ -235,7 +231,6 @@ de:
   correctAnswers: Richtig
   drawWinner: Gewinner ziehen
   winner: Gewinner
-  winnerHint: Diese Auslosung wird nur hier angezeigt. Teilnehmende werden nicht benachrichtigt.
   close: Schließen
   refresh: Aktualisieren
   loading: Laden...
@@ -249,7 +244,6 @@ ja:
   correctAnswers: 正解
   drawWinner: 当選者を選ぶ
   winner: 当選者
-  winnerHint: この抽選はここにのみ表示され、参加者には通知されません。
   close: 閉じる
   refresh: 更新
   loading: 読み込み中...
