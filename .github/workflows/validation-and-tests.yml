@@ -1,9 +1,6 @@
 name: Validation & Tests
 
 on:
-  # push:
-  #   branches:
-  #     - main
   pull_request:
     branches:
       - main
@@ -35,31 +32,33 @@ jobs:
         include:
           - name: Lint & Format
             command: vp run test:lint-format
-          - name: Type Check
-            command: vp run test:type
+          - name: package.json Format
+            command: vp run test:package-json
           - name: Third-Party Notices
             command: vp run test:notices
+          - name: Nuxt Type Check
+            command: vp run test:type
+          - name: Unit Tests
+            command: vp run test:unit
 
     steps:
       # Check out the repository
       - name: Checkout the Codebase
-        uses: actions/checkout@v6
+        # actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           fetch-depth: 0
 
-      # Install and set up Vite+ with Node with pnpm for use in the workflow
-      - name: Setup Vite+
-        uses: voidzero-dev/setup-vp@v1
-        with:
-          version: 0.1.19
-          node-version: "24"
-          cache: true
-          run-install: false
+      # Use a bounded shared bootstrap before project credentials are exposed.
+      - name: Setup Node and Vite+
+        timeout-minutes: 3
+        uses: ./.github/actions/setup-vite-plus-ci
 
       # Install project dependencies with automatic `nuxt prepare` at the end.
+      # Use the clean wrapper so CI and local dependency installs use the same command.
       # Thanks to the cache, this step is extremely fast on subsequent runs.
-      - name: Install dependencies
-        run: vp run install:clean
+      - name: Install Dependencies
+        run: vp run install:clean:frozen
 
       # Execute the specific check command from the matrix
       - name: Run Check
@@ -69,6 +68,7 @@ jobs:
   # This job acts as a single, final status check for branch protection.
   all_checks_passed:
     name: All Validations & Tests Passed
+    timeout-minutes: 3
     runs-on: ubuntu-24.04
     # We need to run this job regardless of the outcome of the dependent jobs
     # to be able to report a failure.

@@ -1,25 +1,33 @@
 networks:
   traefik-public:
     external: true
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: stage-flow-tools
-    environment:
-      - NUXT_JWT_SECRET=${NUXT_JWT_SECRET}
     image: stage-flow-tools
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.stage-flow-tools.rule=Host(`quiz.your-domain.com`)
-      - traefik.http.routers.stage-flow-tools.entrypoints=websecure
-      - traefik.http.services.stage-flow-tools.loadbalancer.server.port=3000
-      - traefik.http.routers.stage-flow-tools.tls.certresolver=myresolver
-
-    networks:
-      - traefik-public
+    container_name: stage-flow-tools
     restart: unless-stopped
+    # Choose one and uncomment:
+    # env_file:
+    #   - .env
+    # environment:
+    #   - NUXT_JWT_SECRET=...
+    #   - ...
     volumes:
       - ./.data:/app/.data
-version: "3.9"
+    networks:
+      - traefik-public
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.stage-flow-tools.loadbalancer.server.port=3000
+      - traefik.http.routers.stage-flow-tools.rule=Host(`quiz.your-domain.com`)
+      - traefik.http.routers.stage-flow-tools.entrypoints=websecure
+      - traefik.http.routers.stage-flow-tools.tls.certresolver=myresolver
+      - traefik.http.middlewares.stage-flow-tools-cors.headers.accesscontrolalloworiginlist=http://localhost:3030
+      - traefik.http.middlewares.stage-flow-tools-cors.headers.accesscontrolallowmethods=GET,POST,OPTIONS
+      - traefik.http.middlewares.stage-flow-tools-cors.headers.accesscontrolallowheaders=Authorization,Content-Type
+      - traefik.http.middlewares.stage-flow-tools-cors.headers.addvaryheader=true
+      - traefik.http.routers.stage-flow-tools.middlewares=stage-flow-tools-cors

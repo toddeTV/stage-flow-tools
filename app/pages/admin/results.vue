@@ -339,7 +339,7 @@ async function resetAnswers() {
                     pr-2.5 duration-500 ease-out"
                   :style="{ width: getBarWidth(result.count) + '%' }"
                 >
-                  <span class="text-shadow-lg relative z-10 text-xl font-bold text-white">
+                  <span class="relative z-10 text-xl font-bold text-white text-shadow-lg">
                     {{ getPercentage(result.count) }}%
                   </span>
                 </div>
@@ -433,7 +433,7 @@ ja:
 </i18n>
 
 <style scoped>
-@reference "tailwindcss";
+@reference "../../assets/css/main.css";
 
 .page-title::after {
   content: '●';

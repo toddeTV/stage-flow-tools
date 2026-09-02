@@ -29,12 +29,9 @@ export const jsonAndJsoncConfigs = [
     },
   },
   {
-    // Enforce trailing commas for editor and agent settings files
+    // Enforce trailing commas for configuration files
     files: [
       '**/*.jsonc',
-      '.claude/settings.json',
-      '.vscode/extensions.json',
-      '.vscode/settings.json',
       'tsconfig.json',
     ],
     rules: {
@@ -47,7 +44,6 @@ export const jsonAndJsoncConfigs = [
   {
     // Disable JSONC sort-keys for files where key order is meaningful
     files: [
-      '.vscode/settings.json',
       'package.json',
       'tsconfig.json',
     ],

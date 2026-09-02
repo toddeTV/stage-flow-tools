@@ -41,7 +41,7 @@ onMounted(() => {
 
       <a
         v-if="studioUrl"
-        class="block border-[3px] border-black bg-black px-4 py-3 text-sm uppercase text-white
+        class="block border-[3px] border-black bg-black px-4 py-3 text-sm text-white uppercase
           transition-all duration-200 hover:translate-x-1 hover:shadow-[-5px_5px_0_#000]"
         :href="studioUrl"
         rel="noopener noreferrer"
@@ -61,7 +61,7 @@ onMounted(() => {
 
       <div
         v-else
-        class="flex h-[78vh] items-center justify-center text-sm uppercase tracking-wide text-gray-500"
+        class="flex h-[78vh] items-center justify-center text-sm tracking-wide text-gray-500 uppercase"
       >
         {{ t('loading') }}
       </div>

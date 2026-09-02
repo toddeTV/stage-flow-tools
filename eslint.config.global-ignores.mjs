@@ -6,8 +6,6 @@ export const globalIgnoresConfig = {
     'dist/',
     '.data/',
     'server/database/migrations/**',
-    '.claude/skills/**/.skilld/',
-    '.claude/skills/skilld-lock.yaml',
     'pnpm-lock.yaml',
   ],
 }

@@ -44,7 +44,7 @@ async function handleLogout() {
           hover:translate-x-1 hover:shadow-[-5px_5px_0_#000]"
         :to="page.path"
       >
-        <h2 class="mb-2 text-2xl uppercase tracking-wide">
+        <h2 class="mb-2 text-2xl tracking-wide uppercase">
           {{ page.label }}
         </h2>
         <p class="text-sm text-gray-500">

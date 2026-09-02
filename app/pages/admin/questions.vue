@@ -120,7 +120,7 @@ const { data: fetchedQuestions, error: fetchError, refresh: loadQuestions } = us
 
 watch(fetchedQuestions, (newQuestions) => {
   if (newQuestions && Array.isArray(newQuestions)) {
-    allQuestions.value = newQuestions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    allQuestions.value = newQuestions.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     activeQuestion.value = newQuestions.find(q => q.is_active) || null
 
     if (editingQuestionId.value) {
@@ -647,7 +647,7 @@ ja:
 </i18n>
 
 <style scoped>
-@reference "tailwindcss";
+@reference "../../assets/css/main.css";
 
 .section-heading {
   @apply mb-5 border-b-[3px] border-black pb-2.5 text-3xl uppercase;

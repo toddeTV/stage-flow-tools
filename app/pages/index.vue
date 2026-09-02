@@ -238,7 +238,7 @@ async function sendQuickEmoji(emoji: string) {
           <form class="flex items-center" @submit.prevent="submitEmoji">
             <UiInput
               v-model="emojiInput"
-              class="size-16 flex-shrink-0 border-r-0 text-center text-2xl"
+              class="size-16 shrink-0 border-r-0 text-center text-2xl"
               placeholder="?"
             />
             <UiButton class="h-16" :disabled="isEmojiCooldown" type="submit">
@@ -257,8 +257,8 @@ async function sendQuickEmoji(emoji: string) {
           </UiButton>
           <div
             v-if="activeQuestion.is_locked"
-            class="whitespace-nowrap bg-black px-4 py-2 text-sm
-              uppercase text-white"
+            class="bg-black px-4 py-2 text-sm whitespace-nowrap
+              text-white uppercase"
           >
             🔒 {{ t('answersLocked') }}
           </div>
@@ -370,7 +370,7 @@ ja:
 </i18n>
 
 <style scoped>
-@reference "tailwindcss";
+@reference "../assets/css/main.css";
 
 @keyframes pulse {
   0%, 80%, 100% {

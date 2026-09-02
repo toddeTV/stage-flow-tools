@@ -1,0 +1,46 @@
+name: Verify Vite+ Bootstrap Fallback
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  verify-fallback:
+    name: Warm Cache Installer Failure Fallback
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout the Codebase
+        # actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      # Seed the exact bootstrap cache that the fallback restores.
+      - name: Warm Vite+ Bootstrap Cache
+        timeout-minutes: 3
+        uses: ./.github/actions/setup-vite-plus-ci
+
+      # Force setup-vp's shell installer to fail while cache/setup-node actions remain unaffected.
+      - name: Simulate Vite+ Installer Failure
+        run: |
+          vite_plus_home="$HOME/.vite-plus"
+          test -d "$vite_plus_home"
+          test "$(basename "$vite_plus_home")" = '.vite-plus'
+          rm -rf -- "$vite_plus_home"
+          fake_bin="$RUNNER_TEMP/simulated-installer-failure-bin"
+          mkdir -p "$fake_bin"
+          printf '%s\n' '#!/usr/bin/env bash' 'exit 1' > "$fake_bin/curl"
+          chmod +x "$fake_bin/curl"
+          echo "$fake_bin" >> "$GITHUB_PATH"
+
+      - id: fallback
+        name: Verify Cached Vite+ Fallback
+        timeout-minutes: 3
+        uses: ./.github/actions/setup-vite-plus-ci
+
+      - name: Assert Cached Fallback Was Used
+        run: |
+          test '${{ steps.fallback.outputs.used-cached-fallback }}' = 'true'
+          vite_plus_version="$(vp --version)"
+          test "${vite_plus_version%%$'\n'*}" = 'vp v0.3.0'
