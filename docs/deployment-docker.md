@@ -107,7 +107,7 @@ Without the `.data` mount, all runtime data is lost when the container is remove
 The Docker image uses a multi-stage build:
 
 - The `build` stage installs the full toolchain and runs `nuxt build`.
-- The `production` stage copies only the generated `.output` directory.
+- The `production` stage copies the generated `.output` directory and the Drizzle migration files required at startup.
 - The container starts `node .output/server/index.mjs` directly.
 - The embedded Drizzle Studio worker is started lazily by Nitro on first access to `/admin/database`.
 

@@ -7,7 +7,7 @@ FROM node:24-alpine AS build
 WORKDIR /app
 
 # Install Vite+ CLI
-RUN apk add --no-cache bash curl
+RUN apk add --no-cache bash curl g++ make python3
 ENV VP_HOME=/root/.vite-plus
 ENV VP_VERSION=0.3.0
 ENV PATH=${VP_HOME}/bin:${PATH}
@@ -25,12 +25,15 @@ COPY . .
 
 # Build the application for production
 RUN vp exec nuxt prepare
+# The install above deliberately skips lifecycle scripts. Rebuild this native
+# dependency before Nitro traces it into the standalone server output.
+RUN vp rebuild -- better-sqlite3
 RUN vp run build:ssr
 
 # --- Production Stage ---
-# This is the final, minimal image. It only copies the standalone Nuxt output
-# from the 'build' stage and runs the generated server entrypoint directly.
-# No source code or package install step is needed in this stage.
+# This is the final, minimal image. It copies the standalone Nuxt output and
+# Drizzle migrations from the 'build' stage, then runs the server directly.
+# No package install step is needed in this stage.
 FROM node:24-alpine AS production
 
 # Set working directory
@@ -38,6 +41,8 @@ WORKDIR /app
 
 # Copy the built output from the build stage
 COPY --from=build /app/.output ./.output
+# Drizzle reads migrations from the project-relative path at server startup.
+COPY --from=build /app/server/database/migrations ./server/database/migrations
 
 # Expose the port the app runs on
 EXPOSE 3000
