@@ -6,6 +6,7 @@
 
 !package.json
 !pnpm-lock.yaml
+!pnpm-workspace.yaml
 !.npmrc
 !nuxt.config.ts
 !i18n.config.ts
