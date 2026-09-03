@@ -7,6 +7,7 @@ import {
   or,
 } from 'drizzle-orm'
 import type { H3Event } from 'h3'
+import { WebSocketChannel } from '~/types'
 import type {
   Answer,
   InputQuestion,
@@ -28,7 +29,10 @@ import {
   questions,
 } from '../database/schema'
 import { buildQuestionOptionResults } from './quiz-results'
-import { getPeers } from './websocket'
+import {
+  broadcast,
+  getPeers,
+} from './websocket'
 
 let storageInitialized = false
 
@@ -258,7 +262,7 @@ export async function publishQuestion(questionIdentifier: string): Promise<Quest
 
   if (publishedQuestion) {
     const results = await getResultsForQuestion(publishedQuestion.id)
-    broadcast('results-update', results)
+    broadcast('results-update', results, WebSocketChannel.RESULTS)
   }
 
   return publishedQuestion
