@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getEmojiBatch } from '~/utils/emoji-batch'
+
 definePageMeta({
   layout: 'default',
   middleware: 'auth',
@@ -34,9 +36,9 @@ const { data } = useWebSocket(wsEndpoint, {
 
 watch(data, (newValue) => {
   try {
-    const event = JSON.parse(newValue)
-    if (event.event === 'emoji' && event.data?.emoji && event.data?.id) {
-      addEmoji(event.data.emoji, event.data.id)
+    const event: unknown = JSON.parse(newValue)
+    for (const emoji of getEmojiBatch(event)) {
+      addEmoji(emoji.emoji, emoji.id)
     }
   }
   catch (error) {
