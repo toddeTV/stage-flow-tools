@@ -603,28 +603,30 @@ function removeOption(index: number) {
                 <h3 class="text-sm font-bold tracking-wide uppercase">
                   {{ t('questionLifecycle') }}
                 </h3>
-                <dl class="mt-3 grid gap-2 text-sm">
-                  <div class="border-b border-gray-300 pb-2">
-                    <dt class="font-bold">{{ t('queuePosition') }}</dt>
-                    <dd>{{ index + 1 }}</dd>
-                  </div>
-                  <div class="border-b border-gray-300 pb-2">
-                    <dt class="font-bold">{{ t('disabledStatus') }}</dt>
-                    <dd>{{ question.is_disabled ? t('yes') : t('no') }}</dd>
-                  </div>
-                  <div class="border-b border-gray-300 pb-2">
-                    <dt class="font-bold">{{ t('activeStatus') }}</dt>
-                    <dd>{{ question.is_active ? t('yes') : t('no') }}</dd>
-                  </div>
-                  <div class="border-b border-gray-300 pb-2">
-                    <dt class="font-bold">{{ t('alreadyAskedStatus') }}</dt>
-                    <dd>{{ question.alreadyPublished ? t('yes') : t('no') }}</dd>
-                  </div>
-                  <div>
-                    <dt class="font-bold">{{ t('answersLockedStatus') }}</dt>
-                    <dd>{{ question.is_locked ? t('yes') : t('no') }}</dd>
-                  </div>
-                </dl>
+                <table class="mt-3 w-full border-collapse text-left text-sm">
+                  <tbody>
+                    <tr class="border-b border-gray-300">
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('queuePosition') }}</th>
+                      <td class="py-2 text-left">{{ index + 1 }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-300">
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('disabledStatus') }}</th>
+                      <td class="py-2 text-left">{{ question.is_disabled ? t('yes') : t('no') }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-300">
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('activeStatus') }}</th>
+                      <td class="py-2 text-left">{{ question.is_active ? t('yes') : t('no') }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-300">
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('alreadyAskedStatus') }}</th>
+                      <td class="py-2 text-left">{{ question.alreadyPublished ? t('yes') : t('no') }}</td>
+                    </tr>
+                    <tr>
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('answersLockedStatus') }}</th>
+                      <td class="py-2 text-left">{{ question.is_locked ? t('yes') : t('no') }}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </aside>
             </div>
           </li>
@@ -897,10 +899,10 @@ en:
   answersLockedStatus: Answers locked
   yes: Yes
   no: No
-  publishThisQuestion: Publish This Question
+  publishThisQuestion: Publish
   publishQuestionTitle: Publish Question
   confirmPublishQuestion: "Publish '{key}' as active question?"
-  disableQuestion: Disable Question
+  disableQuestion: Disable
   enableQuestion: Enable Question
   confirmDisableQuestion: "Disable '{key}'? Publish Next will skip it."
   confirmEnableQuestion: "Enable '{key}'? Publish Next can select it again."
@@ -948,10 +950,10 @@ de:
   answersLockedStatus: Antworten gesperrt
   yes: Ja
   no: Nein
-  publishThisQuestion: Diese Frage veröffentlichen
+  publishThisQuestion: Veröffentlichen
   publishQuestionTitle: Frage veröffentlichen
   confirmPublishQuestion: "'{key}' als aktive Frage veröffentlichen?"
-  disableQuestion: Frage deaktivieren
+  disableQuestion: Deaktivieren
   enableQuestion: Frage aktivieren
   confirmDisableQuestion: "'{key}' deaktivieren? Nächste veröffentlichen überspringt die Frage dann."
   confirmEnableQuestion: "'{key}' aktivieren? Nächste veröffentlichen kann die Frage dann wieder auswählen."
@@ -999,10 +1001,10 @@ ja:
   answersLockedStatus: 回答をロック
   yes: はい
   no: いいえ
-  publishThisQuestion: この質問を公開
+  publishThisQuestion: 公開
   publishQuestionTitle: 質問を公開
   confirmPublishQuestion: "'{key}' をアクティブな質問として公開しますか？"
-  disableQuestion: 質問を無効にする
+  disableQuestion: 無効にする
   enableQuestion: 質問を有効にする
   confirmDisableQuestion: "'{key}' を無効にしますか？次を公開ではスキップされます。"
   confirmEnableQuestion: "'{key}' を有効にしますか？次を公開で再び選択できるようになります。"
