@@ -1,15 +1,14 @@
 import { WebSocketChannel } from '~/types'
+import { EmptyRequestSchema } from '#shared/utils/validation'
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
+  await readValidatedRequestBody(event, EmptyRequestSchema)
 
   const activeQuestion = await getActiveQuestion()
 
   if (!activeQuestion) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'No active question',
-    })
+    throwApiError(404, 'quiz.no_active_question')
   }
 
   await clearAnswersForQuestion(activeQuestion.id)

@@ -1,49 +1,26 @@
 import { WebSocketChannel, type LocalizedString } from '~/types'
+import { AnswerSubmitSchema } from '#shared/utils/validation'
 
-export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-
-  if (!body || typeof body !== 'object') {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Invalid payload',
-    })
-  }
-
-  const user_id = typeof body.user_id === 'string' ? body.user_id.trim() : ''
-  const user_nickname = typeof body.user_nickname === 'string' ? body.user_nickname.trim() : ''
-  const selected_answer = body.selected_answer as LocalizedString | undefined
-
-  if (
-    !user_id
-    || !user_nickname
-    || !selected_answer
-    || typeof selected_answer.en !== 'string' || !selected_answer.en.trim()
-  ) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'User ID, nickname and answer required',
-    })
-  }
-
-  // Update selected_answer with trimmed value to reuse it safely
-  selected_answer.en = selected_answer.en.trim()
+export default defineApiHandler(async (event) => {
+  const {
+    selected_answer,
+    user_id,
+    user_nickname,
+  } = await readValidatedRequestBody<{
+    selected_answer: LocalizedString
+    user_id: string
+    user_nickname: string
+  }>(event, AnswerSubmitSchema)
 
   // Get active question
   const activeQuestion = await getActiveQuestion()
 
   if (!activeQuestion) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'No active question',
-    })
+    throwApiError(404, 'quiz.no_active_question')
   }
 
   if (activeQuestion.is_locked) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'Question is locked',
-    })
+    throwApiError(403, 'quiz.question_locked')
   }
 
   // Normalize and validate answer
@@ -53,10 +30,7 @@ export default defineEventHandler(async (event) => {
   const selectedAnswerNormalized = selected_answer.en.toLowerCase()
 
   if (!answerOptions.includes(selectedAnswerNormalized)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Invalid answer',
-    })
+    throwApiError(400, 'quiz.invalid_answer')
   }
 
   // Find the original-cased answer option
