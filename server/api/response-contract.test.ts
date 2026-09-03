@@ -82,11 +82,16 @@ describe('POST response contract', () => {
     expect(source).toContain("throwApiError(401, 'auth.token_invalid')")
   })
 
-  it('requires admin authentication before opening a results WebSocket', async () => {
+  it('requires the same origin and admin authentication before opening a results WebSocket', async () => {
     const source = await readSource('server/routes/_ws/default.ts')
 
     expect(source).toContain('query.output.channel === WebSocketChannel.RESULTS')
+    expect(source).toContain('isSameOriginWebSocketRequest(peer.request)')
+    expect(source).toContain("peer.close(1008, 'auth.origin_invalid')")
     expect(source).toContain('await verifyAdminWebSocket(peer.request)')
+    expect(source.indexOf('isSameOriginWebSocketRequest(peer.request)')).toBeLessThan(
+      source.indexOf('await verifyAdminWebSocket(peer.request)'),
+    )
     expect(source).toContain("peer.close(1008, 'auth.token_required')")
   })
 

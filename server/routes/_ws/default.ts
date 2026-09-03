@@ -23,6 +23,11 @@ export default defineWebSocketHandler({
     }
 
     if (query.output.channel === WebSocketChannel.RESULTS) {
+      if (!isSameOriginWebSocketRequest(peer.request)) {
+        peer.close(1008, 'auth.origin_invalid')
+        return
+      }
+
       try {
         await verifyAdminWebSocket(peer.request)
       }

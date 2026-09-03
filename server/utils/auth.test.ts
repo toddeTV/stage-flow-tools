@@ -6,10 +6,28 @@ import {
   vi,
 } from 'vite-plus/test'
 import { throwApiError } from './api-errors'
-import { verifyAdminWebSocket } from './auth'
+import {
+  isSameOriginWebSocketRequest,
+  verifyAdminWebSocket,
+} from './auth'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+describe('isSameOriginWebSocketRequest', () => {
+  it('accepts matching request and browser origins', () => {
+    expect(isSameOriginWebSocketRequest(new Request('https://quiz.example/_ws', {
+      headers: { origin: 'https://quiz.example' },
+    }))).toBe(true)
+  })
+
+  it('rejects missing and cross-site browser origins', () => {
+    expect(isSameOriginWebSocketRequest(new Request('https://quiz.example/_ws'))).toBe(false)
+    expect(isSameOriginWebSocketRequest(new Request('https://quiz.example/_ws', {
+      headers: { origin: 'https://untrusted.example' },
+    }))).toBe(false)
+  })
 })
 
 describe('verifyAdminWebSocket', () => {

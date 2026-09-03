@@ -104,6 +104,22 @@ export async function verifyAdminWebSocket(request: Pick<Request, 'headers'>) {
   return verifyAdminToken(getTokenFromHeaders(request.headers), useRuntimeConfig())
 }
 
+/** Returns whether a browser WebSocket upgrade originates from this application. */
+export function isSameOriginWebSocketRequest(request: Pick<Request, 'headers' | 'url'>): boolean {
+  const origin = request.headers.get('origin')
+
+  if (!origin) {
+    return false
+  }
+
+  try {
+    return new URL(origin).origin === new URL(request.url).origin
+  }
+  catch {
+    return false
+  }
+}
+
 async function verifyAdminToken(
   token: string | undefined,
   config: { adminToken: string, jwtSecret: string },
