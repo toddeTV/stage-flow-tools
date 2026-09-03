@@ -13,13 +13,16 @@ export interface Question {
   question_text: LocalizedString
   answer_options: AnswerOption[]
   is_active?: boolean
+  is_disabled: boolean
   is_locked: boolean
+  sortOrder: number
   createdAt: string
   alreadyPublished: boolean
   note?: LocalizedString
 }
 
-export type InputQuestion = Omit<Question, 'id' | 'is_active' | 'is_locked' | 'createdAt' | 'alreadyPublished'>
+export type InputQuestion = Omit<Question,
+  'id' | 'is_active' | 'is_disabled' | 'is_locked' | 'sortOrder' | 'createdAt' | 'alreadyPublished'>
 
 export interface Answer {
   id: string
