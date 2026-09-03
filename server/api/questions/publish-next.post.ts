@@ -9,7 +9,7 @@ export default defineApiHandler(async (event) => {
   const nextQuestion = await getNextPublishableQuestion()
 
   if (!nextQuestion) {
-    throwApiError(404, 'quiz.no_unpublished_question')
+    throwApiError(404, 'quiz.no_enabled_question')
   }
 
   const question = await publishQuestion(nextQuestion.id)

@@ -18,7 +18,7 @@ export const API_ERROR_CODES = [
   'quiz.question_not_found',
   'quiz.question_key_conflict',
   'quiz.question_answers_reset_required',
-  'quiz.no_unpublished_question',
+  'quiz.no_enabled_question',
   'quiz.publish_next_failed',
   'emoji.cooldown',
   'answer.no_answers_for_question',

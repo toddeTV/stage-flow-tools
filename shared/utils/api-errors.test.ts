@@ -7,6 +7,7 @@ describe('isApiErrorCode', () => {
     expect(isApiErrorCode('validation.required')).toBe(true)
     expect(isApiErrorCode('quiz.question_not_found')).toBe(true)
     expect(isApiErrorCode('quiz.question_answers_reset_required')).toBe(true)
+    expect(isApiErrorCode('quiz.no_enabled_question')).toBe(true)
     expect(isApiErrorCode('Question not found')).toBe(false)
     expect(isApiErrorCode('unknown.code')).toBe(false)
   })
