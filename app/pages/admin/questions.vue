@@ -534,19 +534,25 @@ function removeOption(index: number) {
               <div class="min-w-0">
                 <div class="mb-3">
                   <p class="font-bold">
-                    {{ index + 1 }}. [{{ question.key }}] {{ getLocalizedText(question.question_text) }}
+                    {{ index + 1 }}. [{{ question.key }}]
+                    <span :class="{ 'line-through': question.is_disabled }">
+                      {{ getLocalizedText(question.question_text) }}
+                    </span>
                   </p>
                 </div>
 
-                <p v-if="question.is_disabled" class="mb-3 text-sm font-bold">
-                  {{ t('disabledQuestion') }}
-                </p>
-                <p v-if="question.note" class="mb-3 border border-black bg-gray-200 p-2 text-sm text-gray-600">
+                <p
+                  v-if="question.note"
+                  class="mb-3 border border-black bg-gray-200 p-2 text-sm text-gray-600"
+                  :class="{ 'line-through': question.is_disabled }"
+                >
                   {{ getLocalizedText(question.note) }}
                 </p>
                 <ul class="mb-4 list-inside list-disc p-0">
                   <li v-for="(option, optionIndex) in question.answer_options" :key="optionIndex">
-                    {{ getLocalizedText(option.text) }} <span v-if="option.emoji">{{ option.emoji }}</span>
+                    <span :class="{ 'line-through': question.is_disabled }">
+                      {{ getLocalizedText(option.text) }} <span v-if="option.emoji">{{ option.emoji }}</span>
+                    </span>
                   </li>
                 </ul>
 
@@ -916,7 +922,6 @@ en:
   enableQuestion: Enable
   confirmDisableQuestion: "Disable '{key}'? Publish Next will skip it."
   confirmEnableQuestion: "Enable '{key}'? Publish Next can select it again."
-  disabledQuestion: "Disabled: skipped by Publish Next."
   deleteQuestion: Delete
   confirmDeleteQuestion: "Delete '{key}' and all submitted answers permanently?"
   moveQuestionUp: Move question up
@@ -967,7 +972,6 @@ de:
   enableQuestion: Aktivieren
   confirmDisableQuestion: "'{key}' deaktivieren? Nächste veröffentlichen überspringt die Frage dann."
   confirmEnableQuestion: "'{key}' aktivieren? Nächste veröffentlichen kann die Frage dann wieder auswählen."
-  disabledQuestion: "Deaktiviert: Wird bei Nächste veröffentlichen übersprungen."
   deleteQuestion: Löschen
   confirmDeleteQuestion: "'{key}' und alle abgegebenen Antworten dauerhaft löschen?"
   moveQuestionUp: Frage nach oben verschieben
@@ -1018,7 +1022,6 @@ ja:
   enableQuestion: 有効にする
   confirmDisableQuestion: "'{key}' を無効にしますか？次を公開ではスキップされます。"
   confirmEnableQuestion: "'{key}' を有効にしますか？次を公開で再び選択できるようになります。"
-  disabledQuestion: 無効：次を公開ではスキップされます。
   deleteQuestion: 削除
   confirmDeleteQuestion: "'{key}' と送信済みの回答をすべて完全に削除しますか？"
   moveQuestionUp: 質問を上へ移動
