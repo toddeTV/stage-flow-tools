@@ -68,12 +68,18 @@ function isQuestionEditable(question: Question): boolean {
 const activeQuestion = ref<Question | null>(null)
 const allQuestions = ref<Question[]>([])
 const questionDialog = ref<HTMLDialogElement>()
+const publishConfirmationDialog = ref<HTMLDialogElement>()
+const toggleDisabledConfirmationDialog = ref<HTMLDialogElement>()
+const deleteConfirmationDialog = ref<HTMLDialogElement>()
 const editingQuestionId = ref<string | null>(null)
 const isSavingQuestion = ref(false)
 const isResettingAnswers = ref(false)
 const isUpdatingQuestionId = ref<string | null>(null)
 const questionForm = ref<QuestionForm>(createDefaultQuestionForm())
 const questionFormErrors = ref<Record<string, string>>({})
+const questionToPublish = ref<Question | null>(null)
+const questionToToggleDisabled = ref<Question | null>(null)
+const questionToDelete = ref<Question | null>(null)
 const isEditMode = computed(() => editingQuestionId.value !== null)
 const formTitle = computed(() => isEditMode.value ? t('editQuestionTitle') : t('addQuestion'))
 const submitButtonLabel = computed(() => isEditMode.value ? t('saveQuestion') : t('createQuestion'))
@@ -226,18 +232,47 @@ async function handleSaveQuestion() {
   }
 }
 
-async function publishQuestion(key: string) {
+function requestQuestionPublication(question: Question) {
+  if (isUpdatingQuestionId.value) {
+    return
+  }
+
+  questionToPublish.value = question
+  publishConfirmationDialog.value?.showModal()
+}
+
+function closePublishConfirmationDialog() {
+  publishConfirmationDialog.value?.close()
+}
+
+function resetPublishConfirmationDialog() {
+  questionToPublish.value = null
+}
+
+async function publishQuestion() {
+  const questionToPublishValue = questionToPublish.value
+
+  if (!questionToPublishValue || isUpdatingQuestionId.value) {
+    return
+  }
+
+  isUpdatingQuestionId.value = questionToPublishValue.id
+
   try {
     const question = await $fetch<Question>('/api/questions/publish', {
       method: 'POST',
-      body: { key },
+      body: { key: questionToPublishValue.key },
     })
 
     activeQuestion.value = question
     await loadQuestions()
+    closePublishConfirmationDialog()
   }
-  catch (error) {
+  catch (error: unknown) {
     alert(getErrorMessage(error))
+  }
+  finally {
+    isUpdatingQuestionId.value = null
   }
 }
 
@@ -266,19 +301,39 @@ async function moveQuestion(question: Question, direction: 'up' | 'down') {
   }
 }
 
-async function toggleQuestionDisabled(question: Question) {
+function requestQuestionDisabledToggle(question: Question) {
   if (isUpdatingQuestionId.value) {
     return
   }
 
-  isUpdatingQuestionId.value = question.id
+  questionToToggleDisabled.value = question
+  toggleDisabledConfirmationDialog.value?.showModal()
+}
+
+function closeToggleDisabledConfirmationDialog() {
+  toggleDisabledConfirmationDialog.value?.close()
+}
+
+function resetToggleDisabledConfirmationDialog() {
+  questionToToggleDisabled.value = null
+}
+
+async function toggleQuestionDisabled() {
+  const questionToToggleDisabledValue = questionToToggleDisabled.value
+
+  if (!questionToToggleDisabledValue || isUpdatingQuestionId.value) {
+    return
+  }
+
+  isUpdatingQuestionId.value = questionToToggleDisabledValue.id
 
   try {
     await $fetch<Question>('/api/questions/toggle-disabled', {
       method: 'POST',
-      body: { questionId: question.id },
+      body: { questionId: questionToToggleDisabledValue.id },
     })
     await loadQuestions()
+    closeToggleDisabledConfirmationDialog()
   }
   catch (error: unknown) {
     alert(getErrorMessage(error))
@@ -288,19 +343,39 @@ async function toggleQuestionDisabled(question: Question) {
   }
 }
 
-async function deleteQuestion(question: Question) {
-  if (isUpdatingQuestionId.value || !window.confirm(t('confirmDeleteQuestion', { key: question.key }))) {
+function requestQuestionDeletion(question: Question) {
+  if (isUpdatingQuestionId.value) {
     return
   }
 
-  isUpdatingQuestionId.value = question.id
+  questionToDelete.value = question
+  deleteConfirmationDialog.value?.showModal()
+}
+
+function closeDeleteConfirmationDialog() {
+  deleteConfirmationDialog.value?.close()
+}
+
+function resetDeleteConfirmationDialog() {
+  questionToDelete.value = null
+}
+
+async function deleteQuestion() {
+  const questionToDeleteValue = questionToDelete.value
+
+  if (!questionToDeleteValue || isUpdatingQuestionId.value) {
+    return
+  }
+
+  isUpdatingQuestionId.value = questionToDeleteValue.id
 
   try {
     await $fetch('/api/questions/delete', {
       method: 'POST',
-      body: { questionId: question.id },
+      body: { questionId: questionToDeleteValue.id },
     })
     await loadQuestions()
+    closeDeleteConfirmationDialog()
   }
   catch (error: unknown) {
     alert(getErrorMessage(error))
@@ -510,13 +585,13 @@ function removeOption(index: number) {
             </p>
 
             <div class="flex flex-wrap gap-2.5">
-              <UiButton :disabled="isUpdatingQuestionId !== null" @click="publishQuestion(question.key)">
+              <UiButton :disabled="isUpdatingQuestionId !== null" @click="requestQuestionPublication(question)">
                 {{ t('publishThisQuestion') }}
               </UiButton>
               <UiButton
                 :disabled="isUpdatingQuestionId !== null"
                 variant="secondary"
-                @click="toggleQuestionDisabled(question)"
+                @click="requestQuestionDisabledToggle(question)"
               >
                 {{ question.is_disabled ? t('enableQuestion') : t('disableQuestion') }}
               </UiButton>
@@ -533,7 +608,7 @@ function removeOption(index: number) {
                 :aria-label="t('deleteQuestion')"
                 :disabled="isUpdatingQuestionId !== null"
                 variant="danger"
-                @click="deleteQuestion(question)"
+                @click="requestQuestionDeletion(question)"
               >
                 <Icon aria-hidden="true" class="size-5" name="ph:trash" />
               </UiButton>
@@ -669,6 +744,108 @@ function removeOption(index: number) {
         </div>
       </form>
     </dialog>
+
+    <dialog
+      ref="publishConfirmationDialog"
+      :aria-busy="isUpdatingQuestionId === questionToPublish?.id"
+      aria-describedby="publish-question-confirmation-description"
+      aria-labelledby="publish-question-confirmation-title"
+      class="m-auto w-[calc(100%-2.5rem)] max-w-lg border-[3px] border-black bg-white p-6 text-black
+        backdrop:bg-black/50"
+      @click.self="() => closePublishConfirmationDialog()"
+      @close="resetPublishConfirmationDialog"
+    >
+      <h2 id="publish-question-confirmation-title" class="text-3xl font-bold uppercase">
+        {{ t('publishQuestionTitle') }}
+      </h2>
+      <p id="publish-question-confirmation-description" class="mt-4">
+        {{ t('confirmPublishQuestion', { key: questionToPublish?.key ?? '' }) }}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          @click="publishQuestion"
+        >
+          {{ t('publishThisQuestion') }}
+        </UiButton>
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          variant="secondary"
+          @click="closePublishConfirmationDialog"
+        >
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+    </dialog>
+
+    <dialog
+      ref="toggleDisabledConfirmationDialog"
+      :aria-busy="isUpdatingQuestionId === questionToToggleDisabled?.id"
+      aria-describedby="toggle-disabled-question-confirmation-description"
+      aria-labelledby="toggle-disabled-question-confirmation-title"
+      class="m-auto w-[calc(100%-2.5rem)] max-w-lg border-[3px] border-black bg-white p-6 text-black
+        backdrop:bg-black/50"
+      @click.self="() => closeToggleDisabledConfirmationDialog()"
+      @close="resetToggleDisabledConfirmationDialog"
+    >
+      <h2 id="toggle-disabled-question-confirmation-title" class="text-3xl font-bold uppercase">
+        {{ questionToToggleDisabled?.is_disabled ? t('enableQuestion') : t('disableQuestion') }}
+      </h2>
+      <p id="toggle-disabled-question-confirmation-description" class="mt-4">
+        {{ questionToToggleDisabled?.is_disabled
+          ? t('confirmEnableQuestion', { key: questionToToggleDisabled.key })
+          : t('confirmDisableQuestion', { key: questionToToggleDisabled?.key ?? '' }) }}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          @click="toggleQuestionDisabled"
+        >
+          {{ questionToToggleDisabled?.is_disabled ? t('enableQuestion') : t('disableQuestion') }}
+        </UiButton>
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          variant="secondary"
+          @click="closeToggleDisabledConfirmationDialog"
+        >
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+    </dialog>
+
+    <dialog
+      ref="deleteConfirmationDialog"
+      :aria-busy="isUpdatingQuestionId === questionToDelete?.id"
+      aria-describedby="delete-question-confirmation-description"
+      aria-labelledby="delete-question-confirmation-title"
+      class="m-auto w-[calc(100%-2.5rem)] max-w-lg border-[3px] border-black bg-white p-6 text-black
+        backdrop:bg-black/50"
+      @click.self="() => closeDeleteConfirmationDialog()"
+      @close="resetDeleteConfirmationDialog"
+    >
+      <h2 id="delete-question-confirmation-title" class="text-3xl font-bold uppercase">
+        {{ t('deleteQuestion') }}
+      </h2>
+      <p id="delete-question-confirmation-description" class="mt-4">
+        {{ t('confirmDeleteQuestion', { key: questionToDelete?.key ?? '' }) }}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          variant="danger"
+          @click="deleteQuestion"
+        >
+          {{ t('deleteQuestion') }}
+        </UiButton>
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          variant="secondary"
+          @click="closeDeleteConfirmationDialog"
+        >
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+    </dialog>
   </div>
 </template>
 
@@ -706,8 +883,12 @@ en:
   editBlockedPublished: Edit disabled for already published question.
   allQuestions: All Questions
   publishThisQuestion: Publish This Question
+  publishQuestionTitle: Publish Question
+  confirmPublishQuestion: "Publish '{key}' as active question?"
   disableQuestion: Disable Question
   enableQuestion: Enable Question
+  confirmDisableQuestion: "Disable '{key}'? Publish Next will skip it."
+  confirmEnableQuestion: "Enable '{key}'? Publish Next can select it again."
   disabledQuestion: "Disabled: skipped by Publish Next."
   deleteQuestion: Delete Question
   confirmDeleteQuestion: "Delete '{key}' and all submitted answers permanently?"
@@ -748,8 +929,12 @@ de:
   editBlockedPublished: Bearbeitung für bereits veröffentlichte Frage deaktiviert.
   allQuestions: Alle Fragen
   publishThisQuestion: Diese Frage veröffentlichen
+  publishQuestionTitle: Frage veröffentlichen
+  confirmPublishQuestion: "'{key}' als aktive Frage veröffentlichen?"
   disableQuestion: Frage deaktivieren
   enableQuestion: Frage aktivieren
+  confirmDisableQuestion: "'{key}' deaktivieren? Nächste veröffentlichen überspringt die Frage dann."
+  confirmEnableQuestion: "'{key}' aktivieren? Nächste veröffentlichen kann die Frage dann wieder auswählen."
   disabledQuestion: "Deaktiviert: Wird bei Nächste veröffentlichen übersprungen."
   deleteQuestion: Frage löschen
   confirmDeleteQuestion: "'{key}' und alle abgegebenen Antworten dauerhaft löschen?"
@@ -790,8 +975,12 @@ ja:
   editBlockedPublished: 既に公開済みの質問は編集できません。
   allQuestions: 全ての質問
   publishThisQuestion: この質問を公開
+  publishQuestionTitle: 質問を公開
+  confirmPublishQuestion: "'{key}' をアクティブな質問として公開しますか？"
   disableQuestion: 質問を無効にする
   enableQuestion: 質問を有効にする
+  confirmDisableQuestion: "'{key}' を無効にしますか？次を公開ではスキップされます。"
+  confirmEnableQuestion: "'{key}' を有効にしますか？次を公開で再び選択できるようになります。"
   disabledQuestion: 無効：次を公開ではスキップされます。
   deleteQuestion: 質問を削除
   confirmDeleteQuestion: "'{key}' と送信済みの回答をすべて完全に削除しますか？"
