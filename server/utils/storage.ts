@@ -67,7 +67,7 @@ export async function getQuestions(): Promise<Question[]> {
   return getDatabase()
     .select()
     .from(questions)
-    .orderBy(asc(questions.createdAt))
+    .orderBy(asc(questions.sortOrder), asc(questions.createdAt), asc(questions.id))
     .all()
     .map(deserializeQuestion)
 }
@@ -99,11 +99,18 @@ export async function getActiveQuestion(): Promise<Question | undefined> {
 }
 
 export async function createQuestion(
-  questionData: Omit<Question, 'id' | 'is_active' | 'is_locked' | 'createdAt' | 'alreadyPublished'>,
+  questionData: InputQuestion,
 ): Promise<Question> {
   await initStorage()
 
-  const row = createQuestionInsert(questionData as InputQuestion)
+  const lastQuestion = getDatabase()
+    .select({ sortOrder: questions.sortOrder })
+    .from(questions)
+    .orderBy(desc(questions.sortOrder), desc(questions.createdAt), desc(questions.id))
+    .get()
+  const row = createQuestionInsert(questionData as InputQuestion, {
+    sortOrder: (lastQuestion?.sortOrder ?? -1) + 1,
+  })
 
   const existingQuestion = getDatabase()
     .select({ id: questions.id })
@@ -201,6 +208,84 @@ export async function publishQuestion(questionIdentifier: string): Promise<Quest
   }
 
   return publishedQuestion
+}
+
+/** Returns the first unpublished, enabled question in the persistent queue. */
+export async function getNextPublishableQuestion(): Promise<Question | undefined> {
+  return (await getQuestions()).find(question => !question.alreadyPublished && !question.is_disabled)
+}
+
+/** Swaps a question with its adjacent queue item. */
+export async function moveQuestion(questionId: string, direction: 'up' | 'down'): Promise<Question | undefined> {
+  const questionList = await getQuestions()
+  const currentIndex = questionList.findIndex(question => question.id === questionId)
+
+  if (currentIndex < 0) {
+    return undefined
+  }
+
+  const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+  const question = questionList[currentIndex]
+  const targetQuestion = questionList[targetIndex]
+
+  if (!question || !targetQuestion) {
+    return question
+  }
+
+  getDatabase().transaction((transaction) => {
+    transaction
+      .update(questions)
+      .set({ sortOrder: targetQuestion.sortOrder })
+      .where(eq(questions.id, question.id))
+      .run()
+    transaction
+      .update(questions)
+      .set({ sortOrder: question.sortOrder })
+      .where(eq(questions.id, targetQuestion.id))
+      .run()
+  })
+
+  return getQuestionById(questionId)
+}
+
+/** Toggles whether a question participates in automatic queue publication. */
+export async function toggleQuestionDisabled(questionId: string): Promise<Question | undefined> {
+  await initStorage()
+
+  const question = getQuestionById(questionId)
+
+  if (!question) {
+    return undefined
+  }
+
+  getDatabase()
+    .update(questions)
+    .set({ isDisabled: !question.is_disabled })
+    .where(eq(questions.id, questionId))
+    .run()
+
+  return {
+    ...question,
+    is_disabled: !question.is_disabled,
+  }
+}
+
+/** Deletes a question and all of its submitted answers. */
+export async function deleteQuestion(questionId: string): Promise<Question | undefined> {
+  await initStorage()
+
+  const question = getQuestionById(questionId)
+
+  if (!question) {
+    return undefined
+  }
+
+  getDatabase().transaction((transaction) => {
+    transaction.delete(answers).where(eq(answers.questionId, questionId)).run()
+    transaction.delete(questions).where(eq(questions.id, questionId)).run()
+  })
+
+  return question
 }
 
 /** Deactivate the active question (answers are preserved for potential re-publishing). */

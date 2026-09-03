@@ -1,0 +1,115 @@
+import {
+  mkdtempSync,
+  rmSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { eq } from 'drizzle-orm'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'vite-plus/test'
+import {
+  applyLocalMigrations,
+  createLocalDatabaseClient,
+} from '../database/local-sqlite'
+import {
+  answers,
+  questions,
+} from '../database/schema'
+import {
+  createQuestion,
+  deleteQuestion,
+  getNextPublishableQuestion,
+  getQuestions,
+  moveQuestion,
+  toggleQuestionDisabled,
+} from './storage'
+
+const temporaryDirectories: string[] = []
+let testClient: ReturnType<typeof createLocalDatabaseClient>
+
+function createTemporaryDatabasePath() {
+  const directory = mkdtempSync(join(tmpdir(), 'stage-flow-tools-storage-'))
+  temporaryDirectories.push(directory)
+
+  return join(directory, 'db.sqlite3')
+}
+
+function createInputQuestion(key: string) {
+  return {
+    answer_options: [
+      { text: { en: 'One' } },
+      { text: { en: 'Two' } },
+    ],
+    key,
+    note: undefined,
+    question_text: { en: key },
+  }
+}
+
+beforeEach(() => {
+  testClient = createLocalDatabaseClient(createTemporaryDatabasePath())
+  applyLocalMigrations(testClient.db)
+  globalThis.__stageFlowToolsLocalDatabaseClient = testClient
+})
+
+afterEach(() => {
+  testClient.sqlite.close()
+  globalThis.__stageFlowToolsLocalDatabaseClient = undefined
+
+  for (const directory of temporaryDirectories.splice(0)) {
+    rmSync(directory, {
+      force: true,
+      recursive: true,
+    })
+  }
+})
+
+describe('question queue storage', () => {
+  it('appends questions, swaps adjacent positions, and skips disabled questions', async () => {
+    const first = await createQuestion(createInputQuestion('first'))
+    const second = await createQuestion(createInputQuestion('second'))
+    const third = await createQuestion(createInputQuestion('third'))
+
+    expect((await getQuestions()).map(question => question.id)).toEqual([
+      first.id,
+      second.id,
+      third.id,
+    ])
+
+    await moveQuestion(third.id, 'up')
+    await toggleQuestionDisabled(first.id)
+
+    expect((await getQuestions()).map(question => question.id)).toEqual([
+      first.id,
+      third.id,
+      second.id,
+    ])
+    await expect(getNextPublishableQuestion()).resolves.toMatchObject({ id: third.id })
+  })
+
+  it('deletes answers with their question and reports active deletion', async () => {
+    const question = await createQuestion(createInputQuestion('active-question'))
+    testClient.db.update(questions).set({ isActive: true }).where(eq(questions.id, question.id)).run()
+
+    testClient.db.insert(answers).values({
+      id: 'answer-id',
+      questionId: question.id,
+      selectedAnswer: JSON.stringify({ en: 'One' }),
+      timestamp: '2026-09-03T00:00:00.000Z',
+      userId: 'participant-id',
+      userNickname: 'Participant',
+    }).run()
+
+    await expect(deleteQuestion(question.id)).resolves.toMatchObject({
+      id: question.id,
+      is_active: true,
+    })
+    expect(await getQuestions()).toEqual([])
+    expect(testClient.db.select().from(answers).all()).toEqual([])
+  })
+})
