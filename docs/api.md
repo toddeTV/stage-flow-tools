@@ -243,18 +243,20 @@ English `answer_options[].text.en` values must be unique. Matching is case-insen
 
 ### POST `/api/questions/update`
 
-Update an existing unpublished and inactive question (admin only). Localized question and answer text may use any locale key; their non-empty English (`en`) value is required.
+Update an existing question (admin only). Localized question and answer text may use any locale key; their non-empty English (`en`) value is required. Updating the active question broadcasts the updated question and a freshly calculated results update to connected participants.
 
 Editable fields are `key`, `question_text`, `answer_options`, and `note`.
-Active questions and already-published questions return `409`.
-
 English `answer_options[].text.en` values must be unique. Matching is case-insensitive.
+When submitted answers exist, changing `answer_options` requires `resetAnswers: true`.
+The API otherwise returns `409 quiz.question_answers_reset_required`; confirmed updates
+delete the answers and update the question in one transaction.
 
 **Request:**
 
 ```json
 {
   "questionId": "string",
+  "resetAnswers": "boolean (required as true when changing answered options)",
   "key": "string (optional, unique identifier)",
   "question_text": { "en": "string", "de": "string (optional)" },
   "answer_options": [
@@ -283,11 +285,61 @@ Publish question as active by key (admin only). Clears existing answers and broa
 
 ### POST `/api/questions/publish-next`
 
-Publish the next unpublished question in creation order (admin only). Finds the earliest question where `alreadyPublished` is `false`, publishes it, and broadcasts to all WebSocket clients.
+Publish the next enabled, unpublished question in queue order (admin only). Finds the lowest `sortOrder` question where `alreadyPublished` and `is_disabled` are both `false`, publishes it, and broadcasts to all WebSocket clients.
 
 **Request:** No body required.
 
-**Response:** The published question object, or 404 if no unpublished questions remain.
+**Response:** The published question object, or 404 if no enabled unpublished questions remain.
+
+### POST `/api/questions/move`
+
+Move a question one position in the persistent queue (admin only). Published and disabled questions remain visible and can also be reordered.
+
+**Request:**
+
+```json
+{
+  "questionId": "string",
+  "direction": "up | down"
+}
+```
+
+**Response:** Updated question object.
+
+### POST `/api/questions/toggle-disabled`
+
+Toggle whether a question is skipped by `publish-next` (admin only). Direct publishing remains available for disabled questions.
+
+**Request:**
+
+```json
+{
+  "questionId": "string"
+}
+```
+
+**Response:** Updated question object.
+
+### POST `/api/questions/delete`
+
+Permanently delete a question and every submitted answer for it (admin only). Deleting the active question broadcasts an empty active-question and results state.
+
+**Request:**
+
+```json
+{
+  "questionId": "string"
+}
+```
+
+**Response:**
+
+```json
+{
+  "questionId": "string",
+  "success": true
+}
+```
 
 ### POST `/api/questions/unpublish-active`
 

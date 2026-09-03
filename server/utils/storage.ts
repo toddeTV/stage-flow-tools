@@ -7,6 +7,7 @@ import {
   or,
 } from 'drizzle-orm'
 import type { H3Event } from 'h3'
+import { WebSocketChannel } from '~/types'
 import type {
   Answer,
   InputQuestion,
@@ -28,9 +29,19 @@ import {
   questions,
 } from '../database/schema'
 import { buildQuestionOptionResults } from './quiz-results'
-import { getPeers } from './websocket'
+import {
+  broadcast,
+  getPeers,
+} from './websocket'
 
 let storageInitialized = false
+
+export class QuestionAnswerOptionsResetRequiredError extends Error {
+  constructor() {
+    super('Updating answer options with submitted answers requires a reset')
+    this.name = 'QuestionAnswerOptionsResetRequiredError'
+  }
+}
 
 function getDatabase() {
   return getLocalDatabaseClient().db
@@ -44,6 +55,33 @@ function getQuestionById(questionId: string): Question | undefined {
     .get()
 
   return row ? deserializeQuestion(row) : undefined
+}
+
+function localizedStringsAreEqual(
+  first: Question['question_text'],
+  second: Question['question_text'],
+): boolean {
+  const firstEntries = Object.entries(first)
+
+  return firstEntries.length === Object.keys(second).length
+    && firstEntries.every(([
+      locale,
+      value,
+    ]) => second[locale] === value)
+}
+
+function answerOptionsHaveChanged(
+  currentOptions: Question['answer_options'],
+  updatedOptions: InputQuestion['answer_options'],
+): boolean {
+  return currentOptions.length !== updatedOptions.length
+    || currentOptions.some((currentOption, index) => {
+      const updatedOption = updatedOptions[index]
+
+      return !updatedOption
+        || currentOption.emoji !== updatedOption.emoji
+        || !localizedStringsAreEqual(currentOption.text, updatedOption.text)
+    })
 }
 
 /** Initializes SQLite access once after the startup migration plugin has run. */
@@ -67,7 +105,7 @@ export async function getQuestions(): Promise<Question[]> {
   return getDatabase()
     .select()
     .from(questions)
-    .orderBy(asc(questions.createdAt))
+    .orderBy(asc(questions.sortOrder), asc(questions.createdAt), asc(questions.id))
     .all()
     .map(deserializeQuestion)
 }
@@ -99,11 +137,18 @@ export async function getActiveQuestion(): Promise<Question | undefined> {
 }
 
 export async function createQuestion(
-  questionData: Omit<Question, 'id' | 'is_active' | 'is_locked' | 'createdAt' | 'alreadyPublished'>,
+  questionData: InputQuestion,
 ): Promise<Question> {
   await initStorage()
 
-  const row = createQuestionInsert(questionData as InputQuestion)
+  const lastQuestion = getDatabase()
+    .select({ sortOrder: questions.sortOrder })
+    .from(questions)
+    .orderBy(desc(questions.sortOrder), desc(questions.createdAt), desc(questions.id))
+    .get()
+  const row = createQuestionInsert(questionData as InputQuestion, {
+    sortOrder: (lastQuestion?.sortOrder ?? -1) + 1,
+  })
 
   const existingQuestion = getDatabase()
     .select({ id: questions.id })
@@ -120,25 +165,18 @@ export async function createQuestion(
   return deserializeQuestion(row)
 }
 
-/** Updates a non-active, never-published question and returns the stored row. */
+/** Updates a question and resets submitted answers only when explicitly confirmed. */
 export async function updateQuestion(
   questionId: string,
   updates: Pick<InputQuestion, 'key' | 'question_text' | 'answer_options' | 'note'>,
-): Promise<Question | undefined> {
+  options: { resetAnswers?: boolean } = {},
+): Promise<{ question: Question, answersReset: boolean } | undefined> {
   await initStorage()
 
   const question = getQuestionById(questionId)
 
   if (!question) {
     return undefined
-  }
-
-  if (question.is_active) {
-    throw new Error('Active questions cannot be edited')
-  }
-
-  if (question.alreadyPublished) {
-    throw new Error('Published questions cannot be edited')
   }
 
   const updatedQuestion = {
@@ -157,19 +195,46 @@ export async function updateQuestion(
   }
 
   const updatedRow = createStoredQuestionInsert(updatedQuestion)
+  const answerOptionsChanged = answerOptionsHaveChanged(question.answer_options, updates.answer_options)
 
-  getDatabase()
-    .update(questions)
-    .set({
-      key: updatedRow.key,
-      questionText: updatedRow.questionText,
-      answerOptions: updatedRow.answerOptions,
-      note: updatedRow.note,
-    })
-    .where(eq(questions.id, questionId))
-    .run()
+  const answersReset = getDatabase().transaction((transaction) => {
+    const submittedAnswer = transaction
+      .select({ id: answers.id })
+      .from(answers)
+      .where(eq(answers.questionId, questionId))
+      .limit(1)
+      .get()
 
-  return getQuestionById(questionId)
+    if (answerOptionsChanged && submittedAnswer) {
+      if (!options.resetAnswers) {
+        throw new QuestionAnswerOptionsResetRequiredError()
+      }
+
+      transaction.delete(answers).where(eq(answers.questionId, questionId)).run()
+    }
+
+    transaction
+      .update(questions)
+      .set({
+        key: updatedRow.key,
+        questionText: updatedRow.questionText,
+        answerOptions: updatedRow.answerOptions,
+        note: updatedRow.note,
+      })
+      .where(eq(questions.id, questionId))
+      .run()
+
+    return answerOptionsChanged && Boolean(submittedAnswer)
+  })
+
+  const storedQuestion = getQuestionById(questionId)
+
+  return storedQuestion
+    ? {
+      answersReset,
+      question: storedQuestion,
+    }
+    : undefined
 }
 
 export async function publishQuestion(questionIdentifier: string): Promise<Question | undefined> {
@@ -197,10 +262,88 @@ export async function publishQuestion(questionIdentifier: string): Promise<Quest
 
   if (publishedQuestion) {
     const results = await getResultsForQuestion(publishedQuestion.id)
-    broadcast('results-update', results)
+    broadcast('results-update', results, WebSocketChannel.RESULTS)
   }
 
   return publishedQuestion
+}
+
+/** Returns the first unpublished, enabled question in the persistent queue. */
+export async function getNextPublishableQuestion(): Promise<Question | undefined> {
+  return (await getQuestions()).find(question => !question.alreadyPublished && !question.is_disabled)
+}
+
+/** Swaps a question with its adjacent queue item. */
+export async function moveQuestion(questionId: string, direction: 'up' | 'down'): Promise<Question | undefined> {
+  const questionList = await getQuestions()
+  const currentIndex = questionList.findIndex(question => question.id === questionId)
+
+  if (currentIndex < 0) {
+    return undefined
+  }
+
+  const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+  const question = questionList[currentIndex]
+  const targetQuestion = questionList[targetIndex]
+
+  if (!question || !targetQuestion) {
+    return question
+  }
+
+  getDatabase().transaction((transaction) => {
+    transaction
+      .update(questions)
+      .set({ sortOrder: targetQuestion.sortOrder })
+      .where(eq(questions.id, question.id))
+      .run()
+    transaction
+      .update(questions)
+      .set({ sortOrder: question.sortOrder })
+      .where(eq(questions.id, targetQuestion.id))
+      .run()
+  })
+
+  return getQuestionById(questionId)
+}
+
+/** Toggles whether a question participates in automatic queue publication. */
+export async function toggleQuestionDisabled(questionId: string): Promise<Question | undefined> {
+  await initStorage()
+
+  const question = getQuestionById(questionId)
+
+  if (!question) {
+    return undefined
+  }
+
+  getDatabase()
+    .update(questions)
+    .set({ isDisabled: !question.is_disabled })
+    .where(eq(questions.id, questionId))
+    .run()
+
+  return {
+    ...question,
+    is_disabled: !question.is_disabled,
+  }
+}
+
+/** Deletes a question and all of its submitted answers. */
+export async function deleteQuestion(questionId: string): Promise<Question | undefined> {
+  await initStorage()
+
+  const question = getQuestionById(questionId)
+
+  if (!question) {
+    return undefined
+  }
+
+  getDatabase().transaction((transaction) => {
+    transaction.delete(answers).where(eq(answers.questionId, questionId)).run()
+    transaction.delete(questions).where(eq(questions.id, questionId)).run()
+  })
+
+  return question
 }
 
 /** Deactivate the active question (answers are preserved for potential re-publishing). */

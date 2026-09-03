@@ -24,7 +24,9 @@ ws.onmessage = (event) => {
 
 ### Query Parameters
 
-- **`channel`** - WebSocket channel: `default`, `results`, or `emojis`
+- **`channel`** - WebSocket channel: `default`, `results`, or `emojis`. The
+  `results` channel requires the same admin session cookie as `/admin/results`
+  and a matching browser origin.
 - **`userId`** - Optional non-empty user identifier for tracking
 
 The server validates the connection query with the shared Valibot schema before adding a peer. An invalid query closes the handshake with close code `1008` and reason `validation.invalid_websocket_query`.
@@ -35,7 +37,9 @@ The server validates the connection query with the shared Valibot schema before 
 
 #### `new-question`
 
-Broadcast when question published
+Broadcast when a question is published or the active question is edited. The payload
+uses the public question shape: it excludes the admin note, key, lifecycle and queue
+fields, and answer-option emoji.
 
 ```json
 {
@@ -73,13 +77,16 @@ Bundled voting results (batched every 2 seconds)
 }
 ```
 
-`results-update` may be sent immediately for explicit admin actions such as answer reset.
+`results-update` may be sent immediately for explicit admin actions such as answer reset
+or editing the active question.
 
 #### `answers-reset`
 
-Sent on default channel when admin clears all answers for current active question.
+Sent on the default channel when an admin clears answers, including a confirmed
+answer-option change that resets a question's submitted answers.
 
-Clients should clear local answer state for matching `questionId` so voting can start fresh if question stays unlocked.
+Clients should clear the local stored answer for the matching `questionId`. They should
+clear the visible selection only when that question is active.
 
 ```json
 {

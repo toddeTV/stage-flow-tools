@@ -92,6 +92,7 @@ export const QuestionInputSchema = v.pipe(
 
 export const QuestionUpdateSchema = v.object({
   questionId: requiredTrimmedStringSchema,
+  resetAnswers: v.optional(v.boolean(), false),
   ...questionInputEntries,
 }, 'validation.invalid_type')
 
@@ -131,6 +132,22 @@ export const PublishQuestionSchema = v.object({
 }, 'validation.invalid_type')
 
 export const ToggleQuestionLockSchema = v.object({
+  questionId: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const ToggleQuestionDisabledSchema = v.object({
+  questionId: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const DeleteQuestionSchema = v.object({
+  questionId: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const MoveQuestionSchema = v.object({
+  direction: v.picklist([
+    'up',
+    'down',
+  ]),
   questionId: requiredTrimmedStringSchema,
 }, 'validation.invalid_type')
 
@@ -198,14 +215,16 @@ export function normalizeQuestionInput(value: unknown): InputQuestion {
   return result.output as InputQuestion
 }
 
-export function normalizeQuestionUpdateInput(value: unknown): InputQuestion & { questionId: string } {
+export function normalizeQuestionUpdateInput(
+  value: unknown,
+): InputQuestion & { questionId: string, resetAnswers: boolean } {
   const result = v.safeParse(QuestionUpdateSchema, value)
 
   if (!result.success) {
     throw new QuestionInputValidationError(getValidationIssues(result.issues))
   }
 
-  return result.output as InputQuestion & { questionId: string }
+  return result.output as InputQuestion & { questionId: string, resetAnswers: boolean }
 }
 
 /** Validates if the input string is a single emoji. */

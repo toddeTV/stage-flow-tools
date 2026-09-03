@@ -1,11 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import type { Peer } from 'crossws'
 
-import { WebSocketChannel } from '~/types'
+import {
+  WebSocketChannel,
+  type Results,
+} from '~/types'
 import {
   addPeer,
+  broadcast,
+  clearScheduledResultsUpdate,
   enqueueEmoji,
   removePeer,
+  scheduleResultsUpdate,
 } from './websocket'
 
 const runtimeConfig = {
@@ -19,17 +25,21 @@ const peers: Peer[] = []
 vi.stubGlobal('logger_error', vi.fn())
 vi.stubGlobal('useRuntimeConfig', () => runtimeConfig)
 
-async function addEmojiPeer(): Promise<Peer & { send: ReturnType<typeof vi.fn> }> {
+async function addPeerForChannel(channel: WebSocketChannel): Promise<Peer & { send: ReturnType<typeof vi.fn> }> {
   const peer = {
     id: 'peer-' + peers.length,
     send: vi.fn(),
   } as unknown as Peer & { send: ReturnType<typeof vi.fn> }
 
   peers.push(peer)
-  await addPeer(peer, WebSocketChannel.EMOJIS, '/_ws/default')
+  await addPeer(peer, channel, '/_ws/default')
   peer.send.mockClear()
 
   return peer
+}
+
+async function addEmojiPeer() {
+  return addPeerForChannel(WebSocketChannel.EMOJIS)
 }
 
 afterEach(async () => {
@@ -94,5 +104,23 @@ describe('enqueueEmoji', () => {
     }
 
     expect(enqueueEmoji({ emoji: '👏', id: 'discarded' })).toBe(false)
+  })
+})
+
+describe('scheduled results updates', () => {
+  it('does not send stale results after the channel is cleared', async () => {
+    vi.useFakeTimers()
+    const peer = await addPeerForChannel(WebSocketChannel.RESULTS)
+
+    scheduleResultsUpdate({} as Results, WebSocketChannel.RESULTS)
+    clearScheduledResultsUpdate(WebSocketChannel.RESULTS)
+    broadcast('results-update', null, WebSocketChannel.RESULTS)
+    vi.advanceTimersByTime(2000)
+
+    expect(peer.send).toHaveBeenCalledTimes(1)
+    expect(JSON.parse(peer.send.mock.calls[0]![0])).toEqual({
+      data: null,
+      event: 'results-update',
+    })
   })
 })

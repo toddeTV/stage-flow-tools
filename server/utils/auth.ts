@@ -20,12 +20,42 @@ export function setAdminCookie(event: H3Event, value: string, maxAge: number) {
 }
 
 /** Extracts a bearer token from the Authorization header. */
-function getBearerToken(event: H3Event): string | undefined {
-  const authorization = getHeader(event, 'authorization')
+function getBearerToken(headers: Headers): string | undefined {
+  const authorization = headers.get('authorization')
   const match = authorization?.match(/^Bearer\s+(.+)$/i)
   const token = match?.[1]?.trim()
 
   return token || undefined
+}
+
+function getCookieToken(headers: Headers): string | undefined {
+  const cookieHeader = headers.get('cookie')
+
+  if (!cookieHeader) {
+    return undefined
+  }
+
+  for (const cookie of cookieHeader.split(';')) {
+    const [
+      name,
+      ...valueParts
+    ] = cookie.trim().split('=')
+
+    if (name === 'admin_token') {
+      try {
+        return decodeURIComponent(valueParts.join('=')) || undefined
+      }
+      catch {
+        return undefined
+      }
+    }
+  }
+
+  return undefined
+}
+
+function getTokenFromHeaders(headers: Headers): string | undefined {
+  return getBearerToken(headers) || getCookieToken(headers)
 }
 
 /**
@@ -34,12 +64,12 @@ function getBearerToken(event: H3Event): string | undefined {
  * @returns The token string or undefined.
  */
 export function getToken(event: H3Event): string | undefined {
-  return getBearerToken(event) || getCookie(event, 'admin_token')
+  return getTokenFromHeaders(event.headers)
 }
 
 /** Persists a verified header token into the standard admin cookie for subsequent browser requests. */
 export function syncAdminCookieFromHeaderToken(event: H3Event, maxAge = 60 * 60 * 24) {
-  const headerToken = getBearerToken(event)
+  const headerToken = getBearerToken(event.headers)
 
   if (!headerToken || getCookie(event, 'admin_token') === headerToken) {
     return
@@ -66,8 +96,34 @@ function getStaticAdminPayload(token: string, configuredToken: string): Verified
  * @param event The H3 event object.
  */
 export async function verifyAdmin(event: H3Event) {
-  const config = useRuntimeConfig(event)
-  const token = getToken(event)
+  return verifyAdminToken(getToken(event), useRuntimeConfig(event))
+}
+
+/** Verifies the admin credentials from a WebSocket upgrade request. */
+export async function verifyAdminWebSocket(request: Pick<Request, 'headers'>) {
+  return verifyAdminToken(getTokenFromHeaders(request.headers), useRuntimeConfig())
+}
+
+/** Returns whether a browser WebSocket upgrade originates from this application. */
+export function isSameOriginWebSocketRequest(request: Pick<Request, 'headers' | 'url'>): boolean {
+  const origin = request.headers.get('origin')
+
+  if (!origin) {
+    return false
+  }
+
+  try {
+    return new URL(origin).origin === new URL(request.url).origin
+  }
+  catch {
+    return false
+  }
+}
+
+async function verifyAdminToken(
+  token: string | undefined,
+  config: { adminToken: string, jwtSecret: string },
+) {
 
   if (!token) {
     throwApiError(401, 'auth.token_required')

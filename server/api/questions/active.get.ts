@@ -1,18 +1,11 @@
-import type { Question, LocalizedString } from '~/types'
-
-type PublicQuestion = Omit<Question, 'note' | 'key' | 'alreadyPublished' | 'answer_options'> & {
-  answer_options: { text: LocalizedString }[]
-}
+import type { PublicQuestion } from '../../utils/public-question'
+import { serializePublicQuestion } from '../../utils/public-question'
 
 export default defineApiHandler(async (): Promise<PublicQuestion | { message: string }> => {
   const question = await getActiveQuestion()
 
   if (question) {
-    const { note, key, alreadyPublished, answer_options, ...rest } = question
-    return {
-      ...rest,
-      answer_options: answer_options.map(({ text }) => ({ text })),
-    }
+    return serializePublicQuestion(question)
   }
 
   return { message: 'No active question' }

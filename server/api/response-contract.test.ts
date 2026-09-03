@@ -10,8 +10,11 @@ const schemaValidatedPostRoutes = [
   'server/api/auth/logout.post.ts',
   'server/api/emojis/submit.post.ts',
   'server/api/questions/create.post.ts',
+  'server/api/questions/delete.post.ts',
+  'server/api/questions/move.post.ts',
   'server/api/questions/publish-next.post.ts',
   'server/api/questions/publish.post.ts',
+  'server/api/questions/toggle-disabled.post.ts',
   'server/api/questions/toggle-lock.post.ts',
   'server/api/questions/unpublish-active.post.ts',
   'server/api/questions/update.post.ts',
@@ -21,13 +24,22 @@ const schemaValidatedPostRoutes = [
 const authenticatedRouteSources = [
   'server/api/answers/reset.post.ts',
   'server/api/questions/create.post.ts',
+  'server/api/questions/delete.post.ts',
+  'server/api/questions/move.post.ts',
   'server/api/questions/publish-next.post.ts',
   'server/api/questions/publish.post.ts',
+  'server/api/questions/toggle-disabled.post.ts',
   'server/api/questions/toggle-lock.post.ts',
   'server/api/questions/unpublish-active.post.ts',
   'server/api/questions/update.post.ts',
   'server/api/results/pick-random-user.post.ts',
   'server/routes/index.post.ts',
+]
+
+const publicQuestionBroadcastRoutes = [
+  'server/api/questions/publish-next.post.ts',
+  'server/api/questions/publish.post.ts',
+  'server/api/questions/update.post.ts',
 ]
 
 async function readSource(relativePath: string): Promise<string> {
@@ -57,10 +69,68 @@ describe('POST response contract', () => {
     expect(source).toContain('await verifyAdmin(event)')
   })
 
+  it.each(publicQuestionBroadcastRoutes)('%s broadcasts only public question fields', async (path) => {
+    const source = await readSource(path)
+
+    expect(source).toContain("broadcast('new-question', serializePublicQuestion(question))")
+  })
+
   it('serializes both authentication failure branches as codes', async () => {
     const source = await readSource('server/utils/auth.ts')
 
     expect(source).toContain("throwApiError(401, 'auth.token_required')")
     expect(source).toContain("throwApiError(401, 'auth.token_invalid')")
+  })
+
+  it('requires the same origin and admin authentication before opening a results WebSocket', async () => {
+    const source = await readSource('server/routes/_ws/default.ts')
+
+    expect(source).toContain('query.output.channel === WebSocketChannel.RESULTS')
+    expect(source).toContain('isSameOriginWebSocketRequest(peer.request)')
+    expect(source).toContain("peer.close(1008, 'auth.origin_invalid')")
+    expect(source).toContain('await verifyAdminWebSocket(peer.request)')
+    expect(source.indexOf('isSameOriginWebSocketRequest(peer.request)')).toBeLessThan(
+      source.indexOf('await verifyAdminWebSocket(peer.request)'),
+    )
+    expect(source).toContain("peer.close(1008, 'auth.token_required')")
+  })
+
+  it('clears live question and results state when the active question is deleted', async () => {
+    const source = await readSource('server/api/questions/delete.post.ts')
+
+    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
+    expect(source).toContain("broadcast('new-question', null)")
+    expect(source).toContain("broadcast('results-update', null, WebSocketChannel.RESULTS)")
+  })
+
+  it('cancels buffered results when the active question is unpublished', async () => {
+    const source = await readSource('server/api/questions/unpublish-active.post.ts')
+
+    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
+  })
+
+  it('broadcasts active question edits to connected participants', async () => {
+    const source = await readSource('server/api/questions/update.post.ts')
+
+    expect(source).toContain('if (question.is_active)')
+    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
+    expect(source).toContain("broadcast('new-question', serializePublicQuestion(question))")
+    expect(source).toContain('const results = await getResultsForQuestion(question.id)')
+    expect(source).toContain("broadcast('results-update', results, WebSocketChannel.RESULTS)")
+  })
+
+  it('requires an explicit answer reset before changing answered options', async () => {
+    const source = await readSource('server/api/questions/update.post.ts')
+
+    expect(source).toContain('resetAnswers')
+    expect(source).toContain("throwApiError(409, 'quiz.question_answers_reset_required')")
+  })
+
+  it('broadcasts confirmed answer resets even when the edited question is inactive', async () => {
+    const source = await readSource('server/api/questions/update.post.ts')
+    const answerResetBroadcast = "broadcast('answers-reset', { questionId: question.id }, WebSocketChannel.DEFAULT)"
+
+    expect(source).toContain(answerResetBroadcast)
+    expect(source.indexOf(answerResetBroadcast)).toBeLessThan(source.indexOf('if (question.is_active)'))
   })
 })

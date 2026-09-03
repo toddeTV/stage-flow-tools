@@ -33,6 +33,11 @@ type QuestionForm = {
   note: string
 }
 
+type PendingQuestionUpdate = {
+  questionId: string
+  questionInput: InputQuestion
+}
+
 function createDefaultQuestionForm(): QuestionForm {
   return {
     key: '',
@@ -61,8 +66,52 @@ function createQuestionFormFromQuestion(question: Question): QuestionForm {
   }
 }
 
-function isQuestionEditable(question: Question): boolean {
-  return !question.is_active && !question.alreadyPublished
+const activeQuestion = ref<Question | null>(null)
+const allQuestions = ref<Question[]>([])
+const questionDialog = ref<HTMLDialogElement>()
+const answerResetConfirmationDialog = ref<HTMLDialogElement>()
+const publishConfirmationDialog = ref<HTMLDialogElement>()
+const toggleDisabledConfirmationDialog = ref<HTMLDialogElement>()
+const deleteConfirmationDialog = ref<HTMLDialogElement>()
+const editingQuestionId = ref<string | null>(null)
+const isSavingQuestion = ref(false)
+const isResettingAnswers = ref(false)
+const isUpdatingQuestionId = ref<string | null>(null)
+const questionForm = ref<QuestionForm>(createDefaultQuestionForm())
+const questionFormErrors = ref<Record<string, string>>({})
+const questionToPublish = ref<Question | null>(null)
+const questionToToggleDisabled = ref<Question | null>(null)
+const questionToDelete = ref<Question | null>(null)
+const pendingQuestionUpdate = ref<PendingQuestionUpdate | null>(null)
+const isEditMode = computed(() => editingQuestionId.value !== null)
+const formTitle = computed(() => isEditMode.value ? t('editQuestionTitle') : t('addQuestion'))
+const submitButtonLabel = computed(() => isEditMode.value ? t('saveQuestion') : t('createQuestion'))
+const { getErrorCode, getErrorMessage, getIssueMessage } = useApiError()
+
+function resetQuestionEditor() {
+  editingQuestionId.value = null
+  questionForm.value = createDefaultQuestionForm()
+  questionFormErrors.value = {}
+}
+
+function closeQuestionDialog(force = false) {
+  if (isSavingQuestion.value && !force) {
+    return
+  }
+
+  questionDialog.value?.close()
+}
+
+function openQuestionDialog() {
+  resetQuestionEditor()
+  questionDialog.value?.showModal()
+}
+
+function startEditingQuestion(question: Question) {
+  editingQuestionId.value = question.id
+  questionForm.value = createQuestionFormFromQuestion(question)
+  questionFormErrors.value = {}
+  questionDialog.value?.showModal()
 }
 
 function parseQuestionFormPayload(): InputQuestion | undefined {
@@ -117,32 +166,18 @@ function parseQuestionFormPayload(): InputQuestion | undefined {
   return result.output as InputQuestion
 }
 
-const activeQuestion = ref<Question | null>(null)
-const allQuestions = ref<Question[]>([])
-const questionFormSection = ref<HTMLElement | null>(null)
-const editingQuestionId = ref<string | null>(null)
-const isSavingQuestion = ref(false)
-const isResettingAnswers = ref(false)
-const questionForm = ref<QuestionForm>(createDefaultQuestionForm())
-const questionFormErrors = ref<Record<string, string>>({})
-const isEditMode = computed(() => editingQuestionId.value !== null)
-const formTitle = computed(() => isEditMode.value ? t('editQuestionTitle') : t('prepareNextQuestion'))
-const submitButtonLabel = computed(() => isEditMode.value ? t('saveQuestion') : t('createQuestion'))
-const { getErrorMessage, getIssueMessage } = useApiError()
-
-// Load questions
 const { data: fetchedQuestions, error: fetchError, refresh: loadQuestions } = useFetch<Question[]>('/api/questions')
 
 watch(fetchedQuestions, (newQuestions) => {
   if (newQuestions && Array.isArray(newQuestions)) {
-    allQuestions.value = newQuestions.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    activeQuestion.value = newQuestions.find(q => q.is_active) || null
+    allQuestions.value = newQuestions
+    activeQuestion.value = newQuestions.find(question => question.is_active) || null
 
     if (editingQuestionId.value) {
       const editedQuestion = allQuestions.value.find(question => question.id === editingQuestionId.value)
 
-      if (!editedQuestion || !isQuestionEditable(editedQuestion)) {
-        cancelEditingQuestion()
+      if (!editedQuestion) {
+        closeQuestionDialog()
       }
     }
   }
@@ -159,24 +194,6 @@ watch(fetchError, (newError) => {
   }
 })
 
-async function startEditingQuestion(question: Question) {
-  if (!isQuestionEditable(question)) {
-    return
-  }
-
-  editingQuestionId.value = question.id
-  questionForm.value = createQuestionFormFromQuestion(question)
-
-  await nextTick()
-  questionFormSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
-function cancelEditingQuestion() {
-  editingQuestionId.value = null
-  questionForm.value = createDefaultQuestionForm()
-}
-
-// Create or update question
 async function handleSaveQuestion() {
   const payload = parseQuestionFormPayload()
 
@@ -204,7 +221,54 @@ async function handleSaveQuestion() {
     }
 
     await loadQuestions()
-    cancelEditingQuestion()
+    closeQuestionDialog(true)
+  }
+  catch (error: unknown) {
+    if (editingQuestionId.value && getErrorCode(error) === 'quiz.question_answers_reset_required') {
+      pendingQuestionUpdate.value = {
+        questionId: editingQuestionId.value,
+        questionInput: payload,
+      }
+      answerResetConfirmationDialog.value?.showModal()
+      return
+    }
+
+    alert(getErrorMessage(error))
+  }
+  finally {
+    isSavingQuestion.value = false
+  }
+}
+
+function closeAnswerResetConfirmationDialog() {
+  answerResetConfirmationDialog.value?.close()
+}
+
+function resetAnswerResetConfirmationDialog() {
+  pendingQuestionUpdate.value = null
+}
+
+async function resetAnswersAndSaveQuestion() {
+  const pendingUpdate = pendingQuestionUpdate.value
+
+  if (!pendingUpdate || isSavingQuestion.value) {
+    return
+  }
+
+  isSavingQuestion.value = true
+
+  try {
+    await $fetch<Question>('/api/questions/update', {
+      method: 'POST',
+      body: {
+        questionId: pendingUpdate.questionId,
+        resetAnswers: true,
+        ...pendingUpdate.questionInput,
+      },
+    })
+    await loadQuestions()
+    closeAnswerResetConfirmationDialog()
+    closeQuestionDialog(true)
   }
   catch (error: unknown) {
     alert(getErrorMessage(error))
@@ -214,25 +278,159 @@ async function handleSaveQuestion() {
   }
 }
 
-// Publish question
-async function publishQuestion(key: string) {
+function requestQuestionPublication(question: Question) {
+  if (isUpdatingQuestionId.value) {
+    return
+  }
+
+  questionToPublish.value = question
+  publishConfirmationDialog.value?.showModal()
+}
+
+function closePublishConfirmationDialog() {
+  publishConfirmationDialog.value?.close()
+}
+
+function resetPublishConfirmationDialog() {
+  questionToPublish.value = null
+}
+
+async function publishQuestion() {
+  const questionToPublishValue = questionToPublish.value
+
+  if (!questionToPublishValue || isUpdatingQuestionId.value) {
+    return
+  }
+
+  isUpdatingQuestionId.value = questionToPublishValue.id
+
   try {
     const question = await $fetch<Question>('/api/questions/publish', {
       method: 'POST',
-      body: { key },
+      body: { key: questionToPublishValue.key },
     })
 
     activeQuestion.value = question
     await loadQuestions()
-
-    // alert('Question published successfully')
+    closePublishConfirmationDialog()
   }
-  catch (error) {
+  catch (error: unknown) {
     alert(getErrorMessage(error))
+  }
+  finally {
+    isUpdatingQuestionId.value = null
   }
 }
 
-// Toggle lock
+async function moveQuestion(question: Question, direction: 'up' | 'down') {
+  if (isUpdatingQuestionId.value) {
+    return
+  }
+
+  isUpdatingQuestionId.value = question.id
+
+  try {
+    await $fetch<Question>('/api/questions/move', {
+      method: 'POST',
+      body: {
+        direction,
+        questionId: question.id,
+      },
+    })
+    await loadQuestions()
+  }
+  catch (error: unknown) {
+    alert(getErrorMessage(error))
+  }
+  finally {
+    isUpdatingQuestionId.value = null
+  }
+}
+
+function requestQuestionDisabledToggle(question: Question) {
+  if (isUpdatingQuestionId.value) {
+    return
+  }
+
+  questionToToggleDisabled.value = question
+  toggleDisabledConfirmationDialog.value?.showModal()
+}
+
+function closeToggleDisabledConfirmationDialog() {
+  toggleDisabledConfirmationDialog.value?.close()
+}
+
+function resetToggleDisabledConfirmationDialog() {
+  questionToToggleDisabled.value = null
+}
+
+async function toggleQuestionDisabled() {
+  const questionToToggleDisabledValue = questionToToggleDisabled.value
+
+  if (!questionToToggleDisabledValue || isUpdatingQuestionId.value) {
+    return
+  }
+
+  isUpdatingQuestionId.value = questionToToggleDisabledValue.id
+
+  try {
+    await $fetch<Question>('/api/questions/toggle-disabled', {
+      method: 'POST',
+      body: { questionId: questionToToggleDisabledValue.id },
+    })
+    await loadQuestions()
+    closeToggleDisabledConfirmationDialog()
+  }
+  catch (error: unknown) {
+    alert(getErrorMessage(error))
+  }
+  finally {
+    isUpdatingQuestionId.value = null
+  }
+}
+
+function requestQuestionDeletion(question: Question) {
+  if (isUpdatingQuestionId.value) {
+    return
+  }
+
+  questionToDelete.value = question
+  deleteConfirmationDialog.value?.showModal()
+}
+
+function closeDeleteConfirmationDialog() {
+  deleteConfirmationDialog.value?.close()
+}
+
+function resetDeleteConfirmationDialog() {
+  questionToDelete.value = null
+}
+
+async function deleteQuestion() {
+  const questionToDeleteValue = questionToDelete.value
+
+  if (!questionToDeleteValue || isUpdatingQuestionId.value) {
+    return
+  }
+
+  isUpdatingQuestionId.value = questionToDeleteValue.id
+
+  try {
+    await $fetch('/api/questions/delete', {
+      method: 'POST',
+      body: { questionId: questionToDeleteValue.id },
+    })
+    await loadQuestions()
+    closeDeleteConfirmationDialog()
+  }
+  catch (error: unknown) {
+    alert(getErrorMessage(error))
+  }
+  finally {
+    isUpdatingQuestionId.value = null
+  }
+}
+
 async function toggleLock() {
   if (!activeQuestion.value) return
 
@@ -250,7 +448,6 @@ async function toggleLock() {
   }
 }
 
-// Unpublish active question
 async function unpublishActiveQuestion() {
   try {
     await $fetch('/api/questions/unpublish-active', {
@@ -264,7 +461,6 @@ async function unpublishActiveQuestion() {
   }
 }
 
-// Publish next question
 async function publishNextQuestion() {
   try {
     const question = await $fetch<Question>('/api/questions/publish-next', {
@@ -278,10 +474,6 @@ async function publishNextQuestion() {
   }
 }
 
-/**
- * Reset all answers for the active question after confirmation and reload questions.
- * @returns Promise<void>
- */
 async function resetAnswers() {
   if (!activeQuestion.value || isResettingAnswers.value) {
     return
@@ -309,12 +501,10 @@ async function resetAnswers() {
   }
 }
 
-// Add option
 function addOption() {
   questionForm.value.answer_options.push({ text: '{\n  "en": ""\n}', emoji: '' })
 }
 
-// Remove option
 function removeOption(index: number) {
   questionForm.value.answer_options.splice(index, 1)
 }
@@ -324,9 +514,7 @@ function removeOption(index: number) {
   <div class="mx-auto max-w-6xl p-5">
     <UiPageTitle>{{ t('pageTitle') }}</UiPageTitle>
 
-    <!-- Dashboard -->
     <div class="grid gap-8">
-      <!-- Current Question -->
       <UiSection>
         <div class="mb-5 flex items-center justify-between">
           <h2 class="section-heading">
@@ -349,9 +537,9 @@ function removeOption(index: number) {
               {{ getLocalizedText(option.text) }} <span v-if="option.emoji">{{ option.emoji }}</span>
             </li>
           </ul>
-          <div class="flex items-center justify-between">
+          <div class="flex flex-wrap items-center justify-between gap-3">
             <span>{{ t('statusLabel') }} {{ activeQuestion.is_locked ? t('locked') : t('unlocked') }}</span>
-            <div class="flex gap-2.5">
+            <div class="flex flex-wrap gap-2.5">
               <NuxtLink to="/admin/results">
                 <UiButton variant="secondary">
                   {{ t('viewLiveResults') }} →
@@ -377,172 +565,403 @@ function removeOption(index: number) {
         </div>
       </UiSection>
 
-      <!-- Question Form -->
-      <div ref="questionFormSection">
-        <UiSection>
-          <h2 class="section-heading">
-            {{ formTitle }}
-          </h2>
-
-          <p v-if="isEditMode" class="mb-5 border border-black bg-amber-100 p-3 text-sm font-bold">
-            {{ t('editModeNotice') }}
-          </p>
-
-          <form class="flex flex-col gap-5" @submit.prevent="handleSaveQuestion">
-            <UiInput
-              v-model="questionForm.key"
-              class="border-2 border-black p-3 text-base"
-              :placeholder="t('keyPlaceholder')"
-            />
-            <textarea
-              v-model="questionForm.question_text"
-              :aria-describedby="questionFormErrors.question_text ? 'question-text-error' : undefined"
-              :aria-invalid="Boolean(questionFormErrors.question_text)"
-              class="json-textarea min-h-[100px]"
-              :placeholder="t('questionTextPlaceholder')"
-              required
-            />
-            <p v-if="questionFormErrors.question_text" id="question-text-error" role="alert">
-              {{ questionFormErrors.question_text }}
-            </p>
-
-            <textarea
-              v-model="questionForm.note"
-              :aria-describedby="questionFormErrors.note ? 'note-error' : undefined"
-              :aria-invalid="Boolean(questionFormErrors.note)"
-              class="json-textarea min-h-[70px]"
-              :placeholder="t('notePlaceholder')"
-            />
-            <p v-if="questionFormErrors.note" id="note-error" role="alert">
-              {{ questionFormErrors.note }}
-            </p>
-
-            <div>
-              <h3 class="mb-2.5 text-lg">
-                {{ t('answerOptions') }}
-              </h3>
-              <p v-if="questionFormErrors.answer_options" role="alert">
-                {{ questionFormErrors.answer_options }}
-              </p>
-              <div
-                v-for="(option, index) in questionForm.answer_options"
-                :key="index"
-                class="mb-2.5 flex items-start gap-2.5"
-              >
-                <textarea
-                  v-model="option.text"
-                  :aria-describedby="questionFormErrors[`answer_options.${index}.text`]
-                    ? `answer-option-${index}-text-error`
-                    : undefined"
-                  :aria-invalid="Boolean(questionFormErrors[`answer_options.${index}.text`])"
-                  class="json-textarea min-h-[70px] flex-1"
-                  :placeholder="t('optionPlaceholder', { n: index + 1 })"
-                  required
-                />
-                <p
-                  v-if="questionFormErrors[`answer_options.${index}.text`]"
-                  :id="`answer-option-${index}-text-error`"
-                  role="alert"
-                >
-                  {{ questionFormErrors[`answer_options.${index}.text`] }}
-                </p>
-                <UiInput
-                  :aria-describedby="questionFormErrors[`answer_options.${index}.emoji`]
-                    ? `answer-option-${index}-emoji-error`
-                    : undefined"
-                  :aria-invalid="Boolean(questionFormErrors[`answer_options.${index}.emoji`])"
-                  class="w-24"
-                  maxlength="10"
-                  :model-value="option.emoji || ''"
-                  :placeholder="t('emojiPlaceholder')"
-                  @update:model-value="option.emoji = String($event || '').trim() || undefined"
-                />
-                <p
-                  v-if="questionFormErrors[`answer_options.${index}.emoji`]"
-                  :id="`answer-option-${index}-emoji-error`"
-                  role="alert"
-                >
-                  {{ questionFormErrors[`answer_options.${index}.emoji`] }}
-                </p>
-                <UiButton
-                  v-if="questionForm.answer_options.length > 2"
-                  type="button"
-                  variant="danger"
-                  @click="removeOption(index)"
-                >
-                  {{ t('removeButton') }}
-                </UiButton>
-              </div>
-              <UiButton type="button" variant="secondary" @click="addOption">
-                {{ t('addOptionButton') }}
-              </UiButton>
-            </div>
-
-            <div class="flex flex-wrap gap-2.5">
-              <UiButton :disabled="isSavingQuestion" type="submit">
-                {{ submitButtonLabel }}
-              </UiButton>
-              <UiButton
-                v-if="isEditMode"
-                :disabled="isSavingQuestion"
-                type="button"
-                variant="secondary"
-                @click="cancelEditingQuestion"
-              >
-                {{ t('cancelEditing') }}
-              </UiButton>
-            </div>
-          </form>
-        </UiSection>
-      </div>
-
-      <!-- All Questions -->
       <UiSection>
-        <h2 class="section-heading">
-          {{ t('allQuestions') }}
-        </h2>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div
-            v-for="question in allQuestions"
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <h2 class="section-heading mb-0">
+            {{ t('allQuestions') }}
+          </h2>
+          <UiButton @click="openQuestionDialog">
+            {{ t('addQuestion') }}
+          </UiButton>
+        </div>
+
+        <ol class="flex list-none flex-col gap-4 p-0">
+          <li
+            v-for="(question, index) in allQuestions"
             :key="question.id"
             class="border-2 border-black bg-gray-100 p-5"
-            :class="{ 'opacity-50': question.alreadyPublished }"
+            :class="{
+              'bg-amber-100': question.is_disabled,
+            }"
           >
-            <p class="mb-2.5 font-bold">
-              [{{ question.key }}] {{ getLocalizedText(question.question_text) }}
-            </p>
-            <p v-if="question.note" class="mb-2.5 border border-black bg-gray-200 p-2 text-sm text-gray-600">
-              {{ getLocalizedText(question.note) }}
-            </p>
-            <ul class="mb-4 list-inside list-disc p-0">
-              <li v-for="(option, index) in question.answer_options" :key="index">
-                {{ getLocalizedText(option.text) }} <span v-if="option.emoji">{{ option.emoji }}</span>
-              </li>
-            </ul>
+            <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
+              <div class="min-w-0">
+                <div class="mb-3">
+                  <p class="font-bold">
+                    {{ index + 1 }}. [{{ question.key }}]
+                    <span :class="{ 'line-through': question.is_disabled }">
+                      {{ getLocalizedText(question.question_text) }}
+                    </span>
+                  </p>
+                </div>
 
-            <p v-if="question.is_active" class="mb-4 text-sm font-bold text-gray-700">
-              {{ t('editBlockedActive') }}
-            </p>
-            <p v-else-if="question.alreadyPublished" class="mb-4 text-sm font-bold text-gray-700">
-              {{ t('editBlockedPublished') }}
-            </p>
+                <p
+                  v-if="question.note"
+                  class="mb-3 border border-black bg-gray-200 p-2 text-sm text-gray-600"
+                  :class="{ 'line-through': question.is_disabled }"
+                >
+                  {{ getLocalizedText(question.note) }}
+                </p>
+                <ul class="mb-4 list-inside list-disc p-0">
+                  <li v-for="(option, optionIndex) in question.answer_options" :key="optionIndex">
+                    <span :class="{ 'line-through': question.is_disabled }">
+                      {{ getLocalizedText(option.text) }} <span v-if="option.emoji">{{ option.emoji }}</span>
+                    </span>
+                  </li>
+                </ul>
 
-            <div class="flex flex-wrap gap-2.5">
-              <UiButton @click="publishQuestion(question.key)">
-                {{ t('publishThisQuestion') }}
-              </UiButton>
-              <UiButton
-                v-if="isQuestionEditable(question)"
-                variant="secondary"
-                @click="startEditingQuestion(question)"
-              >
-                {{ editingQuestionId === question.id ? t('editingQuestion') : t('editQuestion') }}
-              </UiButton>
+                <div class="flex flex-wrap gap-2.5">
+                  <UiButton :disabled="isUpdatingQuestionId !== null" @click="requestQuestionPublication(question)">
+                    {{ t('publishThisQuestion') }}
+                  </UiButton>
+                  <UiButton
+                    class="inline-flex items-center gap-2"
+                    :disabled="isUpdatingQuestionId !== null"
+                    variant="secondary"
+                    @click="requestQuestionDisabledToggle(question)"
+                  >
+                    <Icon
+                      aria-hidden="true"
+                      class="size-5"
+                      :name="question.is_disabled ? 'ph:eye' : 'ph:eye-slash'"
+                    />
+                    {{ question.is_disabled ? t('enableQuestion') : t('disableQuestion') }}
+                  </UiButton>
+                  <UiButton
+                    :aria-label="t('editQuestion')"
+                    class="inline-flex items-center gap-2"
+                    :disabled="isUpdatingQuestionId !== null"
+                    variant="secondary"
+                    @click="startEditingQuestion(question)"
+                  >
+                    <Icon aria-hidden="true" class="size-5" name="ph:pencil" />
+                    {{ t('editQuestion') }}
+                  </UiButton>
+                  <UiButton
+                    :aria-label="t('deleteQuestion')"
+                    class="inline-flex items-center gap-2"
+                    :disabled="isUpdatingQuestionId !== null"
+                    variant="danger"
+                    @click="requestQuestionDeletion(question)"
+                  >
+                    <Icon aria-hidden="true" class="size-5" name="ph:trash" />
+                    {{ t('deleteQuestion') }}
+                  </UiButton>
+                  <div class="ml-auto flex gap-2.5">
+                    <UiButton
+                      :aria-label="t('moveQuestionUp')"
+                      :disabled="index === 0 || isUpdatingQuestionId !== null"
+                      size="small"
+                      variant="secondary"
+                      @click="moveQuestion(question, 'up')"
+                    >
+                      <Icon aria-hidden="true" class="size-5" name="ph:arrow-up" />
+                    </UiButton>
+                    <UiButton
+                      :aria-label="t('moveQuestionDown')"
+                      :disabled="index === allQuestions.length - 1 || isUpdatingQuestionId !== null"
+                      size="small"
+                      variant="secondary"
+                      @click="moveQuestion(question, 'down')"
+                    >
+                      <Icon aria-hidden="true" class="size-5" name="ph:arrow-down" />
+                    </UiButton>
+                  </div>
+                </div>
+              </div>
+              <aside class="ml-5 self-start border-2 border-black bg-white p-4 lg:ml-0">
+                <h3 class="text-sm font-bold tracking-wide uppercase">
+                  {{ t('questionLifecycle') }}
+                </h3>
+                <table class="mt-3 w-full border-collapse text-left text-sm">
+                  <tbody>
+                    <tr class="border-b border-gray-300">
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('queuePosition') }}</th>
+                      <td class="py-2 text-left">{{ index + 1 }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-300">
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('disabledStatus') }}</th>
+                      <td class="py-2 text-left">{{ question.is_disabled ? t('yes') : t('no') }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-300">
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('alreadyAskedStatus') }}</th>
+                      <td class="py-2 text-left">{{ question.alreadyPublished ? t('yes') : t('no') }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-300">
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('activeStatus') }}</th>
+                      <td class="py-2 text-left">{{ question.is_active ? t('yes') : t('no') }}</td>
+                    </tr>
+                    <tr>
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('answersLockedStatus') }}</th>
+                      <td class="py-2 text-left">{{ question.is_locked ? t('yes') : t('no') }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </aside>
             </div>
-          </div>
-        </div>
+          </li>
+        </ol>
       </UiSection>
     </div>
+
+    <dialog
+      ref="questionDialog"
+      :aria-busy="isSavingQuestion"
+      aria-labelledby="question-editor-title"
+      class="m-auto max-h-[calc(100dvh-2.5rem)] w-[calc(100%-2.5rem)] max-w-3xl overflow-y-auto
+        border-[3px] border-black bg-white p-6 text-black backdrop:bg-black/50"
+      @click.self="() => closeQuestionDialog()"
+      @close="resetQuestionEditor"
+    >
+      <h2 id="question-editor-title" class="section-heading">
+        {{ formTitle }}
+      </h2>
+
+      <form class="flex flex-col gap-5" @submit.prevent="handleSaveQuestion">
+        <UiInput
+          v-model="questionForm.key"
+          class="border-2 border-black p-3 text-base"
+          :placeholder="t('keyPlaceholder')"
+        />
+        <textarea
+          v-model="questionForm.question_text"
+          :aria-describedby="questionFormErrors.question_text ? 'question-text-error' : undefined"
+          :aria-invalid="Boolean(questionFormErrors.question_text)"
+          class="json-textarea min-h-[100px]"
+          :placeholder="t('questionTextPlaceholder')"
+          required
+        />
+        <p v-if="questionFormErrors.question_text" id="question-text-error" role="alert">
+          {{ questionFormErrors.question_text }}
+        </p>
+
+        <textarea
+          v-model="questionForm.note"
+          :aria-describedby="questionFormErrors.note ? 'note-error' : undefined"
+          :aria-invalid="Boolean(questionFormErrors.note)"
+          class="json-textarea min-h-[70px]"
+          :placeholder="t('notePlaceholder')"
+        />
+        <p v-if="questionFormErrors.note" id="note-error" role="alert">
+          {{ questionFormErrors.note }}
+        </p>
+
+        <div>
+          <h3 class="mb-2.5 text-lg">
+            {{ t('answerOptions') }}
+          </h3>
+          <p v-if="questionFormErrors.answer_options" role="alert">
+            {{ questionFormErrors.answer_options }}
+          </p>
+          <div
+            v-for="(option, index) in questionForm.answer_options"
+            :key="index"
+            class="mb-2.5 flex flex-wrap items-start gap-2.5"
+          >
+            <div class="min-w-0 flex-1">
+              <textarea
+                v-model="option.text"
+                :aria-describedby="questionFormErrors[`answer_options.${index}.text`]
+                  ? `answer-option-${index}-text-error`
+                  : undefined"
+                :aria-invalid="Boolean(questionFormErrors[`answer_options.${index}.text`])"
+                class="json-textarea min-h-[70px] w-full"
+                :placeholder="t('optionPlaceholder', { n: index + 1 })"
+                required
+              />
+              <p
+                v-if="questionFormErrors[`answer_options.${index}.text`]"
+                :id="`answer-option-${index}-text-error`"
+                role="alert"
+              >
+                {{ questionFormErrors[`answer_options.${index}.text`] }}
+              </p>
+            </div>
+            <div>
+              <UiInput
+                :aria-describedby="questionFormErrors[`answer_options.${index}.emoji`]
+                  ? `answer-option-${index}-emoji-error`
+                  : undefined"
+                :aria-invalid="Boolean(questionFormErrors[`answer_options.${index}.emoji`])"
+                class="w-24"
+                maxlength="10"
+                :model-value="option.emoji || ''"
+                :placeholder="t('emojiPlaceholder')"
+                @update:model-value="option.emoji = String($event || '').trim() || undefined"
+              />
+              <p
+                v-if="questionFormErrors[`answer_options.${index}.emoji`]"
+                :id="`answer-option-${index}-emoji-error`"
+                role="alert"
+              >
+                {{ questionFormErrors[`answer_options.${index}.emoji`] }}
+              </p>
+            </div>
+            <UiButton
+              v-if="questionForm.answer_options.length > 2"
+              type="button"
+              variant="danger"
+              @click="removeOption(index)"
+            >
+              {{ t('removeButton') }}
+            </UiButton>
+          </div>
+          <UiButton type="button" variant="secondary" @click="addOption">
+            {{ t('addOptionButton') }}
+          </UiButton>
+        </div>
+
+        <div class="flex flex-wrap gap-2.5">
+          <UiButton :disabled="isSavingQuestion" type="submit">
+            {{ submitButtonLabel }}
+          </UiButton>
+          <UiButton
+            :disabled="isSavingQuestion"
+            type="button"
+            variant="secondary"
+            @click="closeQuestionDialog"
+          >
+            {{ t('cancelEditing') }}
+          </UiButton>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog
+      ref="answerResetConfirmationDialog"
+      :aria-busy="isSavingQuestion"
+      aria-describedby="answer-reset-confirmation-description"
+      aria-labelledby="answer-reset-confirmation-title"
+      class="m-auto w-[calc(100%-2.5rem)] max-w-lg border-[3px] border-black bg-white p-6 text-black
+        backdrop:bg-black/50"
+      @click.self="closeAnswerResetConfirmationDialog"
+      @close="resetAnswerResetConfirmationDialog"
+    >
+      <h2 id="answer-reset-confirmation-title" class="text-3xl font-bold uppercase">
+        {{ t('resetQuestionAnswersTitle') }}
+      </h2>
+      <p id="answer-reset-confirmation-description" class="mt-4">
+        {{ t('confirmAnswerOptionsReset', { key: pendingQuestionUpdate?.questionInput.key ?? '' }) }}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+        <UiButton
+          :disabled="isSavingQuestion"
+          variant="danger"
+          @click="resetAnswersAndSaveQuestion"
+        >
+          {{ t('resetAnswersAndSave') }}
+        </UiButton>
+        <UiButton
+          :disabled="isSavingQuestion"
+          variant="secondary"
+          @click="closeAnswerResetConfirmationDialog"
+        >
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+    </dialog>
+
+    <dialog
+      ref="publishConfirmationDialog"
+      :aria-busy="isUpdatingQuestionId === questionToPublish?.id"
+      aria-describedby="publish-question-confirmation-description"
+      aria-labelledby="publish-question-confirmation-title"
+      class="m-auto w-[calc(100%-2.5rem)] max-w-lg border-[3px] border-black bg-white p-6 text-black
+        backdrop:bg-black/50"
+      @click.self="() => closePublishConfirmationDialog()"
+      @close="resetPublishConfirmationDialog"
+    >
+      <h2 id="publish-question-confirmation-title" class="text-3xl font-bold uppercase">
+        {{ t('publishQuestionTitle') }}
+      </h2>
+      <p id="publish-question-confirmation-description" class="mt-4">
+        {{ t('confirmPublishQuestion', { key: questionToPublish?.key ?? '' }) }}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          @click="publishQuestion"
+        >
+          {{ t('publishThisQuestion') }}
+        </UiButton>
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          variant="secondary"
+          @click="closePublishConfirmationDialog"
+        >
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+    </dialog>
+
+    <dialog
+      ref="toggleDisabledConfirmationDialog"
+      :aria-busy="isUpdatingQuestionId === questionToToggleDisabled?.id"
+      aria-describedby="toggle-disabled-question-confirmation-description"
+      aria-labelledby="toggle-disabled-question-confirmation-title"
+      class="m-auto w-[calc(100%-2.5rem)] max-w-lg border-[3px] border-black bg-white p-6 text-black
+        backdrop:bg-black/50"
+      @click.self="() => closeToggleDisabledConfirmationDialog()"
+      @close="resetToggleDisabledConfirmationDialog"
+    >
+      <h2 id="toggle-disabled-question-confirmation-title" class="text-3xl font-bold uppercase">
+        {{ questionToToggleDisabled?.is_disabled ? t('enableQuestion') : t('disableQuestion') }}
+      </h2>
+      <p id="toggle-disabled-question-confirmation-description" class="mt-4">
+        {{ questionToToggleDisabled?.is_disabled
+          ? t('confirmEnableQuestion', { key: questionToToggleDisabled.key })
+          : t('confirmDisableQuestion', { key: questionToToggleDisabled?.key ?? '' }) }}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          @click="toggleQuestionDisabled"
+        >
+          {{ questionToToggleDisabled?.is_disabled ? t('enableQuestion') : t('disableQuestion') }}
+        </UiButton>
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          variant="secondary"
+          @click="closeToggleDisabledConfirmationDialog"
+        >
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+    </dialog>
+
+    <dialog
+      ref="deleteConfirmationDialog"
+      :aria-busy="isUpdatingQuestionId === questionToDelete?.id"
+      aria-describedby="delete-question-confirmation-description"
+      aria-labelledby="delete-question-confirmation-title"
+      class="m-auto w-[calc(100%-2.5rem)] max-w-lg border-[3px] border-black bg-white p-6 text-black
+        backdrop:bg-black/50"
+      @click.self="() => closeDeleteConfirmationDialog()"
+      @close="resetDeleteConfirmationDialog"
+    >
+      <h2 id="delete-question-confirmation-title" class="text-3xl font-bold uppercase">
+        {{ t('deleteQuestion') }}
+      </h2>
+      <p id="delete-question-confirmation-description" class="mt-4">
+        {{ t('confirmDeleteQuestion', { key: questionToDelete?.key ?? '' }) }}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          variant="danger"
+          @click="deleteQuestion"
+        >
+          {{ t('deleteQuestion') }}
+        </UiButton>
+        <UiButton
+          :disabled="isUpdatingQuestionId !== null"
+          variant="secondary"
+          @click="closeDeleteConfirmationDialog"
+        >
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+    </dialog>
   </div>
 </template>
 
@@ -562,10 +981,12 @@ en:
   publishNext: Publish Next
   unpublishButton: Unpublish
   confirmResetAnswers: Delete all submitted answers for current question?
+  resetQuestionAnswersTitle: Reset submitted answers?
+  confirmAnswerOptionsReset: "Changing options for '{key}' permanently deletes submitted answers. Continue?"
+  resetAnswersAndSave: Delete answers and save
   noActiveQuestion: No active question
-  prepareNextQuestion: Prepare Next Question
+  addQuestion: Add Question
   editQuestionTitle: Edit Question
-  editModeNotice: Edit mode active. Only unpublished inactive questions can be changed.
   keyPlaceholder: "Enter a unique key/slug (optional, e.g., 'question-1')"
   questionTextPlaceholder: "Enter question text as JSON, e.g., {'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
   notePlaceholder: "Enter note as JSON (optional), e.g., {'{'} \"en\": \"Note\" {'}'}"
@@ -574,13 +995,28 @@ en:
   addOptionButton: Add Option
   createQuestion: Create Question
   saveQuestion: Save Question
-  cancelEditing: Cancel Editing
-  editQuestion: Edit Question
-  editingQuestion: Editing
-  editBlockedActive: Edit disabled for active question.
-  editBlockedPublished: Edit disabled for already published question.
+  cancelEditing: Cancel
+  editQuestion: Edit
   allQuestions: All Questions
-  publishThisQuestion: Publish This Question
+  questionLifecycle: Question lifecycle
+  queuePosition: Queue position
+  disabledStatus: Disabled
+  activeStatus: Active now
+  alreadyAskedStatus: Asked before
+  answersLockedStatus: Answers locked
+  yes: Yes
+  no: No
+  publishThisQuestion: Publish
+  publishQuestionTitle: Publish Question
+  confirmPublishQuestion: "Publish '{key}' as active question?"
+  disableQuestion: Disable
+  enableQuestion: Enable
+  confirmDisableQuestion: "Disable '{key}'? Publish Next will skip it."
+  confirmEnableQuestion: "Enable '{key}'? Publish Next can select it again."
+  deleteQuestion: Delete
+  confirmDeleteQuestion: "Delete '{key}' and all submitted answers permanently?"
+  moveQuestionUp: Move question up
+  moveQuestionDown: Move question down
   optionPlaceholder: "Option {n} JSON"
   emojiPlaceholder: Emoji
 de:
@@ -597,27 +1033,44 @@ de:
   resettingAnswers: Antworten werden zurückgesetzt...
   publishNext: Nächste veröffentlichen
   unpublishButton: Veröffentlichung zurückziehen
-  confirmResetAnswers: Alle abgegebenen Antworten für die aktuelle Frage löschen?
+  confirmResetAnswers: Alle abgegebenen Antworten für aktuelle Frage löschen?
+  resetQuestionAnswersTitle: Abgegebene Antworten zurücksetzen?
+  confirmAnswerOptionsReset: "Optionen von '{key}' ändern löscht alle abgegebenen Antworten dauerhaft. Fortfahren?"
+  resetAnswersAndSave: Antworten löschen und speichern
   noActiveQuestion: Keine aktive Frage
-  prepareNextQuestion: Nächste Frage vorbereiten
+  addQuestion: Frage hinzufügen
   editQuestionTitle: Frage bearbeiten
-  editModeNotice: Bearbeitungsmodus aktiv. Nur unveröffentlichte und inaktive Fragen können geändert werden.
   keyPlaceholder: "Eindeutigen Schlüssel eingeben (optional, z.B. 'frage-1')"
   questionTextPlaceholder: "Fragetext als JSON eingeben, z.B. {'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
-  notePlaceholder: "Notiz als JSON eingeben (optional), z.B. {'{'} \"en\": \"Notiz\" {'}'}"
+  notePlaceholder: "Notiz als JSON eingeben, z.B. {'{'} \"en\": \"Notiz\" {'}'}"
   answerOptions: Antwortoptionen
   removeButton: Entfernen
   addOptionButton: Option hinzufügen
   createQuestion: Frage erstellen
   saveQuestion: Frage speichern
-  cancelEditing: Bearbeitung abbrechen
-  editQuestion: Frage bearbeiten
-  editingQuestion: Wird bearbeitet
-  editBlockedActive: Bearbeitung für aktive Frage deaktiviert.
-  editBlockedPublished: Bearbeitung für bereits veröffentlichte Frage deaktiviert.
+  cancelEditing: Abbrechen
+  editQuestion: Bearbeiten
   allQuestions: Alle Fragen
-  publishThisQuestion: Diese Frage veröffentlichen
-  optionPlaceholder: "Option {n} JSON"
+  questionLifecycle: Frage-Lebenszyklus
+  queuePosition: Warteschlangenposition
+  disabledStatus: Deaktiviert
+  activeStatus: Derzeit aktiv
+  alreadyAskedStatus: Bereits gestellt
+  answersLockedStatus: Antworten gesperrt
+  yes: Ja
+  no: Nein
+  publishThisQuestion: Veröffentlichen
+  publishQuestionTitle: Frage veröffentlichen
+  confirmPublishQuestion: "'{key}' als aktive Frage veröffentlichen?"
+  disableQuestion: Deaktivieren
+  enableQuestion: Aktivieren
+  confirmDisableQuestion: "'{key}' deaktivieren? Nächste veröffentlichen überspringt die Frage dann."
+  confirmEnableQuestion: "'{key}' aktivieren? Nächste veröffentlichen kann die Frage dann wieder auswählen."
+  deleteQuestion: Löschen
+  confirmDeleteQuestion: "'{key}' und alle abgegebenen Antworten dauerhaft löschen?"
+  moveQuestionUp: Frage nach oben verschieben
+  moveQuestionDown: Frage nach unten verschieben
+  optionPlaceholder: "Option {n} als JSON"
   emojiPlaceholder: Emoji
 ja:
   pageTitle: 管理ダッシュボード
@@ -634,26 +1087,43 @@ ja:
   publishNext: 次を公開
   unpublishButton: 公開停止
   confirmResetAnswers: 現在の質問の回答を全て削除しますか？
+  resetQuestionAnswersTitle: 送信済みの回答をリセットしますか？
+  confirmAnswerOptionsReset: "'{key}' の回答項目を変更すると、送信済みの回答がすべて完全に削除されます。続行しますか？"
+  resetAnswersAndSave: 回答を削除して保存
   noActiveQuestion: アクティブな質問はありません
-  prepareNextQuestion: 次の質問を準備
+  addQuestion: 質問を追加
   editQuestionTitle: 質問を編集
-  editModeNotice: 編集モードです。未公開かつ非アクティブな質問だけ変更できます。
   keyPlaceholder: "一意のキー/スラグを入力（任意、例：'question-1'）"
   questionTextPlaceholder: "質問テキストをJSONで入力、例：{'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
-  notePlaceholder: "ノートをJSONで入力（任意）、例：{'{'} \"en\": \"メモ\" {'}'}"
+  notePlaceholder: "ノートをJSONで入力、例：{'{'} \"en\": \"メモ\" {'}'}"
   answerOptions: 回答オプション
   removeButton: 削除
   addOptionButton: オプションを追加
   createQuestion: 質問を作成
   saveQuestion: 質問を保存
-  cancelEditing: 編集を取り消す
-  editQuestion: 質問を編集
-  editingQuestion: 編集中
-  editBlockedActive: アクティブな質問は編集できません。
-  editBlockedPublished: 既に公開済みの質問は編集できません。
+  cancelEditing: キャンセル
+  editQuestion: 編集
   allQuestions: 全ての質問
-  publishThisQuestion: この質問を公開
-  optionPlaceholder: "オプション {n} JSON"
+  questionLifecycle: 質問の状態
+  queuePosition: キュー位置
+  disabledStatus: 無効
+  activeStatus: 現在アクティブ
+  alreadyAskedStatus: 公開済み
+  answersLockedStatus: 回答をロック
+  yes: はい
+  no: いいえ
+  publishThisQuestion: 公開
+  publishQuestionTitle: 質問を公開
+  confirmPublishQuestion: "'{key}' をアクティブな質問として公開しますか？"
+  disableQuestion: 無効にする
+  enableQuestion: 有効にする
+  confirmDisableQuestion: "'{key}' を無効にしますか？次を公開ではスキップされます。"
+  confirmEnableQuestion: "'{key}' を有効にしますか？次を公開で再び選択できるようになります。"
+  deleteQuestion: 削除
+  confirmDeleteQuestion: "'{key}' と送信済みの回答をすべて完全に削除しますか？"
+  moveQuestionUp: 質問を上へ移動
+  moveQuestionDown: 質問を下へ移動
+  optionPlaceholder: "選択肢 {n} の JSON"
   emojiPlaceholder: 絵文字
 </i18n>
 

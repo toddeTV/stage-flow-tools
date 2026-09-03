@@ -56,7 +56,9 @@
   "devDependencies": {
     "@eslint/css": "~1.4.0",
     "@eslint/js": "~10.0.1",
+    "@iconify-json/ph": "~1.2.2",
     "@nuxt/eslint": "~1.17.0",
+    "@nuxt/icon": "~2.5.1",
     "@nuxtjs/i18n": "~10.6.0",
     "@paralleldrive/cuid2": "~3.3.0",
     "@stylistic/eslint-plugin": "~5.10.0",

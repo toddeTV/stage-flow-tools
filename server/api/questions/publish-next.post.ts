@@ -1,16 +1,12 @@
 import { WebSocketChannel } from '~/types'
 import { EmptyRequestSchema } from '#shared/utils/validation'
+import { serializePublicQuestion } from '../../utils/public-question'
 
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
   await readValidatedRequestBody(event, EmptyRequestSchema)
 
-  const allQuestions = await getQuestions()
-
-  // Sort questions by creation date to find the next one reliably
-  const sortedQuestions = allQuestions.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-
-  const nextQuestion = sortedQuestions.find(q => !q.alreadyPublished)
+  const nextQuestion = await getNextPublishableQuestion()
 
   if (!nextQuestion) {
     throwApiError(404, 'quiz.no_unpublished_question')
@@ -23,7 +19,7 @@ export default defineApiHandler(async (event) => {
   }
 
   // Broadcast new question to all connected clients
-  broadcast('new-question', question)
+  broadcast('new-question', serializePublicQuestion(question))
 
   // Also broadcast an empty results update to clear previous results
   const results = await getResultsForQuestion(question.id)

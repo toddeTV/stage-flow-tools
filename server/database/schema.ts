@@ -23,13 +23,16 @@ export const questions = sqliteTable('questions', {
   answerOptions: text('answer_options').notNull(),
   note: text('note'),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(false),
+  isDisabled: integer('is_disabled', { mode: 'boolean' }).notNull().default(false),
   isLocked: integer('is_locked', { mode: 'boolean' }).notNull().default(false),
   alreadyPublished: integer('already_published', { mode: 'boolean' }).notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0),
   createdAt: text('created_at').notNull().default(nowIsoExpression),
 }, table => [
   uniqueIndex('questions_key_unique').on(table.key),
   index('questions_active_idx').on(table.isActive),
   index('questions_created_at_idx').on(table.createdAt),
+  index('questions_sort_order_idx').on(table.sortOrder),
 ])
 
 /**

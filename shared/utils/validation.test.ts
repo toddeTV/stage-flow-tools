@@ -3,15 +3,19 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import {
   EmptyRequestSchema,
+  DeleteQuestionSchema,
   EmojiSubmitSchema,
   getValidationIssues,
   LoginRequestSchema,
   normalizeQuestionInput,
   QuestionInputValidationError,
   QuestionInputSchema,
+  QuestionUpdateSchema,
+  MoveQuestionSchema,
   StudioAssetPathSchema,
   WebSocketMessageSchema,
   WebSocketQuerySchema,
+  ToggleQuestionDisabledSchema,
 } from './validation'
 
 describe('normalizeQuestionInput', () => {
@@ -209,6 +213,60 @@ describe('endpoint schemas', () => {
     expect(safeParse(EmptyRequestSchema, undefined)).toMatchObject({ success: true })
     expect(safeParse(EmptyRequestSchema, {})).toMatchObject({ success: true })
     expect(safeParse(EmptyRequestSchema, { unexpected: true }).success).toBe(false)
+  })
+
+  it('validates question lifecycle mutation payloads', () => {
+    expect(safeParse(DeleteQuestionSchema, { questionId: ' question-id ' })).toMatchObject({
+      output: { questionId: 'question-id' },
+      success: true,
+    })
+    expect(safeParse(ToggleQuestionDisabledSchema, { questionId: ' question-id ' })).toMatchObject({
+      output: { questionId: 'question-id' },
+      success: true,
+    })
+    expect(safeParse(MoveQuestionSchema, {
+      direction: 'up',
+      questionId: ' question-id ',
+    })).toMatchObject({
+      output: {
+        direction: 'up',
+        questionId: 'question-id',
+      },
+      success: true,
+    })
+    expect(safeParse(MoveQuestionSchema, {
+      direction: 'sideways',
+      questionId: 'question-id',
+    }).success).toBe(false)
+  })
+
+  it('defaults answer resets to false on question updates', () => {
+    expect(safeParse(QuestionUpdateSchema, {
+      ...{
+        answer_options: [
+          { text: { en: 'One' } },
+          { text: { en: 'Two' } },
+        ],
+        question_text: { en: 'Question' },
+      },
+      questionId: ' question-id ',
+    })).toMatchObject({
+      output: expect.objectContaining({
+        questionId: 'question-id',
+        resetAnswers: false,
+      }),
+      success: true,
+    })
+
+    expect(safeParse(QuestionUpdateSchema, {
+      answer_options: [
+        { text: { en: 'One' } },
+        { text: { en: 'Two' } },
+      ],
+      questionId: 'question-id',
+      question_text: { en: 'Question' },
+      resetAnswers: 'yes',
+    }).success).toBe(false)
   })
 
   it('rejects Studio traversal paths', () => {

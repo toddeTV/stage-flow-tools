@@ -58,7 +58,9 @@ export function deserializeQuestion(row: QuestionRow): Question {
     answer_options: parseJson<AnswerOption[]>(row.answerOptions, `questions.answer_options (id=${row.id})`),
     note: row.note ? parseJson<LocalizedString>(row.note, `questions.note (id=${row.id})`) : undefined,
     is_active: row.isActive,
+    is_disabled: row.isDisabled,
     is_locked: row.isLocked,
+    sortOrder: row.sortOrder,
     createdAt: row.createdAt,
     alreadyPublished: row.alreadyPublished,
   }
@@ -93,7 +95,9 @@ export function createQuestionInsert(
     createdAt?: string
     id?: string
     isActive?: boolean
+    isDisabled?: boolean
     isLocked?: boolean
+    sortOrder?: number
   } = {},
 ): QuestionRow {
   const id = options.id ?? createId()
@@ -106,8 +110,10 @@ export function createQuestionInsert(
     answerOptions: serializeAnswerOptions(question.answer_options),
     note: question.note ? serializeLocalizedString(question.note) : null,
     isActive: options.isActive ?? false,
+    isDisabled: options.isDisabled ?? false,
     isLocked: options.isLocked ?? false,
     alreadyPublished: options.alreadyPublished ?? false,
+    sortOrder: options.sortOrder ?? 0,
     createdAt: options.createdAt ?? new Date().toISOString(),
   }
 }
@@ -115,10 +121,14 @@ export function createQuestionInsert(
 /**
  * Builds a stored question row for seeded question input.
  * @param question Seed question data.
+ * @param sortOrder Persistent queue position for the seeded question.
  * @returns SQLite-ready seeded question row.
  */
-export function createSeedQuestionInsert(question: InputQuestion): QuestionRow {
-  return createQuestionInsert(question, { id: question.key || createId() })
+export function createSeedQuestionInsert(question: InputQuestion, sortOrder: number): QuestionRow {
+  return createQuestionInsert(question, {
+    id: question.key || createId(),
+    sortOrder,
+  })
 }
 
 /**
@@ -134,8 +144,10 @@ export function createStoredQuestionInsert(question: Question): QuestionRow {
     answerOptions: serializeAnswerOptions(question.answer_options),
     note: question.note ? serializeLocalizedString(question.note) : null,
     isActive: question.is_active ?? false,
+    isDisabled: question.is_disabled,
     isLocked: question.is_locked,
     alreadyPublished: question.alreadyPublished,
+    sortOrder: question.sortOrder,
     createdAt: question.createdAt,
   }
 }

@@ -13,7 +13,9 @@ const publishedQuestion: Question = {
     { emoji: '⭐', text: { en: 'Correct' } },
     { text: { en: 'Incorrect' } },
   ],
+  is_disabled: false,
   is_locked: false,
+  sortOrder: 0,
   createdAt: '2026-09-03T00:00:00.000Z',
   alreadyPublished: true,
 }
