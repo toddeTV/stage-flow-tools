@@ -6,7 +6,7 @@ This is an inventory, not a complete redistribution license bundle.
 
 Project source code remains governed by `LICENSE`. Third-party packages remain governed by their own license terms.
 
-Package count: 39
+Package count: 42
 
 ## Packages
 
@@ -186,6 +186,16 @@ Package count: 39
 - Included license files: LICENSE
 - Included notice files: none found
 
+### dompurify
+
+- Declared as: devDependencies (~3.3.3)
+- Installed version: 3.3.3
+- License: (MPL-2.0 OR Apache-2.0)
+- Repository: git://github.com/cure53/DOMPurify.git
+- Homepage: https://github.com/cure53/DOMPurify
+- Included license files: LICENSE
+- Included notice files: none found
+
 ### drizzle-kit
 
 - Declared as: devDependencies (~0.31.10)
@@ -272,6 +282,25 @@ Package count: 39
 - License: MIT
 - Repository: panva/jose
 - Homepage: https://github.com/panva/jose
+- Included license files: LICENSE.md
+- Included notice files: none found
+
+### jsdom
+
+- Declared as: devDependencies (~27.0.1)
+- Installed version: 27.0.1
+- License: MIT
+- Repository: git+https://github.com/jsdom/jsdom.git
+- Included license files: LICENSE.txt
+- Included notice files: none found
+
+### marked
+
+- Declared as: devDependencies (~17.0.6)
+- Installed version: 17.0.6
+- License: MIT
+- Repository: git://github.com/markedjs/marked.git
+- Homepage: https://marked.js.org
 - Included license files: LICENSE.md
 - Included notice files: none found
 
