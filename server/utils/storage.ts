@@ -268,9 +268,15 @@ export async function publishQuestion(questionIdentifier: string): Promise<Quest
   return publishedQuestion
 }
 
-/** Returns the first unpublished, enabled question in the persistent queue. */
+/** Returns the next enabled question after the active one in persistent queue order. */
 export async function getNextPublishableQuestion(): Promise<Question | undefined> {
-  return (await getQuestions()).find(question => !question.alreadyPublished && !question.is_disabled)
+  const questionList = await getQuestions()
+  const activeIndex = questionList.findIndex(question => question.is_active)
+  const followingQuestions = activeIndex < 0
+    ? questionList
+    : questionList.slice(activeIndex + 1)
+
+  return followingQuestions.find(question => !question.is_disabled)
 }
 
 /** Swaps a question with its adjacent queue item. */

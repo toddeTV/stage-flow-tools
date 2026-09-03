@@ -65,11 +65,13 @@ function createInputQuestion(key: string) {
 beforeEach(() => {
   testClient = createLocalDatabaseClient(createTemporaryDatabasePath())
   applyLocalMigrations(testClient.db)
+  vi.stubGlobal('broadcast', vi.fn())
   globalThis.__stageFlowToolsLocalDatabaseClient = testClient
 })
 
 afterEach(() => {
   testClient.sqlite.close()
+  vi.unstubAllGlobals()
   globalThis.__stageFlowToolsLocalDatabaseClient = undefined
 
   for (const directory of temporaryDirectories.splice(0)) {
@@ -101,6 +103,27 @@ describe('question queue storage', () => {
       second.id,
     ])
     await expect(getNextPublishableQuestion()).resolves.toMatchObject({ id: third.id })
+  })
+
+  it('advances through enabled questions after the active question', async () => {
+    const first = await createQuestion(createInputQuestion('first'))
+    const disabled = await createQuestion(createInputQuestion('disabled'))
+    const third = await createQuestion(createInputQuestion('third'))
+
+    testClient.db.update(questions).set({ alreadyPublished: true }).where(eq(questions.id, first.id)).run()
+    testClient.db.update(questions).set({ alreadyPublished: true }).where(eq(questions.id, third.id)).run()
+    await toggleQuestionDisabled(disabled.id)
+
+    await expect(getNextPublishableQuestion()).resolves.toMatchObject({ id: first.id })
+
+    await publishQuestion(first.id)
+    await expect(getNextPublishableQuestion()).resolves.toMatchObject({ id: third.id })
+
+    await publishQuestion(disabled.id)
+    await expect(getNextPublishableQuestion()).resolves.toMatchObject({ id: third.id })
+
+    await publishQuestion(third.id)
+    await expect(getNextPublishableQuestion()).resolves.toBeUndefined()
   })
 
   it('deletes answers with their question and reports active deletion', async () => {

@@ -66,6 +66,17 @@ function createQuestionFormFromQuestion(question: Question): QuestionForm {
   }
 }
 
+function getQueuePosition(question: Question, index: number): number | '-' {
+  if (question.is_disabled) {
+    return '-'
+  }
+
+  return allQuestions.value
+    .slice(0, index + 1)
+    .filter(item => !item.is_disabled)
+    .length
+}
+
 const activeQuestion = ref<Question | null>(null)
 const allQuestions = ref<Question[]>([])
 const questionDialog = ref<HTMLDialogElement>()
@@ -677,7 +688,7 @@ function removeOption(index: number) {
                   <tbody>
                     <tr class="border-b border-gray-300">
                       <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('queuePosition') }}</th>
-                      <td class="py-2 text-left">{{ index + 1 }}</td>
+                      <td class="py-2 text-left">{{ getQueuePosition(question, index) }}</td>
                     </tr>
                     <tr class="border-b border-gray-300">
                       <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('disabledStatus') }}</th>
