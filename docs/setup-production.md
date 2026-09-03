@@ -22,6 +22,10 @@ The repository already includes a `Dockerfile` and `docker-compose.yml`.
 
 Production storage lives in `.data/db/stage-flow-tools.sqlite3`, so mount `/app/.data` to persistent host storage.
 
+Before making the deployment public, add its own legal notice and privacy
+policy to the migrated database. See [Deployment-Specific Legal
+Documents](legal-texts.md).
+
 ```bash
 docker compose up --build -d
 ```

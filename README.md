@@ -29,6 +29,8 @@ Perfect for:
 - **`/admin/leaderboard`** - Player leaderboard
 - **`/admin/emojis`** - Floating emoji overlay
 - **`/admin/database`** - Embedded Drizzle Studio for database inspection
+- **`/legal-notice`** - Legal notice (Impressum)
+- **`/privacy-policy`** - Privacy policy (Datenschutzerklärung)
 
 ## Documentation
 
@@ -37,6 +39,7 @@ For detailed information, see the [`/docs`](docs/) folder:
 - [Quick Start Guide](docs/quick-start.md)
 - [Local Development Setup](docs/setup-local.md)
 - [Production Deployment](docs/setup-production.md)
+- [Deployment-Specific Legal Documents](docs/legal-texts.md)
 - etc.
 
 ## Contribution & Attribution

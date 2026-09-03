@@ -186,6 +186,28 @@ This endpoint is meant for polling, such as once per second from presenter slide
 
 Internal admin-only Drizzle Studio RPC compatibility endpoint used by the embedded frame. Treat this as internal transport, not a public integration API. Its opaque Drizzle RPC payload is intentionally passed through without application-level schema validation.
 
+## Legal Documents
+
+### GET `/api/legal/:key`
+
+Get one public, deployment-specific legal document. Authentication is not
+required. `key` must be `legal-notice` or `privacy-policy`.
+
+**Response:**
+
+```json
+{
+  "key": "legal-notice",
+  "content": "Markdown body",
+  "updatedAt": "2026-09-03T12:00:00.000Z"
+}
+```
+
+Unknown keys and documents that have not been configured return no content.
+The application has no public or admin API for writing legal documents; an
+operator maintains the corresponding database rows directly. See
+[Deployment-Specific Legal Documents](legal-texts.md).
+
 ## Questions
 
 ### GET `/api/questions`

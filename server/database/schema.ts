@@ -1,5 +1,6 @@
 import { createId } from '@paralleldrive/cuid2'
 import {
+  check,
   index,
   integer,
   sqliteTable,
@@ -53,7 +54,24 @@ export const answers = sqliteTable('answers', {
   index('answers_user_idx').on(table.userId),
 ])
 
+export const legalDocumentKeys = [
+  'legal-notice',
+  'privacy-policy',
+] as const
+
+export type LegalDocumentKey = typeof legalDocumentKeys[number]
+
+export const legalDocuments = sqliteTable('legal_documents', {
+  key: text('key').$type<LegalDocumentKey>().primaryKey(),
+  content: text('content').notNull(),
+  updatedAt: text('updated_at').notNull().default(nowIsoExpression),
+}, table => [
+  check('legal_documents_key_check', sql`${table.key} IN ('legal-notice', 'privacy-policy')`),
+])
+
 export type QuestionRow = typeof questions.$inferSelect
 export type NewQuestionRow = typeof questions.$inferInsert
 export type AnswerRow = typeof answers.$inferSelect
 export type NewAnswerRow = typeof answers.$inferInsert
+export type LegalDocumentRow = typeof legalDocuments.$inferSelect
+export type NewLegalDocumentRow = typeof legalDocuments.$inferInsert
