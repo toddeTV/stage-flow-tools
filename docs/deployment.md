@@ -8,6 +8,7 @@ Use Docker Compose on a Linux host with a reverse proxy such as Traefik.
 
 - [Docker Deployment Guide](deployment-docker.md)
 - [Production Deployment](setup-production.md)
+- [Deployment-Specific Legal Documents](legal-texts.md)
 - [Release Flow](release-flow.md)
 
 ## Runtime Notes
@@ -15,6 +16,7 @@ Use Docker Compose on a Linux host with a reverse proxy such as Traefik.
 - Application data is stored in SQLite at `.data/db/stage-flow-tools.sqlite3`.
 - WebSocket state stays in process memory.
 - Production deployments need a persistent mount for `/app/.data`.
+- Operators must add their own legal documents to the migrated database before public operation.
 
 ## Secondary Runtime
 

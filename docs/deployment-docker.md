@@ -94,6 +94,17 @@ The application will be accessible at your configured domain. Traefik will autom
 
 After login, the admin menu includes `/admin/database`, which opens Drizzle Studio inside the app through the protected proxy.
 
+### 5. Prepare Legal Documents
+
+After the first start has created and migrated the SQLite database, sign in
+and use `/admin/database` to add the operator's own `legal-notice` and
+`privacy-policy` rows to the `legal_documents` table before public operation.
+Direct database access is also valid when it fits the deployment
+infrastructure. Stage Flow Tools provides no default legal text.
+
+See [Deployment-Specific Legal Documents](legal-texts.md) for the required
+keys and Markdown format.
+
 ## Data Persistence
 
 The `docker-compose.yml` mounts one directory:
