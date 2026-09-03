@@ -31,7 +31,7 @@ export default defineI18nConfig(() => ({
           question_answers_reset_required: 'Changing answer options requires deleting submitted answers first.',
           question_active: 'Active questions cannot be edited.',
           question_published: 'Published questions cannot be edited.',
-          no_unpublished_question: 'No unpublished questions remain.',
+          no_enabled_question: 'No enabled question remains in the queue.',
           publish_next_failed: 'The next question could not be published.',
         },
         emoji: {
@@ -94,7 +94,7 @@ export default defineI18nConfig(() => ({
           question_answers_reset_required: 'Antwortoptionen ändern erfordert, zuerst abgegebene Antworten zu löschen.',
           question_active: 'Aktive Fragen können nicht bearbeitet werden.',
           question_published: 'Veröffentlichte Fragen können nicht bearbeitet werden.',
-          no_unpublished_question: 'Keine unveröffentlichten Fragen mehr vorhanden.',
+          no_enabled_question: 'Keine aktivierte Frage mehr in der Warteschlange.',
           publish_next_failed: 'Die nächste Frage konnte nicht veröffentlicht werden.',
         },
         emoji: {
@@ -157,7 +157,7 @@ export default defineI18nConfig(() => ({
           question_answers_reset_required: '回答項目を変更するには、送信済みの回答を先に削除する必要があります。',
           question_active: 'アクティブな質問は編集できません。',
           question_published: '公開済みの質問は編集できません。',
-          no_unpublished_question: '未公開の質問は残っていません。',
+          no_enabled_question: 'キュー内に有効な質問は残っていません。',
           publish_next_failed: '次の質問を公開できませんでした。',
         },
         emoji: {

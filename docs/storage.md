@@ -21,9 +21,11 @@ Configuration in `nuxt.config.ts`:
 - Admin credentials are read from runtime config and are not stored in SQLite.
 
 Question queue position is persisted in `questions.sort_order`. Admin and presenter
-question lists read this order, and `publish-next` selects the first unpublished,
-enabled question. `questions.is_disabled` skips a question only for automatic
-publication; direct admin publication remains available.
+question lists read this order, and `publish-next` selects the next enabled question
+after the active one. Previously published questions remain selectable. Without an
+active question, it starts with the first enabled question; after the last enabled
+question, it stops without wrapping. `questions.is_disabled` skips a question only
+for automatic publication; direct admin publication remains available.
 
 Changing a question's answer options after answers were submitted requires an explicit
 reset confirmation. The answers are deleted and the option update is stored in the

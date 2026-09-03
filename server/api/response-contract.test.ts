@@ -133,4 +133,10 @@ describe('POST response contract', () => {
     expect(source).toContain(answerResetBroadcast)
     expect(source.indexOf(answerResetBroadcast)).toBeLessThan(source.indexOf('if (question.is_active)'))
   })
+
+  it('uses the enabled-queue error code when no next question remains', async () => {
+    const source = await readSource('server/api/questions/publish-next.post.ts')
+
+    expect(source).toContain("throwApiError(404, 'quiz.no_enabled_question')")
+  })
 })
