@@ -539,79 +539,110 @@ function removeOption(index: number) {
               'bg-amber-100': question.is_disabled,
             }"
           >
-            <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
-              <p class="font-bold">
-                {{ index + 1 }}. [{{ question.key }}] {{ getLocalizedText(question.question_text) }}
-              </p>
-              <div class="flex gap-2">
-                <UiButton
-                  :aria-label="t('moveQuestionUp')"
-                  :disabled="index === 0 || isUpdatingQuestionId !== null"
-                  size="small"
-                  variant="secondary"
-                  @click="moveQuestion(question, 'up')"
-                >
-                  <Icon aria-hidden="true" class="size-5" name="ph:arrow-up" />
-                </UiButton>
-                <UiButton
-                  :aria-label="t('moveQuestionDown')"
-                  :disabled="index === allQuestions.length - 1 || isUpdatingQuestionId !== null"
-                  size="small"
-                  variant="secondary"
-                  @click="moveQuestion(question, 'down')"
-                >
-                  <Icon aria-hidden="true" class="size-5" name="ph:arrow-down" />
-                </UiButton>
+            <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
+              <div class="min-w-0">
+                <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
+                  <p class="font-bold">
+                    {{ index + 1 }}. [{{ question.key }}] {{ getLocalizedText(question.question_text) }}
+                  </p>
+                  <div class="flex gap-2">
+                    <UiButton
+                      :aria-label="t('moveQuestionUp')"
+                      :disabled="index === 0 || isUpdatingQuestionId !== null"
+                      size="small"
+                      variant="secondary"
+                      @click="moveQuestion(question, 'up')"
+                    >
+                      <Icon aria-hidden="true" class="size-5" name="ph:arrow-up" />
+                    </UiButton>
+                    <UiButton
+                      :aria-label="t('moveQuestionDown')"
+                      :disabled="index === allQuestions.length - 1 || isUpdatingQuestionId !== null"
+                      size="small"
+                      variant="secondary"
+                      @click="moveQuestion(question, 'down')"
+                    >
+                      <Icon aria-hidden="true" class="size-5" name="ph:arrow-down" />
+                    </UiButton>
+                  </div>
+                </div>
+
+                <p v-if="question.is_disabled" class="mb-3 text-sm font-bold">
+                  {{ t('disabledQuestion') }}
+                </p>
+                <p v-if="question.note" class="mb-3 border border-black bg-gray-200 p-2 text-sm text-gray-600">
+                  {{ getLocalizedText(question.note) }}
+                </p>
+                <ul class="mb-4 list-inside list-disc p-0">
+                  <li v-for="(option, optionIndex) in question.answer_options" :key="optionIndex">
+                    {{ getLocalizedText(option.text) }} <span v-if="option.emoji">{{ option.emoji }}</span>
+                  </li>
+                </ul>
+
+                <p v-if="question.is_active" class="mb-4 text-sm font-bold text-gray-700">
+                  {{ t('editBlockedActive') }}
+                </p>
+                <p v-else-if="question.alreadyPublished" class="mb-4 text-sm font-bold text-gray-700">
+                  {{ t('editBlockedPublished') }}
+                </p>
+
+                <div class="flex flex-wrap gap-2.5">
+                  <UiButton :disabled="isUpdatingQuestionId !== null" @click="requestQuestionPublication(question)">
+                    {{ t('publishThisQuestion') }}
+                  </UiButton>
+                  <UiButton
+                    :disabled="isUpdatingQuestionId !== null"
+                    variant="secondary"
+                    @click="requestQuestionDisabledToggle(question)"
+                  >
+                    {{ question.is_disabled ? t('enableQuestion') : t('disableQuestion') }}
+                  </UiButton>
+                  <UiButton
+                    v-if="isQuestionEditable(question)"
+                    :aria-label="t('editQuestion')"
+                    :disabled="isUpdatingQuestionId !== null"
+                    variant="secondary"
+                    @click="startEditingQuestion(question)"
+                  >
+                    <Icon aria-hidden="true" class="size-5" name="ph:pencil" />
+                  </UiButton>
+                  <UiButton
+                    :aria-label="t('deleteQuestion')"
+                    :disabled="isUpdatingQuestionId !== null"
+                    variant="danger"
+                    @click="requestQuestionDeletion(question)"
+                  >
+                    <Icon aria-hidden="true" class="size-5" name="ph:trash" />
+                  </UiButton>
+                </div>
               </div>
-            </div>
-
-            <p v-if="question.is_disabled" class="mb-3 text-sm font-bold">
-              {{ t('disabledQuestion') }}
-            </p>
-            <p v-if="question.note" class="mb-3 border border-black bg-gray-200 p-2 text-sm text-gray-600">
-              {{ getLocalizedText(question.note) }}
-            </p>
-            <ul class="mb-4 list-inside list-disc p-0">
-              <li v-for="(option, optionIndex) in question.answer_options" :key="optionIndex">
-                {{ getLocalizedText(option.text) }} <span v-if="option.emoji">{{ option.emoji }}</span>
-              </li>
-            </ul>
-
-            <p v-if="question.is_active" class="mb-4 text-sm font-bold text-gray-700">
-              {{ t('editBlockedActive') }}
-            </p>
-            <p v-else-if="question.alreadyPublished" class="mb-4 text-sm font-bold text-gray-700">
-              {{ t('editBlockedPublished') }}
-            </p>
-
-            <div class="flex flex-wrap gap-2.5">
-              <UiButton :disabled="isUpdatingQuestionId !== null" @click="requestQuestionPublication(question)">
-                {{ t('publishThisQuestion') }}
-              </UiButton>
-              <UiButton
-                :disabled="isUpdatingQuestionId !== null"
-                variant="secondary"
-                @click="requestQuestionDisabledToggle(question)"
-              >
-                {{ question.is_disabled ? t('enableQuestion') : t('disableQuestion') }}
-              </UiButton>
-              <UiButton
-                v-if="isQuestionEditable(question)"
-                :aria-label="t('editQuestion')"
-                :disabled="isUpdatingQuestionId !== null"
-                variant="secondary"
-                @click="startEditingQuestion(question)"
-              >
-                <Icon aria-hidden="true" class="size-5" name="ph:pencil" />
-              </UiButton>
-              <UiButton
-                :aria-label="t('deleteQuestion')"
-                :disabled="isUpdatingQuestionId !== null"
-                variant="danger"
-                @click="requestQuestionDeletion(question)"
-              >
-                <Icon aria-hidden="true" class="size-5" name="ph:trash" />
-              </UiButton>
+              <aside class="ml-5 self-start border-2 border-black bg-white p-4 lg:ml-0">
+                <h3 class="text-sm font-bold tracking-wide uppercase">
+                  {{ t('questionLifecycle') }}
+                </h3>
+                <dl class="mt-3 grid gap-2 text-sm">
+                  <div class="border-b border-gray-300 pb-2">
+                    <dt class="font-bold">{{ t('queuePosition') }}</dt>
+                    <dd>{{ index + 1 }}</dd>
+                  </div>
+                  <div class="border-b border-gray-300 pb-2">
+                    <dt class="font-bold">{{ t('disabledStatus') }}</dt>
+                    <dd>{{ question.is_disabled ? t('yes') : t('no') }}</dd>
+                  </div>
+                  <div class="border-b border-gray-300 pb-2">
+                    <dt class="font-bold">{{ t('activeStatus') }}</dt>
+                    <dd>{{ question.is_active ? t('yes') : t('no') }}</dd>
+                  </div>
+                  <div class="border-b border-gray-300 pb-2">
+                    <dt class="font-bold">{{ t('alreadyAskedStatus') }}</dt>
+                    <dd>{{ question.alreadyPublished ? t('yes') : t('no') }}</dd>
+                  </div>
+                  <div>
+                    <dt class="font-bold">{{ t('answersLockedStatus') }}</dt>
+                    <dd>{{ question.is_locked ? t('yes') : t('no') }}</dd>
+                  </div>
+                </dl>
+              </aside>
             </div>
           </li>
         </ol>
@@ -882,6 +913,14 @@ en:
   editBlockedActive: Edit disabled for active question.
   editBlockedPublished: Edit disabled for already published question.
   allQuestions: All Questions
+  questionLifecycle: Question lifecycle
+  queuePosition: Queue position
+  disabledStatus: Disabled
+  activeStatus: Active now
+  alreadyAskedStatus: Asked before
+  answersLockedStatus: Answers locked
+  yes: Yes
+  no: No
   publishThisQuestion: Publish This Question
   publishQuestionTitle: Publish Question
   confirmPublishQuestion: "Publish '{key}' as active question?"
@@ -928,6 +967,14 @@ de:
   editBlockedActive: Bearbeitung für aktive Frage deaktiviert.
   editBlockedPublished: Bearbeitung für bereits veröffentlichte Frage deaktiviert.
   allQuestions: Alle Fragen
+  questionLifecycle: Frage-Lebenszyklus
+  queuePosition: Warteschlangenposition
+  disabledStatus: Deaktiviert
+  activeStatus: Derzeit aktiv
+  alreadyAskedStatus: Bereits gestellt
+  answersLockedStatus: Antworten gesperrt
+  yes: Ja
+  no: Nein
   publishThisQuestion: Diese Frage veröffentlichen
   publishQuestionTitle: Frage veröffentlichen
   confirmPublishQuestion: "'{key}' als aktive Frage veröffentlichen?"
@@ -974,6 +1021,14 @@ ja:
   editBlockedActive: アクティブな質問は編集できません。
   editBlockedPublished: 既に公開済みの質問は編集できません。
   allQuestions: 全ての質問
+  questionLifecycle: 質問の状態
+  queuePosition: キュー位置
+  disabledStatus: 無効
+  activeStatus: 現在アクティブ
+  alreadyAskedStatus: 公開済み
+  answersLockedStatus: 回答をロック
+  yes: はい
+  no: いいえ
   publishThisQuestion: この質問を公開
   publishQuestionTitle: 質問を公開
   confirmPublishQuestion: "'{key}' をアクティブな質問として公開しますか？"
