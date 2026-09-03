@@ -32,7 +32,7 @@ const renderedContent = computed(() => legalDocument.value?.content
 </script>
 
 <template>
-  <main class="mx-auto min-h-screen max-w-3xl p-5">
+  <div class="mx-auto max-w-3xl p-5">
     <article class="border-4 border-black bg-white p-6 sm:p-10">
       <h1 class="text-3xl font-bold sm:text-4xl">
         {{ document.title }}
@@ -54,7 +54,7 @@ const renderedContent = computed(() => legalDocument.value?.content
       />
       <!-- eslint-enable vue/no-v-html -->
     </article>
-  </main>
+  </div>
 </template>
 
 <style scoped>

@@ -25,4 +25,10 @@ describe('app legal text', () => {
     expect(componentSource).toContain('This legal document has not been configured for this installation.')
     expect(componentSource).toContain('role="alert"')
   })
+
+  it('leaves the page landmark and viewport height to the default layout', () => {
+    expect(componentSource).toContain('<div class="mx-auto max-w-3xl p-5">')
+    expect(componentSource).not.toContain('<main')
+    expect(componentSource).not.toContain('min-h-screen')
+  })
 })
