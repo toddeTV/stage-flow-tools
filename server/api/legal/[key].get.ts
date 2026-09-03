@@ -4,7 +4,7 @@ import {
   isLegalDocumentKey,
 } from '../../utils/legal-documents'
 
-export default defineEventHandler((event) => {
+export default defineApiHandler((event) => {
   const key = getRouterParam(event, 'key')
 
   if (!isLegalDocumentKey(key)) {

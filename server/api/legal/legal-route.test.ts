@@ -10,6 +10,7 @@ const routeSource = readFileSync(fileURLToPath(new URL('./[key].get.ts', import.
 
 describe('public legal-document route', () => {
   it('provides read-only access only to the two configured document keys', () => {
+    expect(routeSource).toContain('defineApiHandler')
     expect(routeSource).toContain("getRouterParam(event, 'key')")
     expect(routeSource).toContain('isLegalDocumentKey(key)')
     expect(routeSource).toContain('getLegalDocument(key) ?? null')
