@@ -630,12 +630,12 @@ function removeOption(index: number) {
                       <td class="py-2 text-left">{{ question.is_disabled ? t('yes') : t('no') }}</td>
                     </tr>
                     <tr class="border-b border-gray-300">
-                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('activeStatus') }}</th>
-                      <td class="py-2 text-left">{{ question.is_active ? t('yes') : t('no') }}</td>
-                    </tr>
-                    <tr class="border-b border-gray-300">
                       <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('alreadyAskedStatus') }}</th>
                       <td class="py-2 text-left">{{ question.alreadyPublished ? t('yes') : t('no') }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-300">
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('activeStatus') }}</th>
+                      <td class="py-2 text-left">{{ question.is_active ? t('yes') : t('no') }}</td>
                     </tr>
                     <tr>
                       <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('answersLockedStatus') }}</th>
