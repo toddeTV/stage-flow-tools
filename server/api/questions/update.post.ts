@@ -43,18 +43,15 @@ export default defineApiHandler(async (event) => {
   const { question, answersReset } = update
 
   if (question.is_active) {
+    clearScheduledResultsUpdate(WebSocketChannel.RESULTS)
     broadcast('new-question', serializePublicQuestion(question))
 
     if (answersReset) {
-      clearScheduledResultsUpdate(WebSocketChannel.RESULTS)
-      const results = await getResultsForQuestion(question.id)
-
       broadcast('answers-reset', { questionId: question.id }, WebSocketChannel.DEFAULT)
-
-      if (results) {
-        broadcast('results-update', results, WebSocketChannel.RESULTS)
-      }
     }
+
+    const results = await getResultsForQuestion(question.id)
+    broadcast('results-update', results, WebSocketChannel.RESULTS)
   }
 
   return question

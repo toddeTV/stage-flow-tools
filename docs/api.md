@@ -243,7 +243,7 @@ English `answer_options[].text.en` values must be unique. Matching is case-insen
 
 ### POST `/api/questions/update`
 
-Update an existing question (admin only). Localized question and answer text may use any locale key; their non-empty English (`en`) value is required. Updating the active question broadcasts the updated question to connected participants.
+Update an existing question (admin only). Localized question and answer text may use any locale key; their non-empty English (`en`) value is required. Updating the active question broadcasts the updated question and a freshly calculated results update to connected participants.
 
 Editable fields are `key`, `question_text`, `answer_options`, and `note`.
 English `answer_options[].text.en` values must be unique. Matching is case-insensitive.

@@ -100,7 +100,10 @@ describe('POST response contract', () => {
     const source = await readSource('server/api/questions/update.post.ts')
 
     expect(source).toContain('if (question.is_active)')
+    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
     expect(source).toContain("broadcast('new-question', serializePublicQuestion(question))")
+    expect(source).toContain('const results = await getResultsForQuestion(question.id)')
+    expect(source).toContain("broadcast('results-update', results, WebSocketChannel.RESULTS)")
   })
 
   it('requires an explicit answer reset before changing answered options', async () => {

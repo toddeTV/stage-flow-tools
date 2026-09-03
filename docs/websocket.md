@@ -75,7 +75,8 @@ Bundled voting results (batched every 2 seconds)
 }
 ```
 
-`results-update` may be sent immediately for explicit admin actions such as answer reset.
+`results-update` may be sent immediately for explicit admin actions such as answer reset
+or editing the active question.
 
 #### `answers-reset`
 
