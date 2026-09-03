@@ -52,7 +52,13 @@ During local development, data is stored in `.data/db/stage-flow-tools.sqlite3` 
 - `questions` and `answers` are stored in SQLite tables.
 - Admin credentials stay in runtime config.
 
-No bundled question set is shipped with the repository. Create questions through the admin UI.
+Two development-only example questions are included. Seed a fresh local database with:
+
+```bash
+vp run ops:seed:dev
+```
+
+The command applies local migrations and refuses to overwrite existing questions or answers. You can also create questions through the admin UI.
 
 ### Reset Data
 
