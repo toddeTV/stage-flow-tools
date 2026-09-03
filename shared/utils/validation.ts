@@ -134,6 +134,22 @@ export const ToggleQuestionLockSchema = v.object({
   questionId: requiredTrimmedStringSchema,
 }, 'validation.invalid_type')
 
+export const ToggleQuestionDisabledSchema = v.object({
+  questionId: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const DeleteQuestionSchema = v.object({
+  questionId: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const MoveQuestionSchema = v.object({
+  direction: v.picklist([
+    'up',
+    'down',
+  ]),
+  questionId: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
 export const PickRandomUserSchema = v.object({
   option: requiredTrimmedStringSchema,
   questionId: requiredTrimmedStringSchema,

@@ -3,15 +3,18 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import {
   EmptyRequestSchema,
+  DeleteQuestionSchema,
   EmojiSubmitSchema,
   getValidationIssues,
   LoginRequestSchema,
   normalizeQuestionInput,
   QuestionInputValidationError,
   QuestionInputSchema,
+  MoveQuestionSchema,
   StudioAssetPathSchema,
   WebSocketMessageSchema,
   WebSocketQuerySchema,
+  ToggleQuestionDisabledSchema,
 } from './validation'
 
 describe('normalizeQuestionInput', () => {
@@ -209,6 +212,31 @@ describe('endpoint schemas', () => {
     expect(safeParse(EmptyRequestSchema, undefined)).toMatchObject({ success: true })
     expect(safeParse(EmptyRequestSchema, {})).toMatchObject({ success: true })
     expect(safeParse(EmptyRequestSchema, { unexpected: true }).success).toBe(false)
+  })
+
+  it('validates question lifecycle mutation payloads', () => {
+    expect(safeParse(DeleteQuestionSchema, { questionId: ' question-id ' })).toMatchObject({
+      output: { questionId: 'question-id' },
+      success: true,
+    })
+    expect(safeParse(ToggleQuestionDisabledSchema, { questionId: ' question-id ' })).toMatchObject({
+      output: { questionId: 'question-id' },
+      success: true,
+    })
+    expect(safeParse(MoveQuestionSchema, {
+      direction: 'up',
+      questionId: ' question-id ',
+    })).toMatchObject({
+      output: {
+        direction: 'up',
+        questionId: 'question-id',
+      },
+      success: true,
+    })
+    expect(safeParse(MoveQuestionSchema, {
+      direction: 'sideways',
+      questionId: 'question-id',
+    }).success).toBe(false)
   })
 
   it('rejects Studio traversal paths', () => {
