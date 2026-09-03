@@ -10,8 +10,11 @@ const schemaValidatedPostRoutes = [
   'server/api/auth/logout.post.ts',
   'server/api/emojis/submit.post.ts',
   'server/api/questions/create.post.ts',
+  'server/api/questions/delete.post.ts',
+  'server/api/questions/move.post.ts',
   'server/api/questions/publish-next.post.ts',
   'server/api/questions/publish.post.ts',
+  'server/api/questions/toggle-disabled.post.ts',
   'server/api/questions/toggle-lock.post.ts',
   'server/api/questions/unpublish-active.post.ts',
   'server/api/questions/update.post.ts',
@@ -21,8 +24,11 @@ const schemaValidatedPostRoutes = [
 const authenticatedRouteSources = [
   'server/api/answers/reset.post.ts',
   'server/api/questions/create.post.ts',
+  'server/api/questions/delete.post.ts',
+  'server/api/questions/move.post.ts',
   'server/api/questions/publish-next.post.ts',
   'server/api/questions/publish.post.ts',
+  'server/api/questions/toggle-disabled.post.ts',
   'server/api/questions/toggle-lock.post.ts',
   'server/api/questions/unpublish-active.post.ts',
   'server/api/questions/update.post.ts',
@@ -62,5 +68,12 @@ describe('POST response contract', () => {
 
     expect(source).toContain("throwApiError(401, 'auth.token_required')")
     expect(source).toContain("throwApiError(401, 'auth.token_invalid')")
+  })
+
+  it('clears live question and results state when the active question is deleted', async () => {
+    const source = await readSource('server/api/questions/delete.post.ts')
+
+    expect(source).toContain("broadcast('new-question', null)")
+    expect(source).toContain("broadcast('results-update', null, WebSocketChannel.RESULTS)")
   })
 })
