@@ -62,60 +62,79 @@ function clearWinnerConfetti() {
 }
 
 function loadConfetti() {
-  confettiModule ??= import('canvas-confetti')
+  if (!confettiModule) {
+    confettiModule = import('canvas-confetti').catch((error: unknown) => {
+      confettiModule = undefined
+      throw error
+    })
+  }
+
   return confettiModule
+}
+
+function preloadConfetti() {
+  void loadConfetti().catch((error: unknown) => {
+    logger_error('Failed to preload winner confetti', error)
+  })
 }
 
 async function celebrateWinner() {
   const canvas = winnerConfettiCanvas.value
   if (!canvas) return
 
-  const { default: confetti } = await loadConfetti()
-  if (!isWinnerModalOpen.value || winnerConfettiCanvas.value !== canvas) return
+  try {
+    const { default: confetti } = await loadConfetti()
+    if (!isWinnerModalOpen.value || winnerConfettiCanvas.value !== canvas) return
 
-  clearWinnerConfetti()
-  winnerConfetti = confetti.create(canvas, {
-    disableForReducedMotion: true,
-    resize: true,
-    useWorker: true,
-  })
+    clearWinnerConfetti()
+    winnerConfetti = confetti.create(canvas, {
+      disableForReducedMotion: true,
+      resize: true,
+      useWorker: true,
+    })
 
-  const options = {
-    colors: [
-      '#facc15',
-      '#22c55e',
-      '#3b82f6',
-      '#a855f7',
-      '#ec4899',
-    ],
-    scalar: 1.3,
-    ticks: 360,
+    const options = {
+      colors: [
+        '#facc15',
+        '#22c55e',
+        '#3b82f6',
+        '#a855f7',
+        '#ec4899',
+      ],
+      scalar: 1.3,
+      ticks: 360,
+    }
+
+    await Promise.all([
+      winnerConfetti({
+        ...options,
+        angle: 60,
+        origin: { x: 0.05, y: 0.7 },
+        particleCount: 180,
+        spread: 75,
+        startVelocity: 60,
+      }),
+      winnerConfetti({
+        ...options,
+        angle: 120,
+        origin: { x: 0.95, y: 0.7 },
+        particleCount: 180,
+        spread: 75,
+        startVelocity: 60,
+      }),
+      winnerConfetti({
+        ...options,
+        angle: 90,
+        origin: { x: 0.5, y: 0.65 },
+        particleCount: 120,
+        spread: 100,
+        startVelocity: 45,
+      }),
+    ])
   }
-
-  void winnerConfetti({
-    ...options,
-    angle: 60,
-    origin: { x: 0.05, y: 0.7 },
-    particleCount: 180,
-    spread: 75,
-    startVelocity: 60,
-  })
-  void winnerConfetti({
-    ...options,
-    angle: 120,
-    origin: { x: 0.95, y: 0.7 },
-    particleCount: 180,
-    spread: 75,
-    startVelocity: 60,
-  })
-  void winnerConfetti({
-    ...options,
-    angle: 90,
-    origin: { x: 0.5, y: 0.65 },
-    particleCount: 120,
-    spread: 100,
-    startVelocity: 45,
-  })
+  catch (error: unknown) {
+    logger_error('Failed to display winner confetti', error)
+  }
 }
 
 function resetWinnerModal() {
@@ -147,7 +166,7 @@ function startWinnerDraw() {
   if (winnerModalPhase.value !== 'ready') return
 
   winnerModalPhase.value = 'drawing'
-  void loadConfetti()
+  preloadConfetti()
   winnerTimer = setTimeout(() => {
     winnerTimer = undefined
     const winner = pickRandomItem(topRankedEntries.value)
