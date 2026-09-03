@@ -30,6 +30,11 @@ export interface Answer {
   timestamp: string
 }
 
+export interface EmojiReaction {
+  emoji: string
+  id: string
+}
+
 export interface Results {
   question: Question
   results: Record<string, { count: number, emoji?: string }>

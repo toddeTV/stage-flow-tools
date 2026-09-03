@@ -1,5 +1,9 @@
 import type { Peer } from 'crossws'
-import type { Results, WebSocketChannel } from '~/types'
+import { WebSocketChannel } from '~/types'
+import type {
+  EmojiReaction,
+  Results,
+} from '~/types'
 
 interface PeerInfo {
   id: string
@@ -22,6 +26,8 @@ interface ResultsBufferState {
 
 const peerSessions = new Map<string, PeerSession>()
 const resultsBuffers = new Map<WebSocketChannel, ResultsBufferState>()
+const emojiBuffer: EmojiReaction[] = []
+let emojiTimeoutId: ReturnType<typeof setTimeout> | undefined
 
 function getSessions(channel?: WebSocketChannel): PeerSession[] {
   const sessions = Array.from(peerSessions.values())
@@ -111,4 +117,39 @@ export function scheduleResultsUpdate(data: Results, channel: WebSocketChannel) 
   }
 
   resultsBuffers.set(channel, state)
+}
+
+function scheduleEmojiBatch(): void {
+  if (emojiTimeoutId !== undefined) {
+    return
+  }
+
+  const config = useRuntimeConfig()
+
+  emojiTimeoutId = setTimeout(() => {
+    emojiTimeoutId = undefined
+
+    const emojis = emojiBuffer.splice(0, config.emojiBatchMaxSize)
+    if (emojis.length > 0) {
+      broadcast('emojis', emojis, WebSocketChannel.EMOJIS)
+    }
+
+    if (emojiBuffer.length > 0) {
+      scheduleEmojiBatch()
+    }
+  }, config.emojiBatchTickMs)
+}
+
+/** Adds an emoji to the next server-side batch when queue capacity remains. */
+export function enqueueEmoji(reaction: EmojiReaction): boolean {
+  const config = useRuntimeConfig()
+
+  if (emojiBuffer.length >= config.emojiQueueMaxSize) {
+    return false
+  }
+
+  emojiBuffer.push(reaction)
+  scheduleEmojiBatch()
+
+  return true
 }
