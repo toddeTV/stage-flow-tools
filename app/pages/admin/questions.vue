@@ -522,18 +522,20 @@ function removeOption(index: number) {
               </UiButton>
               <UiButton
                 v-if="isQuestionEditable(question)"
+                :aria-label="t('editQuestion')"
                 :disabled="isUpdatingQuestionId !== null"
                 variant="secondary"
                 @click="startEditingQuestion(question)"
               >
-                {{ t('editQuestion') }}
+                <Icon aria-hidden="true" class="size-5" name="ph:pencil" />
               </UiButton>
               <UiButton
+                :aria-label="t('deleteQuestion')"
                 :disabled="isUpdatingQuestionId !== null"
                 variant="danger"
                 @click="deleteQuestion(question)"
               >
-                {{ t('deleteQuestion') }}
+                <Icon aria-hidden="true" class="size-5" name="ph:trash" />
               </UiButton>
             </div>
           </li>

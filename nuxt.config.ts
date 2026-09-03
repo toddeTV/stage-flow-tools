@@ -87,6 +87,8 @@ export default defineNuxtConfig({
       icons: [
         'ph:arrow-down',
         'ph:arrow-up',
+        'ph:pencil',
+        'ph:trash',
       ],
       scan: false,
     },
