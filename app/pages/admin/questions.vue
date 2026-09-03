@@ -532,30 +532,10 @@ function removeOption(index: number) {
           >
             <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
               <div class="min-w-0">
-                <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
+                <div class="mb-3">
                   <p class="font-bold">
                     {{ index + 1 }}. [{{ question.key }}] {{ getLocalizedText(question.question_text) }}
                   </p>
-                  <div class="flex gap-2">
-                    <UiButton
-                      :aria-label="t('moveQuestionUp')"
-                      :disabled="index === 0 || isUpdatingQuestionId !== null"
-                      size="small"
-                      variant="secondary"
-                      @click="moveQuestion(question, 'up')"
-                    >
-                      <Icon aria-hidden="true" class="size-5" name="ph:arrow-up" />
-                    </UiButton>
-                    <UiButton
-                      :aria-label="t('moveQuestionDown')"
-                      :disabled="index === allQuestions.length - 1 || isUpdatingQuestionId !== null"
-                      size="small"
-                      variant="secondary"
-                      @click="moveQuestion(question, 'down')"
-                    >
-                      <Icon aria-hidden="true" class="size-5" name="ph:arrow-down" />
-                    </UiButton>
-                  </div>
                 </div>
 
                 <p v-if="question.is_disabled" class="mb-3 text-sm font-bold">
@@ -575,28 +555,58 @@ function removeOption(index: number) {
                     {{ t('publishThisQuestion') }}
                   </UiButton>
                   <UiButton
+                    class="inline-flex items-center gap-2"
                     :disabled="isUpdatingQuestionId !== null"
                     variant="secondary"
                     @click="requestQuestionDisabledToggle(question)"
                   >
+                    <Icon
+                      aria-hidden="true"
+                      class="size-5"
+                      :name="question.is_disabled ? 'ph:eye' : 'ph:eye-slash'"
+                    />
                     {{ question.is_disabled ? t('enableQuestion') : t('disableQuestion') }}
                   </UiButton>
                   <UiButton
                     :aria-label="t('editQuestion')"
+                    class="inline-flex items-center gap-2"
                     :disabled="isUpdatingQuestionId !== null"
                     variant="secondary"
                     @click="startEditingQuestion(question)"
                   >
                     <Icon aria-hidden="true" class="size-5" name="ph:pencil" />
+                    {{ t('editQuestion') }}
                   </UiButton>
                   <UiButton
                     :aria-label="t('deleteQuestion')"
+                    class="inline-flex items-center gap-2"
                     :disabled="isUpdatingQuestionId !== null"
                     variant="danger"
                     @click="requestQuestionDeletion(question)"
                   >
                     <Icon aria-hidden="true" class="size-5" name="ph:trash" />
+                    {{ t('deleteQuestion') }}
                   </UiButton>
+                  <div class="ml-auto flex gap-2.5">
+                    <UiButton
+                      :aria-label="t('moveQuestionUp')"
+                      :disabled="index === 0 || isUpdatingQuestionId !== null"
+                      size="small"
+                      variant="secondary"
+                      @click="moveQuestion(question, 'up')"
+                    >
+                      <Icon aria-hidden="true" class="size-5" name="ph:arrow-up" />
+                    </UiButton>
+                    <UiButton
+                      :aria-label="t('moveQuestionDown')"
+                      :disabled="index === allQuestions.length - 1 || isUpdatingQuestionId !== null"
+                      size="small"
+                      variant="secondary"
+                      @click="moveQuestion(question, 'down')"
+                    >
+                      <Icon aria-hidden="true" class="size-5" name="ph:arrow-down" />
+                    </UiButton>
+                  </div>
                 </div>
               </div>
               <aside class="ml-5 self-start border-2 border-black bg-white p-4 lg:ml-0">
@@ -889,7 +899,7 @@ en:
   createQuestion: Create Question
   saveQuestion: Save Question
   cancelEditing: Cancel
-  editQuestion: Edit Question
+  editQuestion: Edit
   allQuestions: All Questions
   questionLifecycle: Question lifecycle
   queuePosition: Queue position
@@ -903,11 +913,11 @@ en:
   publishQuestionTitle: Publish Question
   confirmPublishQuestion: "Publish '{key}' as active question?"
   disableQuestion: Disable
-  enableQuestion: Enable Question
+  enableQuestion: Enable
   confirmDisableQuestion: "Disable '{key}'? Publish Next will skip it."
   confirmEnableQuestion: "Enable '{key}'? Publish Next can select it again."
   disabledQuestion: "Disabled: skipped by Publish Next."
-  deleteQuestion: Delete Question
+  deleteQuestion: Delete
   confirmDeleteQuestion: "Delete '{key}' and all submitted answers permanently?"
   moveQuestionUp: Move question up
   moveQuestionDown: Move question down
@@ -940,7 +950,7 @@ de:
   createQuestion: Frage erstellen
   saveQuestion: Frage speichern
   cancelEditing: Abbrechen
-  editQuestion: Frage bearbeiten
+  editQuestion: Bearbeiten
   allQuestions: Alle Fragen
   questionLifecycle: Frage-Lebenszyklus
   queuePosition: Warteschlangenposition
@@ -954,11 +964,11 @@ de:
   publishQuestionTitle: Frage veröffentlichen
   confirmPublishQuestion: "'{key}' als aktive Frage veröffentlichen?"
   disableQuestion: Deaktivieren
-  enableQuestion: Frage aktivieren
+  enableQuestion: Aktivieren
   confirmDisableQuestion: "'{key}' deaktivieren? Nächste veröffentlichen überspringt die Frage dann."
   confirmEnableQuestion: "'{key}' aktivieren? Nächste veröffentlichen kann die Frage dann wieder auswählen."
   disabledQuestion: "Deaktiviert: Wird bei Nächste veröffentlichen übersprungen."
-  deleteQuestion: Frage löschen
+  deleteQuestion: Löschen
   confirmDeleteQuestion: "'{key}' und alle abgegebenen Antworten dauerhaft löschen?"
   moveQuestionUp: Frage nach oben verschieben
   moveQuestionDown: Frage nach unten verschieben
@@ -991,7 +1001,7 @@ ja:
   createQuestion: 質問を作成
   saveQuestion: 質問を保存
   cancelEditing: キャンセル
-  editQuestion: 質問を編集
+  editQuestion: 編集
   allQuestions: 全ての質問
   questionLifecycle: 質問の状態
   queuePosition: キュー位置
@@ -1005,11 +1015,11 @@ ja:
   publishQuestionTitle: 質問を公開
   confirmPublishQuestion: "'{key}' をアクティブな質問として公開しますか？"
   disableQuestion: 無効にする
-  enableQuestion: 質問を有効にする
+  enableQuestion: 有効にする
   confirmDisableQuestion: "'{key}' を無効にしますか？次を公開ではスキップされます。"
   confirmEnableQuestion: "'{key}' を有効にしますか？次を公開で再び選択できるようになります。"
   disabledQuestion: 無効：次を公開ではスキップされます。
-  deleteQuestion: 質問を削除
+  deleteQuestion: 削除
   confirmDeleteQuestion: "'{key}' と送信済みの回答をすべて完全に削除しますか？"
   moveQuestionUp: 質問を上へ移動
   moveQuestionDown: 質問を下へ移動
