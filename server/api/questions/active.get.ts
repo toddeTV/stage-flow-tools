@@ -1,6 +1,9 @@
 import type { Question, LocalizedString } from '~/types'
 
-type PublicQuestion = Omit<Question, 'note' | 'key' | 'alreadyPublished' | 'answer_options'> & {
+type PublicQuestion = Omit<
+  Question,
+  'note' | 'key' | 'alreadyPublished' | 'answer_options' | 'is_disabled' | 'sortOrder'
+> & {
   answer_options: { text: LocalizedString }[]
 }
 
@@ -8,7 +11,15 @@ export default defineApiHandler(async (): Promise<PublicQuestion | { message: st
   const question = await getActiveQuestion()
 
   if (question) {
-    const { note, key, alreadyPublished, answer_options, ...rest } = question
+    const {
+      note,
+      key,
+      alreadyPublished,
+      answer_options,
+      is_disabled,
+      sortOrder,
+      ...rest
+    } = question
     return {
       ...rest,
       answer_options: answer_options.map(({ text }) => ({ text })),
