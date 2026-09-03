@@ -1,4 +1,5 @@
 import { verifyAdmin } from '../../../../utils/auth'
+import { StudioAssetPathSchema } from '#shared/utils/validation'
 
 const DRIZZLE_STUDIO_APP_ORIGIN = 'https://local.drizzle.studio'
 const DRIZZLE_STUDIO_ASSET_FETCH_TIMEOUT_MS = 8000
@@ -9,26 +10,20 @@ const FORWARDED_HEADERS = [
   'last-modified',
 ]
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 
-  const assetPath = event.context.params?.asset
+  const rawAssetPath = event.context.params?.asset
 
-  if (!assetPath) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Drizzle Studio asset not found',
-    })
+  if (!rawAssetPath) {
+    throwApiError(404, 'studio.asset_not_found')
   }
 
-  const pathSegments = assetPath.split('/')
-
-  if (pathSegments.some(segment => segment === '.' || segment === '..')) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Invalid Drizzle Studio asset path',
-    })
-  }
+  const assetPath = parseValidatedValue<string>(
+    rawAssetPath,
+    StudioAssetPathSchema,
+    'studio.asset_path_invalid',
+  )
 
   const requestUrl = getRequestURL(event)
   const upstreamUrl = `${DRIZZLE_STUDIO_APP_ORIGIN}/${assetPath}${requestUrl.search}`
@@ -42,20 +37,14 @@ export default defineEventHandler(async (event) => {
   catch (error) {
     const isAbort = error instanceof Error && error.name === 'AbortError'
 
-    throw createError({
-      statusCode: isAbort ? 504 : 502,
-      statusMessage: isAbort
-        ? `Timed out loading Drizzle Studio asset: ${assetPath}`
-        : 'Failed to reach Drizzle Studio asset upstream',
-      data: error instanceof Error ? { message: error.message } : undefined,
-    })
+    throwApiError(
+      isAbort ? 504 : 502,
+      isAbort ? 'studio.asset_timeout' : 'studio.asset_unavailable',
+    )
   }
 
   if (!response.ok) {
-    throw createError({
-      statusCode: response.status,
-      statusMessage: `Failed to load Drizzle Studio asset: ${assetPath}`,
-    })
+    throwApiError(response.status, 'studio.asset_load_failed')
   }
 
   setResponseStatus(event, response.status, response.statusText)

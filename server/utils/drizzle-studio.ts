@@ -19,10 +19,7 @@ function getDrizzleStudioInternalPort(event: H3Event) {
   const port = Number(config.drizzleStudioInternalPort || DEFAULT_DRIZZLE_STUDIO_INTERNAL_PORT)
 
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'DRIZZLE_STUDIO_INTERNAL_PORT must be a valid TCP port',
-    })
+    throwApiError(500, 'studio.invalid_internal_port')
   }
 
   return port
@@ -71,11 +68,8 @@ async function waitForDrizzleStudio(event: H3Event) {
     await new Promise(resolve => setTimeout(resolve, DRIZZLE_STUDIO_STARTUP_POLL_MS))
   }
 
-  throw createError({
-    statusCode: 502,
-    statusMessage: 'Drizzle Studio failed to start',
-    data: lastError instanceof Error ? { message: lastError.message } : undefined,
-  })
+  logger_error('Drizzle Studio failed to start', lastError)
+  throwApiError(502, 'studio.start_failed')
 }
 
 /** Starts Drizzle Studio once and waits until the local server is ready. */
