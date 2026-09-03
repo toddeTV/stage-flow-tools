@@ -1,5 +1,4 @@
 import { createId } from '@paralleldrive/cuid2'
-import { WebSocketChannel } from '~/types'
 import { EmojiSubmitSchema } from '#shared/utils/validation'
 
 export default defineApiHandler(async (event) => {
@@ -13,12 +12,10 @@ export default defineApiHandler(async (event) => {
   }
 
   updateEmojiTimestamp(user_id)
-
-  // Broadcast the emoji with a unique ID to ensure reactivity on the client
-  broadcast('emoji', { emoji, id: createId() }, WebSocketChannel.EMOJIS)
+  enqueueEmoji({ emoji, id: createId() })
 
   return {
     statusCode: 200,
-    body: { message: 'Emoji received and broadcasted.' },
+    body: { message: 'Emoji received.' },
   }
 })
