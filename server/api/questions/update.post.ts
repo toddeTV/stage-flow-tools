@@ -1,5 +1,6 @@
 import type { InputQuestion } from '~/types'
 import { QuestionUpdateSchema } from '#shared/utils/validation'
+import { serializePublicQuestion } from '../../utils/public-question'
 
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
@@ -30,7 +31,7 @@ export default defineApiHandler(async (event) => {
   }
 
   if (question.is_active) {
-    broadcast('new-question', question)
+    broadcast('new-question', serializePublicQuestion(question))
   }
 
   return question

@@ -35,7 +35,9 @@ The server validates the connection query with the shared Valibot schema before 
 
 #### `new-question`
 
-Broadcast when question published
+Broadcast when a question is published or the active question is edited. The payload
+uses the public question shape: it excludes the admin note, key, lifecycle and queue
+fields, and answer-option emoji.
 
 ```json
 {

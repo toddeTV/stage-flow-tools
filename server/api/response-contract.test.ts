@@ -36,6 +36,12 @@ const authenticatedRouteSources = [
   'server/routes/index.post.ts',
 ]
 
+const publicQuestionBroadcastRoutes = [
+  'server/api/questions/publish-next.post.ts',
+  'server/api/questions/publish.post.ts',
+  'server/api/questions/update.post.ts',
+]
+
 async function readSource(relativePath: string): Promise<string> {
   return readFile(resolve(process.cwd(), relativePath), 'utf8')
 }
@@ -63,6 +69,12 @@ describe('POST response contract', () => {
     expect(source).toContain('await verifyAdmin(event)')
   })
 
+  it.each(publicQuestionBroadcastRoutes)('%s broadcasts only public question fields', async (path) => {
+    const source = await readSource(path)
+
+    expect(source).toContain("broadcast('new-question', serializePublicQuestion(question))")
+  })
+
   it('serializes both authentication failure branches as codes', async () => {
     const source = await readSource('server/utils/auth.ts')
 
@@ -88,6 +100,6 @@ describe('POST response contract', () => {
     const source = await readSource('server/api/questions/update.post.ts')
 
     expect(source).toContain('if (question.is_active)')
-    expect(source).toContain("broadcast('new-question', question)")
+    expect(source).toContain("broadcast('new-question', serializePublicQuestion(question))")
   })
 })

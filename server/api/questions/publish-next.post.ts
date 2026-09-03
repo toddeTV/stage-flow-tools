@@ -1,5 +1,6 @@
 import { WebSocketChannel } from '~/types'
 import { EmptyRequestSchema } from '#shared/utils/validation'
+import { serializePublicQuestion } from '../../utils/public-question'
 
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
@@ -18,7 +19,7 @@ export default defineApiHandler(async (event) => {
   }
 
   // Broadcast new question to all connected clients
-  broadcast('new-question', question)
+  broadcast('new-question', serializePublicQuestion(question))
 
   // Also broadcast an empty results update to clear previous results
   const results = await getResultsForQuestion(question.id)
