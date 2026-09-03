@@ -1,10 +1,7 @@
 import { verifyAdmin } from '../utils/auth'
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 
-  throw createError({
-    statusCode: 404,
-    statusMessage: 'Not Found',
-  })
+  throwApiError(404, 'route.not_found')
 })
