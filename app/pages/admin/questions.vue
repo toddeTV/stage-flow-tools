@@ -61,10 +61,6 @@ function createQuestionFormFromQuestion(question: Question): QuestionForm {
   }
 }
 
-function isQuestionEditable(question: Question): boolean {
-  return !question.is_active && !question.alreadyPublished
-}
-
 const activeQuestion = ref<Question | null>(null)
 const allQuestions = ref<Question[]>([])
 const questionDialog = ref<HTMLDialogElement>()
@@ -105,10 +101,6 @@ function openQuestionDialog() {
 }
 
 function startEditingQuestion(question: Question) {
-  if (!isQuestionEditable(question)) {
-    return
-  }
-
   editingQuestionId.value = question.id
   questionForm.value = createQuestionFormFromQuestion(question)
   questionFormErrors.value = {}
@@ -177,7 +169,7 @@ watch(fetchedQuestions, (newQuestions) => {
     if (editingQuestionId.value) {
       const editedQuestion = allQuestions.value.find(question => question.id === editingQuestionId.value)
 
-      if (!editedQuestion || !isQuestionEditable(editedQuestion)) {
+      if (!editedQuestion) {
         closeQuestionDialog()
       }
     }
@@ -535,7 +527,6 @@ function removeOption(index: number) {
             :key="question.id"
             class="border-2 border-black bg-gray-100 p-5"
             :class="{
-              'opacity-50': question.alreadyPublished,
               'bg-amber-100': question.is_disabled,
             }"
           >
@@ -579,13 +570,6 @@ function removeOption(index: number) {
                   </li>
                 </ul>
 
-                <p v-if="question.is_active" class="mb-4 text-sm font-bold text-gray-700">
-                  {{ t('editBlockedActive') }}
-                </p>
-                <p v-else-if="question.alreadyPublished" class="mb-4 text-sm font-bold text-gray-700">
-                  {{ t('editBlockedPublished') }}
-                </p>
-
                 <div class="flex flex-wrap gap-2.5">
                   <UiButton :disabled="isUpdatingQuestionId !== null" @click="requestQuestionPublication(question)">
                     {{ t('publishThisQuestion') }}
@@ -598,7 +582,6 @@ function removeOption(index: number) {
                     {{ question.is_disabled ? t('enableQuestion') : t('disableQuestion') }}
                   </UiButton>
                   <UiButton
-                    v-if="isQuestionEditable(question)"
                     :aria-label="t('editQuestion')"
                     :disabled="isUpdatingQuestionId !== null"
                     variant="secondary"
@@ -661,10 +644,6 @@ function removeOption(index: number) {
       <h2 id="question-editor-title" class="section-heading">
         {{ formTitle }}
       </h2>
-
-      <p v-if="isEditMode" class="mb-5 border border-black bg-amber-100 p-3 text-sm font-bold">
-        {{ t('editModeNotice') }}
-      </p>
 
       <form class="flex flex-col gap-5" @submit.prevent="handleSaveQuestion">
         <UiInput
@@ -899,7 +878,6 @@ en:
   noActiveQuestion: No active question
   addQuestion: Add Question
   editQuestionTitle: Edit Question
-  editModeNotice: Edit mode active. Only unpublished inactive questions can be changed.
   keyPlaceholder: "Enter a unique key/slug (optional, e.g., 'question-1')"
   questionTextPlaceholder: "Enter question text as JSON, e.g., {'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
   notePlaceholder: "Enter note as JSON (optional), e.g., {'{'} \"en\": \"Note\" {'}'}"
@@ -910,8 +888,6 @@ en:
   saveQuestion: Save Question
   cancelEditing: Cancel
   editQuestion: Edit Question
-  editBlockedActive: Edit disabled for active question.
-  editBlockedPublished: Edit disabled for already published question.
   allQuestions: All Questions
   questionLifecycle: Question lifecycle
   queuePosition: Queue position
@@ -953,7 +929,6 @@ de:
   noActiveQuestion: Keine aktive Frage
   addQuestion: Frage hinzufügen
   editQuestionTitle: Frage bearbeiten
-  editModeNotice: Bearbeitungsmodus aktiv. Nur unveröffentlichte und inaktive Fragen können geändert werden.
   keyPlaceholder: "Eindeutigen Schlüssel eingeben (optional, z.B. 'frage-1')"
   questionTextPlaceholder: "Fragetext als JSON eingeben, z.B. {'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
   notePlaceholder: "Notiz als JSON eingeben, z.B. {'{'} \"en\": \"Notiz\" {'}'}"
@@ -964,8 +939,6 @@ de:
   saveQuestion: Frage speichern
   cancelEditing: Abbrechen
   editQuestion: Frage bearbeiten
-  editBlockedActive: Bearbeitung für aktive Frage deaktiviert.
-  editBlockedPublished: Bearbeitung für bereits veröffentlichte Frage deaktiviert.
   allQuestions: Alle Fragen
   questionLifecycle: Frage-Lebenszyklus
   queuePosition: Warteschlangenposition
@@ -1007,7 +980,6 @@ ja:
   noActiveQuestion: アクティブな質問はありません
   addQuestion: 質問を追加
   editQuestionTitle: 質問を編集
-  editModeNotice: 編集モードです。未公開かつ非アクティブな質問だけ変更できます。
   keyPlaceholder: "一意のキー/スラグを入力（任意、例：'question-1'）"
   questionTextPlaceholder: "質問テキストをJSONで入力、例：{'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
   notePlaceholder: "ノートをJSONで入力、例：{'{'} \"en\": \"メモ\" {'}'}"
@@ -1018,8 +990,6 @@ ja:
   saveQuestion: 質問を保存
   cancelEditing: キャンセル
   editQuestion: 質問を編集
-  editBlockedActive: アクティブな質問は編集できません。
-  editBlockedPublished: 既に公開済みの質問は編集できません。
   allQuestions: 全ての質問
   questionLifecycle: 質問の状態
   queuePosition: キュー位置

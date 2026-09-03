@@ -127,7 +127,7 @@ export async function createQuestion(
   return deserializeQuestion(row)
 }
 
-/** Updates a non-active, never-published question and returns the stored row. */
+/** Updates a question and returns the stored row. */
 export async function updateQuestion(
   questionId: string,
   updates: Pick<InputQuestion, 'key' | 'question_text' | 'answer_options' | 'note'>,
@@ -138,14 +138,6 @@ export async function updateQuestion(
 
   if (!question) {
     return undefined
-  }
-
-  if (question.is_active) {
-    throw new Error('Active questions cannot be edited')
-  }
-
-  if (question.alreadyPublished) {
-    throw new Error('Published questions cannot be edited')
   }
 
   const updatedQuestion = {

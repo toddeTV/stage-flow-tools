@@ -83,4 +83,11 @@ describe('POST response contract', () => {
 
     expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
   })
+
+  it('broadcasts active question edits to connected participants', async () => {
+    const source = await readSource('server/api/questions/update.post.ts')
+
+    expect(source).toContain('if (question.is_active)')
+    expect(source).toContain("broadcast('new-question', question)")
+  })
 })

@@ -20,13 +20,6 @@ export default defineApiHandler(async (event) => {
         throwApiError(409, 'quiz.question_key_conflict')
       }
 
-      if (error.message === 'Active questions cannot be edited') {
-        throwApiError(409, 'quiz.question_active')
-      }
-
-      if (error.message === 'Published questions cannot be edited') {
-        throwApiError(409, 'quiz.question_published')
-      }
     }
 
     throw error
@@ -34,6 +27,10 @@ export default defineApiHandler(async (event) => {
 
   if (!question) {
     throwApiError(404, 'quiz.question_not_found')
+  }
+
+  if (question.is_active) {
+    broadcast('new-question', question)
   }
 
   return question

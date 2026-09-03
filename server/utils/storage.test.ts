@@ -27,6 +27,7 @@ import {
   getQuestions,
   moveQuestion,
   toggleQuestionDisabled,
+  updateQuestion,
 } from './storage'
 
 const temporaryDirectories: string[] = []
@@ -111,5 +112,23 @@ describe('question queue storage', () => {
     })
     expect(await getQuestions()).toEqual([])
     expect(testClient.db.select().from(answers).all()).toEqual([])
+  })
+
+  it('updates active and previously published questions', async () => {
+    const question = await createQuestion(createInputQuestion('published-question'))
+    testClient.db.update(questions).set({
+      alreadyPublished: true,
+      isActive: true,
+    }).where(eq(questions.id, question.id)).run()
+
+    await expect(updateQuestion(question.id, {
+      ...createInputQuestion('updated-question'),
+    })).resolves.toMatchObject({
+      id: question.id,
+      is_active: true,
+      alreadyPublished: true,
+      key: 'updated-question',
+      question_text: { en: 'updated-question' },
+    })
   })
 })

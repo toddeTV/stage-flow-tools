@@ -17,8 +17,6 @@ export const API_ERROR_CODES = [
   'quiz.invalid_answer',
   'quiz.question_not_found',
   'quiz.question_key_conflict',
-  'quiz.question_active',
-  'quiz.question_published',
   'quiz.no_unpublished_question',
   'quiz.publish_next_failed',
   'emoji.cooldown',
