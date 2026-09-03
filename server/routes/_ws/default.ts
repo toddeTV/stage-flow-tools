@@ -1,6 +1,6 @@
 import type { Peer, Message } from 'crossws'
 import { safeParse } from 'valibot'
-import type { WebSocketChannel } from '~/types'
+import { WebSocketChannel } from '~/types'
 import {
   WebSocketMessageSchema,
   WebSocketQuerySchema,
@@ -20,6 +20,16 @@ export default defineWebSocketHandler({
     if (!query.success) {
       peer.close(1008, 'validation.invalid_websocket_query')
       return
+    }
+
+    if (query.output.channel === WebSocketChannel.RESULTS) {
+      try {
+        await verifyAdminWebSocket(peer.request)
+      }
+      catch {
+        peer.close(1008, 'auth.token_required')
+        return
+      }
     }
 
     await addPeer(peer, query.output.channel as WebSocketChannel, url, query.output.userId)

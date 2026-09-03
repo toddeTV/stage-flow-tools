@@ -24,7 +24,8 @@ ws.onmessage = (event) => {
 
 ### Query Parameters
 
-- **`channel`** - WebSocket channel: `default`, `results`, or `emojis`
+- **`channel`** - WebSocket channel: `default`, `results`, or `emojis`. The
+  `results` channel requires the same admin session cookie as `/admin/results`.
 - **`userId`** - Optional non-empty user identifier for tracking
 
 The server validates the connection query with the shared Valibot schema before adding a peer. An invalid query closes the handshake with close code `1008` and reason `validation.invalid_websocket_query`.

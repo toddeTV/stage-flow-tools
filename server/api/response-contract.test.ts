@@ -82,6 +82,14 @@ describe('POST response contract', () => {
     expect(source).toContain("throwApiError(401, 'auth.token_invalid')")
   })
 
+  it('requires admin authentication before opening a results WebSocket', async () => {
+    const source = await readSource('server/routes/_ws/default.ts')
+
+    expect(source).toContain('query.output.channel === WebSocketChannel.RESULTS')
+    expect(source).toContain('await verifyAdminWebSocket(peer.request)')
+    expect(source).toContain("peer.close(1008, 'auth.token_required')")
+  })
+
   it('clears live question and results state when the active question is deleted', async () => {
     const source = await readSource('server/api/questions/delete.post.ts')
 
