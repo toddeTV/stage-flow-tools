@@ -283,11 +283,61 @@ Publish question as active by key (admin only). Clears existing answers and broa
 
 ### POST `/api/questions/publish-next`
 
-Publish the next unpublished question in creation order (admin only). Finds the earliest question where `alreadyPublished` is `false`, publishes it, and broadcasts to all WebSocket clients.
+Publish the next enabled, unpublished question in queue order (admin only). Finds the lowest `sortOrder` question where `alreadyPublished` and `is_disabled` are both `false`, publishes it, and broadcasts to all WebSocket clients.
 
 **Request:** No body required.
 
-**Response:** The published question object, or 404 if no unpublished questions remain.
+**Response:** The published question object, or 404 if no enabled unpublished questions remain.
+
+### POST `/api/questions/move`
+
+Move a question one position in the persistent queue (admin only). Published and disabled questions remain visible and can also be reordered.
+
+**Request:**
+
+```json
+{
+  "questionId": "string",
+  "direction": "up | down"
+}
+```
+
+**Response:** Updated question object.
+
+### POST `/api/questions/toggle-disabled`
+
+Toggle whether a question is skipped by `publish-next` (admin only). Direct publishing remains available for disabled questions.
+
+**Request:**
+
+```json
+{
+  "questionId": "string"
+}
+```
+
+**Response:** Updated question object.
+
+### POST `/api/questions/delete`
+
+Permanently delete a question and every submitted answer for it (admin only). Deleting the active question broadcasts an empty active-question and results state.
+
+**Request:**
+
+```json
+{
+  "questionId": "string"
+}
+```
+
+**Response:**
+
+```json
+{
+  "questionId": "string",
+  "success": true
+}
+```
 
 ### POST `/api/questions/unpublish-active`
 

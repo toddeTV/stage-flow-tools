@@ -9,6 +9,7 @@ System design and technical architecture of the quiz application.
 - **Nuxt 4** - Vue meta-framework
 - **Vue 3** - Composition API
 - **Tailwind CSS** - Utility-first CSS framework
+- **Nuxt Icon + Phosphor** - Locally bundled Iconify icons for accessible icon controls
 
 ### Backend
 
