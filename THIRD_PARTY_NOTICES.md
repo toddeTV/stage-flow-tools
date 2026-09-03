@@ -6,7 +6,7 @@ This is an inventory, not a complete redistribution license bundle.
 
 Project source code remains governed by `LICENSE`. Third-party packages remain governed by their own license terms.
 
-Package count: 36
+Package count: 37
 
 ## Packages
 
@@ -332,6 +332,16 @@ Package count: 36
 - Repository: https://github.com/microsoft/TypeScript.git
 - Homepage: https://www.typescriptlang.org/
 - Included license files: LICENSE.txt
+- Included notice files: none found
+
+### valibot
+
+- Declared as: devDependencies (~1.4.2)
+- Installed version: 1.4.2
+- License: MIT
+- Repository: https://github.com/open-circle/valibot
+- Homepage: https://valibot.dev
+- Included license files: LICENSE.md
 - Included notice files: none found
 
 ### vite-plus
