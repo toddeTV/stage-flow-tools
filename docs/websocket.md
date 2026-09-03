@@ -103,17 +103,19 @@ Peer count change (on connect/disconnect)
 }
 ```
 
-#### `emoji`
+#### `emojis`
 
-Emoji reaction broadcast
+Emoji reaction batch
 
 ```json
 {
-  "event": "emoji",
-  "data": {
-    "emoji": "string",
-    "id": "string (cuid2)"
-  }
+  "event": "emojis",
+  "data": [
+    {
+      "emoji": "string",
+      "id": "string (cuid2)"
+    }
+  ]
 }
 ```
 
@@ -188,6 +190,8 @@ ws.onclose = () => {
 - Results updates (every 2 seconds)
 - Reduces network traffic
 - Smooths UI updates
+- Emoji reactions (every `NUXT_EMOJI_BATCH_TICK_MS` milliseconds, up to
+  `NUXT_EMOJI_BATCH_MAX_SIZE` reactions per batch)
 
 ## Error Handling
 

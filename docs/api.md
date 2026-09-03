@@ -384,7 +384,7 @@ This endpoint derives target question from current active question. Request body
 
 ### POST `/api/emojis/submit`
 
-Submit an emoji reaction. Broadcasts to all clients on the emojis WebSocket channel. Enforces per-user cooldown.
+Submit an emoji reaction. The server queues reactions for batched delivery to clients on the emojis WebSocket channel and enforces a per-user cooldown. When the configured in-memory queue is full, new reactions are discarded while this endpoint still returns success.
 
 **Request:**
 
