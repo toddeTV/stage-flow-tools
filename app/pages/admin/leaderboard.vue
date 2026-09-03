@@ -30,6 +30,7 @@ type ConfettiInstance = ReturnType<ConfettiModule['default']['create']>
 
 const isLoading = ref(false)
 const hasError = ref(false)
+const isOver9000Mode = ref(false)
 const leaderboard = ref<LeaderboardEntry[]>([])
 const totalPublishedQuestions = ref(0)
 const totalQuestionsWithCorrectAnswers = ref(0)
@@ -43,6 +44,10 @@ let confettiModule: Promise<ConfettiModule> | undefined
 let winnerConfetti: ConfettiInstance | undefined
 
 const topRankedEntries = computed(() => leaderboard.value.filter(entry => entry.rank === 1))
+
+function toggleOver9000Mode() {
+  isOver9000Mode.value = !isOver9000Mode.value
+}
 
 function clearWinnerTimer() {
   if (winnerTimer === undefined) return
@@ -208,6 +213,15 @@ onBeforeUnmount(() => {
           {{ t('drawWinner') }}
         </UiButton>
         <UiButton
+          :aria-pressed="isOver9000Mode"
+          :disabled="isLoading || leaderboard.length === 0"
+          size="small"
+          :variant="isOver9000Mode ? 'primary' : 'secondary'"
+          @click="toggleOver9000Mode"
+        >
+          {{ isOver9000Mode ? t('showScores') : t('over9000') }}
+        </UiButton>
+        <UiButton
           :disabled="isLoading"
           size="small"
           variant="secondary"
@@ -265,7 +279,7 @@ onBeforeUnmount(() => {
               <span class="ml-1 text-xs text-gray-400">({{ entry.userId }})</span>
             </td>
             <td class="p-3 text-center text-xl font-bold">
-              {{ entry.correctAnswers }}
+              {{ isOver9000Mode ? '>9000' : entry.correctAnswers }}
             </td>
           </tr>
         </tbody>
@@ -371,6 +385,8 @@ en:
   player: Player
   correctAnswers: Correct
   drawWinner: Draw winner
+  over9000: 🐉 Over 9000!
+  showScores: 🐉 Show scores
   winner: Winner
   winnerDrawHint: The person with the most correct answers will be drawn. Ties are decided at random.
   drawingWinner: Drawing winner...
@@ -386,6 +402,8 @@ de:
   player: Spieler
   correctAnswers: Richtig
   drawWinner: Gewinner ziehen
+  over9000: 🐉 Über 9000!
+  showScores: 🐉 Punkte zeigen
   winner: Gewinner
   winnerDrawHint: Die Person mit den meisten richtigen Antworten wird gezogen. Bei Gleichstand entscheidet der Zufall.
   drawingWinner: Auslosung läuft...
@@ -401,6 +419,8 @@ ja:
   player: プレイヤー
   correctAnswers: 正解
   drawWinner: 当選者を選ぶ
+  over9000: 🐉 9000以上！
+  showScores: 🐉 得点を表示
   winner: 当選者
   winnerDrawHint: 最も多く正解した参加者から選びます。同点の場合はランダムに選ばれます。
   drawingWinner: 抽選中...
