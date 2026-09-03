@@ -33,6 +33,11 @@ type QuestionForm = {
   note: string
 }
 
+type PendingQuestionUpdate = {
+  questionId: string
+  questionInput: InputQuestion
+}
+
 function createDefaultQuestionForm(): QuestionForm {
   return {
     key: '',
@@ -64,6 +69,7 @@ function createQuestionFormFromQuestion(question: Question): QuestionForm {
 const activeQuestion = ref<Question | null>(null)
 const allQuestions = ref<Question[]>([])
 const questionDialog = ref<HTMLDialogElement>()
+const answerResetConfirmationDialog = ref<HTMLDialogElement>()
 const publishConfirmationDialog = ref<HTMLDialogElement>()
 const toggleDisabledConfirmationDialog = ref<HTMLDialogElement>()
 const deleteConfirmationDialog = ref<HTMLDialogElement>()
@@ -76,10 +82,11 @@ const questionFormErrors = ref<Record<string, string>>({})
 const questionToPublish = ref<Question | null>(null)
 const questionToToggleDisabled = ref<Question | null>(null)
 const questionToDelete = ref<Question | null>(null)
+const pendingQuestionUpdate = ref<PendingQuestionUpdate | null>(null)
 const isEditMode = computed(() => editingQuestionId.value !== null)
 const formTitle = computed(() => isEditMode.value ? t('editQuestionTitle') : t('addQuestion'))
 const submitButtonLabel = computed(() => isEditMode.value ? t('saveQuestion') : t('createQuestion'))
-const { getErrorMessage, getIssueMessage } = useApiError()
+const { getErrorCode, getErrorMessage, getIssueMessage } = useApiError()
 
 function resetQuestionEditor() {
   editingQuestionId.value = null
@@ -214,6 +221,53 @@ async function handleSaveQuestion() {
     }
 
     await loadQuestions()
+    closeQuestionDialog(true)
+  }
+  catch (error: unknown) {
+    if (editingQuestionId.value && getErrorCode(error) === 'quiz.question_answers_reset_required') {
+      pendingQuestionUpdate.value = {
+        questionId: editingQuestionId.value,
+        questionInput: payload,
+      }
+      answerResetConfirmationDialog.value?.showModal()
+      return
+    }
+
+    alert(getErrorMessage(error))
+  }
+  finally {
+    isSavingQuestion.value = false
+  }
+}
+
+function closeAnswerResetConfirmationDialog() {
+  answerResetConfirmationDialog.value?.close()
+}
+
+function resetAnswerResetConfirmationDialog() {
+  pendingQuestionUpdate.value = null
+}
+
+async function resetAnswersAndSaveQuestion() {
+  const pendingUpdate = pendingQuestionUpdate.value
+
+  if (!pendingUpdate || isSavingQuestion.value) {
+    return
+  }
+
+  isSavingQuestion.value = true
+
+  try {
+    await $fetch<Question>('/api/questions/update', {
+      method: 'POST',
+      body: {
+        questionId: pendingUpdate.questionId,
+        resetAnswers: true,
+        ...pendingUpdate.questionInput,
+      },
+    })
+    await loadQuestions()
+    closeAnswerResetConfirmationDialog()
     closeQuestionDialog(true)
   }
   catch (error: unknown) {
@@ -774,6 +828,40 @@ function removeOption(index: number) {
     </dialog>
 
     <dialog
+      ref="answerResetConfirmationDialog"
+      :aria-busy="isSavingQuestion"
+      aria-describedby="answer-reset-confirmation-description"
+      aria-labelledby="answer-reset-confirmation-title"
+      class="m-auto w-[calc(100%-2.5rem)] max-w-lg border-[3px] border-black bg-white p-6 text-black
+        backdrop:bg-black/50"
+      @click.self="closeAnswerResetConfirmationDialog"
+      @close="resetAnswerResetConfirmationDialog"
+    >
+      <h2 id="answer-reset-confirmation-title" class="text-3xl font-bold uppercase">
+        {{ t('resetQuestionAnswersTitle') }}
+      </h2>
+      <p id="answer-reset-confirmation-description" class="mt-4">
+        {{ t('confirmAnswerOptionsReset', { key: pendingQuestionUpdate?.questionInput.key ?? '' }) }}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+        <UiButton
+          :disabled="isSavingQuestion"
+          variant="danger"
+          @click="resetAnswersAndSaveQuestion"
+        >
+          {{ t('resetAnswersAndSave') }}
+        </UiButton>
+        <UiButton
+          :disabled="isSavingQuestion"
+          variant="secondary"
+          @click="closeAnswerResetConfirmationDialog"
+        >
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+    </dialog>
+
+    <dialog
       ref="publishConfirmationDialog"
       :aria-busy="isUpdatingQuestionId === questionToPublish?.id"
       aria-describedby="publish-question-confirmation-description"
@@ -893,6 +981,9 @@ en:
   publishNext: Publish Next
   unpublishButton: Unpublish
   confirmResetAnswers: Delete all submitted answers for current question?
+  resetQuestionAnswersTitle: Reset submitted answers?
+  confirmAnswerOptionsReset: "Changing options for '{key}' permanently deletes submitted answers. Continue?"
+  resetAnswersAndSave: Delete answers and save
   noActiveQuestion: No active question
   addQuestion: Add Question
   editQuestionTitle: Edit Question
@@ -943,6 +1034,9 @@ de:
   publishNext: Nächste veröffentlichen
   unpublishButton: Veröffentlichung zurückziehen
   confirmResetAnswers: Alle abgegebenen Antworten für aktuelle Frage löschen?
+  resetQuestionAnswersTitle: Abgegebene Antworten zurücksetzen?
+  confirmAnswerOptionsReset: "Optionen von '{key}' ändern löscht alle abgegebenen Antworten dauerhaft. Fortfahren?"
+  resetAnswersAndSave: Antworten löschen und speichern
   noActiveQuestion: Keine aktive Frage
   addQuestion: Frage hinzufügen
   editQuestionTitle: Frage bearbeiten
@@ -993,6 +1087,9 @@ ja:
   publishNext: 次を公開
   unpublishButton: 公開停止
   confirmResetAnswers: 現在の質問の回答を全て削除しますか？
+  resetQuestionAnswersTitle: 送信済みの回答をリセットしますか？
+  confirmAnswerOptionsReset: "'{key}' の回答項目を変更すると、送信済みの回答がすべて完全に削除されます。続行しますか？"
+  resetAnswersAndSave: 回答を削除して保存
   noActiveQuestion: アクティブな質問はありません
   addQuestion: 質問を追加
   editQuestionTitle: 質問を編集

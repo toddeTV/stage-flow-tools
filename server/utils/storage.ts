@@ -32,6 +32,13 @@ import { getPeers } from './websocket'
 
 let storageInitialized = false
 
+export class QuestionAnswerOptionsResetRequiredError extends Error {
+  constructor() {
+    super('Updating answer options with submitted answers requires a reset')
+    this.name = 'QuestionAnswerOptionsResetRequiredError'
+  }
+}
+
 function getDatabase() {
   return getLocalDatabaseClient().db
 }
@@ -44,6 +51,33 @@ function getQuestionById(questionId: string): Question | undefined {
     .get()
 
   return row ? deserializeQuestion(row) : undefined
+}
+
+function localizedStringsAreEqual(
+  first: Question['question_text'],
+  second: Question['question_text'],
+): boolean {
+  const firstEntries = Object.entries(first)
+
+  return firstEntries.length === Object.keys(second).length
+    && firstEntries.every(([
+      locale,
+      value,
+    ]) => second[locale] === value)
+}
+
+function answerOptionsHaveChanged(
+  currentOptions: Question['answer_options'],
+  updatedOptions: InputQuestion['answer_options'],
+): boolean {
+  return currentOptions.length !== updatedOptions.length
+    || currentOptions.some((currentOption, index) => {
+      const updatedOption = updatedOptions[index]
+
+      return !updatedOption
+        || currentOption.emoji !== updatedOption.emoji
+        || !localizedStringsAreEqual(currentOption.text, updatedOption.text)
+    })
 }
 
 /** Initializes SQLite access once after the startup migration plugin has run. */
@@ -127,11 +161,12 @@ export async function createQuestion(
   return deserializeQuestion(row)
 }
 
-/** Updates a question and returns the stored row. */
+/** Updates a question and resets submitted answers only when explicitly confirmed. */
 export async function updateQuestion(
   questionId: string,
   updates: Pick<InputQuestion, 'key' | 'question_text' | 'answer_options' | 'note'>,
-): Promise<Question | undefined> {
+  options: { resetAnswers?: boolean } = {},
+): Promise<{ question: Question, answersReset: boolean } | undefined> {
   await initStorage()
 
   const question = getQuestionById(questionId)
@@ -156,19 +191,46 @@ export async function updateQuestion(
   }
 
   const updatedRow = createStoredQuestionInsert(updatedQuestion)
+  const answerOptionsChanged = answerOptionsHaveChanged(question.answer_options, updates.answer_options)
 
-  getDatabase()
-    .update(questions)
-    .set({
-      key: updatedRow.key,
-      questionText: updatedRow.questionText,
-      answerOptions: updatedRow.answerOptions,
-      note: updatedRow.note,
-    })
-    .where(eq(questions.id, questionId))
-    .run()
+  const answersReset = getDatabase().transaction((transaction) => {
+    const submittedAnswer = transaction
+      .select({ id: answers.id })
+      .from(answers)
+      .where(eq(answers.questionId, questionId))
+      .limit(1)
+      .get()
 
-  return getQuestionById(questionId)
+    if (answerOptionsChanged && submittedAnswer) {
+      if (!options.resetAnswers) {
+        throw new QuestionAnswerOptionsResetRequiredError()
+      }
+
+      transaction.delete(answers).where(eq(answers.questionId, questionId)).run()
+    }
+
+    transaction
+      .update(questions)
+      .set({
+        key: updatedRow.key,
+        questionText: updatedRow.questionText,
+        answerOptions: updatedRow.answerOptions,
+        note: updatedRow.note,
+      })
+      .where(eq(questions.id, questionId))
+      .run()
+
+    return answerOptionsChanged && Boolean(submittedAnswer)
+  })
+
+  const storedQuestion = getQuestionById(questionId)
+
+  return storedQuestion
+    ? {
+      answersReset,
+      question: storedQuestion,
+    }
+    : undefined
 }
 
 export async function publishQuestion(questionIdentifier: string): Promise<Question | undefined> {

@@ -102,4 +102,11 @@ describe('POST response contract', () => {
     expect(source).toContain('if (question.is_active)')
     expect(source).toContain("broadcast('new-question', serializePublicQuestion(question))")
   })
+
+  it('requires an explicit answer reset before changing answered options', async () => {
+    const source = await readSource('server/api/questions/update.post.ts')
+
+    expect(source).toContain('resetAnswers')
+    expect(source).toContain("throwApiError(409, 'quiz.question_answers_reset_required')")
+  })
 })

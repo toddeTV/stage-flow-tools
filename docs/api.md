@@ -247,12 +247,16 @@ Update an existing question (admin only). Localized question and answer text may
 
 Editable fields are `key`, `question_text`, `answer_options`, and `note`.
 English `answer_options[].text.en` values must be unique. Matching is case-insensitive.
+When submitted answers exist, changing `answer_options` requires `resetAnswers: true`.
+The API otherwise returns `409 quiz.question_answers_reset_required`; confirmed updates
+delete the answers and update the question in one transaction.
 
 **Request:**
 
 ```json
 {
   "questionId": "string",
+  "resetAnswers": "boolean (required as true when changing answered options)",
   "key": "string (optional, unique identifier)",
   "question_text": { "en": "string", "de": "string (optional)" },
   "answer_options": [

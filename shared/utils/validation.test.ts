@@ -10,6 +10,7 @@ import {
   normalizeQuestionInput,
   QuestionInputValidationError,
   QuestionInputSchema,
+  QuestionUpdateSchema,
   MoveQuestionSchema,
   StudioAssetPathSchema,
   WebSocketMessageSchema,
@@ -236,6 +237,35 @@ describe('endpoint schemas', () => {
     expect(safeParse(MoveQuestionSchema, {
       direction: 'sideways',
       questionId: 'question-id',
+    }).success).toBe(false)
+  })
+
+  it('defaults answer resets to false on question updates', () => {
+    expect(safeParse(QuestionUpdateSchema, {
+      ...{
+        answer_options: [
+          { text: { en: 'One' } },
+          { text: { en: 'Two' } },
+        ],
+        question_text: { en: 'Question' },
+      },
+      questionId: ' question-id ',
+    })).toMatchObject({
+      output: expect.objectContaining({
+        questionId: 'question-id',
+        resetAnswers: false,
+      }),
+      success: true,
+    })
+
+    expect(safeParse(QuestionUpdateSchema, {
+      answer_options: [
+        { text: { en: 'One' } },
+        { text: { en: 'Two' } },
+      ],
+      questionId: 'question-id',
+      question_text: { en: 'Question' },
+      resetAnswers: 'yes',
     }).success).toBe(false)
   })
 

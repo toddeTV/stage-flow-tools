@@ -25,6 +25,10 @@ question lists read this order, and `publish-next` selects the first unpublished
 enabled question. `questions.is_disabled` skips a question only for automatic
 publication; direct admin publication remains available.
 
+Changing a question's answer options after answers were submitted requires an explicit
+reset confirmation. The answers are deleted and the option update is stored in the
+same SQLite transaction, so results never reference obsolete options.
+
 ## Initialization
 
 - `server/plugins/migrations.ts` applies pending Drizzle migrations when the Nitro server starts.

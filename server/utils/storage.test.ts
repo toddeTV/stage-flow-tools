@@ -23,9 +23,11 @@ import {
 import {
   createQuestion,
   deleteQuestion,
+  getAnswersForQuestion,
   getNextPublishableQuestion,
   getQuestions,
   moveQuestion,
+  QuestionAnswerOptionsResetRequiredError,
   toggleQuestionDisabled,
   updateQuestion,
 } from './storage'
@@ -124,11 +126,48 @@ describe('question queue storage', () => {
     await expect(updateQuestion(question.id, {
       ...createInputQuestion('updated-question'),
     })).resolves.toMatchObject({
-      id: question.id,
-      is_active: true,
-      alreadyPublished: true,
-      key: 'updated-question',
-      question_text: { en: 'updated-question' },
+      answersReset: false,
+      question: {
+        id: question.id,
+        is_active: true,
+        alreadyPublished: true,
+        key: 'updated-question',
+        question_text: { en: 'updated-question' },
+      },
     })
+  })
+
+  it('requires a confirmed reset before replacing answer options with submitted answers', async () => {
+    const question = await createQuestion(createInputQuestion('answer-options'))
+    testClient.db.insert(answers).values({
+      id: 'answer-id',
+      questionId: question.id,
+      selectedAnswer: JSON.stringify({ en: 'One' }),
+      timestamp: '2026-09-03T00:00:00.000Z',
+      userId: 'participant-id',
+      userNickname: 'Participant',
+    }).run()
+
+    const updatedInput = {
+      ...createInputQuestion('answer-options'),
+      answer_options: [
+        { text: { en: 'Updated one' } },
+        { text: { en: 'Two' } },
+      ],
+    }
+
+    await expect(updateQuestion(question.id, updatedInput)).rejects.toThrowError(
+      QuestionAnswerOptionsResetRequiredError,
+    )
+    await expect(getAnswersForQuestion(question.id)).resolves.toHaveLength(1)
+    await expect(getQuestions()).resolves.toMatchObject([
+      { answer_options: question.answer_options },
+    ])
+
+    await expect(updateQuestion(question.id, updatedInput, { resetAnswers: true })).resolves.toMatchObject({
+      answersReset: true,
+      question: { answer_options: updatedInput.answer_options },
+    })
+    await expect(getAnswersForQuestion(question.id)).resolves.toEqual([])
   })
 })

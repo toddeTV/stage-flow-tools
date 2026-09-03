@@ -79,7 +79,8 @@ Bundled voting results (batched every 2 seconds)
 
 #### `answers-reset`
 
-Sent on default channel when admin clears all answers for current active question.
+Sent on the default channel when an admin clears all answers for the current active
+question, including a confirmed answer-option change that resets its submitted answers.
 
 Clients should clear local answer state for matching `questionId` so voting can start fresh if question stays unlocked.
 
