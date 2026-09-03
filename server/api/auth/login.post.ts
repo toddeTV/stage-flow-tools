@@ -1,24 +1,17 @@
 import { SignJWT } from 'jose'
+import { LoginRequestSchema } from '#shared/utils/validation'
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   const config = useRuntimeConfig(event)
-  const body = await readBody(event)
-  const { username, password } = body as { username?: string, password?: string }
-
-  if (!username || !password) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Username and password required',
-    })
-  }
+  const { username, password } = await readValidatedRequestBody<{
+    password: string
+    username: string
+  }>(event, LoginRequestSchema)
 
   const isValid = await validateAdmin(username, password, event)
 
   if (!isValid) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Invalid credentials',
-    })
+    throwApiError(401, 'auth.credentials_invalid')
   }
 
   // Generate token

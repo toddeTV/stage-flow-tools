@@ -11,7 +11,7 @@ const FORWARDED_HEADERS = [
   'content-type',
 ]
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
   await ensureDrizzleStudioServer(event)
 
@@ -38,13 +38,10 @@ export default defineEventHandler(async (event) => {
   catch (error) {
     const isAbort = error instanceof Error && error.name === 'AbortError'
 
-    throw createError({
-      statusCode: isAbort ? 504 : 502,
-      statusMessage: isAbort
-        ? 'Timed out reaching the Drizzle Studio proxy'
-        : 'Failed to reach the Drizzle Studio proxy',
-      data: error instanceof Error ? { message: error.message } : undefined,
-    })
+    throwApiError(
+      isAbort ? 504 : 502,
+      isAbort ? 'studio.proxy_timeout' : 'studio.proxy_unavailable',
+    )
   }
 
   setResponseStatus(event, response.status, response.statusText)

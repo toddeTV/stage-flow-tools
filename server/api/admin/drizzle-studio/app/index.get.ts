@@ -22,7 +22,7 @@ function sanitizeStudioHtml(html: string) {
   })
 }
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 
   let response: Response
@@ -35,20 +35,14 @@ export default defineEventHandler(async (event) => {
   catch (error) {
     const isAbort = error instanceof Error && error.name === 'AbortError'
 
-    throw createError({
-      statusCode: isAbort ? 504 : 502,
-      statusMessage: isAbort
-        ? 'Timed out loading Drizzle Studio shell'
-        : 'Failed to reach Drizzle Studio upstream',
-      data: error instanceof Error ? { message: error.message } : undefined,
-    })
+    throwApiError(
+      isAbort ? 504 : 502,
+      isAbort ? 'studio.shell_timeout' : 'studio.shell_unavailable',
+    )
   }
 
   if (!response.ok) {
-    throw createError({
-      statusCode: 502,
-      statusMessage: `Failed to load Drizzle Studio (${response.status})`,
-    })
+    throwApiError(502, 'studio.shell_load_failed')
   }
 
   setHeader(

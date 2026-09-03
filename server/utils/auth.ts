@@ -70,10 +70,7 @@ export async function verifyAdmin(event: H3Event) {
   const token = getToken(event)
 
   if (!token) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    })
+    throwApiError(401, 'auth.token_required')
   }
 
   const staticAdminPayload = getStaticAdminPayload(token, config.adminToken)
@@ -90,9 +87,6 @@ export async function verifyAdmin(event: H3Event) {
     return payload
   }
   catch {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Invalid token',
-    })
+    throwApiError(401, 'auth.token_invalid')
   }
 }

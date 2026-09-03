@@ -1,4 +1,4 @@
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   // This endpoint is used by the admin page, so we need to verify the user is an admin.
   // For the public-facing page, a new endpoint should be created to only fetch the active question.
   await verifyAdmin(event)

@@ -1,151 +1,222 @@
+import * as v from 'valibot'
 import type {
-  AnswerOption,
   InputQuestion,
-  LocalizedString,
 } from '../../app/types'
+import type { ApiErrorCode, ApiErrorIssue } from './api-errors'
+import { isApiErrorCode } from './api-errors'
+
+const trimmedStringSchema = v.pipe(
+  v.string('validation.invalid_type'),
+  v.trim(),
+)
+
+const requiredTrimmedStringSchema = v.pipe(
+  trimmedStringSchema,
+  v.minLength(1, 'validation.required'),
+)
+
+const localizedStringSchema = v.pipe(
+  v.record(v.string(), trimmedStringSchema),
+  v.check(value => Boolean(value.en), 'validation.required'),
+)
+
+const optionalLocalizedStringSchema = v.pipe(
+  v.optional(v.record(v.string(), trimmedStringSchema)),
+  v.transform((value) => {
+    if (!value) {
+      return undefined
+    }
+
+    const populatedValues = Object.entries(value).filter(([
+      ,
+      localizedValue,
+    ]) => localizedValue.length > 0)
+
+    return populatedValues.length > 0
+      ? Object.fromEntries(populatedValues)
+      : undefined
+  }),
+)
+
+const optionalEmojiSchema = v.pipe(
+  v.optional(trimmedStringSchema),
+  v.transform(value => value || undefined),
+  v.check(value => value === undefined || isValidEmoji(value), 'validation.invalid_emoji'),
+)
+
+const questionInputEntries = {
+  key: v.optional(trimmedStringSchema, ''),
+  question_text: localizedStringSchema,
+  answer_options: v.array(v.object({
+    emoji: optionalEmojiSchema,
+    text: localizedStringSchema,
+  }), 'validation.invalid_type'),
+  note: optionalLocalizedStringSchema,
+}
+
+export const QuestionInputSchema = v.pipe(
+  v.object(questionInputEntries, 'validation.invalid_type'),
+  v.forward(
+    v.check(value => value.answer_options.length >= 2, 'validation.minimum_answer_options'),
+    [
+      'answer_options',
+    ],
+  ),
+  v.forward(
+    v.check((value) => {
+      const normalizedLabels = new Set<string>()
+
+      for (const option of value.answer_options) {
+        const englishLabel = option.text.en
+
+        if (!englishLabel) {
+          return false
+        }
+
+        const normalizedLabel = englishLabel.toLowerCase()
+
+        if (normalizedLabels.has(normalizedLabel)) {
+          return false
+        }
+
+        normalizedLabels.add(normalizedLabel)
+      }
+
+      return true
+    }, 'validation.duplicate_answer_option'),
+    [
+      'answer_options',
+    ],
+  ),
+)
+
+export const QuestionUpdateSchema = v.object({
+  questionId: requiredTrimmedStringSchema,
+  ...questionInputEntries,
+}, 'validation.invalid_type')
+
+export const LoginRequestSchema = v.object({
+  password: v.pipe(
+    v.string('validation.invalid_type'),
+    v.minLength(1, 'validation.required'),
+  ),
+  username: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const NicknameSchema = requiredTrimmedStringSchema
+
+export const EmojiSchema = v.pipe(
+  requiredTrimmedStringSchema,
+  v.check(isValidEmoji, 'validation.invalid_emoji'),
+)
+
+export const AnswerSubmitSchema = v.object({
+  selected_answer: localizedStringSchema,
+  user_id: requiredTrimmedStringSchema,
+  user_nickname: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const AnswerRetractSchema = v.object({
+  question_id: requiredTrimmedStringSchema,
+  user_id: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const EmojiSubmitSchema = v.object({
+  emoji: EmojiSchema,
+  user_id: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const PublishQuestionSchema = v.object({
+  key: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const ToggleQuestionLockSchema = v.object({
+  questionId: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const PickRandomUserSchema = v.object({
+  option: requiredTrimmedStringSchema,
+  questionId: requiredTrimmedStringSchema,
+}, 'validation.invalid_type')
+
+export const EmptyRequestSchema = v.optional(v.strictObject({}), undefined)
+
+export const StudioAssetPathSchema = v.pipe(
+  requiredTrimmedStringSchema,
+  v.check(
+    value => value.split('/').every(segment => segment !== '.' && segment !== '..'),
+    'studio.asset_path_invalid',
+  ),
+)
+
+export const WebSocketQuerySchema = v.object({
+  channel: v.optional(v.picklist([
+    'default',
+    'results',
+    'emojis',
+  ]), 'default'),
+  userId: v.pipe(
+    v.optional(trimmedStringSchema),
+    v.transform(value => value || undefined),
+  ),
+}, 'validation.invalid_websocket_query')
+
+export const WebSocketMessageSchema = v.literal('ping', 'validation.invalid_websocket_message')
 
 export class QuestionInputValidationError extends Error {
-  constructor(message: string) {
-    super(message)
+  readonly issues: ApiErrorIssue[]
+
+  constructor(issues: ApiErrorIssue[]) {
+    super(issues[0]?.code || 'validation.invalid_request')
     this.name = 'QuestionInputValidationError'
+    this.issues = issues
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
+function getIssueCode(message: string | undefined): ApiErrorCode {
+  if (isApiErrorCode(message) && message.startsWith('validation.')) {
+    return message
+  }
+
+  return 'validation.invalid_request'
 }
 
-function throwQuestionInputValidationError(message: string): never {
-  throw new QuestionInputValidationError(message)
+export function getValidationIssues(issues: readonly v.BaseIssue<unknown>[]): ApiErrorIssue[] {
+  return issues.map(issue => ({
+    code: getIssueCode(issue.message),
+    path: issue.path?.map(pathItem => String(pathItem.key)) ?? [],
+  }))
 }
 
-function normalizeLocalizedString(
-  value: unknown,
-  fieldName: string,
-  options: { requireEnglishValue: boolean } = { requireEnglishValue: false },
-): LocalizedString {
-  if (!isRecord(value)) {
-    throwQuestionInputValidationError(`${fieldName} must be an object`)
-  }
-
-  const normalizedValue: Record<string, string> = {}
-
-  for (const [
-    lang,
-    localizedValue,
-  ] of Object.entries(value)) {
-    if (typeof localizedValue !== 'string') {
-      throwQuestionInputValidationError(`Invalid value for locale "${lang}" in ${fieldName}: expected string`)
-    }
-
-    normalizedValue[lang] = localizedValue.trim()
-  }
-
-  if (options.requireEnglishValue && !normalizedValue.en) {
-    throwQuestionInputValidationError(`${fieldName} (English) is required`)
-  }
-
-  return normalizedValue as LocalizedString
-}
-
-function normalizeOptionalLocalizedString(value: unknown, fieldName: string): LocalizedString | undefined {
-  if (!isRecord(value)) {
-    return undefined
-  }
-
-  const normalizedValue: Record<string, string> = {}
-
-  for (const [
-    lang,
-    localizedValue,
-  ] of Object.entries(value)) {
-    if (typeof localizedValue !== 'string') {
-      throwQuestionInputValidationError(`Invalid value for locale "${lang}" in ${fieldName}: expected string`)
-    }
-
-    const trimmedValue = localizedValue.trim()
-    if (trimmedValue) {
-      normalizedValue[lang] = trimmedValue
-    }
-  }
-
-  return Object.keys(normalizedValue).length > 0
-    ? normalizedValue as LocalizedString
-    : undefined
-}
-
-function normalizeAnswerOptions(value: unknown): AnswerOption[] {
-  if (!Array.isArray(value)) {
-    throwQuestionInputValidationError('Answer options must be an array')
-  }
-
-  if (value.length < 2) {
-    throwQuestionInputValidationError('At least 2 non-empty answer options are required')
-  }
-
-  const answerOptions = value.map((rawOption) => {
-    if (!isRecord(rawOption)) {
-      throwQuestionInputValidationError('Each answer option must be an object')
-    }
-
-    return {
-      text: normalizeLocalizedString(rawOption.text, 'answer option text', { requireEnglishValue: true }),
-      emoji: typeof rawOption.emoji === 'string' ? rawOption.emoji.trim() || undefined : undefined,
-    } satisfies AnswerOption
-  })
-
-  const normalizedEnglishLabels = new Set<string>()
-
-  for (const option of answerOptions) {
-    const normalizedEnglishLabel = option.text.en.toLowerCase()
-
-    if (normalizedEnglishLabels.has(normalizedEnglishLabel)) {
-      throwQuestionInputValidationError('Answer option English text values must be unique')
-    }
-
-    normalizedEnglishLabels.add(normalizedEnglishLabel)
-  }
-
-  return answerOptions
-}
-
-/**
- * Normalizes and validates admin question input so create and update share one rule set.
- */
 export function normalizeQuestionInput(value: unknown): InputQuestion {
-  if (!isRecord(value)) {
-    throwQuestionInputValidationError('Question payload must be an object')
+  const result = v.safeParse(QuestionInputSchema, value)
+
+  if (!result.success) {
+    throw new QuestionInputValidationError(getValidationIssues(result.issues))
   }
 
-  const key = typeof value.key === 'string' ? value.key.trim() : ''
-
-  return {
-    key,
-    question_text: normalizeLocalizedString(value.question_text, 'Question text', { requireEnglishValue: true }),
-    answer_options: normalizeAnswerOptions(value.answer_options),
-    note: normalizeOptionalLocalizedString(value.note, 'note'),
-  }
+  return result.output as InputQuestion
 }
 
-/**
- * Validates if the input string is a single emoji.
- *
- * @param emoji - The string to validate.
- * @returns True if the string is a single emoji, false otherwise.
- */
+export function normalizeQuestionUpdateInput(value: unknown): InputQuestion & { questionId: string } {
+  const result = v.safeParse(QuestionUpdateSchema, value)
+
+  if (!result.success) {
+    throw new QuestionInputValidationError(getValidationIssues(result.issues))
+  }
+
+  return result.output as InputQuestion & { questionId: string }
+}
+
+/** Validates if the input string is a single emoji. */
 export function isValidEmoji(emoji: string): boolean {
   if (!emoji || typeof emoji !== 'string') {
     return false
   }
 
-  // Regex to match most common emojis, including ZWJ sequences and skin tone modifiers
-  // This regex is more inclusive and covers a wider range of characters that render as emojis,
-  // including symbols, pictographs, and transport/map symbols.
   const emojiRegex
     = /^(?:\p{Emoji}|\u200D|\uFE0F|\uFE0E|[\u{E0020}-\u{E007F}]|[\u2600-\u26FF]|[\u2700-\u27BF])+$/u
 
-  // Check if the string is a single grapheme cluster and matches the broader emoji pattern.
-  // This ensures complex emojis (like flags or family emojis) are counted as one.
   return [
     ...new Intl.Segmenter().segment(emoji),
   ].length === 1 && emojiRegex.test(emoji)

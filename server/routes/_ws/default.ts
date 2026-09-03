@@ -1,5 +1,10 @@
 import type { Peer, Message } from 'crossws'
-import { WebSocketChannel } from '~/types'
+import { safeParse } from 'valibot'
+import type { WebSocketChannel } from '~/types'
+import {
+  WebSocketMessageSchema,
+  WebSocketQuerySchema,
+} from '#shared/utils/validation'
 
 export default defineWebSocketHandler({
   async open(peer) {
@@ -7,9 +12,17 @@ export default defineWebSocketHandler({
     const { url: requestUrlString } = peer.request
     const requestUrl = new URL(requestUrlString)
     const url = requestUrl.pathname
-    const userId = requestUrl.searchParams.get('userId') || undefined
-    const channel = (requestUrl.searchParams.get('channel') as WebSocketChannel) || WebSocketChannel.DEFAULT
-    await addPeer(peer, channel, url, userId)
+    const query = safeParse(WebSocketQuerySchema, {
+      channel: requestUrl.searchParams.get('channel') || undefined,
+      userId: requestUrl.searchParams.get('userId') || undefined,
+    })
+
+    if (!query.success) {
+      peer.close(1008, 'validation.invalid_websocket_query')
+      return
+    }
+
+    await addPeer(peer, query.output.channel as WebSocketChannel, url, query.output.userId)
   },
 
   async close(peer: Peer) {
@@ -22,8 +35,9 @@ export default defineWebSocketHandler({
   },
 
   message(peer: Peer, message: Message) {
-    // Handle ping/pong for connection keepalive
-    if (message.text() === 'ping') {
+    const parsedMessage = safeParse(WebSocketMessageSchema, message.text())
+
+    if (parsedMessage.success) {
       peer.send('pong')
     }
   },

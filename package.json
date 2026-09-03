@@ -20,7 +20,7 @@
     "build:ssg": "cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt generate",
     "build:ssr": "cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt build",
     "dev": "nuxt dev",
-    "dev:preset": "nuxt dev --port 3000 --public",
+    "dev:public": "nuxt dev --port 3000 --public",
     "drizzle:migrate:apply:dev": "vp exec drizzle-kit migrate --config=drizzle.config.dev.ts",
     "drizzle:migrate:apply:prod": "vp exec drizzle-kit migrate --config=drizzle.config.prod.ts",
     "drizzle:migrate:create": "vp exec drizzle-kit generate --config=drizzle.config.ts",
@@ -86,6 +86,7 @@
     "tailwindcss": "~4.3.3",
     "tsx": "~4.23.13",
     "typescript": "~6.0.3",
+    "valibot": "~1.4.2",
     "vite-plus": "catalog:",
     "vue-tsc": "~3.3.11"
   },

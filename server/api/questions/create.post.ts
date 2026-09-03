@@ -1,23 +1,10 @@
-import { normalizeQuestionInput, QuestionInputValidationError } from '#shared/utils/validation'
+import type { InputQuestion } from '~/types'
+import { QuestionInputSchema } from '#shared/utils/validation'
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 
-  let questionInput
-
-  try {
-    questionInput = normalizeQuestionInput(await readBody(event))
-  }
-  catch (error: unknown) {
-    if (error instanceof QuestionInputValidationError) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: error.message,
-      })
-    }
-
-    throw error
-  }
+  const questionInput = await readValidatedRequestBody<InputQuestion>(event, QuestionInputSchema)
 
   let question
   try {
@@ -25,10 +12,7 @@ export default defineEventHandler(async (event) => {
   }
   catch (error: unknown) {
     if (error instanceof Error && error.message.includes('already exists')) {
-      throw createError({
-        statusCode: 409,
-        statusMessage: 'A question with this key already exists',
-      })
+      throwApiError(409, 'quiz.question_key_conflict')
     }
     throw error
   }

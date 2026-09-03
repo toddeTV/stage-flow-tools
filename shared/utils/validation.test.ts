@@ -1,8 +1,17 @@
+import { safeParse } from 'valibot'
 import { describe, expect, it } from 'vite-plus/test'
 
 import {
+  EmptyRequestSchema,
+  EmojiSubmitSchema,
+  getValidationIssues,
+  LoginRequestSchema,
   normalizeQuestionInput,
   QuestionInputValidationError,
+  QuestionInputSchema,
+  StudioAssetPathSchema,
+  WebSocketMessageSchema,
+  WebSocketQuerySchema,
 } from './validation'
 
 describe('normalizeQuestionInput', () => {
@@ -12,6 +21,7 @@ describe('normalizeQuestionInput', () => {
       question_text: {
         de: ' Hallo ',
         en: ' Hello ',
+        fr: ' Bonjour ',
       },
       answer_options: [
         {
@@ -19,6 +29,7 @@ describe('normalizeQuestionInput', () => {
           text: {
             de: ' Ja ',
             en: ' Yes ',
+            fr: ' Oui ',
           },
         },
         {
@@ -37,6 +48,7 @@ describe('normalizeQuestionInput', () => {
       question_text: {
         de: 'Hallo',
         en: 'Hello',
+        fr: 'Bonjour',
       },
       answer_options: [
         {
@@ -44,6 +56,7 @@ describe('normalizeQuestionInput', () => {
           text: {
             de: 'Ja',
             en: 'Yes',
+            fr: 'Oui',
           },
         },
         {
@@ -70,7 +83,11 @@ describe('normalizeQuestionInput', () => {
         { text: { en: 'One' } },
         { text: { en: 'Two' } },
       ],
-    })).toThrowError(new QuestionInputValidationError('Question text (English) is required'))
+    })).toThrowError(new QuestionInputValidationError([
+      { code: 'validation.required', path: [
+        'question_text',
+      ] },
+    ]))
   })
 
   it('rejects duplicate english answer labels after trim and lowercase normalization', () => {
@@ -82,6 +99,140 @@ describe('normalizeQuestionInput', () => {
         { text: { en: ' Yes ' } },
         { text: { en: 'yes' } },
       ],
-    })).toThrowError(new QuestionInputValidationError('Answer option English text values must be unique'))
+    })).toThrowError(new QuestionInputValidationError([
+      { code: 'validation.duplicate_answer_option', path: [
+        'answer_options',
+      ] },
+    ]))
+  })
+
+  it('rejects JSON-derived values that are not question objects', () => {
+    const result = safeParse(QuestionInputSchema, [
+      {
+        question_text: { en: 'Question' },
+      },
+    ])
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(getValidationIssues(result.issues)).toEqual([
+        { code: 'validation.invalid_type', path: [
+          'question_text',
+        ] },
+        { code: 'validation.invalid_type', path: [
+          'answer_options',
+        ] },
+      ])
+    }
+  })
+
+  it('reports field paths for invalid nested option content', () => {
+    const result = safeParse(QuestionInputSchema, {
+      question_text: { en: 'Question' },
+      answer_options: [
+        { text: { en: 'One' } },
+        { emoji: 'not an emoji', text: { en: 'Two' } },
+      ],
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(getValidationIssues(result.issues)).toContainEqual({
+        code: 'validation.invalid_emoji',
+        path: [
+          'answer_options',
+          '1',
+          'emoji',
+        ],
+      })
+    }
+  })
+
+  it('rejects fewer than two answer options', () => {
+    const result = safeParse(QuestionInputSchema, {
+      question_text: { en: 'Question' },
+      answer_options: [
+        { text: { en: 'One' } },
+      ],
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(getValidationIssues(result.issues)).toContainEqual({
+        code: 'validation.minimum_answer_options',
+        path: [
+          'answer_options',
+        ],
+      })
+    }
+  })
+})
+
+describe('endpoint schemas', () => {
+  it('preserves password whitespace while trimming the username', () => {
+    expect(safeParse(LoginRequestSchema, {
+      password: ' secret ',
+      username: ' admin ',
+    })).toMatchObject({
+      output: {
+        password: ' secret ',
+        username: 'admin',
+      },
+      success: true,
+    })
+
+    expect(safeParse(LoginRequestSchema, {
+      password: '',
+      username: 'admin',
+    }).success).toBe(false)
+  })
+
+  it('trims emoji request input and rejects malformed required values', () => {
+    expect(safeParse(EmojiSubmitSchema, {
+      emoji: ' 😀 ',
+      user_id: ' participant ',
+    })).toMatchObject({
+      output: {
+        emoji: '😀',
+        user_id: 'participant',
+      },
+      success: true,
+    })
+
+    expect(safeParse(EmojiSubmitSchema, {
+      emoji: '😀',
+      user_id: ' ',
+    }).success).toBe(false)
+  })
+
+  it('accepts only an empty body for no-body POST routes', () => {
+    expect(safeParse(EmptyRequestSchema, undefined)).toMatchObject({ success: true })
+    expect(safeParse(EmptyRequestSchema, {})).toMatchObject({ success: true })
+    expect(safeParse(EmptyRequestSchema, { unexpected: true }).success).toBe(false)
+  })
+
+  it('rejects Studio traversal paths', () => {
+    expect(safeParse(StudioAssetPathSchema, 'assets/index.js')).toMatchObject({
+      output: 'assets/index.js',
+      success: true,
+    })
+    expect(safeParse(StudioAssetPathSchema, '../secrets').success).toBe(false)
+    expect(safeParse(StudioAssetPathSchema, 'assets/../../secrets').success).toBe(false)
+  })
+
+  it('validates WebSocket query and message input', () => {
+    expect(safeParse(WebSocketQuerySchema, {
+      channel: 'results',
+      userId: ' participant ',
+    })).toMatchObject({
+      output: {
+        channel: 'results',
+        userId: 'participant',
+      },
+      success: true,
+    })
+    expect(safeParse(WebSocketQuerySchema, { channel: 'other' }).success).toBe(false)
+    expect(safeParse(WebSocketMessageSchema, 'ping')).toMatchObject({ success: true })
+    expect(safeParse(WebSocketMessageSchema, 'pong').success).toBe(false)
   })
 })

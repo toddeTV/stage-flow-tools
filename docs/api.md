@@ -91,7 +91,7 @@ Load the authenticated Drizzle Studio shell used by `/admin/database`.
 
 ### GET `/api/admin/drizzle-studio/app/<asset>`
 
-Load Drizzle Studio static assets through the authenticated proxy.
+Load Drizzle Studio static assets through the authenticated proxy. Asset paths must be non-empty relative paths and cannot contain `.` or `..` segments.
 
 ### GET `/api/admin/presenter/overview`
 
@@ -184,7 +184,7 @@ This endpoint is meant for polling, such as once per second from presenter slide
 
 ### POST `/`
 
-Internal admin-only Drizzle Studio RPC compatibility endpoint used by the embedded frame. Treat this as internal transport, not a public integration API.
+Internal admin-only Drizzle Studio RPC compatibility endpoint used by the embedded frame. Treat this as internal transport, not a public integration API. Its opaque Drizzle RPC payload is intentionally passed through without application-level schema validation.
 
 ## Questions
 
@@ -221,7 +221,7 @@ Get the currently active question (public). Returns a simplified version without
 
 ### POST `/api/questions/create`
 
-Create new question (admin only).
+Create new question (admin only). Localized question and answer text may use any locale key; their non-empty English (`en`) value is required.
 
 English `answer_options[].text.en` values must be unique. Matching is case-insensitive.
 
@@ -243,7 +243,7 @@ English `answer_options[].text.en` values must be unique. Matching is case-insen
 
 ### POST `/api/questions/update`
 
-Update an existing unpublished and inactive question (admin only).
+Update an existing unpublished and inactive question (admin only). Localized question and answer text may use any locale key; their non-empty English (`en`) value is required.
 
 Editable fields are `key`, `question_text`, `answer_options`, and `note`.
 Active questions and already-published questions return `409`.
@@ -461,49 +461,28 @@ Get active WebSocket connections (admin only).
 
 **Response:** Array of connection objects with `id` and `url`.
 
-## Error Responses
+## Validation and error responses
 
-### 400 Bad Request
+All application-owned HTTP endpoints validate input with the shared Valibot schemas in `shared/utils/validation.ts`. Client validation helps people correct forms early, but each server boundary validates again.
+
+Errors use stable machine-readable codes. This is a breaking change from prose `statusMessage` values: `statusMessage` now exactly mirrors `data.code`, and clients localize `errors.<code>` themselves.
 
 ```json
 {
   "statusCode": 400,
-  "statusMessage": "Error description"
+  "statusMessage": "validation.invalid_request",
+  "data": {
+    "code": "validation.invalid_request",
+    "issues": [
+      {
+        "code": "validation.required",
+        "path": ["question_text"]
+      }
+    ]
+  }
 }
 ```
 
-### 401 Unauthorized
+`issues` is present only for schema failures. Each issue contains a stable code and a field path; array indexes are serialized as strings. Unexpected failures are logged server-side and return only `server.internal_error`.
 
-```json
-{
-  "statusCode": 401,
-  "statusMessage": "Unauthorized"
-}
-```
-
-### 403 Forbidden
-
-```json
-{
-  "statusCode": 403,
-  "statusMessage": "Question is locked"
-}
-```
-
-### 404 Not Found
-
-```json
-{
-  "statusCode": 404,
-  "statusMessage": "No active question"
-}
-```
-
-### 429 Too Many Requests
-
-```json
-{
-  "statusCode": 429,
-  "statusMessage": "You are sending emojis too fast. Please wait a moment."
-}
-```
+The supported code namespaces are `validation.*`, `auth.*`, `quiz.*`, `emoji.cooldown`, `answer.*`, `websocket.*`, `studio.*`, `route.not_found`, and `server.internal_error`. HTTP status codes retain their existing meanings.

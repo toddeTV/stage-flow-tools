@@ -4,7 +4,7 @@ type PublicQuestion = Omit<Question, 'note' | 'key' | 'alreadyPublished' | 'answ
   answer_options: { text: LocalizedString }[]
 }
 
-export default defineEventHandler(async (): Promise<PublicQuestion | { message: string }> => {
+export default defineApiHandler(async (): Promise<PublicQuestion | { message: string }> => {
   const question = await getActiveQuestion()
 
   if (question) {

@@ -1,7 +1,9 @@
 import { WebSocketChannel } from '~/types'
+import { EmptyRequestSchema } from '#shared/utils/validation'
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
+  await readValidatedRequestBody(event, EmptyRequestSchema)
 
   const allQuestions = await getQuestions()
 
@@ -11,19 +13,13 @@ export default defineEventHandler(async (event) => {
   const nextQuestion = sortedQuestions.find(q => !q.alreadyPublished)
 
   if (!nextQuestion) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'No more unpublished questions found.',
-    })
+    throwApiError(404, 'quiz.no_unpublished_question')
   }
 
   const question = await publishQuestion(nextQuestion.id)
 
   if (!question) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Failed to publish the next question.',
-    })
+    throwApiError(500, 'quiz.publish_next_failed')
   }
 
   // Broadcast new question to all connected clients

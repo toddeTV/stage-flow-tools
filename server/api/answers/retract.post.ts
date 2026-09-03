@@ -1,15 +1,11 @@
 import { WebSocketChannel } from '~/types'
+import { AnswerRetractSchema } from '#shared/utils/validation'
 
-export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const { user_id, question_id } = body as { user_id: string, question_id: string }
-
-  if (!user_id || !question_id) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'User ID and question ID required',
-    })
-  }
+export default defineApiHandler(async (event) => {
+  const { user_id, question_id } = await readValidatedRequestBody<{
+    question_id: string
+    user_id: string
+  }>(event, AnswerRetractSchema)
 
   await retractAnswer(user_id, question_id)
 

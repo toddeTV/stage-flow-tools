@@ -1,25 +1,15 @@
 import { WebSocketChannel } from '~/types'
+import { PublishQuestionSchema } from '#shared/utils/validation'
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 
-  const body = await readBody(event) as { key?: string }
-  const { key } = body
-
-  if (!key) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Question key is required',
-    })
-  }
+  const { key } = await readValidatedRequestBody<{ key: string }>(event, PublishQuestionSchema)
 
   const question = await publishQuestion(key)
 
   if (!question) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Question not found',
-    })
+    throwApiError(404, 'quiz.question_not_found')
   }
 
   // Broadcast new question to all connected clients

@@ -25,7 +25,9 @@ ws.onmessage = (event) => {
 ### Query Parameters
 
 - **`channel`** - WebSocket channel: `default`, `results`, or `emojis`
-- **`userId`** - Optional user identifier for tracking
+- **`userId`** - Optional non-empty user identifier for tracking
+
+The server validates the connection query with the shared Valibot schema before adding a peer. An invalid query closes the handshake with close code `1008` and reason `validation.invalid_websocket_query`.
 
 ## Event Types
 
@@ -145,6 +147,8 @@ Keep-alive message
 "ping"
 ```
 
+This is the only accepted client-to-server message. Invalid messages are ignored and never broadcast or logged as application errors.
+
 ## Implementation Details
 
 ### Connection Lifecycle
@@ -195,9 +199,9 @@ ws.onclose = () => {
 
 ### Message Errors
 
-- JSON parse validation
-- Unknown event handling
-- Error logging
+- Queries and messages are validated with the shared Valibot schemas.
+- Invalid connection queries are rejected with policy-violation close code `1008`.
+- Any client message other than the literal `ping` is ignored.
 
 ## Performance Optimization
 

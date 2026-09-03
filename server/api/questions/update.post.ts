@@ -1,33 +1,13 @@
-import { normalizeQuestionInput, QuestionInputValidationError } from '#shared/utils/validation'
+import type { InputQuestion } from '~/types'
+import { QuestionUpdateSchema } from '#shared/utils/validation'
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 
-  const body = await readBody(event) as { questionId?: unknown } & Record<string, unknown>
-  const questionId = typeof body.questionId === 'string' ? body.questionId.trim() : ''
-
-  if (!questionId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Question ID is required',
-    })
-  }
-
-  let questionInput
-
-  try {
-    questionInput = normalizeQuestionInput(body)
-  }
-  catch (error: unknown) {
-    if (error instanceof QuestionInputValidationError) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: error.message,
-      })
-    }
-
-    throw error
-  }
+  const {
+    questionId,
+    ...questionInput
+  } = await readValidatedRequestBody<InputQuestion & { questionId: string }>(event, QuestionUpdateSchema)
 
   let question
 
@@ -37,20 +17,15 @@ export default defineEventHandler(async (event) => {
   catch (error: unknown) {
     if (error instanceof Error) {
       if (error.message.includes('already exists')) {
-        throw createError({
-          statusCode: 409,
-          statusMessage: 'A question with this key already exists',
-        })
+        throwApiError(409, 'quiz.question_key_conflict')
       }
 
-      if (
-        error.message === 'Active questions cannot be edited'
-        || error.message === 'Published questions cannot be edited'
-      ) {
-        throw createError({
-          statusCode: 409,
-          statusMessage: error.message,
-        })
+      if (error.message === 'Active questions cannot be edited') {
+        throwApiError(409, 'quiz.question_active')
+      }
+
+      if (error.message === 'Published questions cannot be edited') {
+        throwApiError(409, 'quiz.question_published')
       }
     }
 
@@ -58,10 +33,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!question) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Question not found',
-    })
+    throwApiError(404, 'quiz.question_not_found')
   }
 
   return question

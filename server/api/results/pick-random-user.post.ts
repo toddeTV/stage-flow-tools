@@ -1,31 +1,27 @@
 import type { Answer } from '~/types'
 import { WebSocketChannel } from '~/types'
+import { PickRandomUserSchema } from '#shared/utils/validation'
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 
-  const body = await readBody(event) as { questionId: string, option: string }
-  const { questionId, option } = body
-
-  if (!questionId || !option) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Missing questionId or option',
-    })
-  }
+  const { questionId, option } = await readValidatedRequestBody<{
+    option: string
+    questionId: string
+  }>(event, PickRandomUserSchema)
 
   try {
     const questionAnswers = await getAnswersForQuestion(questionId)
 
     if (!questionAnswers || questionAnswers.length === 0) {
-      throw createError({ statusCode: 404, statusMessage: 'No answers found for this question' })
+      throwApiError(404, 'answer.no_answers_for_question')
     }
 
     const usersForOption = questionAnswers
       .filter((userAnswer: Answer) => userAnswer.selected_answer.en === option)
 
     if (usersForOption.length === 0) {
-      throw createError({ statusCode: 404, statusMessage: 'No users found for this option' })
+      throwApiError(404, 'answer.no_users_for_option')
     }
 
     const randomIndex = Math.floor(Math.random() * usersForOption.length)
@@ -39,21 +35,17 @@ export default defineEventHandler(async (event) => {
     }, WebSocketChannel.DEFAULT)
 
     if (!delivered) {
-      throw createError({ statusCode: 503, statusMessage: 'Winner is not currently connected' })
+      throwApiError(503, 'websocket.winner_not_connected')
     }
 
     event.node.res.statusCode = 204
     return ''
   }
   catch (error: unknown) {
-    // Re-throw H3 errors (from createError) as-is to preserve status codes
-    if (error && typeof error === 'object' && 'statusCode' in error) {
+    if (error && typeof error === 'object' && 'data' in error) {
       throw error
     }
     logger_error('Failed to pick random user', error)
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Internal Server Error',
-    })
+    throwApiError(500, 'server.internal_error')
   }
 })

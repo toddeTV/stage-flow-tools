@@ -1,6 +1,6 @@
 import { buildLeaderboardResults } from '../../utils/leaderboard'
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 
   const questions = await getQuestions()

@@ -118,6 +118,7 @@ stage-flow-tools/
 
 ### Data Validation
 
-- **Input Sanitization** - All user inputs validated
-- **Type Checking** - TypeScript enforcement
-- **Error Boundaries** - Graceful failure handling
+- **Valibot at both boundaries** - `shared/utils/validation.ts` owns reusable schemas and normalization. Browser forms use those schemas for inline feedback; every application-owned HTTP and WebSocket boundary validates again before side effects.
+- **Localized content** - Question and answer option text may carry arbitrary locale keys. A non-empty English (`en`) value remains required so results and existing displays have a stable canonical label.
+- **Codes, not server prose** - `shared/utils/api-errors.ts` defines the shared error-code contract. HTTP errors mirror the code in `statusMessage` and `data.code`; the client resolves `errors.<code>` from the global i18n catalog.
+- **Safe error boundary** - `defineApiHandler()` logs unexpected server failures and returns `server.internal_error`, never implementation, database, credential, or upstream details.

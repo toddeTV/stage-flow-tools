@@ -1,5 +1,11 @@
 <script setup lang="ts">
+import { safeParse } from 'valibot'
 import type { Question } from '~/types'
+import {
+  EmojiSchema,
+  getValidationIssues,
+  NicknameSchema,
+} from '#shared/utils/validation'
 
 definePageMeta({
   layout: 'default',
@@ -12,9 +18,17 @@ definePageMeta({
 const userNickname = ref('')
 const nicknameInput = ref('')
 const emojiInput = ref('')
+const answerError = ref('')
+const emojiError = ref('')
+const nicknameError = ref('')
 const { activeQuestion, selectedAnswer } = useQuizSocket()
 const { t } = useI18n()
 const { getLocalizedText } = useLocalization()
+const {
+  getErrorCode,
+  getErrorMessage,
+  getIssueMessage,
+} = useApiError()
 
 // Load nickname from localStorage
 onMounted(() => {
@@ -26,10 +40,17 @@ onMounted(() => {
 
 // Set nickname
 function setNickname() {
-  if (nicknameInput.value.trim()) {
-    userNickname.value = nicknameInput.value.trim()
-    localStorage.setItem('quiz-nickname', userNickname.value)
+  nicknameError.value = ''
+
+  const result = safeParse(NicknameSchema, nicknameInput.value)
+
+  if (!result.success) {
+    nicknameError.value = getIssueMessage(getValidationIssues(result.issues)[0]!)
+    return
   }
+
+  userNickname.value = result.output
+  localStorage.setItem('quiz-nickname', userNickname.value)
 }
 
 // Change nickname
@@ -87,6 +108,8 @@ async function submitAnswer() {
     return
   }
 
+  answerError.value = ''
+
   try {
     const userId = localStorage.getItem('quiz-user-id')
     if (!userId) {
@@ -108,8 +131,9 @@ async function submitAnswer() {
   }
   catch (error: unknown) {
     logger_error('Failed to submit answer:', error)
+    answerError.value = getErrorMessage(error)
     // If locked, reload question
-    if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 403) {
+    if (getErrorCode(error) === 'quiz.question_locked') {
       await refreshQuestion()
     }
   }
@@ -133,10 +157,16 @@ const { pause, resume } = useIntervalFn(() => {
 }, 10, { immediate: false })
 
 async function submitEmoji() {
-  if (isEmojiCooldown.value || !isValidEmoji(emojiInput.value)) {
-    if (!isValidEmoji(emojiInput.value)) {
-      alert(t('emojis.singleEmojiRequired'))
-    }
+  if (isEmojiCooldown.value) {
+    return
+  }
+
+  emojiError.value = ''
+
+  const result = safeParse(EmojiSchema, emojiInput.value)
+
+  if (!result.success) {
+    emojiError.value = getIssueMessage(getValidationIssues(result.issues)[0]!)
     return
   }
 
@@ -150,7 +180,7 @@ async function submitEmoji() {
     await $fetch('/api/emojis/submit', {
       method: 'POST',
       body: {
-        emoji: emojiInput.value,
+        emoji: result.output,
         user_id: userId,
       },
     })
@@ -166,7 +196,7 @@ async function submitEmoji() {
   }
   catch (error) {
     logger_error('Failed to submit emoji:', error)
-    alert(t('emojis.failedToSend'))
+    alert(getErrorMessage(error))
   }
 }
 
@@ -201,10 +231,15 @@ async function sendQuickEmoji(emoji: string) {
       <form class="flex flex-col gap-5" @submit.prevent="setNickname">
         <UiInput
           v-model="nicknameInput"
+          :aria-describedby="nicknameError ? 'nickname-error' : undefined"
+          :aria-invalid="Boolean(nicknameError)"
           class="text-center text-xl"
           :placeholder="t('nicknamePlaceholder')"
           required
         />
+        <p v-if="nicknameError" id="nickname-error" role="alert">
+          {{ nicknameError }}
+        </p>
         <UiButton type="submit">
           {{ t('joinButton') }}
         </UiButton>
@@ -238,6 +273,8 @@ async function sendQuickEmoji(emoji: string) {
           <form class="flex items-center" @submit.prevent="submitEmoji">
             <UiInput
               v-model="emojiInput"
+              :aria-describedby="emojiError ? 'emoji-error' : undefined"
+              :aria-invalid="Boolean(emojiError)"
               class="size-16 shrink-0 border-r-0 text-center text-2xl"
               placeholder="?"
             />
@@ -245,6 +282,14 @@ async function sendQuickEmoji(emoji: string) {
               <span v-if="isEmojiCooldown">{{ cooldownTimerInSec.toFixed(2) }}s</span>
               <span v-else>{{ t('sendButton') }}</span>
             </UiButton>
+            <p
+              v-if="emojiError"
+              id="emoji-error"
+              class="sr-only"
+              role="alert"
+            >
+              {{ emojiError }}
+            </p>
           </form>
         </div>
       </div>
@@ -285,6 +330,10 @@ async function sendQuickEmoji(emoji: string) {
         <div v-if="selectedAnswer !== null && !activeQuestion.is_locked" class="answer-banner">
           ✓ {{ t('answerSubmitted') }}
         </div>
+
+        <p v-if="answerError" class="mt-4" role="alert">
+          {{ answerError }}
+        </p>
 
         <div v-if="selectedAnswer !== null && activeQuestion.is_locked" class="answer-banner">
           {{ t('yourAnswer') }}
@@ -328,9 +377,6 @@ en:
   yourAnswer: "Your answer:"
   waitingForQuestion: Waiting for Question
   presenterWillStart: The presenter will start a question soon...
-  emojis:
-    singleEmojiRequired: Please enter a single emoji.
-    failedToSend: Failed to send emoji. Please try again.
 de:
   pageTitle: Quiz-Zeit
   welcome: Willkommen!
@@ -346,9 +392,6 @@ de:
   yourAnswer: "Deine Antwort:"
   waitingForQuestion: Warten auf Frage
   presenterWillStart: Der Moderator wird bald eine Frage starten...
-  emojis:
-    singleEmojiRequired: Bitte geben Sie ein einzelnes Emoji ein.
-    failedToSend: Emoji konnte nicht gesendet werden. Bitte versuchen Sie es erneut.
 ja:
   pageTitle: クイズタイム
   welcome: ようこそ！
@@ -364,9 +407,6 @@ ja:
   yourAnswer: あなたの答え：
   waitingForQuestion: 質問を待っています
   presenterWillStart: プレゼンターがまもなく質問を開始します...
-  emojis:
-    singleEmojiRequired: 単一の絵文字を入力してください。
-    failedToSend: 絵文字の送信に失敗しました。もう一度お試しください。
 </i18n>
 
 <style scoped>

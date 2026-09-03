@@ -1,25 +1,15 @@
 import { WebSocketChannel } from '~/types'
+import { ToggleQuestionLockSchema } from '#shared/utils/validation'
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 
-  const body = await readBody(event) as { questionId?: string }
-  const { questionId } = body
-
-  if (!questionId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Question ID required',
-    })
-  }
+  const { questionId } = await readValidatedRequestBody<{ questionId: string }>(event, ToggleQuestionLockSchema)
 
   const question = await toggleQuestionLock(questionId)
 
   if (!question) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Question not found',
-    })
+    throwApiError(404, 'quiz.question_not_found')
   }
 
   // Broadcast lock status change
