@@ -285,11 +285,11 @@ Publish question as active by key (admin only). Clears existing answers and broa
 
 ### POST `/api/questions/publish-next`
 
-Publish the next enabled, unpublished question in queue order (admin only). Finds the lowest `sortOrder` question where `alreadyPublished` and `is_disabled` are both `false`, publishes it, and broadcasts to all WebSocket clients.
+Publish the next enabled question after the active question in queue order (admin only). Previously published questions can be published again. Without an active question, it selects the first enabled question. It does not wrap after the last enabled question and broadcasts the selected question to all WebSocket clients.
 
 **Request:** No body required.
 
-**Response:** The published question object, or 404 if no enabled unpublished questions remain.
+**Response:** The published question object, or 404 with `quiz.no_enabled_question` if no enabled question can be selected.
 
 ### POST `/api/questions/move`
 
