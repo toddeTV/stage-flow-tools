@@ -5,17 +5,36 @@ const appVersion = config.public.version
 
 <template>
   <footer class="flex flex-col items-center justify-between gap-4 p-4 text-sm md:flex-row md:gap-0">
-    <div class="text-center md:text-left">
-      Copyright (c) 2025-present,
+    <div class="flex flex-wrap items-center justify-center gap-x-1 text-center md:justify-start md:text-left">
+      <span>Created with</span>
+      <svg
+        aria-hidden="true"
+        class="size-4 fill-red-600 stroke-red-600"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12 21.35 10.55 20.03C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09A6.02 6.02 0 0 1 16.5 3C19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35Z"
+        />
+      </svg>
+      <span>by</span>
       <NuxtLink
-        aria-label="Website of Thorsten Seyschab"
+        aria-label="Website of todde.tv"
         class="underline"
         target="_blank"
         to="https://todde.tv/"
       >
-        Thorsten Seyschab</NuxtLink>.
+        todde.tv</NuxtLink>
+      <span aria-hidden="true">·</span>
+      <span>Copyright (c) 2025-present.</span>
     </div>
     <div class="flex items-center space-x-4">
+      <NuxtLink class="underline" to="/legal-notice">
+        Legal Notice
+      </NuxtLink>
+      <NuxtLink class="underline" to="/privacy-policy">
+        Privacy Policy
+      </NuxtLink>
       <span>v{{ appVersion }}</span>
       <NuxtLink
         aria-label="Source Code on GitHub"
