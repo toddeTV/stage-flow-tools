@@ -19,7 +19,7 @@ System design and technical architecture of the quiz application.
 
 ### Storage
 
-- **Drizzle ORM + SQLite** - Persistent quiz storage at `.data/db/stage-flow-tools.sqlite3`
+- **Drizzle ORM + SQLite** - Persistent quiz and legal-document storage at `.data/db/stage-flow-tools.sqlite3`
 
 ## Application Structure
 
@@ -55,6 +55,8 @@ stage-flow-tools/
 - **`admin/results.vue`** - Results display
 - **`admin/leaderboard.vue`** - Admin leaderboard
 - **`admin/emojis.vue`** - Emoji overlay
+- **`legal-notice.vue`** - Public legal notice (Impressum)
+- **`privacy-policy.vue`** - Public privacy policy (Datenschutzerklärung)
 
 ### API Routes
 
@@ -63,6 +65,7 @@ stage-flow-tools/
 - **`/answers/*`** - Answer submission
 - **`/results/*`** - Results retrieval
 - **`/emojis/*`** - Emoji reactions
+- **`/legal/:key`** - Public legal-document reads
 - **`/websockets/*`** - Connection monitoring
 
 ## Design Decisions
@@ -105,6 +108,15 @@ stage-flow-tools/
 3. Publishes question
 4. WebSocket notifies all clients
 5. Controls lock status
+
+### Legal Documents
+
+1. Operator inserts deployment-specific Markdown into the `legal_documents`
+   database rows.
+2. Public legal pages fetch only `legal-notice` or `privacy-policy` through
+   `/api/legal/:key`.
+3. The client renders the returned Markdown after sanitizing it; raw HTML is
+   not interpreted.
 
 ## Security Model
 
