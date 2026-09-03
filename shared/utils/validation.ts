@@ -96,7 +96,10 @@ export const QuestionUpdateSchema = v.object({
 }, 'validation.invalid_type')
 
 export const LoginRequestSchema = v.object({
-  password: requiredTrimmedStringSchema,
+  password: v.pipe(
+    v.string('validation.invalid_type'),
+    v.minLength(1, 'validation.required'),
+  ),
   username: requiredTrimmedStringSchema,
 }, 'validation.invalid_type')
 

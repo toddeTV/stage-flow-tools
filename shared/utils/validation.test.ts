@@ -5,6 +5,7 @@ import {
   EmptyRequestSchema,
   EmojiSubmitSchema,
   getValidationIssues,
+  LoginRequestSchema,
   normalizeQuestionInput,
   QuestionInputValidationError,
   QuestionInputSchema,
@@ -168,6 +169,24 @@ describe('normalizeQuestionInput', () => {
 })
 
 describe('endpoint schemas', () => {
+  it('preserves password whitespace while trimming the username', () => {
+    expect(safeParse(LoginRequestSchema, {
+      password: ' secret ',
+      username: ' admin ',
+    })).toMatchObject({
+      output: {
+        password: ' secret ',
+        username: 'admin',
+      },
+      success: true,
+    })
+
+    expect(safeParse(LoginRequestSchema, {
+      password: '',
+      username: 'admin',
+    }).success).toBe(false)
+  })
+
   it('trims emoji request input and rejects malformed required values', () => {
     expect(safeParse(EmojiSubmitSchema, {
       emoji: ' 😀 ',
