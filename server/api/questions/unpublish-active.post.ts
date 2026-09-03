@@ -1,7 +1,9 @@
 import { WebSocketChannel } from '~/types'
+import { EmptyRequestSchema } from '#shared/utils/validation'
 
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
+  await readValidatedRequestBody(event, EmptyRequestSchema)
 
   const deactivated = await unpublishActiveQuestion()
 
