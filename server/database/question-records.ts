@@ -121,10 +121,14 @@ export function createQuestionInsert(
 /**
  * Builds a stored question row for seeded question input.
  * @param question Seed question data.
+ * @param sortOrder Persistent queue position for the seeded question.
  * @returns SQLite-ready seeded question row.
  */
-export function createSeedQuestionInsert(question: InputQuestion): QuestionRow {
-  return createQuestionInsert(question, { id: question.key || createId() })
+export function createSeedQuestionInsert(question: InputQuestion, sortOrder: number): QuestionRow {
+  return createQuestionInsert(question, {
+    id: question.key || createId(),
+    sortOrder,
+  })
 }
 
 /**

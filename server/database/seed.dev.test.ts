@@ -10,6 +10,11 @@ import {
   expect,
   it,
 } from 'vite-plus/test'
+import { asc } from 'drizzle-orm'
+import {
+  getQuestions,
+  moveQuestion,
+} from '../utils/storage'
 import { deserializeQuestion } from './question-records'
 import { createLocalDatabaseClient } from './local-sqlite'
 import { seedDevelopmentDatabase } from './seed.dev'
@@ -47,7 +52,7 @@ afterEach(() => {
 })
 
 describe('seedDevelopmentDatabase', () => {
-  it('creates two unpublished localized example questions in an empty database', () => {
+  it('creates two unpublished localized example questions in an empty database', async () => {
     const databasePath = createTemporaryDatabasePath()
 
     expect(seedDevelopmentDatabase({ databasePath })).toEqual({
@@ -60,13 +65,17 @@ describe('seedDevelopmentDatabase', () => {
       const seededQuestions = db
         .select()
         .from(questions)
+        .orderBy(asc(questions.sortOrder))
         .all()
         .map(deserializeQuestion)
 
       expect(seededQuestions).toHaveLength(2)
-      expect(seededQuestions.map(question => question.key).sort()).toEqual([
-        'seed-question-lifecycle',
-        'seed-stage-flow-purpose',
+      expect(seededQuestions.map(question => question.key)).toEqual(
+        developmentSeedQuestions.map(question => question.key),
+      )
+      expect(seededQuestions.map(question => question.sortOrder)).toEqual([
+        0,
+        1,
       ])
 
       for (const question of seededQuestions) {
@@ -81,8 +90,21 @@ describe('seedDevelopmentDatabase', () => {
           expectLocalized(option.text)
         }
       }
+
+      globalThis.__stageFlowToolsLocalDatabaseClient = { db, sqlite }
+      const [
+        firstQuestion,
+      ] = await getQuestions()
+
+      await moveQuestion(firstQuestion!.id, 'down')
+
+      expect((await getQuestions()).map(question => question.key)).toEqual([
+        developmentSeedQuestions[1]!.key,
+        developmentSeedQuestions[0]!.key,
+      ])
     }
     finally {
+      globalThis.__stageFlowToolsLocalDatabaseClient = undefined
       sqlite.close()
     }
   })

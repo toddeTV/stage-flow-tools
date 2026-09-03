@@ -50,7 +50,9 @@ export function seedDevelopmentDatabase(
   try {
     applyLocalMigrations(db)
     assertDevelopmentDatabaseIsEmpty(db)
-    db.insert(questions).values(developmentSeedQuestions.map(createSeedQuestionInsert)).run()
+    db.insert(questions).values(developmentSeedQuestions.map((question, sortOrder) => {
+      return createSeedQuestionInsert(question, sortOrder)
+    })).run()
 
     return {
       questionCount: developmentSeedQuestions.length,
