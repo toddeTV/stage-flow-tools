@@ -9,14 +9,13 @@ export const useQuizSocket = (channel = 'default') => {
   const totalConnections = ref(0)
   const userId = useLocalStorage<string | null>('quiz-user-id', null)
 
-  /**
-   * Clear selected answer state and remove the client-side stored answer for a question.
-   * @param questionId Question identifier used for the session storage key.
-   */
-  function clearStoredAnswer(questionId: string) {
-    selectedAnswer.value = null
+  /** Removes a client-side stored answer and optionally clears the visible selection. */
+  function clearStoredAnswer(questionId: string, clearVisibleSelection = true) {
+    if (clearVisibleSelection) {
+      selectedAnswer.value = null
+    }
 
-    if (import.meta.client) {
+    if (typeof sessionStorage !== 'undefined') {
       sessionStorage.removeItem(`answer-${questionId}`)
     }
   }
@@ -83,9 +82,10 @@ export const useQuizSocket = (channel = 'default') => {
         }
       }
       else if (parsed.event === 'answers-reset') {
-        if (activeQuestion.value && activeQuestion.value.id === parsed.data.questionId) {
-          clearStoredAnswer(parsed.data.questionId)
-        }
+        clearStoredAnswer(
+          parsed.data.questionId,
+          activeQuestion.value?.id === parsed.data.questionId,
+        )
       }
       else if (parsed.event === 'results-update') {
         results.value = parsed.data

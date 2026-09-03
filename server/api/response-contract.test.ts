@@ -120,4 +120,12 @@ describe('POST response contract', () => {
     expect(source).toContain('resetAnswers')
     expect(source).toContain("throwApiError(409, 'quiz.question_answers_reset_required')")
   })
+
+  it('broadcasts confirmed answer resets even when the edited question is inactive', async () => {
+    const source = await readSource('server/api/questions/update.post.ts')
+    const answerResetBroadcast = "broadcast('answers-reset', { questionId: question.id }, WebSocketChannel.DEFAULT)"
+
+    expect(source).toContain(answerResetBroadcast)
+    expect(source.indexOf(answerResetBroadcast)).toBeLessThan(source.indexOf('if (question.is_active)'))
+  })
 })

@@ -81,10 +81,11 @@ or editing the active question.
 
 #### `answers-reset`
 
-Sent on the default channel when an admin clears all answers for the current active
-question, including a confirmed answer-option change that resets its submitted answers.
+Sent on the default channel when an admin clears answers, including a confirmed
+answer-option change that resets a question's submitted answers.
 
-Clients should clear local answer state for matching `questionId` so voting can start fresh if question stays unlocked.
+Clients should clear the local stored answer for the matching `questionId`. They should
+clear the visible selection only when that question is active.
 
 ```json
 {
