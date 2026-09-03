@@ -1,13 +1,35 @@
 <script setup lang="ts">
+import { safeParse } from 'valibot'
+import {
+  getValidationIssues,
+  LoginRequestSchema,
+} from '#shared/utils/validation'
+
 const loginForm = ref({ username: '', password: '' })
 const loginError = ref('')
+const loginFieldErrors = ref<Record<string, string>>({})
+const { getErrorMessage, getIssueMessage } = useApiError()
 
 async function handleLogin() {
+  loginFieldErrors.value = {}
+
+  const result = safeParse(LoginRequestSchema, loginForm.value)
+
+  if (!result.success) {
+    loginFieldErrors.value = Object.fromEntries(
+      getValidationIssues(result.issues).map(issue => [
+        issue.path[0] || 'form',
+        getIssueMessage(issue),
+      ]),
+    )
+    return
+  }
+
   try {
     loginError.value = ''
     await $fetch('/api/auth/login', {
       method: 'POST',
-      body: loginForm.value,
+      body: result.output,
     })
 
     const router = useRouter()
@@ -28,8 +50,7 @@ async function handleLogin() {
     router.push(redirectPath)
   }
   catch (error: unknown) {
-    const fetchError = error as { data?: { statusMessage?: string } }
-    loginError.value = fetchError.data?.statusMessage || 'Login failed'
+    loginError.value = getErrorMessage(error, 'auth.credentials_invalid')
   }
 }
 </script>
@@ -40,13 +61,37 @@ async function handleLogin() {
       Admin Login
     </h1>
     <form class="flex flex-col gap-4" @submit.prevent="handleLogin">
-      <UiInput v-model="loginForm.username" placeholder="Username" required />
+      <UiInput
+        v-model="loginForm.username"
+        :aria-describedby="loginFieldErrors.username ? 'login-username-error' : undefined"
+        :aria-invalid="Boolean(loginFieldErrors.username)"
+        placeholder="Username"
+        required
+      />
+      <p
+        v-if="loginFieldErrors.username"
+        id="login-username-error"
+        class="text-sm"
+        role="alert"
+      >
+        {{ loginFieldErrors.username }}
+      </p>
       <UiInput
         v-model="loginForm.password"
+        :aria-describedby="loginFieldErrors.password ? 'login-password-error' : undefined"
+        :aria-invalid="Boolean(loginFieldErrors.password)"
         placeholder="Password"
         required
         type="password"
       />
+      <p
+        v-if="loginFieldErrors.password"
+        id="login-password-error"
+        class="text-sm"
+        role="alert"
+      >
+        {{ loginFieldErrors.password }}
+      </p>
       <UiButton type="submit">
         Login
       </UiButton>
