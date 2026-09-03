@@ -6,7 +6,7 @@ This is an inventory, not a complete redistribution license bundle.
 
 Project source code remains governed by `LICENSE`. Third-party packages remain governed by their own license terms.
 
-Package count: 37
+Package count: 39
 
 ## Packages
 
@@ -30,12 +30,30 @@ Package count: 37
 - Included license files: LICENSE
 - Included notice files: none found
 
+### @iconify-json/ph
+
+- Declared as: devDependencies (~1.2.2)
+- Installed version: 1.2.2
+- License: MIT
+- Homepage: https://icon-sets.iconify.design/ph/
+- Included license files: none found
+- Included notice files: none found
+
 ### @nuxt/eslint
 
 - Declared as: devDependencies (~1.17.0)
 - Installed version: 1.17.0
 - License: MIT
 - Repository: git+https://github.com/nuxt/eslint.git
+- Included license files: LICENSE
+- Included notice files: none found
+
+### @nuxt/icon
+
+- Declared as: devDependencies (~2.5.1)
+- Installed version: 2.5.1
+- License: MIT
+- Repository: nuxt/icon
 - Included license files: LICENSE
 - Included notice files: none found
 

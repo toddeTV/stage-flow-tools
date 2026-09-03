@@ -82,8 +82,20 @@ const configModules: InputConfig<NuxtConfig, ConfigLayerMeta> = {
 }
 
 export default defineNuxtConfig({
+  icon: {
+    clientBundle: {
+      icons: [
+        'ph:arrow-down',
+        'ph:arrow-up',
+      ],
+      scan: false,
+    },
+    provider: 'none',
+  },
+
   modules: [
     '@nuxt/eslint',
+    '@nuxt/icon',
     '@nuxtjs/i18n',
     '@vueuse/nuxt',
   ],
