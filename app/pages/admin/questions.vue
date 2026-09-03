@@ -1,9 +1,14 @@
 <script setup lang="ts">
+import { safeParse } from 'valibot'
 import type {
   InputQuestion,
   LocalizedString,
   Question,
 } from '~/types'
+import {
+  getValidationIssues,
+  QuestionInputSchema,
+} from '#shared/utils/validation'
 
 definePageMeta({
   layout: 'default',
@@ -60,48 +65,56 @@ function isQuestionEditable(question: Question): boolean {
   return !question.is_active && !question.alreadyPublished
 }
 
-function parseQuestionFormPayload(): InputQuestion {
-  const parsedNote = questionForm.value.note.trim() ? JSON.parse(questionForm.value.note) : undefined
+function parseQuestionFormPayload(): InputQuestion | undefined {
+  questionFormErrors.value = {}
+  let hasJsonError = false
 
-  return {
+  function parseJsonValue(value: string, path: string): unknown {
+    try {
+      return JSON.parse(value)
+    }
+    catch {
+      hasJsonError = true
+      questionFormErrors.value[path] = getIssueMessage({
+        code: 'validation.invalid_json',
+        path: [
+          path,
+        ],
+      })
+      return undefined
+    }
+  }
+
+  const questionText = parseJsonValue(questionForm.value.question_text, 'question_text')
+  const answerOptions = questionForm.value.answer_options.map((option, index) => ({
+    text: parseJsonValue(option.text, `answer_options.${index}.text`),
+    emoji: option.emoji,
+  }))
+  const parsedNote = questionForm.value.note.trim()
+    ? parseJsonValue(questionForm.value.note, 'note')
+    : undefined
+
+  if (hasJsonError) {
+    return undefined
+  }
+
+  const result = safeParse(QuestionInputSchema, {
     key: questionForm.value.key,
-    question_text: JSON.parse(questionForm.value.question_text) as LocalizedString,
-    answer_options: questionForm.value.answer_options.map(option => ({
-      text: JSON.parse(option.text) as LocalizedString,
-      emoji: option.emoji,
-    })),
+    question_text: questionText,
+    answer_options: answerOptions,
     note: parsedNote,
-  }
-}
+  })
 
-function getRequestErrorMessage(error: unknown, fallbackMessage: string): string {
-  if (typeof error === 'object' && error !== null) {
-    const statusMessage = 'statusMessage' in error && typeof error.statusMessage === 'string'
-      ? error.statusMessage
-      : undefined
-
-    if (statusMessage) {
-      return statusMessage
+  if (!result.success) {
+    for (const issue of getValidationIssues(result.issues)) {
+      const path = issue.path.join('.') || 'form'
+      questionFormErrors.value[path] ??= getIssueMessage(issue)
     }
 
-    const data = 'data' in error && typeof error.data === 'object' && error.data !== null
-      ? error.data as { statusMessage?: unknown, message?: unknown }
-      : undefined
-
-    if (typeof data?.statusMessage === 'string') {
-      return data.statusMessage
-    }
-
-    if (typeof data?.message === 'string') {
-      return data.message
-    }
+    return undefined
   }
 
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
-
-  return fallbackMessage
+  return result.output as InputQuestion
 }
 
 const activeQuestion = ref<Question | null>(null)
@@ -111,9 +124,11 @@ const editingQuestionId = ref<string | null>(null)
 const isSavingQuestion = ref(false)
 const isResettingAnswers = ref(false)
 const questionForm = ref<QuestionForm>(createDefaultQuestionForm())
+const questionFormErrors = ref<Record<string, string>>({})
 const isEditMode = computed(() => editingQuestionId.value !== null)
 const formTitle = computed(() => isEditMode.value ? t('editQuestionTitle') : t('prepareNextQuestion'))
 const submitButtonLabel = computed(() => isEditMode.value ? t('saveQuestion') : t('createQuestion'))
+const { getErrorMessage, getIssueMessage } = useApiError()
 
 // Load questions
 const { data: fetchedQuestions, error: fetchError, refresh: loadQuestions } = useFetch<Question[]>('/api/questions')
@@ -163,13 +178,9 @@ function cancelEditingQuestion() {
 
 // Create or update question
 async function handleSaveQuestion() {
-  let payload: InputQuestion
+  const payload = parseQuestionFormPayload()
 
-  try {
-    payload = parseQuestionFormPayload()
-  }
-  catch {
-    alert(t('invalidJson'))
+  if (!payload) {
     return
   }
 
@@ -196,7 +207,7 @@ async function handleSaveQuestion() {
     cancelEditingQuestion()
   }
   catch (error: unknown) {
-    alert(getRequestErrorMessage(error, isEditMode.value ? t('failedUpdateQuestion') : t('failedCreateQuestion')))
+    alert(getErrorMessage(error))
   }
   finally {
     isSavingQuestion.value = false
@@ -216,8 +227,8 @@ async function publishQuestion(key: string) {
 
     // alert('Question published successfully')
   }
-  catch {
-    alert(t('failedPublishQuestion'))
+  catch (error) {
+    alert(getErrorMessage(error))
   }
 }
 
@@ -235,7 +246,7 @@ async function toggleLock() {
   }
   catch (error: unknown) {
     logger_error('Failed to toggle lock status from results page', error)
-    alert(t('failedToggleLock'))
+    alert(getErrorMessage(error))
   }
 }
 
@@ -248,8 +259,8 @@ async function unpublishActiveQuestion() {
     activeQuestion.value = null
     await loadQuestions()
   }
-  catch {
-    alert(t('failedUnpublish'))
+  catch (error) {
+    alert(getErrorMessage(error))
   }
 }
 
@@ -262,8 +273,8 @@ async function publishNextQuestion() {
     activeQuestion.value = question
     await loadQuestions()
   }
-  catch {
-    alert(t('failedPublishNext'))
+  catch (error) {
+    alert(getErrorMessage(error))
   }
 }
 
@@ -291,7 +302,7 @@ async function resetAnswers() {
   }
   catch (error: unknown) {
     logger_error('Failed to reset answers from questions page', error)
-    alert(t('failedResetAnswers'))
+    alert(getErrorMessage(error))
   }
   finally {
     isResettingAnswers.value = false
@@ -385,21 +396,34 @@ function removeOption(index: number) {
             />
             <textarea
               v-model="questionForm.question_text"
+              :aria-describedby="questionFormErrors.question_text ? 'question-text-error' : undefined"
+              :aria-invalid="Boolean(questionFormErrors.question_text)"
               class="json-textarea min-h-[100px]"
               :placeholder="t('questionTextPlaceholder')"
               required
             />
+            <p v-if="questionFormErrors.question_text" id="question-text-error" role="alert">
+              {{ questionFormErrors.question_text }}
+            </p>
 
             <textarea
               v-model="questionForm.note"
+              :aria-describedby="questionFormErrors.note ? 'note-error' : undefined"
+              :aria-invalid="Boolean(questionFormErrors.note)"
               class="json-textarea min-h-[70px]"
               :placeholder="t('notePlaceholder')"
             />
+            <p v-if="questionFormErrors.note" id="note-error" role="alert">
+              {{ questionFormErrors.note }}
+            </p>
 
             <div>
               <h3 class="mb-2.5 text-lg">
                 {{ t('answerOptions') }}
               </h3>
+              <p v-if="questionFormErrors.answer_options" role="alert">
+                {{ questionFormErrors.answer_options }}
+              </p>
               <div
                 v-for="(option, index) in questionForm.answer_options"
                 :key="index"
@@ -407,17 +431,39 @@ function removeOption(index: number) {
               >
                 <textarea
                   v-model="option.text"
+                  :aria-describedby="questionFormErrors[`answer_options.${index}.text`]
+                    ? `answer-option-${index}-text-error`
+                    : undefined"
+                  :aria-invalid="Boolean(questionFormErrors[`answer_options.${index}.text`])"
                   class="json-textarea min-h-[70px] flex-1"
                   :placeholder="t('optionPlaceholder', { n: index + 1 })"
                   required
                 />
+                <p
+                  v-if="questionFormErrors[`answer_options.${index}.text`]"
+                  :id="`answer-option-${index}-text-error`"
+                  role="alert"
+                >
+                  {{ questionFormErrors[`answer_options.${index}.text`] }}
+                </p>
                 <UiInput
+                  :aria-describedby="questionFormErrors[`answer_options.${index}.emoji`]
+                    ? `answer-option-${index}-emoji-error`
+                    : undefined"
+                  :aria-invalid="Boolean(questionFormErrors[`answer_options.${index}.emoji`])"
                   class="w-24"
                   maxlength="10"
                   :model-value="option.emoji || ''"
                   :placeholder="t('emojiPlaceholder')"
                   @update:model-value="option.emoji = String($event || '').trim() || undefined"
                 />
+                <p
+                  v-if="questionFormErrors[`answer_options.${index}.emoji`]"
+                  :id="`answer-option-${index}-emoji-error`"
+                  role="alert"
+                >
+                  {{ questionFormErrors[`answer_options.${index}.emoji`] }}
+                </p>
                 <UiButton
                   v-if="questionForm.answer_options.length > 2"
                   type="button"
@@ -535,19 +581,8 @@ en:
   editBlockedPublished: Edit disabled for already published question.
   allQuestions: All Questions
   publishThisQuestion: Publish This Question
-  validationQuestionEnRequired: "Question text must have a non-empty English (\"en\") value."
-  validationMinOptions: 'At least 2 answer options with an "en" key are required.'
-  validationOptionEnRequired: "Each answer option must have a non-empty English (\"en\") text."
   optionPlaceholder: "Option {n} JSON"
   emojiPlaceholder: Emoji
-  invalidJson: Invalid JSON in question form.
-  failedCreateQuestion: Failed to create question.
-  failedUpdateQuestion: Failed to update question.
-  failedPublishQuestion: Failed to publish question.
-  failedToggleLock: Failed to toggle lock status.
-  failedResetAnswers: Failed to reset answers.
-  failedUnpublish: Failed to unpublish active question.
-  failedPublishNext: Failed to publish next question. There may be no unpublished questions left.
 de:
   pageTitle: Admin-Dashboard
   currentActiveQuestion: Aktuelle aktive Frage
@@ -582,21 +617,8 @@ de:
   editBlockedPublished: Bearbeitung für bereits veröffentlichte Frage deaktiviert.
   allQuestions: Alle Fragen
   publishThisQuestion: Diese Frage veröffentlichen
-  validationQuestionEnRequired: "Fragetext muss einen nicht-leeren englischen (\"en\") Wert haben."
-  validationMinOptions: 'Mindestens 2 Antwortoptionen mit einem "en"-Schlüssel sind erforderlich.'
-  validationOptionEnRequired: "Jede Antwortoption muss einen nicht-leeren englischen (\"en\") Text haben."
   optionPlaceholder: "Option {n} JSON"
   emojiPlaceholder: Emoji
-  invalidJson: Ungültiges JSON im Fragenformular.
-  failedCreateQuestion: Frage konnte nicht erstellt werden.
-  failedUpdateQuestion: Frage konnte nicht aktualisiert werden.
-  failedPublishQuestion: Frage konnte nicht veröffentlicht werden.
-  failedToggleLock: Sperrstatus konnte nicht geändert werden.
-  failedResetAnswers: Antworten konnten nicht zurückgesetzt werden.
-  failedUnpublish: Veröffentlichung konnte nicht zurückgezogen werden.
-  failedPublishNext: >-
-    Nächste Frage konnte nicht veröffentlicht werden.
-    Möglicherweise gibt es keine unveröffentlichten Fragen mehr.
 ja:
   pageTitle: 管理ダッシュボード
   currentActiveQuestion: 現在のアクティブな質問
@@ -631,19 +653,8 @@ ja:
   editBlockedPublished: 既に公開済みの質問は編集できません。
   allQuestions: 全ての質問
   publishThisQuestion: この質問を公開
-  validationQuestionEnRequired: "質問テキストには空でない英語（\"en\"）の値が必要です。"
-  validationMinOptions: '"en"キーを持つ回答オプションが2つ以上必要です。'
-  validationOptionEnRequired: "各回答オプションには空でない英語（\"en\"）テキストが必要です。"
   optionPlaceholder: "オプション {n} JSON"
   emojiPlaceholder: 絵文字
-  invalidJson: 質問フォームのJSONが不正です。
-  failedCreateQuestion: 質問の作成に失敗しました。
-  failedUpdateQuestion: 質問の更新に失敗しました。
-  failedPublishQuestion: 質問の公開に失敗しました。
-  failedToggleLock: ロック状態の切り替えに失敗しました。
-  failedResetAnswers: 回答のリセットに失敗しました。
-  failedUnpublish: 公開停止に失敗しました。
-  failedPublishNext: 次の質問の公開に失敗しました。未公開の質問がない可能性があります。
 </i18n>
 
 <style scoped>

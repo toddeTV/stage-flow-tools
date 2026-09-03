@@ -12,6 +12,7 @@ definePageMeta({
 const { results } = useQuizSocket('results')
 const { t } = useI18n()
 const { getLocalizedText } = useLocalization()
+const { getErrorMessage } = useApiError()
 
 // Look up the localized display text for a result key (English answer text)
 function getLocalizedOption(enKey: string): string {
@@ -147,7 +148,7 @@ function pickRandomUser(option: string) {
     },
   }).catch((error: unknown) => {
     logger_error('Failed to pick random user:', error)
-    alert('An error occurred while picking a random user. Please try again.')
+    alert(getErrorMessage(error))
   }).finally(() => {
     isPickingUser.value = false
   })
@@ -172,7 +173,7 @@ async function toggleLock() {
   catch (error: unknown) {
     results.value.question.is_locked = originalState // Revert on error
     logger_error('Failed to toggle lock status from results page', error)
-    alert('Failed to toggle lock status. See console for details.')
+    alert(getErrorMessage(error))
   }
   finally {
     isTogglingLock.value = false
@@ -188,7 +189,7 @@ async function publishNextQuestion() {
   }
   catch (error: unknown) {
     logger_error('Failed to publish next question', error)
-    alert('Failed to publish next question. Maybe there are no unpublished questions left.')
+    alert(getErrorMessage(error))
   }
 }
 
@@ -201,7 +202,7 @@ async function unpublishActiveQuestion() {
   }
   catch (error: unknown) {
     logger_error('Failed to unpublish active question', error)
-    alert('Failed to unpublish active question.')
+    alert(getErrorMessage(error))
   }
 }
 
@@ -226,7 +227,7 @@ async function resetAnswers() {
   }
   catch (error: unknown) {
     logger_error('Failed to reset answers from results page', error)
-    alert(t('failedResetAnswers'))
+    alert(getErrorMessage(error))
   }
   finally {
     isResettingAnswers.value = false
@@ -390,7 +391,6 @@ en:
   refreshButton: Refresh
   nextButton: Next
   confirmResetAnswers: Delete all submitted answers for current question?
-  failedResetAnswers: Failed to reset answers.
   votes: votes
   noActiveQuestion: No Active Question
   waitingForQuestion: Waiting for a question to be published...
@@ -408,7 +408,6 @@ de:
   refreshButton: Aktualisieren
   nextButton: Nächste
   confirmResetAnswers: Alle abgegebenen Antworten für die aktuelle Frage löschen?
-  failedResetAnswers: Antworten konnten nicht zurückgesetzt werden.
   votes: Stimmen
   noActiveQuestion: Keine aktive Frage
   waitingForQuestion: Warten auf die Veröffentlichung einer Frage...
@@ -426,7 +425,6 @@ ja:
   refreshButton: 更新
   nextButton: 次へ
   confirmResetAnswers: 現在の質問の回答を全て削除しますか？
-  failedResetAnswers: 回答のリセットに失敗しました。
   votes: 票
   noActiveQuestion: アクティブな質問はありません
   waitingForQuestion: 質問が公開されるのを待っています...
