@@ -73,7 +73,14 @@ describe('POST response contract', () => {
   it('clears live question and results state when the active question is deleted', async () => {
     const source = await readSource('server/api/questions/delete.post.ts')
 
+    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
     expect(source).toContain("broadcast('new-question', null)")
     expect(source).toContain("broadcast('results-update', null, WebSocketChannel.RESULTS)")
+  })
+
+  it('cancels buffered results when the active question is unpublished', async () => {
+    const source = await readSource('server/api/questions/unpublish-active.post.ts')
+
+    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
   })
 })

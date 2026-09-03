@@ -119,6 +119,21 @@ export function scheduleResultsUpdate(data: Results, channel: WebSocketChannel) 
   resultsBuffers.set(channel, state)
 }
 
+/** Cancels a buffered results update so cleared state cannot be overwritten later. */
+export function clearScheduledResultsUpdate(channel: WebSocketChannel) {
+  const state = resultsBuffers.get(channel)
+
+  if (!state) {
+    return
+  }
+
+  if (state.timeoutId) {
+    clearTimeout(state.timeoutId)
+  }
+
+  resultsBuffers.delete(channel)
+}
+
 function scheduleEmojiBatch(): void {
   if (emojiTimeoutId !== undefined) {
     return
