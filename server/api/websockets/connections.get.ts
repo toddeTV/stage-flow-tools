@@ -1,4 +1,4 @@
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 
   const peers = await getPeers()
