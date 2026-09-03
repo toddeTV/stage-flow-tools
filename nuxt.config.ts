@@ -26,6 +26,9 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
     adminToken: '',
     adminUsername: 'admin',
     drizzleStudioInternalPort: '64983',
+    emojiBatchMaxSize: 1200,
+    emojiBatchTickMs: 150,
+    emojiQueueMaxSize: 25000,
     jwtSecret: 'tryUJ0zQbstPbTOrezme+Fv+KndzDNRx5lmSeelr2ial2/2yV8HqLeQ2felJafqf',
 
     // Public keys (available on both client and server)
