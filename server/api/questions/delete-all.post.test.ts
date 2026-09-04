@@ -27,6 +27,15 @@ afterEach(() => {
 })
 
 describe('POST /api/questions/delete-all', () => {
+  it('stops before deleting when the admin origin check rejects the request', async () => {
+    const originError = new Error('cross-site request')
+    verifyAdmin.mockRejectedValueOnce(originError)
+
+    await expect(deleteAllQuestionsRoute({} as never)).rejects.toBe(originError)
+    expect(readValidatedRequestBody).not.toHaveBeenCalled()
+    expect(deleteAllQuestions).not.toHaveBeenCalled()
+  })
+
   it('clears pending live state after deleting every question and answer', async () => {
     deleteAllQuestions.mockResolvedValue(3)
 

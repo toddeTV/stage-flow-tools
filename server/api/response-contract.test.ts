@@ -79,11 +79,12 @@ describe('POST response contract', () => {
     expect(source).toContain("broadcast('new-question', serializePublicQuestion(question))")
   })
 
-  it('serializes both authentication failure branches as codes', async () => {
+  it('serializes authentication and origin failure branches as codes', async () => {
     const source = await readSource('server/utils/auth.ts')
 
     expect(source).toContain("throwApiError(401, 'auth.token_required')")
     expect(source).toContain("throwApiError(401, 'auth.token_invalid')")
+    expect(source).toContain("throwApiError(403, 'auth.origin_invalid')")
   })
 
   it('requires the same origin and admin authentication before opening a results WebSocket', async () => {

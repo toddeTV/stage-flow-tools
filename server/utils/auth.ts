@@ -58,6 +58,19 @@ function getTokenFromHeaders(headers: Headers): string | undefined {
   return getBearerToken(headers) || getCookieToken(headers)
 }
 
+function originsMatch(origin: string | null, requestUrl: string): boolean {
+  if (!origin) {
+    return false
+  }
+
+  try {
+    return new URL(origin).origin === new URL(requestUrl).origin
+  }
+  catch {
+    return false
+  }
+}
+
 /**
  * Extracts the admin auth token from cookies or headers.
  * @param event The H3 event object.
@@ -96,7 +109,20 @@ function getStaticAdminPayload(token: string, configuredToken: string): Verified
  * @param event The H3 event object.
  */
 export async function verifyAdmin(event: H3Event) {
-  return verifyAdminToken(getToken(event), useRuntimeConfig(event))
+  const verifiedAdmin = await verifyAdminToken(getToken(event), useRuntimeConfig(event))
+
+  if (
+    event.method !== 'GET'
+    && event.method !== 'HEAD'
+    && event.method !== 'OPTIONS'
+    && !getBearerToken(event.headers)
+    && getCookieToken(event.headers)
+    && !isSameOriginHttpRequest(event)
+  ) {
+    throwApiError(403, 'auth.origin_invalid')
+  }
+
+  return verifiedAdmin
 }
 
 /** Verifies the admin credentials from a WebSocket upgrade request. */
@@ -106,18 +132,12 @@ export async function verifyAdminWebSocket(request: Pick<Request, 'headers'>) {
 
 /** Returns whether a browser WebSocket upgrade originates from this application. */
 export function isSameOriginWebSocketRequest(request: Pick<Request, 'headers' | 'url'>): boolean {
-  const origin = request.headers.get('origin')
+  return originsMatch(request.headers.get('origin'), request.url)
+}
 
-  if (!origin) {
-    return false
-  }
-
-  try {
-    return new URL(origin).origin === new URL(request.url).origin
-  }
-  catch {
-    return false
-  }
+/** Returns whether a browser HTTP request originates from this application. */
+export function isSameOriginHttpRequest(event: H3Event): boolean {
+  return originsMatch(event.headers.get('origin'), getRequestURL(event).toString())
 }
 
 async function verifyAdminToken(

@@ -25,6 +25,7 @@ export default defineI18nConfig(() => ({
           credentials_invalid: 'Invalid username or password.',
           token_required: 'Authentication is required.',
           token_invalid: 'Your authentication has expired or is invalid.',
+          origin_invalid: 'This request must come from this application.',
         },
         quiz: {
           no_active_question: 'No active question is available.',
@@ -92,6 +93,7 @@ export default defineI18nConfig(() => ({
           credentials_invalid: 'Benutzername oder Passwort ist ungültig.',
           token_required: 'Anmeldung erforderlich.',
           token_invalid: 'Deine Anmeldung ist abgelaufen oder ungültig.',
+          origin_invalid: 'Diese Anfrage muss von dieser Anwendung stammen.',
         },
         quiz: {
           no_active_question: 'Keine aktive Frage verfügbar.',
@@ -159,6 +161,7 @@ export default defineI18nConfig(() => ({
           credentials_invalid: 'ユーザー名またはパスワードが無効です。',
           token_required: '認証が必要です。',
           token_invalid: '認証の有効期限が切れているか、無効です。',
+          origin_invalid: 'このリクエストは、このアプリケーションから送信する必要があります。',
         },
         quiz: {
           no_active_question: 'アクティブな質問はありません。',
