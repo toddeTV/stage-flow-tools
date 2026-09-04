@@ -78,9 +78,15 @@ Core view with 30px padding, 120% scale, and hidden results.
 
 ### `transparency`
 
-- **Type**: Number (decimal, clamped to max 1)
+- **Type**: Number (decimal, clamped to `0`–`1`)
 - **Default**: `1`
-- **Effect**: Sets emoji opacity. Values are clamped to maximum 1.0 (fully opaque).
+- **Effect**: Sets emoji opacity. Values are clamped from `0` (transparent) to `1` (fully opaque).
+
+### `background`
+
+- **Type**: Hex color (`#RRGGBB`)
+- **Default**: Not set (transparent)
+- **Effect**: Fills the emoji display viewport with the supplied color. Invalid values leave the transparent background unchanged.
 
 ### Examples
 
@@ -96,4 +102,61 @@ Emojis rendered at 50% opacity.
 
 /admin/emojis?scale=1.5&transparency=0.7
 Emojis at 150% size with 70% opacity.
+
+/admin/emojis?background=%23000000
+Emojis on a black background. Encode the `#` character as `%23` in URLs.
 ```
+
+## `/admin/leaderboard` Page
+
+### `core`
+
+- **Type**: Flag (presence check)
+- **Default**: Not set
+- **Effect**: Uses a projector-oriented table with large rank and score text. Winner draw, score masking, and manual refresh controls remain available.
+
+### `padding`
+
+- **Type**: Non-negative number (pixels)
+- **Default**: `0`
+- **Effect**: Adds padding around the leaderboard content in core view mode.
+
+### `scale`
+
+- **Type**: Positive number (decimal)
+- **Default**: `1`
+- **Effect**: Scales leaderboard content in core view mode.
+
+### `background`
+
+- **Type**: Hex color (`#RRGGBB`)
+- **Default**: Not set (the existing leaderboard grid background)
+- **Effect**: Replaces the leaderboard page background with the supplied color. Invalid values preserve the existing background.
+
+### `showUserId`
+
+- **Type**: Boolean (`true` | `false`)
+- **Default**: `true`
+- **Effect**: Shows technical participant IDs by default. Set to `false` for display surfaces that should show only nicknames, ranks, and scores.
+
+### `refresh`
+
+- **Type**: Non-negative integer (seconds)
+- **Default**: `5`
+- **Effect**: Fetches only leaderboard data at the selected interval without reloading the page. Set to `0` to disable automatic refresh. Invalid or negative values use the five-second default.
+- **Winner dialog**: An open draw or revealed-winner dialog is not closed or replaced by a refresh. The draw candidates and revealed winner remain fixed until the dialog is closed, even if the refreshed table no longer contains that winner.
+
+### Examples
+
+```text
+/admin/leaderboard
+Standard leaderboard with five-second data refresh and visible participant IDs.
+
+/admin/leaderboard?core&padding=20&scale=0.9&background=%23ffffff&showUserId=false&refresh=10
+Projector-oriented leaderboard with a white background, hidden technical IDs, and a ten-second data refresh interval.
+
+/admin/leaderboard?refresh=0
+Standard leaderboard with manual refresh only.
+```
+
+For `background`, encode the `#` character as `%23` in URLs.
