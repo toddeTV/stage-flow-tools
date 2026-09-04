@@ -48,6 +48,20 @@ describe('parseDisplayParameters', () => {
     })
   })
 
+  it('uses defaults for blank numeric values', () => {
+    expect(parseDisplayParameters({
+      padding: '',
+      refresh: '  ',
+      scale: '',
+      transparency: '',
+    })).toMatchObject({
+      padding: 0,
+      refreshIntervalMs: DEFAULT_REFRESH_INTERVAL_SECONDS * 1000,
+      scale: 1,
+      transparency: 1,
+    })
+  })
+
   it('allows refresh to be disabled without changing the other defaults', () => {
     expect(parseDisplayParameters({ refresh: '0' })).toMatchObject({
       refreshIntervalMs: 0,

@@ -20,7 +20,7 @@ function getSingleQueryValue(query: DisplayQuery, key: string): string | undefin
 }
 
 function parseNumber(value: string | undefined, fallback: number): number {
-  if (value === undefined) {
+  if (value === undefined || value.trim() === '') {
     return fallback
   }
 
