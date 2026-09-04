@@ -16,6 +16,7 @@ const props = defineProps<{
   errorMessage?: string
   isImporting: boolean
   isPreparingPreview: boolean
+  isPreviewReady: boolean
   questions: Question[]
 }>()
 
@@ -72,7 +73,7 @@ async function selectQuestionPackage(event: Event) {
 }
 
 function confirmImport() {
-  if (!questionPackage.value || props.isPreparingPreview || props.isImporting) {
+  if (!questionPackage.value || !props.isPreviewReady || props.isPreparingPreview || props.isImporting) {
     return
   }
 
@@ -119,7 +120,7 @@ function confirmImport() {
 
     <div class="flex flex-wrap gap-2.5">
       <UiButton
-        :disabled="!questionPackage || isPreparingPreview || isImporting"
+        :disabled="!questionPackage || !isPreviewReady || isPreparingPreview || isImporting"
         @click="confirmImport"
       >
         {{ isImporting ? t('importingQuestions') : t('importQuestions') }}

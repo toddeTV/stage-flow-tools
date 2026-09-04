@@ -101,6 +101,8 @@ const isClearingAllQuestions = ref(false)
 const isExportingQuestions = ref(false)
 const isImportingQuestions = ref(false)
 const isPreparingImportPreview = ref(false)
+const isImportPreviewReady = ref(false)
+let importPreviewRequestId = 0
 const questionForm = ref<QuestionForm>(createDefaultQuestionForm())
 const questionFormErrors = ref<Record<string, string>>({})
 const questionToPublish = ref<Question | null>(null)
@@ -133,6 +135,8 @@ function resetQuestionEditor() {
   questionForm.value = createDefaultQuestionForm()
   questionFormErrors.value = {}
   importError.value = undefined
+  isImportPreviewReady.value = false
+  importPreviewRequestId += 1
 }
 
 function closeQuestionDialog(force = false) {
@@ -171,6 +175,9 @@ function selectManualQuestionCreation() {
 function returnToQuestionChoices() {
   questionDialogMode.value = 'choice'
   importError.value = undefined
+  isPreparingImportPreview.value = false
+  isImportPreviewReady.value = false
+  importPreviewRequestId += 1
 }
 
 function parseQuestionFormPayload(): InputQuestion | undefined {
@@ -497,22 +504,32 @@ async function refreshQuestionsForImportPreview() {
 }
 
 async function handleQuestionPackageSelected(_questionPackage: QuestionPackage) {
+  const requestId = ++importPreviewRequestId
   importError.value = undefined
+  isImportPreviewReady.value = false
   isPreparingImportPreview.value = true
 
   try {
     await refreshQuestionsForImportPreview()
+
+    if (requestId === importPreviewRequestId) {
+      isImportPreviewReady.value = true
+    }
   }
   catch (error: unknown) {
-    importError.value = getErrorMessage(error)
+    if (requestId === importPreviewRequestId) {
+      importError.value = getErrorMessage(error)
+    }
   }
   finally {
-    isPreparingImportPreview.value = false
+    if (requestId === importPreviewRequestId) {
+      isPreparingImportPreview.value = false
+    }
   }
 }
 
 async function importQuestionPackage(questionPackage: QuestionPackage) {
-  if (isImportingQuestions.value || isPreparingImportPreview.value) {
+  if (!isImportPreviewReady.value || isImportingQuestions.value || isPreparingImportPreview.value) {
     return
   }
 
@@ -961,6 +978,7 @@ function removeOption(index: number) {
         :error-message="importError"
         :is-importing="isImportingQuestions"
         :is-preparing-preview="isPreparingImportPreview"
+        :is-preview-ready="isImportPreviewReady"
         :questions="allQuestions"
         @back="returnToQuestionChoices"
         @confirm="importQuestionPackage"
