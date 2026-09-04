@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { eq } from 'drizzle-orm'
 import type { Peer } from 'crossws'
+import type { QuestionPackage } from '~/types'
 import {
   afterEach,
   beforeEach,
@@ -25,10 +26,12 @@ import {
 } from '../database/schema'
 import {
   createQuestion,
+  deleteAllQuestions,
   deleteQuestion,
   getAnswersForQuestion,
   getNextPublishableQuestion,
   getQuestions,
+  importQuestionPackage,
   moveQuestion,
   publishQuestion,
   QuestionAnswerOptionsResetRequiredError,
@@ -59,6 +62,14 @@ function createInputQuestion(key: string) {
     key,
     note: undefined,
     question_text: { en: key },
+  }
+}
+
+function createQuestionPackage(questions: QuestionPackage['questions']): QuestionPackage {
+  return {
+    format: 'stage-flow-tools.question-package',
+    questions,
+    version: 1,
   }
 }
 
@@ -144,6 +155,125 @@ describe('question queue storage', () => {
       is_active: true,
     })
     expect(await getQuestions()).toEqual([])
+    expect(testClient.db.select().from(answers).all()).toEqual([])
+  })
+
+  it('adds package questions and updates matching keys without resetting answers or queue state', async () => {
+    const existing = await createQuestion(createInputQuestion('existing-question'))
+    const preserved = await createQuestion(createInputQuestion('preserved-question'))
+
+    testClient.db.update(questions).set({
+      alreadyPublished: true,
+      isActive: true,
+      isLocked: true,
+    }).where(eq(questions.id, existing.id)).run()
+    testClient.db.insert(answers).values({
+      id: 'answer-id',
+      questionId: existing.id,
+      selectedAnswer: JSON.stringify({ en: 'One' }),
+      timestamp: '2026-09-04T00:00:00.000Z',
+      userId: 'participant-id',
+      userNickname: 'Participant',
+    }).run()
+
+    const result = await importQuestionPackage(createQuestionPackage([
+      {
+        answer_options: [
+          { text: { en: 'Updated one' } },
+          { text: { en: 'Updated two' } },
+        ],
+        is_disabled: true,
+        key: existing.key,
+        note: { en: 'Updated note' },
+        question_text: { en: 'Updated question' },
+      },
+      {
+        answer_options: [
+          { text: { en: 'New one' } },
+          { text: { en: 'New two' } },
+        ],
+        is_disabled: false,
+        key: 'new-question',
+        question_text: { en: 'New question' },
+      },
+      {
+        answer_options: [
+          { text: { en: 'Generated one' } },
+          { text: { en: 'Generated two' } },
+        ],
+        is_disabled: false,
+        question_text: { en: 'Generated question' },
+      },
+    ]))
+
+    expect(result).toMatchObject({
+      activeQuestion: {
+        id: existing.id,
+        is_active: true,
+        is_locked: true,
+        key: existing.key,
+      },
+      createdCount: 2,
+      updatedCount: 1,
+    })
+    expect((await getQuestions()).map(question => question.key)).toEqual([
+      existing.key,
+      preserved.key,
+      'new-question',
+      expect.any(String),
+    ])
+    expect((await getQuestions())[0]).toMatchObject({
+      alreadyPublished: true,
+      id: existing.id,
+      is_disabled: true,
+      is_locked: true,
+      note: { en: 'Updated note' },
+      question_text: { en: 'Updated question' },
+      sortOrder: existing.sortOrder,
+    })
+    await expect(getAnswersForQuestion(existing.id)).resolves.toMatchObject([
+      { selected_answer: { en: 'One' } },
+    ])
+  })
+
+  it('rolls back every package change when a duplicate key reaches storage', async () => {
+    const existing = await createQuestion(createInputQuestion('existing-question'))
+
+    await expect(importQuestionPackage(createQuestionPackage([
+      {
+        ...createInputQuestion(existing.key),
+        is_disabled: false,
+        question_text: { en: 'This must roll back' },
+      },
+      {
+        ...createInputQuestion('duplicate-new-question'),
+        is_disabled: false,
+      },
+      {
+        ...createInputQuestion('duplicate-new-question'),
+        is_disabled: false,
+      },
+    ]))).rejects.toThrow()
+
+    await expect(getQuestions()).resolves.toMatchObject([
+      { question_text: { en: 'existing-question' } },
+    ])
+    await expect(getQuestions()).resolves.toHaveLength(1)
+  })
+
+  it('deletes all questions and answers together', async () => {
+    const question = await createQuestion(createInputQuestion('question-to-clear'))
+    testClient.db.insert(answers).values({
+      id: 'answer-id',
+      questionId: question.id,
+      selectedAnswer: JSON.stringify({ en: 'One' }),
+      timestamp: '2026-09-04T00:00:00.000Z',
+      userId: 'participant-id',
+      userNickname: 'Participant',
+    }).run()
+
+    await expect(deleteAllQuestions()).resolves.toBe(1)
+    await expect(getQuestions()).resolves.toEqual([])
     expect(testClient.db.select().from(answers).all()).toEqual([])
   })
 
