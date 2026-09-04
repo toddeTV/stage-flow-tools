@@ -38,6 +38,7 @@ type ConfettiInstance = ReturnType<ConfettiModule['default']['create']>
 
 const isLoading = ref(false)
 const hasError = ref(false)
+const hasLoadedLeaderboard = ref(false)
 const isOver9000Mode = ref(false)
 const showUserId = ref(initialShowUserId.value)
 const leaderboard = ref<LeaderboardEntry[]>([])
@@ -211,19 +212,23 @@ async function fetchLeaderboard() {
   }
 
   isLoading.value = true
-  hasError.value = false
+  if (!hasLoadedLeaderboard.value) {
+    hasError.value = false
+  }
+
   try {
     const data = await $fetch<LeaderboardResponse>('/api/results/leaderboard')
     leaderboard.value = data.leaderboard
     totalPublishedQuestions.value = data.totalPublishedQuestions
     totalQuestionsWithCorrectAnswers.value = data.totalQuestionsWithCorrectAnswers
+    hasLoadedLeaderboard.value = true
+    hasError.value = false
   }
   catch (error: unknown) {
     logger_error('Failed to fetch leaderboard', error)
-    hasError.value = true
-    leaderboard.value = []
-    totalPublishedQuestions.value = 0
-    totalQuestionsWithCorrectAnswers.value = 0
+    if (!hasLoadedLeaderboard.value) {
+      hasError.value = true
+    }
   }
   finally {
     isLoading.value = false
@@ -317,7 +322,7 @@ watch(refreshIntervalMs, restartPolling)
       </div>
 
       <UiSection :bare="isCoreView">
-        <p v-if="isLoading" class="status-message">
+        <p v-if="isLoading && !hasLoadedLeaderboard" class="status-message">
           {{ t('loading') }}
         </p>
 

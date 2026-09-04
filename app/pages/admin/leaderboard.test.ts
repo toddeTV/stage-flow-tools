@@ -206,6 +206,34 @@ describe('leaderboard display mode', () => {
     rendered.app.unmount()
   })
 
+  it('keeps the last successful leaderboard visible during failed background refreshes', async () => {
+    vi.useFakeTimers()
+    let rejectRefresh: (reason?: unknown) => void
+    const pendingRefresh = new Promise<typeof initialResponse>((_resolve, reject) => {
+      rejectRefresh = reject
+    })
+    const fetchLeaderboard = vi.fn()
+      .mockResolvedValueOnce(initialResponse)
+      .mockReturnValueOnce(pendingRefresh)
+    vi.stubGlobal('$fetch', fetchLeaderboard)
+
+    const rendered = renderPage()
+    await flushAsyncState()
+    await vi.advanceTimersByTimeAsync(5000)
+    await nextTick()
+
+    expect(rendered.container.textContent).toContain('Alice')
+    expect(rendered.container.textContent).not.toContain('loading')
+
+    rejectRefresh!(new Error('Network error'))
+    await flushAsyncState()
+
+    expect(rendered.container.textContent).toContain('Alice')
+    expect(rendered.container.textContent).not.toContain('error')
+
+    rendered.app.unmount()
+  })
+
   it('does not start a second polling request while one is still loading', async () => {
     vi.useFakeTimers()
     let resolveFetch: (response: typeof initialResponse) => void
