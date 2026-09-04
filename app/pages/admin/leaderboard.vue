@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDisplayParameters } from '~/composables/useDisplayParameters'
 import { pickRandomItem } from '~/utils/pickRandomItem'
 
 definePageMeta({
@@ -10,6 +11,13 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+const {
+  backgroundStyles,
+  coreViewStyles,
+  isCoreView,
+  refreshIntervalMs,
+  showUserId,
+} = useDisplayParameters()
 
 interface LeaderboardEntry {
   rank: number
@@ -37,9 +45,11 @@ const totalQuestionsWithCorrectAnswers = ref(0)
 const isWinnerModalOpen = ref(false)
 const winnerModalPhase = ref<WinnerModalPhase>('ready')
 const selectedWinner = ref<LeaderboardEntry>()
+const selectedWinnerTotalPublishedQuestions = ref(0)
 const winnerDialog = ref<HTMLDialogElement>()
 const winnerConfettiCanvas = ref<HTMLCanvasElement>()
 let winnerTimer: ReturnType<typeof setTimeout> | undefined
+let refreshTimer: ReturnType<typeof setInterval> | undefined
 let confettiModule: Promise<ConfettiModule> | undefined
 let winnerConfetti: ConfettiInstance | undefined
 
@@ -143,6 +153,7 @@ function resetWinnerModal() {
   isWinnerModalOpen.value = false
   winnerModalPhase.value = 'ready'
   selectedWinner.value = undefined
+  selectedWinnerTotalPublishedQuestions.value = 0
 }
 
 function closeWinnerModal() {
@@ -165,11 +176,16 @@ function openWinnerModal() {
 function startWinnerDraw() {
   if (winnerModalPhase.value !== 'ready') return
 
+  const candidates = [
+    ...topRankedEntries.value,
+  ]
+  const totalPublishedQuestionsAtDrawStart = totalPublishedQuestions.value
+
   winnerModalPhase.value = 'drawing'
   preloadConfetti()
   winnerTimer = setTimeout(() => {
     winnerTimer = undefined
-    const winner = pickRandomItem(topRankedEntries.value)
+    const winner = pickRandomItem(candidates)
 
     if (!winner) {
       closeWinnerModal()
@@ -177,6 +193,7 @@ function startWinnerDraw() {
     }
 
     selectedWinner.value = winner
+    selectedWinnerTotalPublishedQuestions.value = totalPublishedQuestionsAtDrawStart
     winnerModalPhase.value = 'revealed'
     void celebrateWinner()
   }, 750)
@@ -184,7 +201,10 @@ function startWinnerDraw() {
 
 /** Fetch leaderboard data from the API. */
 async function fetchLeaderboard() {
-  closeWinnerModal()
+  if (isLoading.value) {
+    return
+  }
+
   isLoading.value = true
   hasError.value = false
   try {
@@ -205,195 +225,238 @@ async function fetchLeaderboard() {
   }
 }
 
+function stopPolling() {
+  if (refreshTimer === undefined) {
+    return
+  }
+
+  clearInterval(refreshTimer)
+  refreshTimer = undefined
+}
+
+function restartPolling() {
+  stopPolling()
+
+  if (refreshIntervalMs.value === 0) {
+    return
+  }
+
+  refreshTimer = setInterval(() => {
+    void fetchLeaderboard()
+  }, refreshIntervalMs.value)
+}
+
 onMounted(() => {
-  fetchLeaderboard()
+  void fetchLeaderboard()
+  restartPolling()
 })
 
 onBeforeUnmount(() => {
+  stopPolling()
   clearWinnerTimer()
   clearWinnerConfetti()
 })
+
+watch(refreshIntervalMs, restartPolling)
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl p-5">
-    <UiPageTitle>{{ t('title') }}</UiPageTitle>
+  <div class="min-h-screen" :style="backgroundStyles">
+    <div :class="isCoreView ? 'min-h-screen' : 'mx-auto max-w-3xl p-5'" :style="coreViewStyles">
+      <UiPageTitle v-if="!isCoreView">
+        {{ t('title') }}
+      </UiPageTitle>
 
-    <div class="mb-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <p class="text-sm text-gray-500">
-        {{ t('scoredQuestions', { count: totalQuestionsWithCorrectAnswers }) }}
-      </p>
-      <div class="flex gap-2">
-        <UiButton
-          :disabled="isLoading || isWinnerModalOpen || topRankedEntries.length === 0"
-          size="small"
-          @click="openWinnerModal"
-        >
-          {{ t('drawWinner') }}
-        </UiButton>
-        <UiButton
-          :aria-pressed="isOver9000Mode"
-          :disabled="isLoading || leaderboard.length === 0"
-          size="small"
-          :variant="isOver9000Mode ? 'primary' : 'secondary'"
-          @click="toggleOver9000Mode"
-        >
-          {{ isOver9000Mode ? t('showScores') : t('over9000') }}
-        </UiButton>
-        <UiButton
-          :disabled="isLoading"
-          size="small"
-          variant="secondary"
-          @click="fetchLeaderboard"
-        >
-          {{ t('refresh') }}
-        </UiButton>
-      </div>
-    </div>
-
-    <UiSection>
-      <p v-if="isLoading" class="status-message">
-        {{ t('loading') }}
-      </p>
-
-      <p
-        v-else-if="hasError"
-        class="status-message"
-      >
-        {{ t('error') }}
-      </p>
-
-      <p
-        v-else-if="leaderboard.length === 0"
-        class="status-message"
-      >
-        {{ t('empty') }}
-      </p>
-
-      <table v-else class="w-full border-collapse">
-        <thead>
-          <tr class="border-b-[3px] border-black text-left tracking-wide uppercase">
-            <th class="p-3 text-center">
-              {{ t('rank') }}
-            </th>
-            <th class="p-3">
-              {{ t('player') }}
-            </th>
-            <th class="p-3 text-center">
-              {{ t('correctAnswers') }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="entry in leaderboard"
-            :key="entry.userId"
-            class="border-b border-gray-300"
-          >
-            <td class="p-3 text-center text-xl font-bold">
-              {{ entry.rank }}
-            </td>
-            <td class="p-3">
-              {{ entry.nickname }}
-              <span class="ml-1 text-xs text-gray-400">({{ entry.userId }})</span>
-            </td>
-            <td class="p-3 text-center text-xl font-bold">
-              {{ isOver9000Mode ? '>9000' : entry.correctAnswers }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </UiSection>
-
-    <dialog
-      v-if="isWinnerModalOpen"
-      ref="winnerDialog"
-      :aria-busy="winnerModalPhase === 'drawing'"
-      :aria-describedby="winnerModalPhase === 'ready' ? 'winner-modal-description' : undefined"
-      aria-labelledby="winner-modal-title"
-      class="m-auto max-h-[calc(100dvh-2.5rem)] w-[calc(100%-2.5rem)] max-w-md
-        border-[3px] border-black bg-white p-6 text-black backdrop:bg-black/50"
-      @click.self="closeWinnerModal"
-      @close="resetWinnerModal"
-    >
-      <canvas
-        ref="winnerConfettiCanvas"
-        aria-hidden="true"
-        class="pointer-events-none fixed inset-0 z-10 h-dvh w-dvw"
-      />
-
-      <div class="relative z-20">
-        <p class="text-sm font-bold tracking-wide uppercase">
-          {{ t('winner') }}
+      <div class="mb-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-gray-500">
+          {{ t('scoredQuestions', { count: totalQuestionsWithCorrectAnswers }) }}
         </p>
-
-        <template v-if="winnerModalPhase === 'ready'">
-          <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
+        <div class="flex gap-2">
+          <UiButton
+            :disabled="isLoading || isWinnerModalOpen || topRankedEntries.length === 0"
+            size="small"
+            @click="openWinnerModal"
+          >
             {{ t('drawWinner') }}
-          </h2>
-
-          <div class="mt-6">
-            <UiButton @click="startWinnerDraw">
-              {{ t('drawWinner') }}
-            </UiButton>
-            <p id="winner-modal-description" class="mt-3 text-sm text-gray-600">
-              {{ t('winnerDrawHint') }}
-            </p>
-          </div>
-        </template>
-
-        <template v-else-if="winnerModalPhase === 'drawing'">
-          <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
-            {{ t('drawingWinner') }}
-          </h2>
-
-          <div aria-live="polite" class="mt-6 border-[3px] border-black bg-gray-100 p-8 text-center" role="status">
-            <div
-              aria-hidden="true"
-              class="mx-auto size-16 animate-spin border-[6px] border-black border-t-gray-300
-                motion-reduce:animate-none"
-            />
-            <p class="mt-4 text-sm font-bold tracking-wide uppercase">
-              {{ t('drawingWinner') }}
-            </p>
-          </div>
-        </template>
-
-        <template v-else-if="selectedWinner">
-          <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
-            {{ selectedWinner.nickname }}
-          </h2>
-
-          <dl class="mt-6 grid grid-cols-2 gap-3">
-            <div class="winner-stat">
-              <dt class="winner-stat-label">
-                {{ t('rank') }}
-              </dt>
-              <dd class="winner-stat-value">
-                {{ selectedWinner.rank }}
-              </dd>
-            </div>
-            <div class="winner-stat">
-              <dt class="winner-stat-label">
-                {{ t('correctAnswers') }}
-              </dt>
-              <dd class="winner-stat-value">
-                {{ selectedWinner.correctAnswers }}
-                <span class="ml-1 text-lg font-normal text-gray-400">
-                  / {{ totalPublishedQuestions }}
-                </span>
-              </dd>
-            </div>
-          </dl>
-        </template>
-
-        <div class="mt-6 flex justify-end">
-          <UiButton variant="secondary" @click="closeWinnerModal">
-            {{ t('close') }}
+          </UiButton>
+          <UiButton
+            :aria-pressed="isOver9000Mode"
+            :disabled="isLoading || leaderboard.length === 0"
+            size="small"
+            :variant="isOver9000Mode ? 'primary' : 'secondary'"
+            @click="toggleOver9000Mode"
+          >
+            {{ isOver9000Mode ? t('showScores') : t('over9000') }}
+          </UiButton>
+          <UiButton
+            :disabled="isLoading"
+            size="small"
+            variant="secondary"
+            @click="fetchLeaderboard"
+          >
+            {{ t('refresh') }}
           </UiButton>
         </div>
       </div>
-    </dialog>
+
+      <UiSection :bare="isCoreView">
+        <p v-if="isLoading" class="status-message">
+          {{ t('loading') }}
+        </p>
+
+        <p
+          v-else-if="hasError"
+          class="status-message"
+        >
+          {{ t('error') }}
+        </p>
+
+        <p
+          v-else-if="leaderboard.length === 0"
+          class="status-message"
+        >
+          {{ t('empty') }}
+        </p>
+
+        <table v-else :class="isCoreView ? 'w-full border-collapse bg-white' : 'w-full border-collapse'">
+          <thead>
+            <tr
+              :class="isCoreView
+                ? 'border-b-[3px] border-black bg-black text-left tracking-wide text-white uppercase'
+                : 'border-b-[3px] border-black text-left tracking-wide uppercase'"
+            >
+              <th :class="isCoreView ? 'p-5 text-center text-3xl' : 'p-3 text-center'">
+                {{ t('rank') }}
+              </th>
+              <th :class="isCoreView ? 'p-5 text-3xl' : 'p-3'">
+                {{ t('player') }}
+              </th>
+              <th :class="isCoreView ? 'p-5 text-center text-3xl' : 'p-3 text-center'">
+                {{ t('correctAnswers') }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="entry in leaderboard"
+              :key="entry.userId"
+              :class="isCoreView
+                ? [
+                  'border-b border-black',
+                  { 'bg-black text-white': entry.rank === 1 },
+                ]
+                : 'border-b border-gray-300'"
+            >
+              <td :class="isCoreView ? 'p-5 text-center text-5xl font-bold' : 'p-3 text-center text-xl font-bold'">
+                {{ entry.rank }}
+              </td>
+              <td :class="isCoreView ? 'p-5 text-4xl font-bold' : 'p-3'">
+                {{ entry.nickname }}
+                <span
+                  v-if="showUserId"
+                  :class="isCoreView ? 'ml-2 text-lg font-normal opacity-70' : 'ml-1 text-xs text-gray-400'"
+                >
+                  ({{ entry.userId }})
+                </span>
+              </td>
+              <td :class="isCoreView ? 'p-5 text-center text-5xl font-bold' : 'p-3 text-center text-xl font-bold'">
+                {{ isOver9000Mode ? '>9000' : entry.correctAnswers }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </UiSection>
+
+      <dialog
+        v-if="isWinnerModalOpen"
+        ref="winnerDialog"
+        :aria-busy="winnerModalPhase === 'drawing'"
+        :aria-describedby="winnerModalPhase === 'ready' ? 'winner-modal-description' : undefined"
+        aria-labelledby="winner-modal-title"
+        class="m-auto max-h-[calc(100dvh-2.5rem)] w-[calc(100%-2.5rem)] max-w-md
+        border-[3px] border-black bg-white p-6 text-black backdrop:bg-black/50"
+        @click.self="closeWinnerModal"
+        @close="resetWinnerModal"
+      >
+        <canvas
+          ref="winnerConfettiCanvas"
+          aria-hidden="true"
+          class="pointer-events-none fixed inset-0 z-10 h-dvh w-dvw"
+        />
+
+        <div class="relative z-20">
+          <p class="text-sm font-bold tracking-wide uppercase">
+            {{ t('winner') }}
+          </p>
+
+          <template v-if="winnerModalPhase === 'ready'">
+            <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
+              {{ t('drawWinner') }}
+            </h2>
+
+            <div class="mt-6">
+              <UiButton @click="startWinnerDraw">
+                {{ t('drawWinner') }}
+              </UiButton>
+              <p id="winner-modal-description" class="mt-3 text-sm text-gray-600">
+                {{ t('winnerDrawHint') }}
+              </p>
+            </div>
+          </template>
+
+          <template v-else-if="winnerModalPhase === 'drawing'">
+            <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
+              {{ t('drawingWinner') }}
+            </h2>
+
+            <div aria-live="polite" class="mt-6 border-[3px] border-black bg-gray-100 p-8 text-center" role="status">
+              <div
+                aria-hidden="true"
+                class="mx-auto size-16 animate-spin border-[6px] border-black border-t-gray-300
+                motion-reduce:animate-none"
+              />
+              <p class="mt-4 text-sm font-bold tracking-wide uppercase">
+                {{ t('drawingWinner') }}
+              </p>
+            </div>
+          </template>
+
+          <template v-else-if="selectedWinner">
+            <h2 id="winner-modal-title" class="mt-2 text-4xl leading-tight font-bold">
+              {{ selectedWinner.nickname }}
+            </h2>
+
+            <dl class="mt-6 grid grid-cols-2 gap-3">
+              <div class="winner-stat">
+                <dt class="winner-stat-label">
+                  {{ t('rank') }}
+                </dt>
+                <dd class="winner-stat-value">
+                  {{ selectedWinner.rank }}
+                </dd>
+              </div>
+              <div class="winner-stat">
+                <dt class="winner-stat-label">
+                  {{ t('correctAnswers') }}
+                </dt>
+                <dd class="winner-stat-value">
+                  {{ selectedWinner.correctAnswers }}
+                  <span class="ml-1 text-lg font-normal text-gray-400">
+                    / {{ selectedWinnerTotalPublishedQuestions }}
+                  </span>
+                </dd>
+              </div>
+            </dl>
+          </template>
+
+          <div class="mt-6 flex justify-end">
+            <UiButton variant="secondary" @click="closeWinnerModal">
+              {{ t('close') }}
+            </UiButton>
+          </div>
+        </div>
+      </dialog>
+    </div>
   </div>
 </template>
 
