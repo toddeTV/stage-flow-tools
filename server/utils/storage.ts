@@ -12,6 +12,7 @@ import type {
   Answer,
   InputQuestion,
   Question,
+  QuestionPackage,
   Results,
 } from '~/types'
 import {
@@ -41,6 +42,12 @@ export class QuestionAnswerOptionsResetRequiredError extends Error {
     super('Updating answer options with submitted answers requires a reset')
     this.name = 'QuestionAnswerOptionsResetRequiredError'
   }
+}
+
+export type QuestionPackageImportResult = {
+  activeQuestion?: Question
+  createdCount: number
+  updatedCount: number
 }
 
 function getDatabase() {
@@ -163,6 +170,90 @@ export async function createQuestion(
   getDatabase().insert(questions).values(row).run()
 
   return deserializeQuestion(row)
+}
+
+/** Adds new package questions and updates matching keys in one transaction. */
+export async function importQuestionPackage(
+  questionPackage: QuestionPackage,
+): Promise<QuestionPackageImportResult> {
+  await initStorage()
+
+  const result = getDatabase().transaction((transaction) => {
+    const storedQuestions = transaction
+      .select()
+      .from(questions)
+      .all()
+    const questionsByKey = new Map(storedQuestions.map(question => [
+      question.key,
+      question,
+    ]))
+    let nextSortOrder = Math.max(-1, ...storedQuestions.map(question => question.sortOrder)) + 1
+    let activeQuestionId: string | undefined
+    let createdCount = 0
+    let updatedCount = 0
+
+    for (const packageQuestion of questionPackage.questions) {
+      const questionInput: InputQuestion = {
+        key: packageQuestion.key ?? '',
+        question_text: packageQuestion.question_text,
+        answer_options: packageQuestion.answer_options,
+        note: packageQuestion.note,
+      }
+      const storedQuestion = questionInput.key
+        ? questionsByKey.get(questionInput.key)
+        : undefined
+
+      if (!storedQuestion) {
+        const questionRow = createQuestionInsert(questionInput, {
+          isDisabled: packageQuestion.is_disabled,
+          sortOrder: nextSortOrder,
+        })
+
+        transaction.insert(questions).values(questionRow).run()
+        nextSortOrder += 1
+        createdCount += 1
+        continue
+      }
+
+      const updatedQuestion = {
+        ...deserializeQuestion(storedQuestion),
+        ...questionInput,
+        is_disabled: packageQuestion.is_disabled,
+      } satisfies Question
+      const updatedRow = createStoredQuestionInsert(updatedQuestion)
+
+      transaction
+        .update(questions)
+        .set({
+          questionText: updatedRow.questionText,
+          answerOptions: updatedRow.answerOptions,
+          note: updatedRow.note,
+          isDisabled: updatedRow.isDisabled,
+        })
+        .where(eq(questions.id, storedQuestion.id))
+        .run()
+
+      if (storedQuestion.isActive) {
+        activeQuestionId = storedQuestion.id
+      }
+
+      updatedCount += 1
+    }
+
+    return {
+      activeQuestionId,
+      createdCount,
+      updatedCount,
+    }
+  })
+
+  return {
+    activeQuestion: result.activeQuestionId
+      ? getQuestionById(result.activeQuestionId)
+      : undefined,
+    createdCount: result.createdCount,
+    updatedCount: result.updatedCount,
+  }
 }
 
 /** Updates a question and resets submitted answers only when explicitly confirmed. */
@@ -350,6 +441,24 @@ export async function deleteQuestion(questionId: string): Promise<Question | und
   })
 
   return question
+}
+
+/** Deletes every question and submitted answer in one transaction. */
+export async function deleteAllQuestions(): Promise<number> {
+  await initStorage()
+
+  return getDatabase().transaction((transaction) => {
+    const deletedQuestionCount = transaction
+      .select({ id: questions.id })
+      .from(questions)
+      .all()
+      .length
+
+    transaction.delete(answers).run()
+    transaction.delete(questions).run()
+
+    return deletedQuestionCount
+  })
 }
 
 /** Deactivate the active question (answers are preserved for potential re-publishing). */

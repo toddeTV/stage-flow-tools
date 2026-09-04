@@ -24,6 +24,17 @@ export interface Question {
 export type InputQuestion = Omit<Question,
   'id' | 'is_active' | 'is_disabled' | 'is_locked' | 'sortOrder' | 'createdAt' | 'alreadyPublished'>
 
+export interface QuestionPackageQuestion extends Omit<InputQuestion, 'key'> {
+  key?: string
+  is_disabled: boolean
+}
+
+export interface QuestionPackage {
+  format: 'stage-flow-tools.question-package'
+  version: 1
+  questions: QuestionPackageQuestion[]
+}
+
 export interface Answer {
   id: string
   question_id: string

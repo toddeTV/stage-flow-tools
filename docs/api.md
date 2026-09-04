@@ -263,6 +263,42 @@ English `answer_options[].text.en` values must be unique. Matching is case-insen
 }
 ```
 
+### POST `/api/questions/import`
+
+Import a Version 1 question package (admin only). The full package is validated
+before one SQLite transaction adds new questions and updates questions with a
+matching non-empty `key`. Updated questions keep their answers, technical ID,
+queue position, and lifecycle state. Questions without a key receive a generated
+key. An updated active question is broadcast with recalculated results.
+
+```json
+{
+  "format": "stage-flow-tools.question-package",
+  "version": 1,
+  "questions": [
+    {
+      "key": "round-1-question-1",
+      "question_text": { "en": "Question" },
+      "answer_options": [
+        { "text": { "en": "Yes" } },
+        { "text": { "en": "No" } }
+      ],
+      "note": { "en": "Optional" },
+      "is_disabled": false
+    }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "createdCount": 1,
+  "updatedCount": 0
+}
+```
+
 ### POST `/api/questions/update`
 
 Update an existing question (admin only). Localized question and answer text may use any locale key; their non-empty English (`en`) value is required. Updating the active question broadcasts the updated question and a freshly calculated results update to connected participants.
@@ -359,6 +395,23 @@ Permanently delete a question and every submitted answer for it (admin only). De
 ```json
 {
   "questionId": "string",
+  "success": true
+}
+```
+
+### POST `/api/questions/delete-all`
+
+Permanently delete every question and submitted answer (admin only). The route
+uses one transaction, clears pending result updates, and broadcasts an empty
+question and results state.
+
+**Request:** No body required.
+
+**Response:**
+
+```json
+{
+  "deletedQuestionCount": 3,
   "success": true
 }
 ```

@@ -6,7 +6,7 @@ This is an inventory, not a complete redistribution license bundle.
 
 Project source code remains governed by `LICENSE`. Third-party packages remain governed by their own license terms.
 
-Package count: 42
+Package count: 44
 
 ## Packages
 
@@ -37,6 +37,16 @@ Package count: 42
 - License: MIT
 - Homepage: https://icon-sets.iconify.design/ph/
 - Included license files: none found
+- Included notice files: none found
+
+### @intlify/unplugin-vue-i18n
+
+- Declared as: devDependencies (~11.2.5)
+- Installed version: 11.2.5
+- License: MIT
+- Repository: git+https://github.com/intlify/bundle-tools.git
+- Homepage: https://github.com/intlify/bundle-tools/blob/main/packages/unplugin-vue-i18n/README.md
+- Included license files: LICENSE
 - Included notice files: none found
 
 ### @nuxt/eslint
@@ -114,6 +124,16 @@ Package count: 42
 - License: MIT
 - Repository: https://github.com/DefinitelyTyped/DefinitelyTyped.git
 - Homepage: https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/canvas-confetti
+- Included license files: LICENSE
+- Included notice files: none found
+
+### @vitejs/plugin-vue
+
+- Declared as: devDependencies (~6.0.8)
+- Installed version: 6.0.8
+- License: MIT
+- Repository: git+https://github.com/vitejs/vite-plugin-vue.git
+- Homepage: https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue#readme
 - Included license files: LICENSE
 - Included notice files: none found
 

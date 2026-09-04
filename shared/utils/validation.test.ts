@@ -8,8 +8,10 @@ import {
   getValidationIssues,
   LoginRequestSchema,
   normalizeQuestionInput,
+  normalizeQuestionPackage,
   QuestionInputValidationError,
   QuestionInputSchema,
+  QuestionPackageSchema,
   QuestionUpdateSchema,
   MoveQuestionSchema,
   StudioAssetPathSchema,
@@ -266,6 +268,86 @@ describe('endpoint schemas', () => {
       questionId: 'question-id',
       question_text: { en: 'Question' },
       resetAnswers: 'yes',
+    }).success).toBe(false)
+  })
+
+  it('validates strict Version 1 question packages', () => {
+    expect(normalizeQuestionPackage({
+      format: 'stage-flow-tools.question-package',
+      version: 1,
+      questions: [
+        {
+          answer_options: [
+            { text: { en: 'One' } },
+            { text: { en: 'Two' } },
+          ],
+          is_disabled: false,
+          question_text: { en: 'Question' },
+        },
+      ],
+    })).toEqual({
+      format: 'stage-flow-tools.question-package',
+      version: 1,
+      questions: [
+        {
+          answer_options: [
+            { emoji: undefined, text: { en: 'One' } },
+            { emoji: undefined, text: { en: 'Two' } },
+          ],
+          is_disabled: false,
+          key: '',
+          note: undefined,
+          question_text: { en: 'Question' },
+        },
+      ],
+    })
+  })
+
+  it('rejects unsupported packages and duplicate populated keys', () => {
+    const basePackage = {
+      format: 'stage-flow-tools.question-package',
+      version: 1,
+      questions: [
+        {
+          answer_options: [
+            { text: { en: 'One' } },
+            { text: { en: 'Two' } },
+          ],
+          is_disabled: false,
+          key: 'question-key',
+          question_text: { en: 'Question' },
+        },
+      ],
+    }
+
+    expect(safeParse(QuestionPackageSchema, {
+      ...basePackage,
+      version: 2,
+    }).success).toBe(false)
+    expect(safeParse(QuestionPackageSchema, {
+      ...basePackage,
+      questions: [
+        ...basePackage.questions,
+        {
+          ...basePackage.questions[0],
+          question_text: { en: 'Other question' },
+        },
+      ],
+    }).success).toBe(false)
+    expect(safeParse(QuestionPackageSchema, {
+      ...basePackage,
+      unexpected: true,
+    }).success).toBe(false)
+    expect(safeParse(QuestionPackageSchema, {
+      ...basePackage,
+      questions: [
+        {
+          ...basePackage.questions[0],
+          answer_options: [
+            { text: { en: 'Only one' } },
+          ],
+        },
+      ],
     }).success).toBe(false)
   })
 

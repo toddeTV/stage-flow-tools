@@ -10,7 +10,9 @@ const schemaValidatedPostRoutes = [
   'server/api/auth/logout.post.ts',
   'server/api/emojis/submit.post.ts',
   'server/api/questions/create.post.ts',
+  'server/api/questions/delete-all.post.ts',
   'server/api/questions/delete.post.ts',
+  'server/api/questions/import.post.ts',
   'server/api/questions/move.post.ts',
   'server/api/questions/publish-next.post.ts',
   'server/api/questions/publish.post.ts',
@@ -24,7 +26,9 @@ const schemaValidatedPostRoutes = [
 const authenticatedRouteSources = [
   'server/api/answers/reset.post.ts',
   'server/api/questions/create.post.ts',
+  'server/api/questions/delete-all.post.ts',
   'server/api/questions/delete.post.ts',
+  'server/api/questions/import.post.ts',
   'server/api/questions/move.post.ts',
   'server/api/questions/publish-next.post.ts',
   'server/api/questions/publish.post.ts',
@@ -75,11 +79,12 @@ describe('POST response contract', () => {
     expect(source).toContain("broadcast('new-question', serializePublicQuestion(question))")
   })
 
-  it('serializes both authentication failure branches as codes', async () => {
+  it('serializes authentication and origin failure branches as codes', async () => {
     const source = await readSource('server/utils/auth.ts')
 
     expect(source).toContain("throwApiError(401, 'auth.token_required')")
     expect(source).toContain("throwApiError(401, 'auth.token_invalid')")
+    expect(source).toContain("throwApiError(403, 'auth.origin_invalid')")
   })
 
   it('requires the same origin and admin authentication before opening a results WebSocket', async () => {
@@ -101,6 +106,24 @@ describe('POST response contract', () => {
     expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
     expect(source).toContain("broadcast('new-question', null)")
     expect(source).toContain("broadcast('results-update', null, WebSocketChannel.RESULTS)")
+  })
+
+  it('clears live question and results state when every question is deleted', async () => {
+    const source = await readSource('server/api/questions/delete-all.post.ts')
+
+    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
+    expect(source).toContain("broadcast('new-question', null)")
+    expect(source).toContain("broadcast('results-update', null, WebSocketChannel.RESULTS)")
+  })
+
+  it('broadcasts an active question changed by a package import', async () => {
+    const source = await readSource('server/api/questions/import.post.ts')
+
+    expect(source).toContain('if (result.activeQuestion)')
+    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
+    expect(source).toContain("broadcast('new-question', serializePublicQuestion(result.activeQuestion))")
+    expect(source).toContain('const results = await getResultsForQuestion(result.activeQuestion.id)')
+    expect(source).toContain("broadcast('results-update', results, WebSocketChannel.RESULTS)")
   })
 
   it('cancels buffered results when the active question is unpublished', async () => {

@@ -1,10 +1,16 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
+import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite-plus'
 
 const rootDirectory = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
+  plugins: [
+    VueI18nPlugin({}),
+    vue(),
+  ],
   resolve: {
     alias: {
       '#shared': resolve(rootDirectory, 'shared'),
