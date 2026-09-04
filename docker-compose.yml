@@ -10,12 +10,12 @@ services:
     image: stage-flow-tools
     container_name: stage-flow-tools
     restart: unless-stopped
-    # Choose one and uncomment:
+    environment:
+      NUXT_API_CORS_ALLOWED_ORIGINS: "${NUXT_API_CORS_ALLOWED_ORIGINS:-}"
+      NUXT_API_CORS_ENABLED: "${NUXT_API_CORS_ENABLED:-false}"
+    # Add other runtime configuration with one of these options:
     # env_file:
     #   - .env
-    # environment:
-    #   - NUXT_JWT_SECRET=...
-    #   - ...
     volumes:
       - ./.data:/app/.data
     networks:
@@ -26,8 +26,3 @@ services:
       - traefik.http.routers.stage-flow-tools.rule=Host(`quiz.your-domain.com`)
       - traefik.http.routers.stage-flow-tools.entrypoints=websecure
       - traefik.http.routers.stage-flow-tools.tls.certresolver=myresolver
-      - traefik.http.middlewares.stage-flow-tools-cors.headers.accesscontrolalloworiginlist=http://localhost:3030
-      - traefik.http.middlewares.stage-flow-tools-cors.headers.accesscontrolallowmethods=GET,POST,OPTIONS
-      - traefik.http.middlewares.stage-flow-tools-cors.headers.accesscontrolallowheaders=Authorization,Content-Type
-      - traefik.http.middlewares.stage-flow-tools-cors.headers.addvaryheader=true
-      - traefik.http.routers.stage-flow-tools.middlewares=stage-flow-tools-cors

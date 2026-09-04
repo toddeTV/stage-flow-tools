@@ -25,6 +25,8 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
     adminPassword: '123',
     adminToken: '',
     adminUsername: 'admin',
+    apiCorsAllowedOrigins: '',
+    apiCorsEnabled: false,
     drizzleStudioInternalPort: '64983',
     emojiBatchMaxSize: 1200,
     emojiBatchTickMs: 150,

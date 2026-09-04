@@ -54,6 +54,20 @@ NUXT_JWT_SECRET=<paste-output-from-openssl>
 
 Set `NUXT_ADMIN_TOKEN` only if external software needs either direct admin API access with `Authorization: Bearer <token>` or protected admin page access with `?token=<token>`. Leave it empty to disable that path. Only one exact token is accepted.
 
+### CORS for Slidev and other browser clients
+
+Cross-origin REST API access is disabled by default. Enable it only for the exact origins that need it. For a local Slidev presentation running on port `3030`:
+
+```bash
+# In .env:
+NUXT_API_CORS_ENABLED=true
+NUXT_API_CORS_ALLOWED_ORIGINS=http://localhost:3030
+```
+
+Use a comma-separated list for multiple origins, for example `http://localhost:3030,https://slides.example`. Entries must be exact `http` or `https` origins without wildcards, paths, query parameters, fragments, or credentials.
+
+This policy applies only to `/api/*`, allows `GET`, `POST`, and `OPTIONS`, and accepts `Authorization` and `Content-Type` request headers. It deliberately does not enable cross-origin cookies. Browser clients calling protected presenter endpoints must send `Authorization: Bearer <token>` and must not embed that token in publicly distributed slide assets. The application now sends these headers itself; no Traefik CORS middleware is needed.
+
 Admin authentication variants:
 
 1. `/login` with `NUXT_ADMIN_USERNAME` and `NUXT_ADMIN_PASSWORD` for normal human admin access.
