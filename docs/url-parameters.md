@@ -137,7 +137,7 @@ Emojis on a black background. Encode the `#` character as `%23` in URLs.
 
 - **Type**: Boolean (`true` | `false`)
 - **Default**: `true`
-- **Effect**: Shows technical participant IDs by default. Set to `false` for display surfaces that should show only nicknames, ranks, and scores.
+- **Effect**: Sets the initial visibility of technical participant IDs. IDs are visible by default; set to `false` for display surfaces that should show only nicknames, ranks, and scores. The leaderboard control can change this visibility after loading.
 
 ### `refresh`
 

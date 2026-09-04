@@ -16,7 +16,7 @@ const {
   coreViewStyles,
   isCoreView,
   refreshIntervalMs,
-  showUserId,
+  showUserId: initialShowUserId,
 } = useDisplayParameters()
 
 interface LeaderboardEntry {
@@ -39,6 +39,7 @@ type ConfettiInstance = ReturnType<ConfettiModule['default']['create']>
 const isLoading = ref(false)
 const hasError = ref(false)
 const isOver9000Mode = ref(false)
+const showUserId = ref(initialShowUserId.value)
 const leaderboard = ref<LeaderboardEntry[]>([])
 const totalPublishedQuestions = ref(0)
 const totalQuestionsWithCorrectAnswers = ref(0)
@@ -57,6 +58,10 @@ const topRankedEntries = computed(() => leaderboard.value.filter(entry => entry.
 
 function toggleOver9000Mode() {
   isOver9000Mode.value = !isOver9000Mode.value
+}
+
+function toggleUserIdVisibility() {
+  showUserId.value = !showUserId.value
 }
 
 function clearWinnerTimer() {
@@ -271,29 +276,41 @@ watch(refreshIntervalMs, restartPolling)
         <p class="text-sm text-gray-500">
           {{ t('scoredQuestions', { count: totalQuestionsWithCorrectAnswers }) }}
         </p>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
           <UiButton
+            class="inline-flex items-center gap-2"
             :disabled="isLoading || isWinnerModalOpen || topRankedEntries.length === 0"
             size="small"
             @click="openWinnerModal"
           >
+            <span aria-hidden="true">🏆</span>
             {{ t('drawWinner') }}
           </UiButton>
           <UiButton
+            :aria-label="isOver9000Mode ? t('showScores') : t('over9000')"
             :aria-pressed="isOver9000Mode"
             :disabled="isLoading || leaderboard.length === 0"
             size="small"
             :variant="isOver9000Mode ? 'primary' : 'secondary'"
             @click="toggleOver9000Mode"
           >
-            {{ isOver9000Mode ? t('showScores') : t('over9000') }}
+            <span aria-hidden="true">🐉</span>
           </UiButton>
           <UiButton
+            size="small"
+            variant="secondary"
+            @click="toggleUserIdVisibility"
+          >
+            {{ showUserId ? t('hideUserIds') : t('showUserIds') }}
+          </UiButton>
+          <UiButton
+            class="inline-flex items-center gap-2"
             :disabled="isLoading"
             size="small"
             variant="secondary"
             @click="fetchLeaderboard"
           >
+            <Icon aria-hidden="true" class="size-4" name="ph:arrow-clockwise" />
             {{ t('refresh') }}
           </UiButton>
         </div>
@@ -469,6 +486,8 @@ en:
   drawWinner: Draw winner
   over9000: 🐉 Over 9000!
   showScores: 🐉 Show scores
+  showUserIds: Show IDs
+  hideUserIds: Hide IDs
   winner: Winner
   winnerDrawHint: The person with the most correct answers will be drawn. Ties are decided at random.
   drawingWinner: Drawing winner...
@@ -486,6 +505,8 @@ de:
   drawWinner: Gewinner ziehen
   over9000: 🐉 Über 9000!
   showScores: 🐉 Punkte zeigen
+  showUserIds: IDs zeigen
+  hideUserIds: IDs ausblenden
   winner: Gewinner
   winnerDrawHint: Die Person mit den meisten richtigen Antworten wird gezogen. Bei Gleichstand entscheidet der Zufall.
   drawingWinner: Auslosung läuft...
@@ -503,6 +524,8 @@ ja:
   drawWinner: 当選者を選ぶ
   over9000: 🐉 9000以上！
   showScores: 🐉 得点を表示
+  showUserIds: IDを表示
+  hideUserIds: IDを非表示
   winner: 当選者
   winnerDrawHint: 最も多く正解した参加者から選びます。同点の場合はランダムに選ばれます。
   drawingWinner: 抽選中...

@@ -51,6 +51,18 @@ const Passthrough = defineComponent({
   },
 })
 
+const Icon = defineComponent({
+  props: {
+    name: {
+      required: true,
+      type: String,
+    },
+  },
+  setup(props) {
+    return () => h('svg', { 'data-icon': props.name })
+  },
+})
+
 const initialResponse = {
   leaderboard: [
     {
@@ -79,7 +91,7 @@ const refreshedResponse = {
 
 function findButton(container: ParentNode, label: string): HTMLButtonElement {
   const button = Array.from(container.querySelectorAll('button'))
-    .find(candidate => candidate.textContent === label)
+    .find(candidate => candidate.textContent?.includes(label))
 
   if (!button) {
     throw new Error(`Button "${label}" is missing`)
@@ -98,6 +110,7 @@ function renderPage() {
   const container = document.createElement('div')
   const app = createApp(LeaderboardPage)
   app.component('UiButton', UiButton)
+  app.component('Icon', Icon)
   app.component('UiPageTitle', Passthrough)
   app.component('UiSection', Passthrough)
   document.body.append(container)
@@ -153,11 +166,23 @@ describe('leaderboard display mode', () => {
     const rendered = renderPage()
     await flushAsyncState()
 
-    expect(rendered.container.textContent).toContain('drawWinner')
-    expect(rendered.container.textContent).toContain('over9000')
+    const drawWinnerButton = findButton(rendered.container, 'drawWinner')
+    const over9000Button = findButton(rendered.container, '🐉')
+    const userIdVisibilityButton = findButton(rendered.container, 'showUserIds')
+    const refreshButton = findButton(rendered.container, 'refresh')
+
+    expect(drawWinnerButton.textContent).toContain('🏆')
+    expect(over9000Button.textContent?.trim()).toBe('🐉')
+    expect(over9000Button.getAttribute('aria-label')).toBe('over9000')
+    expect(refreshButton.querySelector('[data-icon="ph:arrow-clockwise"]')).not.toBeNull()
     expect(rendered.container.textContent).toContain('refresh')
     expect(rendered.container.textContent).not.toContain('alice-id')
     expect((rendered.container.firstElementChild as HTMLElement).style.backgroundColor).toBe('rgb(18, 52, 86)')
+
+    userIdVisibilityButton.click()
+    await nextTick()
+    expect(rendered.container.textContent).toContain('alice-id')
+    expect(rendered.container.textContent).toContain('hideUserIds')
 
     rendered.app.unmount()
   })
