@@ -27,6 +27,10 @@ function createQuestionFixture(overrides: Partial<Question> = {}): Question {
 }
 
 describe('question packages', () => {
+  it('does not create an empty package that import would reject', () => {
+    expect(() => createQuestionPackage([])).toThrow('Question packages require at least one question')
+  })
+
   it('exports only portable question configuration in existing queue order', () => {
     const packageValue = createQuestionPackage([
       createQuestionFixture({ key: 'first-question' }),

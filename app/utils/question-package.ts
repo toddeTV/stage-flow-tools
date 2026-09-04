@@ -14,6 +14,10 @@ export type QuestionPackageImportPreview = {
 
 /** Builds a portable V1 package without answers or runtime lifecycle state. */
 export function createQuestionPackage(questions: Question[]): QuestionPackage {
+  if (questions.length === 0) {
+    throw new Error('Question packages require at least one question')
+  }
+
   return {
     format: QUESTION_PACKAGE_FORMAT,
     version: QUESTION_PACKAGE_VERSION,

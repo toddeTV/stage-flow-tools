@@ -578,7 +578,7 @@ async function clearAllQuestions() {
 }
 
 function requestQuestionsExport() {
-  if (isBatchOperationPending.value) {
+  if (allQuestions.value.length === 0 || isBatchOperationPending.value) {
     return
   }
 
@@ -606,6 +606,12 @@ async function exportQuestions() {
 
   try {
     const questions = await $fetch<Question[]>('/api/questions')
+
+    if (questions.length === 0) {
+      exportError.value = t('noQuestionsToExport')
+      return
+    }
+
     const downloadUrl = URL.createObjectURL(new Blob([
       stringifyQuestionPackage(createQuestionPackage(questions)),
     ], { type: 'application/json;charset=utf-8' }))
@@ -783,7 +789,7 @@ function removeOption(index: number) {
             </UiButton>
             <UiButton
               class="inline-flex items-center gap-2"
-              :disabled="isBatchOperationPending"
+              :disabled="allQuestions.length === 0 || isBatchOperationPending"
               variant="secondary"
               @click="requestQuestionsExport"
             >
@@ -1309,6 +1315,7 @@ en:
   confirmDeleteAllQuestions: Permanently delete every question and all submitted answers?
   exportQuestions: Export
   exportingQuestions: Exporting...
+  noQuestionsToExport: Add at least one question before exporting.
   confirmExportQuestions: Download all questions as a JSON package without submitted answers?
   editQuestionTitle: Edit Question
   keyPlaceholder: "Enter a unique key/slug (optional, e.g., 'question-1')"
@@ -1372,6 +1379,7 @@ de:
   confirmDeleteAllQuestions: Alle Fragen und abgegebenen Antworten dauerhaft löschen?
   exportQuestions: Exportieren
   exportingQuestions: Export wird erstellt...
+  noQuestionsToExport: Füge vor dem Export mindestens eine Frage hinzu.
   confirmExportQuestions: Alle Fragen ohne abgegebene Antworten als JSON-Paket herunterladen?
   editQuestionTitle: Frage bearbeiten
   keyPlaceholder: "Eindeutigen Schlüssel eingeben (optional, z.B. 'frage-1')"
@@ -1435,6 +1443,7 @@ ja:
   confirmDeleteAllQuestions: すべての質問と送信済みの回答を完全に削除しますか？
   exportQuestions: エクスポート
   exportingQuestions: エクスポート中...
+  noQuestionsToExport: エクスポートする前に、少なくとも 1 件の質問を追加してください。
   confirmExportQuestions: 送信済みの回答を含まない JSON パッケージとして全質問をダウンロードしますか？
   editQuestionTitle: 質問を編集
   keyPlaceholder: "一意のキー/スラグを入力（任意、例：'question-1'）"
