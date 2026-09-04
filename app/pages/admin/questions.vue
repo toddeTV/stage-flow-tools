@@ -497,10 +497,8 @@ async function deleteQuestion() {
   }
 }
 
-async function refreshQuestionsForImportPreview() {
-  const latestQuestions = await $fetch<Question[]>('/api/questions')
-  allQuestions.value = latestQuestions
-  activeQuestion.value = latestQuestions.find(question => question.is_active) || null
+async function fetchQuestionsForImportPreview(): Promise<Question[]> {
+  return $fetch<Question[]>('/api/questions')
 }
 
 async function handleQuestionPackageSelected(_questionPackage: QuestionPackage) {
@@ -510,9 +508,11 @@ async function handleQuestionPackageSelected(_questionPackage: QuestionPackage) 
   isPreparingImportPreview.value = true
 
   try {
-    await refreshQuestionsForImportPreview()
+    const latestQuestions = await fetchQuestionsForImportPreview()
 
     if (requestId === importPreviewRequestId) {
+      allQuestions.value = latestQuestions
+      activeQuestion.value = latestQuestions.find(question => question.is_active) || null
       isImportPreviewReady.value = true
     }
   }
