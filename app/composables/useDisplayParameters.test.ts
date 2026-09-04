@@ -62,6 +62,12 @@ describe('parseDisplayParameters', () => {
     })
   })
 
+  it('clamps transparency to the documented range', () => {
+    expect(parseDisplayParameters({ transparency: '-0.5' })).toMatchObject({
+      transparency: 0,
+    })
+  })
+
   it('allows refresh to be disabled without changing the other defaults', () => {
     expect(parseDisplayParameters({ refresh: '0' })).toMatchObject({
       refreshIntervalMs: 0,

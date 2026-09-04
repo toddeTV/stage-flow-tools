@@ -56,7 +56,7 @@ function parseBackgroundColor(value: string | undefined): string | undefined {
 
 /** Parses shared, presentation-oriented query parameters. */
 export function parseDisplayParameters(query: DisplayQuery): DisplayParameters {
-  const transparency = parseNonNegativeNumber(getSingleQueryValue(query, 'transparency'), 1)
+  const transparency = parseNumber(getSingleQueryValue(query, 'transparency'), 1)
 
   return {
     backgroundColor: parseBackgroundColor(getSingleQueryValue(query, 'background')),
@@ -65,7 +65,7 @@ export function parseDisplayParameters(query: DisplayQuery): DisplayParameters {
     refreshIntervalMs: parseRefreshInterval(getSingleQueryValue(query, 'refresh')),
     scale: parsePositiveNumber(getSingleQueryValue(query, 'scale'), 1),
     showUserId: getSingleQueryValue(query, 'showUserId') !== 'false',
-    transparency: Math.min(transparency, 1),
+    transparency: Math.min(Math.max(transparency, 0), 1),
   }
 }
 
