@@ -4,7 +4,12 @@ import type {
   InputQuestion,
   LocalizedString,
   Question,
+  QuestionPackage,
 } from '~/types'
+import {
+  createQuestionPackage,
+  stringifyQuestionPackage,
+} from '~/utils/question-package'
 import {
   getValidationIssues,
   QuestionInputSchema,
@@ -37,6 +42,8 @@ type PendingQuestionUpdate = {
   questionId: string
   questionInput: InputQuestion
 }
+
+type QuestionDialogMode = 'choice' | 'import' | 'manual'
 
 function createDefaultQuestionForm(): QuestionForm {
   return {
@@ -84,29 +91,52 @@ const answerResetConfirmationDialog = ref<HTMLDialogElement>()
 const publishConfirmationDialog = ref<HTMLDialogElement>()
 const toggleDisabledConfirmationDialog = ref<HTMLDialogElement>()
 const deleteConfirmationDialog = ref<HTMLDialogElement>()
+const clearAllConfirmationDialog = ref<HTMLDialogElement>()
+const exportConfirmationDialog = ref<HTMLDialogElement>()
 const editingQuestionId = ref<string | null>(null)
 const isSavingQuestion = ref(false)
 const isResettingAnswers = ref(false)
 const isUpdatingQuestionId = ref<string | null>(null)
+const isClearingAllQuestions = ref(false)
+const isExportingQuestions = ref(false)
+const isImportingQuestions = ref(false)
+const isPreparingImportPreview = ref(false)
 const questionForm = ref<QuestionForm>(createDefaultQuestionForm())
 const questionFormErrors = ref<Record<string, string>>({})
 const questionToPublish = ref<Question | null>(null)
 const questionToToggleDisabled = ref<Question | null>(null)
 const questionToDelete = ref<Question | null>(null)
 const pendingQuestionUpdate = ref<PendingQuestionUpdate | null>(null)
+const questionDialogMode = ref<QuestionDialogMode>('choice')
+const clearAllError = ref<string>()
+const exportError = ref<string>()
+const importError = ref<string>()
 const isEditMode = computed(() => editingQuestionId.value !== null)
-const formTitle = computed(() => isEditMode.value ? t('editQuestionTitle') : t('addQuestion'))
+const isBatchOperationPending = computed(() => (
+  isClearingAllQuestions.value || isExportingQuestions.value || isImportingQuestions.value
+))
+const formTitle = computed(() => {
+  if (isEditMode.value) {
+    return t('editQuestionTitle')
+  }
+
+  return questionDialogMode.value === 'import'
+    ? t('importQuestionsTitle')
+    : t('addQuestion')
+})
 const submitButtonLabel = computed(() => isEditMode.value ? t('saveQuestion') : t('createQuestion'))
 const { getErrorCode, getErrorMessage, getIssueMessage } = useApiError()
 
 function resetQuestionEditor() {
   editingQuestionId.value = null
+  questionDialogMode.value = 'choice'
   questionForm.value = createDefaultQuestionForm()
   questionFormErrors.value = {}
+  importError.value = undefined
 }
 
 function closeQuestionDialog(force = false) {
-  if (isSavingQuestion.value && !force) {
+  if ((isSavingQuestion.value || isImportingQuestions.value || isPreparingImportPreview.value) && !force) {
     return
   }
 
@@ -114,15 +144,33 @@ function closeQuestionDialog(force = false) {
 }
 
 function openQuestionDialog() {
+  if (isBatchOperationPending.value) {
+    return
+  }
+
   resetQuestionEditor()
   questionDialog.value?.showModal()
 }
 
 function startEditingQuestion(question: Question) {
+  if (isBatchOperationPending.value) {
+    return
+  }
+
   editingQuestionId.value = question.id
+  questionDialogMode.value = 'manual'
   questionForm.value = createQuestionFormFromQuestion(question)
   questionFormErrors.value = {}
   questionDialog.value?.showModal()
+}
+
+function selectManualQuestionCreation() {
+  questionDialogMode.value = 'manual'
+}
+
+function returnToQuestionChoices() {
+  questionDialogMode.value = 'choice'
+  importError.value = undefined
 }
 
 function parseQuestionFormPayload(): InputQuestion | undefined {
@@ -442,6 +490,145 @@ async function deleteQuestion() {
   }
 }
 
+async function refreshQuestionsForImportPreview() {
+  const latestQuestions = await $fetch<Question[]>('/api/questions')
+  allQuestions.value = latestQuestions
+  activeQuestion.value = latestQuestions.find(question => question.is_active) || null
+}
+
+async function handleQuestionPackageSelected(_questionPackage: QuestionPackage) {
+  importError.value = undefined
+  isPreparingImportPreview.value = true
+
+  try {
+    await refreshQuestionsForImportPreview()
+  }
+  catch (error: unknown) {
+    importError.value = getErrorMessage(error)
+  }
+  finally {
+    isPreparingImportPreview.value = false
+  }
+}
+
+async function importQuestionPackage(questionPackage: QuestionPackage) {
+  if (isImportingQuestions.value || isPreparingImportPreview.value) {
+    return
+  }
+
+  importError.value = undefined
+  isImportingQuestions.value = true
+
+  try {
+    await $fetch('/api/questions/import', {
+      method: 'POST',
+      body: questionPackage,
+    })
+    await loadQuestions()
+    closeQuestionDialog(true)
+  }
+  catch (error: unknown) {
+    importError.value = getErrorMessage(error)
+  }
+  finally {
+    isImportingQuestions.value = false
+  }
+}
+
+function requestClearAllQuestions() {
+  if (allQuestions.value.length === 0 || isBatchOperationPending.value) {
+    return
+  }
+
+  clearAllError.value = undefined
+  clearAllConfirmationDialog.value?.showModal()
+}
+
+function closeClearAllConfirmationDialog() {
+  if (!isClearingAllQuestions.value) {
+    clearAllConfirmationDialog.value?.close()
+  }
+}
+
+function resetClearAllConfirmationDialog() {
+  clearAllError.value = undefined
+}
+
+async function clearAllQuestions() {
+  if (isClearingAllQuestions.value) {
+    return
+  }
+
+  clearAllError.value = undefined
+  isClearingAllQuestions.value = true
+
+  try {
+    await $fetch('/api/questions/delete-all', {
+      method: 'POST',
+    })
+    await loadQuestions()
+    clearAllConfirmationDialog.value?.close()
+  }
+  catch (error: unknown) {
+    clearAllError.value = getErrorMessage(error)
+  }
+  finally {
+    isClearingAllQuestions.value = false
+  }
+}
+
+function requestQuestionsExport() {
+  if (isBatchOperationPending.value) {
+    return
+  }
+
+  exportError.value = undefined
+  exportConfirmationDialog.value?.showModal()
+}
+
+function closeExportConfirmationDialog() {
+  if (!isExportingQuestions.value) {
+    exportConfirmationDialog.value?.close()
+  }
+}
+
+function resetExportConfirmationDialog() {
+  exportError.value = undefined
+}
+
+async function exportQuestions() {
+  if (isExportingQuestions.value) {
+    return
+  }
+
+  exportError.value = undefined
+  isExportingQuestions.value = true
+
+  try {
+    const questions = await $fetch<Question[]>('/api/questions')
+    const downloadUrl = URL.createObjectURL(new Blob([
+      stringifyQuestionPackage(createQuestionPackage(questions)),
+    ], { type: 'application/json;charset=utf-8' }))
+    const downloadLink = document.createElement('a')
+    const timestamp = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-')
+
+    downloadLink.href = downloadUrl
+    downloadLink.download = `stage-flow-tools-questions-${timestamp}.json`
+    document.body.append(downloadLink)
+    downloadLink.click()
+    downloadLink.remove()
+    URL.revokeObjectURL(downloadUrl)
+
+    exportConfirmationDialog.value?.close()
+  }
+  catch (error: unknown) {
+    exportError.value = getErrorMessage(error)
+  }
+  finally {
+    isExportingQuestions.value = false
+  }
+}
+
 async function toggleLock() {
   if (!activeQuestion.value) return
 
@@ -581,9 +768,29 @@ function removeOption(index: number) {
           <h2 class="section-heading mb-0">
             {{ t('allQuestions') }}
           </h2>
-          <UiButton @click="openQuestionDialog">
-            {{ t('addQuestion') }}
-          </UiButton>
+          <div class="flex flex-wrap gap-2.5">
+            <UiButton :disabled="isBatchOperationPending" @click="openQuestionDialog">
+              {{ t('addQuestion') }}
+            </UiButton>
+            <UiButton
+              class="inline-flex items-center gap-2"
+              :disabled="allQuestions.length === 0 || isBatchOperationPending"
+              variant="danger"
+              @click="requestClearAllQuestions"
+            >
+              <Icon aria-hidden="true" class="size-5" name="ph:trash" />
+              {{ t('deleteAllQuestions') }}
+            </UiButton>
+            <UiButton
+              class="inline-flex items-center gap-2"
+              :disabled="isBatchOperationPending"
+              variant="secondary"
+              @click="requestQuestionsExport"
+            >
+              <Icon aria-hidden="true" class="size-5" name="ph:export" />
+              {{ t('exportQuestions') }}
+            </UiButton>
+          </div>
         </div>
 
         <ol class="flex list-none flex-col gap-4 p-0">
@@ -717,7 +924,7 @@ function removeOption(index: number) {
 
     <dialog
       ref="questionDialog"
-      :aria-busy="isSavingQuestion"
+      :aria-busy="isSavingQuestion || isImportingQuestions || isPreparingImportPreview"
       aria-labelledby="question-editor-title"
       class="m-auto max-h-[calc(100dvh-2.5rem)] w-[calc(100%-2.5rem)] max-w-3xl overflow-y-auto
         border-[3px] border-black bg-white p-6 text-black backdrop:bg-black/50"
@@ -728,7 +935,33 @@ function removeOption(index: number) {
         {{ formTitle }}
       </h2>
 
-      <form class="flex flex-col gap-5" @submit.prevent="handleSaveQuestion">
+      <div v-if="!isEditMode && questionDialogMode === 'choice'" class="flex flex-col gap-5">
+        <p>{{ t('addQuestionChoiceHint') }}</p>
+        <div class="flex flex-wrap gap-2.5">
+          <UiButton @click="selectManualQuestionCreation">
+            {{ t('createQuestionWithForm') }}
+          </UiButton>
+          <UiButton variant="secondary" @click="questionDialogMode = 'import'">
+            {{ t('importQuestions') }}
+          </UiButton>
+        </div>
+        <UiButton variant="secondary" @click="closeQuestionDialog">
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+
+      <QuestionPackageImportWizard
+        v-else-if="!isEditMode && questionDialogMode === 'import'"
+        :error-message="importError"
+        :is-importing="isImportingQuestions"
+        :is-preparing-preview="isPreparingImportPreview"
+        :questions="allQuestions"
+        @back="returnToQuestionChoices"
+        @confirm="importQuestionPackage"
+        @package-selected="handleQuestionPackageSelected"
+      />
+
+      <form v-else class="flex flex-col gap-5" @submit.prevent="handleSaveQuestion">
         <UiInput
           v-model="questionForm.key"
           class="border-2 border-black p-3 text-base"
@@ -973,6 +1206,76 @@ function removeOption(index: number) {
         </UiButton>
       </div>
     </dialog>
+
+    <dialog
+      ref="clearAllConfirmationDialog"
+      :aria-busy="isClearingAllQuestions"
+      aria-describedby="clear-all-questions-confirmation-description"
+      aria-labelledby="clear-all-questions-confirmation-title"
+      class="m-auto w-[calc(100%-2.5rem)] max-w-lg border-[3px] border-black bg-white p-6 text-black
+        backdrop:bg-black/50"
+      @click.self="closeClearAllConfirmationDialog"
+      @close="resetClearAllConfirmationDialog"
+    >
+      <h2 id="clear-all-questions-confirmation-title" class="text-3xl font-bold uppercase">
+        {{ t('deleteAllQuestions') }}
+      </h2>
+      <p id="clear-all-questions-confirmation-description" class="mt-4">
+        {{ t('confirmDeleteAllQuestions') }}
+      </p>
+      <p v-if="clearAllError" class="mt-4" role="alert">
+        {{ clearAllError }}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+        <UiButton
+          :disabled="isClearingAllQuestions"
+          variant="danger"
+          @click="clearAllQuestions"
+        >
+          {{ isClearingAllQuestions ? t('deletingAllQuestions') : t('deleteAllQuestions') }}
+        </UiButton>
+        <UiButton
+          :disabled="isClearingAllQuestions"
+          variant="secondary"
+          @click="closeClearAllConfirmationDialog"
+        >
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+    </dialog>
+
+    <dialog
+      ref="exportConfirmationDialog"
+      :aria-busy="isExportingQuestions"
+      aria-describedby="export-questions-confirmation-description"
+      aria-labelledby="export-questions-confirmation-title"
+      class="m-auto w-[calc(100%-2.5rem)] max-w-lg border-[3px] border-black bg-white p-6 text-black
+        backdrop:bg-black/50"
+      @click.self="closeExportConfirmationDialog"
+      @close="resetExportConfirmationDialog"
+    >
+      <h2 id="export-questions-confirmation-title" class="text-3xl font-bold uppercase">
+        {{ t('exportQuestions') }}
+      </h2>
+      <p id="export-questions-confirmation-description" class="mt-4">
+        {{ t('confirmExportQuestions') }}
+      </p>
+      <p v-if="exportError" class="mt-4" role="alert">
+        {{ exportError }}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+        <UiButton :disabled="isExportingQuestions" @click="exportQuestions">
+          {{ isExportingQuestions ? t('exportingQuestions') : t('exportQuestions') }}
+        </UiButton>
+        <UiButton
+          :disabled="isExportingQuestions"
+          variant="secondary"
+          @click="closeExportConfirmationDialog"
+        >
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+    </dialog>
   </div>
 </template>
 
@@ -997,6 +1300,16 @@ en:
   resetAnswersAndSave: Delete answers and save
   noActiveQuestion: No active question
   addQuestion: Add Question
+  addQuestionChoiceHint: Choose how to add questions.
+  createQuestionWithForm: Create one question
+  importQuestionsTitle: Import Questions
+  importQuestions: Import
+  deleteAllQuestions: Delete All
+  deletingAllQuestions: Deleting All...
+  confirmDeleteAllQuestions: Permanently delete every question and all submitted answers?
+  exportQuestions: Export
+  exportingQuestions: Exporting...
+  confirmExportQuestions: Download all questions as a JSON package without submitted answers?
   editQuestionTitle: Edit Question
   keyPlaceholder: "Enter a unique key/slug (optional, e.g., 'question-1')"
   questionTextPlaceholder: "Enter question text as JSON, e.g., {'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
@@ -1050,6 +1363,16 @@ de:
   resetAnswersAndSave: Antworten löschen und speichern
   noActiveQuestion: Keine aktive Frage
   addQuestion: Frage hinzufügen
+  addQuestionChoiceHint: Wähle aus, wie du Fragen hinzufügen möchtest.
+  createQuestionWithForm: Einzelne Frage erstellen
+  importQuestionsTitle: Fragen importieren
+  importQuestions: Importieren
+  deleteAllQuestions: Alle löschen
+  deletingAllQuestions: Alles wird gelöscht...
+  confirmDeleteAllQuestions: Alle Fragen und abgegebenen Antworten dauerhaft löschen?
+  exportQuestions: Exportieren
+  exportingQuestions: Export wird erstellt...
+  confirmExportQuestions: Alle Fragen ohne abgegebene Antworten als JSON-Paket herunterladen?
   editQuestionTitle: Frage bearbeiten
   keyPlaceholder: "Eindeutigen Schlüssel eingeben (optional, z.B. 'frage-1')"
   questionTextPlaceholder: "Fragetext als JSON eingeben, z.B. {'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
@@ -1103,6 +1426,16 @@ ja:
   resetAnswersAndSave: 回答を削除して保存
   noActiveQuestion: アクティブな質問はありません
   addQuestion: 質問を追加
+  addQuestionChoiceHint: 質問を追加する方法を選択してください。
+  createQuestionWithForm: 1 件の質問を作成
+  importQuestionsTitle: 質問をインポート
+  importQuestions: インポート
+  deleteAllQuestions: すべて削除
+  deletingAllQuestions: すべて削除中...
+  confirmDeleteAllQuestions: すべての質問と送信済みの回答を完全に削除しますか？
+  exportQuestions: エクスポート
+  exportingQuestions: エクスポート中...
+  confirmExportQuestions: 送信済みの回答を含まない JSON パッケージとして全質問をダウンロードしますか？
   editQuestionTitle: 質問を編集
   keyPlaceholder: "一意のキー/スラグを入力（任意、例：'question-1'）"
   questionTextPlaceholder: "質問テキストをJSONで入力、例：{'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"

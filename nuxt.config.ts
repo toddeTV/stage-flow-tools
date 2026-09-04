@@ -89,6 +89,7 @@ export default defineNuxtConfig({
         'ph:arrow-up',
         'ph:eye',
         'ph:eye-slash',
+        'ph:export',
         'ph:pencil',
         'ph:trash',
       ],
