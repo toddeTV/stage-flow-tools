@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDisplayParameters } from '~/composables/useDisplayParameters'
 import { getEmojiBatch } from '~/utils/emoji-batch'
 
 definePageMeta({
@@ -21,12 +22,11 @@ interface Emoji {
 const emojis = ref<Emoji[]>([])
 const { width: windowWidth, height: windowHeight } = useWindowSize()
 
-const route = useRoute()
-const scale = computed(() => Number(route.query.scale) || 1)
-const transparency = computed(() => {
-  const val = Number(route.query.transparency) || 1
-  return Math.min(val, 1)
-})
+const {
+  backgroundStyles,
+  scale,
+  transparency,
+} = useDisplayParameters()
 
 // WebSocket connection
 const wsEndpoint = computed(() => getWsEndpoint('default', { channel: 'emojis' }))
@@ -78,7 +78,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="fixed inset-0 overflow-hidden">
+  <div class="fixed inset-0 overflow-hidden" :style="backgroundStyles">
     <div
       v-for="emoji in emojis"
       :key="emoji.id"

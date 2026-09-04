@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDisplayParameters } from '~/composables/useDisplayParameters'
 import type { Results } from '~/types'
 
 definePageMeta({
@@ -21,11 +22,10 @@ function getLocalizedOption(enKey: string): string {
 }
 
 const route = useRoute()
-const isCoreView = computed(() => route.query.core !== undefined)
-
-// State for core view parameters
-const padding = ref(route.query.padding ? Number(route.query.padding) : 0)
-const scale = ref(route.query.scale ? Number(route.query.scale) : 1)
+const {
+  coreViewStyles,
+  isCoreView,
+} = useDisplayParameters()
 
 const visibility = ref(
   (route.query.visibility as string) || 'hide',
@@ -42,19 +42,6 @@ const isTogglingLock = ref(false)
 const isPickingUser = ref(false)
 const isResettingAnswers = ref(false)
 const hasHydratedOnce = ref(false)
-
-// Dynamic styles for core view
-const coreViewStyles = computed(() => {
-  if (!isCoreView.value) {
-    return {}
-  }
-  return {
-    'padding': `${padding.value}px`,
-    'transform': `scale(${scale.value})`,
-    'transform-origin': 'top left',
-    'width': `calc(100% / ${scale.value})`,
-  }
-})
 
 // Fetch initial results
 const { data: fetchedResults, refresh: refreshResults } = await useFetch<Results>('/api/results/current')

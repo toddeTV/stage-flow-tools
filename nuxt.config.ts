@@ -86,6 +86,7 @@ export default defineNuxtConfig({
     clientBundle: {
       icons: [
         'ph:arrow-down',
+        'ph:arrow-clockwise',
         'ph:arrow-up',
         'ph:eye',
         'ph:eye-slash',
