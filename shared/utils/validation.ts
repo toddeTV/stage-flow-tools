@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 import type {
   InputQuestion,
+  QuestionPackage,
 } from '../../app/types'
 import type { ApiErrorCode, ApiErrorIssue } from './api-errors'
 import { isApiErrorCode } from './api-errors'
@@ -54,6 +55,9 @@ const questionInputEntries = {
   note: optionalLocalizedStringSchema,
 }
 
+export const QUESTION_PACKAGE_FORMAT = 'stage-flow-tools.question-package' as const
+export const QUESTION_PACKAGE_VERSION = 1 as const
+
 export const QuestionInputSchema = v.pipe(
   v.object(questionInputEntries, 'validation.invalid_type'),
   v.forward(
@@ -95,6 +99,78 @@ export const QuestionUpdateSchema = v.object({
   resetAnswers: v.optional(v.boolean(), false),
   ...questionInputEntries,
 }, 'validation.invalid_type')
+
+const QuestionPackageQuestionSchema = v.pipe(
+  v.strictObject({
+    ...questionInputEntries,
+    is_disabled: v.boolean('validation.invalid_type'),
+  }, 'validation.invalid_question_package'),
+  v.forward(
+    v.check(value => value.answer_options.length >= 2, 'validation.minimum_answer_options'),
+    [
+      'answer_options',
+    ],
+  ),
+  v.forward(
+    v.check((value) => {
+      const normalizedLabels = new Set<string>()
+
+      for (const option of value.answer_options) {
+        const englishLabel = option.text.en
+
+        if (!englishLabel) {
+          return false
+        }
+
+        const normalizedLabel = englishLabel.toLowerCase()
+
+        if (normalizedLabels.has(normalizedLabel)) {
+          return false
+        }
+
+        normalizedLabels.add(normalizedLabel)
+      }
+
+      return true
+    }, 'validation.duplicate_answer_option'),
+    [
+      'answer_options',
+    ],
+  ),
+)
+
+export const QuestionPackageSchema = v.pipe(
+  v.strictObject({
+    format: v.literal(QUESTION_PACKAGE_FORMAT, 'validation.invalid_question_package'),
+    version: v.literal(QUESTION_PACKAGE_VERSION, 'validation.unsupported_question_package_version'),
+    questions: v.pipe(
+      v.array(QuestionPackageQuestionSchema, 'validation.invalid_question_package'),
+      v.minLength(1, 'validation.empty_question_package'),
+    ),
+  }, 'validation.invalid_question_package'),
+  v.forward(
+    v.check((value) => {
+      const keys = new Set<string>()
+
+      for (const question of value.questions) {
+        if (!question.key) {
+          continue
+        }
+
+        if (keys.has(question.key)) {
+          return false
+        }
+
+        keys.add(question.key)
+      }
+
+      return true
+    }, 'validation.duplicate_question_key'),
+    [
+      'questions',
+    ],
+  ),
+)
 
 export const LoginRequestSchema = v.object({
   password: v.pipe(
@@ -225,6 +301,16 @@ export function normalizeQuestionUpdateInput(
   }
 
   return result.output as InputQuestion & { questionId: string, resetAnswers: boolean }
+}
+
+export function normalizeQuestionPackage(value: unknown): QuestionPackage {
+  const result = v.safeParse(QuestionPackageSchema, value)
+
+  if (!result.success) {
+    throw new QuestionInputValidationError(getValidationIssues(result.issues))
+  }
+
+  return result.output as QuestionPackage
 }
 
 /** Validates if the input string is a single emoji. */
