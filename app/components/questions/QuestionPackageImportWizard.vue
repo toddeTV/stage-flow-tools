@@ -142,7 +142,7 @@ en:
   questionPackageImportSummary: Import summary
   questionsToCreate: "{count} questions will be added."
   questionsToUpdate: "{count} existing questions will be updated."
-  questionPackageAnswerWarning: Existing answers stay unchanged when a question is updated.
+  questionPackageAnswerWarning: Existing answers stay. Changed options can make results inconsistent.
   importQuestions: Import questions
   importingQuestions: Importing questions...
   backToQuestionChoices: Back
@@ -152,7 +152,7 @@ de:
   questionPackageImportSummary: Importübersicht
   questionsToCreate: "{count} Fragen werden hinzugefügt."
   questionsToUpdate: "{count} vorhandene Fragen werden aktualisiert."
-  questionPackageAnswerWarning: Bestehende Antworten bleiben bei aktualisierten Fragen unverändert.
+  questionPackageAnswerWarning: Bestehende Antworten bleiben erhalten. Geänderte Optionen können Ergebnisse verfälschen.
   importQuestions: Fragen importieren
   importingQuestions: Fragen werden importiert...
   backToQuestionChoices: Zurück
@@ -162,7 +162,7 @@ ja:
   questionPackageImportSummary: インポート概要
   questionsToCreate: "{count} 件の質問が追加されます。"
   questionsToUpdate: "{count} 件の既存質問が更新されます。"
-  questionPackageAnswerWarning: 質問を更新しても既存の回答は変更されません。
+  questionPackageAnswerWarning: 既存の回答は保持されます。選択肢を変更すると結果が不整合になる場合があります。
   importQuestions: 質問をインポート
   importingQuestions: 質問をインポート中...
   backToQuestionChoices: 戻る
