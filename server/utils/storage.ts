@@ -92,7 +92,7 @@ function answerOptionsHaveChanged(
 }
 
 /** Initializes SQLite access once after the startup migration plugin has run. */
-export async function initStorage(_event?: H3Event) {
+export async function initStorage() {
   if (storageInitialized) return
 
   try {
@@ -115,19 +115,6 @@ export async function getQuestions(): Promise<Question[]> {
     .orderBy(asc(questions.sortOrder), asc(questions.createdAt), asc(questions.id))
     .all()
     .map(deserializeQuestion)
-}
-
-export async function saveQuestions(questionList: Question[]): Promise<void> {
-  await initStorage()
-
-  getDatabase().transaction((transaction) => {
-    transaction.delete(answers).run()
-    transaction.delete(questions).run()
-
-    if (questionList.length > 0) {
-      transaction.insert(questions).values(questionList.map(createStoredQuestionInsert)).run()
-    }
-  })
 }
 
 export async function getActiveQuestion(): Promise<Question | undefined> {
@@ -514,18 +501,6 @@ export async function getAnswers(): Promise<Answer[]> {
     .orderBy(asc(answers.timestamp))
     .all()
     .map(deserializeAnswer)
-}
-
-export async function saveAnswers(answerList: Answer[]): Promise<void> {
-  await initStorage()
-
-  getDatabase().transaction((transaction) => {
-    transaction.delete(answers).run()
-
-    if (answerList.length > 0) {
-      transaction.insert(answers).values(answerList.map(createStoredAnswerInsert)).run()
-    }
-  })
 }
 
 export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>): Promise<Answer[]> {
