@@ -27,9 +27,16 @@ active question, it starts with the first enabled question; after the last enabl
 question, it stops without wrapping. `questions.is_disabled` skips a question only
 for automatic publication; direct admin publication remains available.
 
-Changing a question's answer options after answers were submitted requires an explicit
-reset confirmation. The answers are deleted and the option update is stored in the
-same SQLite transaction, so results never reference obsolete options.
+Changing a question's answer options through a single-question update after answers
+were submitted requires an explicit reset confirmation. The answers are deleted and
+the option update is stored in the same SQLite transaction.
+
+Question-package imports intentionally use a different rule. An import may replace a
+matching question's text and answer options while retaining its existing answers and
+lifecycle state. Answers whose stored English option label no longer matches an
+imported option remain stored and count toward `totalVotes`, but do not appear in an
+option's displayed count. The import preview warns the admin that changed options can
+make results inconsistent.
 
 ## Initialization
 
