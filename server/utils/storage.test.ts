@@ -158,7 +158,7 @@ describe('question queue storage', () => {
     expect(testClient.db.select().from(answers).all()).toEqual([])
   })
 
-  it('adds package questions and updates matching keys without resetting answers or queue state', async () => {
+  it('updates active published package questions without resetting answers or queue state', async () => {
     const existing = await createQuestion(createInputQuestion('existing-question'))
     const preserved = await createQuestion(createInputQuestion('preserved-question'))
 
@@ -223,16 +223,28 @@ describe('question queue storage', () => {
       expect.any(String),
     ])
     expect((await getQuestions())[0]).toMatchObject({
+      answer_options: [
+        { text: { en: 'Updated one' } },
+        { text: { en: 'Updated two' } },
+      ],
       alreadyPublished: true,
       id: existing.id,
+      is_active: true,
       is_disabled: true,
       is_locked: true,
       note: { en: 'Updated note' },
       question_text: { en: 'Updated question' },
       sortOrder: existing.sortOrder,
     })
-    await expect(getAnswersForQuestion(existing.id)).resolves.toMatchObject([
-      { selected_answer: { en: 'One' } },
+    await expect(getAnswersForQuestion(existing.id)).resolves.toEqual([
+      {
+        id: 'answer-id',
+        question_id: existing.id,
+        selected_answer: { en: 'One' },
+        timestamp: '2026-09-04T00:00:00.000Z',
+        user_id: 'participant-id',
+        user_nickname: 'Participant',
+      },
     ])
   })
 

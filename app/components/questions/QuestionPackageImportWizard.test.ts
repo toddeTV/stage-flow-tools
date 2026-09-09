@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import {
+  computed,
   createApp,
   defineComponent,
   h,
@@ -14,6 +15,7 @@ import {
   it,
   vi,
 } from 'vite-plus/test'
+import type { Question } from '~/types'
 import QuestionPackageImportWizard from './QuestionPackageImportWizard.vue'
 
 const questionPackage = {
@@ -26,6 +28,7 @@ const questionPackage = {
         { text: { en: 'No' } },
       ],
       is_disabled: false,
+      key: 'existing-question',
       question_text: { en: 'Question' },
     },
   ],
@@ -39,10 +42,14 @@ const UiButton = defineComponent({
 })
 
 beforeEach(() => {
-  vi.stubGlobal('computed', <T>(getter: () => T) => ({ value: getter() }))
+  vi.stubGlobal('computed', computed)
   vi.stubGlobal('ref', ref)
   vi.stubGlobal('useApiError', () => ({ getIssueMessage: (issue: { code: string }) => issue.code }))
-  vi.stubGlobal('useI18n', () => ({ t: (key: string) => key }))
+  vi.stubGlobal('useI18n', () => ({
+    t: (key: string, params?: { count?: number }) => params?.count === undefined
+      ? key
+      : `${key}:${params.count}`,
+  }))
 })
 
 afterEach(() => {
@@ -70,14 +77,14 @@ async function selectPackage(container: HTMLElement) {
   await nextTick()
 }
 
-function renderWizard(isPreviewReady: boolean) {
+function renderWizard(isPreviewReady: boolean, questions: Question[] = []) {
   const container = document.createElement('div')
   const confirmedPackages: typeof questionPackage[] = []
   const app = createApp(QuestionPackageImportWizard, {
     isImporting: false,
     isPreparingPreview: false,
     isPreviewReady,
-    questions: [],
+    questions,
     onConfirm: (selectedPackage: typeof questionPackage) => confirmedPackages.push(selectedPackage),
   })
 
@@ -115,6 +122,39 @@ describe('question package import wizard', () => {
     importButton?.click()
     expect(rendered.confirmedPackages).toHaveLength(1)
     expect(rendered.confirmedPackages[0]).toMatchObject(questionPackage)
+    rendered.app.unmount()
+  })
+
+  it('warns before importing an update to an existing question', async () => {
+    const rendered = renderWizard(true, [
+      {
+        answer_options: [
+          { text: { en: 'Old yes' } },
+          { text: { en: 'Old no' } },
+        ],
+        alreadyPublished: true,
+        createdAt: '2026-09-04T12:00:00.000Z',
+        id: 'existing-question-id',
+        is_active: true,
+        is_disabled: false,
+        is_locked: true,
+        key: 'existing-question',
+        question_text: { en: 'Old question' },
+        sortOrder: 4,
+      },
+    ])
+
+    expect(rendered.container.textContent).not.toContain('questionPackageAnswerWarning')
+
+    await selectPackage(rendered.container)
+
+    expect(rendered.container.textContent).toContain('questionsToUpdate:1')
+    expect(rendered.container.textContent).toContain('questionPackageAnswerWarning')
+
+    const importButton = rendered.container.querySelector<HTMLButtonElement>('button')
+    expect(importButton?.disabled).toBe(false)
+    importButton?.click()
+    expect(rendered.confirmedPackages).toHaveLength(1)
     rendered.app.unmount()
   })
 })
