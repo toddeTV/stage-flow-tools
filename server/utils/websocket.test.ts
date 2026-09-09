@@ -108,6 +108,37 @@ describe('enqueueEmoji', () => {
 })
 
 describe('scheduled results updates', () => {
+  it('keeps pending updates isolated between channels', async () => {
+    vi.useFakeTimers()
+    const defaultPeer = await addPeerForChannel(WebSocketChannel.DEFAULT)
+    const resultsPeer = await addPeerForChannel(WebSocketChannel.RESULTS)
+    defaultPeer.send.mockClear()
+    resultsPeer.send.mockClear()
+
+    const defaultResults = { totalVotes: 1 } as Results
+    const results = { totalVotes: 2 } as Results
+
+    scheduleResultsUpdate(defaultResults, WebSocketChannel.DEFAULT)
+    scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
+    vi.advanceTimersByTime(1999)
+
+    expect(defaultPeer.send).not.toHaveBeenCalled()
+    expect(resultsPeer.send).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(1)
+
+    expect(defaultPeer.send).toHaveBeenCalledTimes(1)
+    expect(JSON.parse(defaultPeer.send.mock.calls[0]![0])).toEqual({
+      data: defaultResults,
+      event: 'results-update',
+    })
+    expect(resultsPeer.send).toHaveBeenCalledTimes(1)
+    expect(JSON.parse(resultsPeer.send.mock.calls[0]![0])).toEqual({
+      data: results,
+      event: 'results-update',
+    })
+  })
+
   it('does not send stale results after the channel is cleared', async () => {
     vi.useFakeTimers()
     const peer = await addPeerForChannel(WebSocketChannel.RESULTS)
