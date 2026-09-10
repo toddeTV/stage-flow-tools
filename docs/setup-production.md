@@ -36,7 +36,7 @@ If Docker is not available in your environment, you can run the built Node.js se
 
 Requirements:
 
-- Node.js `24.x`
+- Node.js `26.x`
 - A process manager such as `pm2`
 - Persistent storage for `.data/`
 

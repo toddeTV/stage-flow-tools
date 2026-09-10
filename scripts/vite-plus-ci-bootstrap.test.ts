@@ -27,7 +27,7 @@ describe('Vite+ CI bootstrap', () => {
     expect(action).toContain('using: composite')
     expect(action).toContain('used-cached-fallback:')
     expect(action).toContain('uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020')
-    expect(action).toContain('node-version: "24"\n        package-manager-cache: false')
+    expect(action).toContain('node-version: 26.8.2\n        package-manager-cache: false')
     expect(action).toContain('uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9')
     expect(action).toContain('uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9')
     expect(action).toContain('uses: voidzero-dev/setup-vp@49c3e4e92c52e7f8392712a9267bbe71c5ab30e5')

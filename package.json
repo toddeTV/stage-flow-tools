@@ -114,8 +114,8 @@
     "workshop"
   ],
   "engines": {
-    "node": "24.x",
-    "pnpm": "10.x"
+    "node": "26.x",
+    "pnpm": "12.x"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@12.3.4"
 }

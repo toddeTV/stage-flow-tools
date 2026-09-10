@@ -4,7 +4,7 @@ Get the quiz application running in minutes.
 
 ## Prerequisites
 
-- Node.js 24.x
+- Node.js 26.x
 - Vite+ (`vp`)
 
 ## Installation
