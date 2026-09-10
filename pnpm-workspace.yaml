@@ -3,10 +3,10 @@ allowBuilds:
   esbuild: false
 
 catalog:
-  eslint: ~10.9.1
+  eslint: ~10.10.0
 
   # vite-plus ecosystem packages only; Nuxt must keep resolving upstream `vite`
-  vite-plus: ~0.3.0
+  vite-plus: ~0.3.1
 
 shellEmulator: true
 
