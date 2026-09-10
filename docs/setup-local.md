@@ -10,8 +10,6 @@ Complete guide for setting up the quiz application locally.
 - **Vite+ (`vp`)**: Installed and available in your shell
 - **Git**: For version control
 
-On platforms without a `better-sqlite3` prebuilt binary, install a C++ toolchain before installing dependencies. Debian and Ubuntu users need `build-essential` and `python3`.
-
 ### Installation Steps
 
 1. **Install Vite+** (if not installed)
