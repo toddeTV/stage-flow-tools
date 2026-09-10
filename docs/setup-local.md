@@ -24,7 +24,7 @@ On platforms without a `better-sqlite3` prebuilt binary, install a C++ toolchain
    ```bash
    git clone <repository-url>
    cd stage-flow-tools
-   vp run install:clean:frozen
+   vp run install:clean
    ```
 
 ## Configuration

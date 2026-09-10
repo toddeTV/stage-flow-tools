@@ -19,7 +19,7 @@ Get the quiz application running in minutes.
 2. **Install dependencies**
 
    ```bash
-   vp run install:clean:frozen
+   vp run install:clean
    ```
 
 3. **Configure environment**
