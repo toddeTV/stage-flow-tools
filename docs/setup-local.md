@@ -6,7 +6,7 @@ Complete guide for setting up the quiz application locally.
 
 ### Required Software
 
-- **Node.js**: Version 24.x
+- **Node.js**: Version 26.x
 - **Vite+ (`vp`)**: Installed and available in your shell
 - **Git**: For version control
 
@@ -22,7 +22,7 @@ Complete guide for setting up the quiz application locally.
    ```bash
    git clone <repository-url>
    cd stage-flow-tools
-   vp install
+   vp run install:clean
    ```
 
 ## Configuration

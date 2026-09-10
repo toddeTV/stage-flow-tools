@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vite-plus/test'
 const repoRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const bootstrapKey = [
   'vite-plus-bootstrap-v1-${{ runner.os }}-${{ runner.arch }}',
-  'vp-0.3.0-node-${{ steps.setup-node.outputs.node-version }}',
+  'vp-0.3.1-node-${{ steps.setup-node.outputs.node-version }}',
 ].join('-')
 const compositeActionPath = '.github/actions/setup-vite-plus-ci/action.yml'
 const fallbackWorkflowPath = '.github/workflows/verify-vite-plus-bootstrap-fallback.yml'
@@ -27,11 +27,12 @@ describe('Vite+ CI bootstrap', () => {
     expect(action).toContain('using: composite')
     expect(action).toContain('used-cached-fallback:')
     expect(action).toContain('uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020')
-    expect(action).toContain('node-version: "24"\n        package-manager-cache: false')
+    expect(action).toContain('node-version: 26.8.2\n        package-manager-cache: false')
     expect(action).toContain('uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9')
     expect(action).toContain('uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9')
-    expect(action).toContain('uses: voidzero-dev/setup-vp@35171c92dd08b67d5a9d3f2a4327800e58396f2a')
+    expect(action).toContain('uses: voidzero-dev/setup-vp@49c3e4e92c52e7f8392712a9267bbe71c5ab30e5')
     expect(action).toContain(`key: ${bootstrapKey}`)
+    expect(action).toContain('version: 0.3.1')
     expect(action).toContain('VP_NODE_MANAGER: no')
     expect(action).toContain('vp env off')
     expect(action).toContain('id: validate-vite-plus-bootstrap-cache')
@@ -41,6 +42,7 @@ describe('Vite+ CI bootstrap', () => {
     expect(action).toContain('used-cached-fallback=true')
     expect(action).toContain('cached_vite_plus_version="$("$cached_vite_plus_bin" --version)"')
     expect(action).toContain('fallback_vite_plus_version="$("$fallback_vite_plus_bin" --version)"')
+    expect(action).toContain("= 'vp v0.3.1'")
     expect(action).not.toContain('VP_NODE_DIST_MIRROR')
     expect(action).not.toContain('--version | grep -Fxq')
     expect(vitePlusSetup).not.toContain('node-version:')
@@ -51,7 +53,7 @@ describe('Vite+ CI bootstrap', () => {
     const bootstrapIndex = workflow.indexOf('- name: Setup Node and Vite+')
 
     expect(workflow).toContain('name: Setup Node and Vite+\n        timeout-minutes: 3')
-    expect(workflow).toContain('uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0')
+    expect(workflow).toContain('uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1')
     expect(workflow).toContain('uses: ./.github/actions/setup-vite-plus-ci')
     expect(bootstrapIndex).toBeGreaterThan(-1)
     expect(bootstrapIndex).toBeLessThan(workflow.indexOf('- name: Install Dependencies'))
@@ -65,11 +67,12 @@ describe('Vite+ CI bootstrap', () => {
     const workflow = readFile(fallbackWorkflowPath)
 
     expect(workflow).toContain('workflow_dispatch: {}')
-    expect(workflow).toContain('uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0')
+    expect(workflow).toContain('uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1')
     expect(workflow).toContain('uses: ./.github/actions/setup-vite-plus-ci')
     expect(workflow).toContain("'exit 1' > \"$fake_bin/curl\"")
     expect(workflow).toContain("test '${{ steps.fallback.outputs.used-cached-fallback }}' = 'true'")
     expect(workflow).toContain('vite_plus_version="$(vp --version)"')
+    expect(workflow).toContain("= 'vp v0.3.1'")
     expect(workflow).not.toContain('secrets.')
     expect(workflow).not.toContain('vp --version | grep -Fxq')
   })

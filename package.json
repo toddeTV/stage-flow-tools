@@ -30,7 +30,7 @@
     "fix:lint-format": "vp exec eslint . --fix",
     "fix:package-json": "vp exec prettier-package-json --write package.json",
     "hooks:install": "vp run hooks:install:vite-plus && vp run notices:hook:install",
-    "hooks:install:vite-plus": "vp config --hooks-only",
+    "hooks:install:vite-plus": "vp config --hooks",
     "postinstall": "nuxt prepare",
     "install:clean": "vp install --prefer-offline",
     "install:clean:frozen": "vp install --frozen-lockfile --prefer-offline",
@@ -54,7 +54,7 @@
     "vue": "~3.5.42"
   },
   "devDependencies": {
-    "@eslint/css": "~1.4.0",
+    "@eslint/css": "~2.0.0",
     "@eslint/js": "~10.0.1",
     "@iconify-json/ph": "~1.2.2",
     "@intlify/unplugin-vue-i18n": "~11.2.5",
@@ -74,26 +74,26 @@
     "concurrently": "~10.0.5",
     "cross-env": "~10.1.0",
     "crossws": "0.3.5",
-    "dompurify": "~3.3.3",
+    "dompurify": "~3.4.15",
     "drizzle-kit": "~0.31.10",
     "drizzle-orm": "~0.45.2",
-    "eslint": "10.9.1",
+    "eslint": "catalog:",
     "eslint-plugin-better-tailwindcss": "~4.7.0",
     "eslint-plugin-format": "~2.0.1",
     "eslint-plugin-jsonc": "~3.4.2",
     "eslint-plugin-perfectionist": "~5.11.0",
     "eslint-plugin-yml": "~3.8.1",
-    "jose": "~6.2.10",
-    "jsdom": "~27.0.1",
-    "marked": "~17.0.6",
+    "jose": "~6.2.12",
+    "jsdom": "~30.0.1",
+    "marked": "~18.0.12",
     "nuxi": "~3.37.0",
     "prettier": "~3.9.6",
     "prettier-package-json": "~2.8.0",
-    "tailwind-csstree": "~0.3.3",
+    "tailwind-csstree": "~0.4.0",
     "tailwindcss": "~4.3.3",
     "tsx": "~4.23.13",
     "typescript": "~6.0.3",
-    "valibot": "~1.4.2",
+    "valibot": "~1.5.0",
     "vite-plus": "catalog:",
     "vue-tsc": "~3.3.11"
   },
@@ -114,8 +114,8 @@
     "workshop"
   ],
   "engines": {
-    "node": "24.x",
-    "pnpm": "10.x"
+    "node": "26.x",
+    "pnpm": "12.x"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@12.3.4"
 }

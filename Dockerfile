@@ -1,7 +1,7 @@
 # --- Build Stage ---
 # This stage builds the application. It installs all dependencies (including dev)
 # and creates the optimized production output in the /.output directory.
-FROM node:24-alpine AS build
+FROM node:26.8.2-alpine AS build
 
 # Set working directory
 WORKDIR /app
@@ -9,7 +9,7 @@ WORKDIR /app
 # Install Vite+ CLI
 RUN apk add --no-cache bash curl g++ make python3
 ENV VP_HOME=/root/.vite-plus
-ENV VP_VERSION=0.3.0
+ENV VP_VERSION=0.3.1
 ENV PATH=${VP_HOME}/bin:${PATH}
 RUN VP_NODE_MANAGER=no curl -fsSL https://vite.plus | bash
 
@@ -34,7 +34,7 @@ RUN vp run build:ssr
 # This is the final, minimal image. It copies the standalone Nuxt output and
 # Drizzle migrations from the 'build' stage, then runs the server directly.
 # No package install step is needed in this stage.
-FROM node:24-alpine AS production
+FROM node:26.8.2-alpine AS production
 
 # Set working directory
 WORKDIR /app

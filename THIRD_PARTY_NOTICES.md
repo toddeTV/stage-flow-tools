@@ -12,8 +12,8 @@ Package count: 44
 
 ### @eslint/css
 
-- Declared as: devDependencies (~1.4.0)
-- Installed version: 1.4.0
+- Declared as: devDependencies (~2.0.0)
+- Installed version: 2.0.0
 - License: Apache-2.0
 - Repository: git+https://github.com/eslint/css.git
 - Homepage: https://github.com/eslint/css#readme
@@ -208,8 +208,8 @@ Package count: 44
 
 ### dompurify
 
-- Declared as: devDependencies (~3.3.3)
-- Installed version: 3.3.3
+- Declared as: devDependencies (~3.4.15)
+- Installed version: 3.4.15
 - License: (MPL-2.0 OR Apache-2.0)
 - Repository: git://github.com/cure53/DOMPurify.git
 - Homepage: https://github.com/cure53/DOMPurify
@@ -238,8 +238,8 @@ Package count: 44
 
 ### eslint
 
-- Declared as: devDependencies (10.9.1)
-- Installed version: 10.9.1
+- Declared as: devDependencies (catalog:)
+- Installed version: 10.10.0
 - License: MIT
 - Repository: eslint/eslint
 - Homepage: https://eslint.org
@@ -297,8 +297,8 @@ Package count: 44
 
 ### jose
 
-- Declared as: devDependencies (~6.2.10)
-- Installed version: 6.2.10
+- Declared as: devDependencies (~6.2.12)
+- Installed version: 6.2.12
 - License: MIT
 - Repository: panva/jose
 - Homepage: https://github.com/panva/jose
@@ -307,8 +307,8 @@ Package count: 44
 
 ### jsdom
 
-- Declared as: devDependencies (~27.0.1)
-- Installed version: 27.0.1
+- Declared as: devDependencies (~30.0.1)
+- Installed version: 30.0.1
 - License: MIT
 - Repository: git+https://github.com/jsdom/jsdom.git
 - Included license files: LICENSE.txt
@@ -316,12 +316,12 @@ Package count: 44
 
 ### marked
 
-- Declared as: devDependencies (~17.0.6)
-- Installed version: 17.0.6
+- Declared as: devDependencies (~18.0.12)
+- Installed version: 18.0.12
 - License: MIT
-- Repository: git://github.com/markedjs/marked.git
+- Repository: git+https://github.com/markedjs/marked.git
 - Homepage: https://marked.js.org
-- Included license files: LICENSE.md
+- Included license files: LICENSE
 - Included notice files: none found
 
 ### nuxi
@@ -364,8 +364,8 @@ Package count: 44
 
 ### tailwind-csstree
 
-- Declared as: devDependencies (~0.3.3)
-- Installed version: 0.3.3
+- Declared as: devDependencies (~0.4.0)
+- Installed version: 0.4.0
 - License: Apache-2.0
 - Repository: git+https://github.com/humanwhocodes/tailwind-csstree.git
 - Included license files: LICENSE
@@ -403,8 +403,8 @@ Package count: 44
 
 ### valibot
 
-- Declared as: devDependencies (~1.4.2)
-- Installed version: 1.4.2
+- Declared as: devDependencies (~1.5.0)
+- Installed version: 1.5.0
 - License: MIT
 - Repository: https://github.com/open-circle/valibot
 - Homepage: https://valibot.dev
@@ -414,7 +414,7 @@ Package count: 44
 ### vite-plus
 
 - Declared as: devDependencies (catalog:)
-- Installed version: 0.3.0
+- Installed version: 0.3.1
 - License: MIT
 - Repository: git+https://github.com/voidzero-dev/vite-plus.git
 - Homepage: https://viteplus.dev/guide

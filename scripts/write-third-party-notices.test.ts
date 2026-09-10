@@ -66,7 +66,7 @@ describe('third-party notice generation', () => {
         '@scope/beta': '~2.0.0',
         tsx: '~4.23.13',
       },
-      packageManager: 'pnpm@10.33.0',
+      packageManager: 'pnpm@12.3.4',
       peerDependencies: {
         gamma: '^3.0.0',
       },

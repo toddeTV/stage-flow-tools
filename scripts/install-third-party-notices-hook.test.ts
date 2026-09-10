@@ -63,7 +63,7 @@ describe('third-party notices hook', () => {
 
     expect(packageJson.scripts).toMatchObject({
       'hooks:install': 'vp run hooks:install:vite-plus && vp run notices:hook:install',
-      'hooks:install:vite-plus': 'vp config --hooks-only',
+      'hooks:install:vite-plus': 'vp config --hooks',
       'prepare': 'vp run hooks:install',
     })
   })

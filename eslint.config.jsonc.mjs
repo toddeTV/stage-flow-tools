@@ -29,10 +29,9 @@ export const jsonAndJsoncConfigs = [
     },
   },
   {
-    // Enforce trailing commas for configuration files
+    // Enforce trailing commas for JSONC configuration files.
     files: [
       '**/*.jsonc',
-      'tsconfig.json',
     ],
     rules: {
       'jsonc/comma-dangle': [
