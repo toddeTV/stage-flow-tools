@@ -159,8 +159,8 @@ Package count: 44
 
 ### better-sqlite3
 
-- Declared as: devDependencies (~13.0.3)
-- Installed version: 13.0.3
+- Declared as: devDependencies (~12.10.0)
+- Installed version: 12.10.1
 - License: MIT
 - Repository: git://github.com/WiseLibs/better-sqlite3.git
 - Homepage: http://github.com/WiseLibs/better-sqlite3
