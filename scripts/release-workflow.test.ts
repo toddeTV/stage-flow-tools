@@ -44,6 +44,16 @@ describe('release workflow configuration', () => {
     expect(releaseJob).not.toContain('secrets.GITHUB_TOKEN')
   })
 
+  it('bootstraps the first stable release without a fabricated manifest version', () => {
+    const config = JSON.parse(readFile(releaseConfigPath)) as {
+      packages: { '.': { 'release-as': string } }
+    }
+    const manifest = JSON.parse(readFile('.release-please-manifest.json')) as Record<string, string>
+
+    expect(manifest).toEqual({})
+    expect(config.packages['.']['release-as']).toBe('1.0.0')
+  })
+
   it('derives Docker semver tags from the Release Please tag', () => {
     const workflow = readFile(releaseWorkflowPath)
     const dockerMetadata = workflow.slice(

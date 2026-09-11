@@ -19,6 +19,7 @@
       "include-component-in-tag": false,
       "include-v-in-tag": true,
       "pull-request-title-pattern": "chore: release v${version}",
+      "release-as": "1.0.0",
       "release-type": "node"
     }
   }
