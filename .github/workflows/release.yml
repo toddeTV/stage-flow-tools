@@ -72,7 +72,6 @@ jobs:
             type=semver,pattern={{version}},value=${{ needs.release-please.outputs.tag_name }}
             type=semver,pattern={{major}}.{{minor}},value=${{ needs.release-please.outputs.tag_name }}
             type=semver,pattern={{major}},value=${{ needs.release-please.outputs.tag_name }}
-            latest=auto
 
       - name: Build and push Docker image
         # docker/build-push-action@v7.3.0

@@ -75,7 +75,7 @@ describe('release workflow configuration', () => {
     expect(dockerMetadata).toContain('type=semver,pattern={{version}},' + releaseTagValue)
     expect(dockerMetadata).toContain('type=semver,pattern={{major}}.{{minor}},' + releaseTagValue)
     expect(dockerMetadata).toContain('type=semver,pattern={{major}},' + releaseTagValue)
-    expect(dockerMetadata).toContain('latest=auto')
+    expect(dockerMetadata).not.toContain('latest=')
   })
 
   it('builds and smoke-tests the Release Please source SHA', () => {
