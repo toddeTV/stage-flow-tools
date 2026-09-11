@@ -1,7 +1,8 @@
-import type {
-  PresenterCurrentState,
-  PresenterQuestionsOverview,
-  Question,
+import {
+  WebSocketChannel,
+  type PresenterCurrentState,
+  type PresenterQuestionsOverview,
+  type Question,
 } from '~/types'
 
 function getPercent(part: number, total: number): number {
@@ -36,14 +37,8 @@ export async function getPresenterQuestionsOverview(): Promise<PresenterQuestion
 
 /** Returns polling-friendly presenter state for the active question. */
 export async function getPresenterCurrentState(): Promise<PresenterCurrentState> {
-  const [
-    questionList,
-    peers,
-  ] = await Promise.all([
-    getQuestions(),
-    getPeers(),
-  ])
-  const totalUsers = peers.length
+  const questionList = await getQuestions()
+  const totalUsers = getPeerCount(WebSocketChannel.DEFAULT)
   const currentQuestion = findActiveQuestion(questionList)
 
   if (!currentQuestion) {

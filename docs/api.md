@@ -127,7 +127,7 @@ Get detailed presenter state for the active question (admin only).
 
 This endpoint is meant for polling, such as once per second from presenter slides.
 
-`totalUsers` means active WebSocket connections at request time.
+`totalUsers` means active participant connections on the default WebSocket channel at request time. Results and emoji display connections are excluded.
 
 **Headers:**
 
@@ -527,6 +527,8 @@ Submit an emoji reaction. The server queues reactions for batched delivery to cl
 ### GET `/api/results/current`
 
 Get current question results (admin only).
+
+`totalConnections` counts only participant connections on the default WebSocket channel.
 
 **Response:**
 

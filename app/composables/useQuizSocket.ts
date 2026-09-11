@@ -6,7 +6,6 @@ export const useQuizSocket = (channel = 'default') => {
   const activeQuestion = ref<Question | null>(null)
   const selectedAnswer = ref<number | null>(null)
   const results = ref<Results | null>(null)
-  const totalConnections = ref(0)
   const userId = useLocalStorage<string | null>('quiz-user-id', null)
 
   /** Removes a client-side stored answer and optionally clears the visible selection. */
@@ -90,9 +89,6 @@ export const useQuizSocket = (channel = 'default') => {
       else if (parsed.event === 'results-update') {
         results.value = parsed.data
       }
-      else if (parsed.event === 'connections-update') {
-        totalConnections.value = parsed.data.totalConnections
-      }
       else if (parsed.event === 'winner-selected' && parsed.data.userId === userId.value) {
         alert(`Congratulations, ${parsed.data.username}! You have won for option "${parsed.data.option}".`)
       }
@@ -110,7 +106,6 @@ export const useQuizSocket = (channel = 'default') => {
     activeQuestion,
     selectedAnswer,
     results,
-    totalConnections,
     send,
     open,
     close,
