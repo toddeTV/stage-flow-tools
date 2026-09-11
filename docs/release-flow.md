@@ -1,42 +1,61 @@
 # Release Flow
 
-This document outlines the automated release process for the application, which is managed by GitHub Actions and the `release-please` bot.
+GitHub Actions and Release Please turn Conventional Commits on `main` into
+versioned GitHub releases and Docker images.
 
-## Overview
+## Version Model
 
-The release process is triggered automatically when commits are pushed to the `main` branch. It handles versioning, changelog generation, GitHub releases, and Docker image publishing.
+- The Release Please configuration uses the pull-request-title template
+  `chore: release v${version}`. A generated release PR is titled, for
+  example, `chore: release v1.0.0`.
+- Release Please changes `package.json`,
+  `.release-please-manifest.json`, and `CHANGELOG.md` together in its
+  release PR. A merged stable release must have the same version in the package
+  file and manifest.
+- The first stable release after `1.0.0-rc.0` is `v1.0.0`. Do not manually
+  bump a feature branch or this configuration change to a stable version; merge
+  the generated release PR instead.
 
-## Workflow
+## Release Bot Token
 
-### 1. Development
+Release Please uses the repository secret `RELEASE_BOT_PAT_TOKEN`, not
+`GITHUB_TOKEN`. This lets the generated release PR start the normal
+`pull_request` validation workflow without manual approval.
 
-Developers work on feature or fix branches and create pull requests to merge their changes into the `main` branch. Commit messages must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
+Create a fine-grained personal access token or GitHub App token that is limited
+to this repository. Grant Contents, Issues, and Pull requests read/write
+access; Metadata read access is automatic. Set an expiration date, rotate the
+token before it expires, and store it as the `RELEASE_BOT_PAT_TOKEN`
+repository secret.
 
-### 2. Release Proposal
+GitHub Actions must be allowed to create pull requests in the repository
+settings. The Docker publish job continues to use its separate
+`GITHUB_TOKEN` with `packages: write`; do not grant package-publishing
+rights to the release bot token.
 
-After one or more pull requests are merged into `main`, the `release-please` GitHub Action runs automatically. It analyzes the commit history since the last release and determines the next semantic version number.
+## Release Flow
 
-If a new release is warranted, the bot creates a new pull request titled `chore(main): release [version]`. This PR includes:
+1. Merge Conventional Commit pull requests into `main`.
+2. The workflow verifies that `RELEASE_BOT_PAT_TOKEN` is present, then Release
+   Please opens or updates its release PR.
+3. The release PR runs the standard validation workflow. A maintainer reviews
+   and merges it after checks pass.
+4. Release Please creates the `v<version>` GitHub Release from that merge.
+5. The Docker smoke test builds and starts the release source. On success, the
+   publish job pushes the same release version to GHCR.
 
-- An updated `CHANGELOG.md` file.
-- The new version number bumped in `package.json`.
+## Docker Image Tags
 
-### 3. Human Approval
+Docker metadata receives the Release Please `tag_name` directly. A stable
+`v1.2.3` release produces `1.2.3`, `1.2`, `1`, and `latest` tags for
+`ghcr.io/<owner>/<repository>`. The workflow does not deploy a live
+environment; operators and self-hosted users select one of these tags in their
+own Docker deployment.
 
-A project maintainer reviews the release pull request. If everything is correct, the PR is merged into the `main` branch. This merge action is the trigger for the next step.
+## Docker Publish Failure
 
-### 4. Release and Publication
-
-Upon merging the release PR, the GitHub Actions workflow performs the following tasks:
-
-1. **Creates a GitHub Release**: A new release is created on GitHub with the tag `v[version]`. The release notes are populated from the `CHANGELOG.md`.
-2. **Builds Docker Image**: A new Docker image is built based on the state of the `main` branch at the release tag.
-3. **Pushes to Registry**: The Docker image is pushed to the GitHub Container Registry (`ghcr.io`) with tags corresponding to the release version (e.g., `1.2.3`, `1.2`, `1`, `latest`).
-
-The `main` branch is now updated with the latest version, and a new, versioned Docker image is available for deployment.
-
-### 5. Deployment Consumption
-
-The release workflow does not deploy a live environment.
-
-It publishes versioned Docker images to `ghcr.io`. Operations teams or self-hosted users pull one of those tags and deploy it through their own Docker environment.
+A GitHub Release can already exist when the Docker smoke test or GHCR publish
+fails. Do not delete or recreate the GitHub Release or its tag, and do not
+publish a later `main` commit under that version. This repository has no
+automated Docker recovery workflow yet; investigate the failed run and recover
+only from the released tag through a reviewed operational procedure.

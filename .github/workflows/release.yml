@@ -8,21 +8,33 @@ on:
 jobs:
   release-please:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: write
+      issues: write
       pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
+      - name: Check Release Bot Token
+        env:
+          RELEASE_BOT_PAT_TOKEN: ${{ secrets.RELEASE_BOT_PAT_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "${RELEASE_BOT_PAT_TOKEN}" ]; then
+            echo "Missing RELEASE_BOT_PAT_TOKEN. Release Please must use a PAT or GitHub App token so release PR validation workflows run without manual approval."
+            exit 1
+          fi
+
       - name: Release Please Action
         id: release
         # googleapis/release-please-action@v5.0.0
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: node
+          token: ${{ secrets.RELEASE_BOT_PAT_TOKEN }}
           config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
 
   publish-docker-image:
     needs:
@@ -55,9 +67,9 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=semver,pattern={{version}},value=${{ needs.release-please.outputs.tag_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release-please.outputs.tag_name }}
+            type=semver,pattern={{major}},value=${{ needs.release-please.outputs.tag_name }}
             latest=auto
 
       - name: Build and push Docker image
