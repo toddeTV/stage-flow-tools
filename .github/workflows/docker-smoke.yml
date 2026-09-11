@@ -1,0 +1,41 @@
+name: Docker Smoke Test
+
+on:
+  workflow_call: {}
+  workflow_dispatch: {}
+
+jobs:
+  docker-smoke:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        # actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Validate Docker Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build Docker image
+        run: docker build --tag stage-flow-tools:smoke .
+
+      - name: Start image and wait for the public API
+        run: |
+          docker run --detach --name stage-flow-tools-smoke --publish 127.0.0.1:3000:3000 stage-flow-tools:smoke
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/api/questions/active >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs stage-flow-tools-smoke
+          exit 1
+
+      - name: Show container logs after failure
+        if: failure()
+        run: docker logs stage-flow-tools-smoke || true
+
+      - name: Remove smoke-test container
+        if: always()
+        run: docker rm --force stage-flow-tools-smoke || true

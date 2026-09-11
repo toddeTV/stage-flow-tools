@@ -42,12 +42,13 @@
     "prepare": "vp run hooks:install",
     "preview:ssg": "vp dlx serve .output/public",
     "preview:ssr": "nuxt preview",
-    "test": "concurrently --names \"test:lint-format,test:package-json,test:notices,test:type,test:unit\" \"vp exec eslint .\" \"vp exec prettier-package-json --list-different package.json\" \"vp run test:notices\" \"nuxt typecheck\" \"vp test run app server shared scripts\"",
+    "test": "vp run test:lint-format && vp run test:package-json && vp run test:notices && vp run test:type && vp run test:unit && vp run test:integration",
+    "test:integration": "vp test run --dir test integration",
     "test:lint-format": "vp exec eslint .",
     "test:notices": "vp run notices:validate",
     "test:package-json": "vp exec prettier-package-json --list-different package.json",
     "test:type": "nuxt typecheck",
-    "test:unit": "vp test run app server shared scripts"
+    "test:unit": "vp test run app server shared scripts test/unit"
   },
   "dependencies": {
     "nuxt": "~4.5.2",
@@ -67,6 +68,7 @@
     "@types/better-sqlite3": "~9.6.0",
     "@types/canvas-confetti": "~1.9.0",
     "@vitejs/plugin-vue": "~6.0.8",
+    "@vue/test-utils": "~2.5.0",
     "@vueuse/core": "~14.4.0",
     "@vueuse/nuxt": "~14.4.0",
     "better-sqlite3": "~13.0.3",
@@ -83,6 +85,7 @@
     "eslint-plugin-jsonc": "~3.4.2",
     "eslint-plugin-perfectionist": "~5.11.0",
     "eslint-plugin-yml": "~3.8.1",
+    "happy-dom": "~20.14.3",
     "jose": "~6.2.12",
     "jsdom": "~30.0.1",
     "marked": "~18.0.12",
