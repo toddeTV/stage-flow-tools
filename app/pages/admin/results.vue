@@ -225,6 +225,7 @@ async function resetAnswers() {
 <template>
   <div :class="{ 'mx-auto min-h-screen max-w-4xl p-5': !isCoreView }">
     <div :style="coreViewStyles">
+      <AdminBackLink v-if="!isCoreView" />
       <UiPageTitle v-if="!isCoreView" class="page-title relative">
         {{ t('pageTitle') }}
       </UiPageTitle>

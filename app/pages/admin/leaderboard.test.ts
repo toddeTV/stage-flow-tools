@@ -19,6 +19,7 @@ import {
   vi,
 } from 'vite-plus/test'
 import LeaderboardPage from './leaderboard.vue'
+import AdminBackLink from '~/components/admin/AdminBackLink.vue'
 
 vi.mock('canvas-confetti', () => {
   const instance = Object.assign(vi.fn(), { reset: vi.fn() })
@@ -109,8 +110,10 @@ async function flushAsyncState() {
 function renderPage() {
   const container = document.createElement('div')
   const app = createApp(LeaderboardPage)
+  app.component('AdminBackLink', AdminBackLink)
   app.component('UiButton', UiButton)
   app.component('Icon', Icon)
+  app.component('NuxtLink', Passthrough)
   app.component('UiPageTitle', Passthrough)
   app.component('UiSection', Passthrough)
   document.body.append(container)
@@ -177,6 +180,7 @@ describe('leaderboard display mode', () => {
     expect(refreshButton.querySelector('[data-icon="ph:arrow-clockwise"]')).not.toBeNull()
     expect(rendered.container.textContent).toContain('refresh')
     expect(rendered.container.textContent).not.toContain('alice-id')
+    expect(rendered.container.querySelector('[to="/admin"]')).toBeNull()
     expect((rendered.container.firstElementChild as HTMLElement).style.backgroundColor).toBe('rgb(18, 52, 86)')
 
     userIdVisibilityButton.click()
@@ -195,6 +199,7 @@ describe('leaderboard display mode', () => {
     const rendered = renderPage()
     await flushAsyncState()
     expect(fetchLeaderboard).toHaveBeenCalledTimes(1)
+    expect(rendered.container.querySelector('[to="/admin"]')).not.toBeNull()
     expect(rendered.container.textContent).toContain('alice-id')
 
     await vi.advanceTimersByTimeAsync(5000)

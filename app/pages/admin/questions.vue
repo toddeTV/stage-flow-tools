@@ -733,6 +733,7 @@ function removeOption(index: number) {
 
 <template>
   <div class="mx-auto max-w-6xl p-5">
+    <AdminBackLink />
     <UiPageTitle>{{ t('pageTitle') }}</UiPageTitle>
 
     <div class="grid gap-8">
