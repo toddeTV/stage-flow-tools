@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vite-plus/test'
 
 const repoRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const releaseWorkflowPath = '.github/workflows/release.yml'
+const dockerSmokeWorkflowPath = '.github/workflows/docker-smoke.yml'
 const releaseConfigPath = 'release-please-config.json'
 const releaseDocsPath = 'docs/release-flow.md'
 const releaseTitlePattern = 'chore: release v${version}'
@@ -65,6 +66,22 @@ describe('release workflow configuration', () => {
     expect(dockerMetadata).toContain('type=semver,pattern={{major}}.{{minor}},' + releaseTagValue)
     expect(dockerMetadata).toContain('type=semver,pattern={{major}},' + releaseTagValue)
     expect(dockerMetadata).toContain('latest=auto')
+  })
+
+  it('builds and smoke-tests the Release Please source SHA', () => {
+    const workflow = readFile(releaseWorkflowPath)
+    const smokeWorkflow = readFile(dockerSmokeWorkflowPath)
+    const releaseJob = releasePleaseJob(workflow)
+    const dockerPublishJob = workflow.slice(
+      workflow.indexOf('  publish-docker-image:'),
+      workflow.indexOf('  docker-smoke:'),
+    )
+
+    expect(releaseJob).toContain('release_sha: ${{ steps.release.outputs.sha }}')
+    expect(dockerPublishJob).toContain('ref: ${{ needs.release-please.outputs.release_sha }}')
+    expect(workflow).toContain('release_sha: ${{ needs.release-please.outputs.release_sha }}')
+    expect(smokeWorkflow).toContain('release_sha:')
+    expect(smokeWorkflow).toContain('ref: ${{ inputs.release_sha || github.sha }}')
   })
 
   it('documents the configured release PR title', () => {

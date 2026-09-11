@@ -46,8 +46,9 @@ rights to the release bot token.
 3. The release PR runs the standard validation workflow. A maintainer reviews
    and merges it after checks pass.
 4. Release Please creates the `v<version>` GitHub Release from that merge.
-5. The Docker smoke test builds and starts the release source. On success, the
-   publish job pushes the same release version to GHCR.
+5. The Docker smoke test and publish job both check out the Release Please
+   output SHA, so they build the exact source that GitHub tags. On success, the
+   publish job pushes that release version to GHCR.
 
 ## Docker Image Tags
 
