@@ -8,6 +8,7 @@ const releaseWorkflowPath = '.github/workflows/release.yml'
 const dockerSmokeWorkflowPath = '.github/workflows/docker-smoke.yml'
 const releaseConfigPath = 'release-please-config.json'
 const releaseDocsPath = 'docs/release-flow.md'
+const environmentExamplePath = '.env.example'
 const releaseTitlePattern = 'chore: release v${version}'
 const releaseTagValue = 'value=${{ needs.release-please.outputs.tag_name }}'
 
@@ -53,6 +54,13 @@ describe('release workflow configuration', () => {
 
     expect(manifest).toEqual({})
     expect(config.packages['.']['release-as']).toBe('1.0.0')
+  })
+
+  it('declares the release bot secret in the environment contract', () => {
+    const environmentExample = readFile(environmentExamplePath)
+
+    expect(environmentExample).toContain('GitHub Actions repository secret')
+    expect(environmentExample).toContain('RELEASE_BOT_PAT_TOKEN=')
   })
 
   it('derives Docker semver tags from the Release Please tag', () => {
