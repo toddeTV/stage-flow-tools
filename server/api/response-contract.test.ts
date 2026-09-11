@@ -103,7 +103,7 @@ describe('POST response contract', () => {
   it('clears live question and results state when the active question is deleted', async () => {
     const source = await readSource('server/api/questions/delete.post.ts')
 
-    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
+    expect(source).toContain('cancelPendingResultsUpdate()')
     expect(source).toContain("broadcast('new-question', null)")
     expect(source).toContain("broadcast('results-update', null, WebSocketChannel.RESULTS)")
   })
@@ -111,7 +111,7 @@ describe('POST response contract', () => {
   it('clears live question and results state when every question is deleted', async () => {
     const source = await readSource('server/api/questions/delete-all.post.ts')
 
-    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
+    expect(source).toContain('cancelPendingResultsUpdate()')
     expect(source).toContain("broadcast('new-question', null)")
     expect(source).toContain("broadcast('results-update', null, WebSocketChannel.RESULTS)")
   })
@@ -120,7 +120,7 @@ describe('POST response contract', () => {
     const source = await readSource('server/api/questions/import.post.ts')
 
     expect(source).toContain('if (result.activeQuestion)')
-    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
+    expect(source).toContain('cancelPendingResultsUpdate()')
     expect(source).toContain("broadcast('new-question', serializePublicQuestion(result.activeQuestion))")
     expect(source).toContain('const results = await getResultsForQuestion(result.activeQuestion.id)')
     expect(source).toContain("broadcast('results-update', results, WebSocketChannel.RESULTS)")
@@ -129,14 +129,14 @@ describe('POST response contract', () => {
   it('cancels buffered results when the active question is unpublished', async () => {
     const source = await readSource('server/api/questions/unpublish-active.post.ts')
 
-    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
+    expect(source).toContain('cancelPendingResultsUpdate()')
   })
 
   it('broadcasts active question edits to connected participants', async () => {
     const source = await readSource('server/api/questions/update.post.ts')
 
     expect(source).toContain('if (question.is_active)')
-    expect(source).toContain('clearScheduledResultsUpdate(WebSocketChannel.RESULTS)')
+    expect(source).toContain('cancelPendingResultsUpdate()')
     expect(source).toContain("broadcast('new-question', serializePublicQuestion(question))")
     expect(source).toContain('const results = await getResultsForQuestion(question.id)')
     expect(source).toContain("broadcast('results-update', results, WebSocketChannel.RESULTS)")

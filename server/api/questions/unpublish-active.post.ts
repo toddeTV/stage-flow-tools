@@ -9,7 +9,7 @@ export default defineApiHandler(async (event) => {
 
   if (deactivated) {
     // Broadcast that there is no active question
-    clearScheduledResultsUpdate(WebSocketChannel.RESULTS)
+    cancelPendingResultsUpdate()
     broadcast('new-question', null)
     broadcast('results-update', null, WebSocketChannel.RESULTS)
   }

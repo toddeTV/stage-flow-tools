@@ -16,6 +16,7 @@ Deploy the application on your own Linux server using Docker Compose and a Traef
 - A [Traefik](https://doc.traefik.io/traefik/) reverse proxy instance running and configured on the same server. Traefik handles SSL certificate provisioning via Let's Encrypt and routes HTTPS traffic to the application container.
 - The `traefik-public` Docker network must exist. Create it if needed: `docker network create traefik-public`.
 - A domain or subdomain pointed to the server's IP address (A or AAAA DNS record).
+- At least 65,536 open files allowed for the host, Traefik process, and application container when serving large audiences.
 
 ## Setup
 
@@ -107,6 +108,14 @@ docker compose up --build -d
 The application will be accessible at your configured domain. Traefik will automatically handle SSL certificate provisioning via Let's Encrypt.
 
 After login, the admin menu includes `/admin/database`, which opens Drizzle Studio inside the app through the protected proxy.
+
+For large audiences, verify the container limit:
+
+```bash
+docker compose exec app sh -c 'ulimit -n'
+```
+
+The result must be at least `65536`. Configure the service manager that starts Traefik with the same or a higher `LimitNOFILE` value and confirm its effective limit before the event. The Compose service already sets the application container's soft and hard `nofile` limits to `65536`.
 
 ### 5. Prepare Legal Documents
 

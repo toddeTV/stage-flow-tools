@@ -98,19 +98,6 @@ clear the visible selection only when that question is active.
 }
 ```
 
-#### `connections-update`
-
-Peer count change (on connect/disconnect)
-
-```json
-{
-  "event": "connections-update",
-  "data": {
-    "totalConnections": "number"
-  }
-}
-```
-
 #### `emojis`
 
 Emoji reaction batch
@@ -219,9 +206,10 @@ ws.onclose = () => {
 
 ### Message Batching
 
-- Group results updates
-- 2-second buffer window
-- Single broadcast per batch
+- Answer, retraction, and lock changes request a results update.
+- The server waits for one 2-second buffer window before calculating current results.
+- Every window performs at most one calculation and one results-channel broadcast.
+- Administrative state replacements cancel pending results before sending the new state immediately.
 
 ### Connection Pooling
 

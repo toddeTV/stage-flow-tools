@@ -1,9 +1,6 @@
 import type { Peer } from 'crossws'
 import { WebSocketChannel } from '~/types'
-import type {
-  EmojiReaction,
-  Results,
-} from '~/types'
+import type { EmojiReaction } from '~/types'
 
 interface PeerInfo {
   id: string
@@ -19,13 +16,7 @@ interface PeerSession {
   userId?: string
 }
 
-interface ResultsBufferState {
-  latest?: Results
-  timeoutId?: ReturnType<typeof setTimeout>
-}
-
 const peerSessions = new Map<string, PeerSession>()
-const resultsBuffers = new Map<WebSocketChannel, ResultsBufferState>()
 const emojiBuffer: EmojiReaction[] = []
 let emojiTimeoutId: ReturnType<typeof setTimeout> | undefined
 
@@ -37,21 +28,17 @@ function getSessions(channel?: WebSocketChannel): PeerSession[] {
     : sessions
 }
 
-export async function addPeer(peer: Peer, channel: WebSocketChannel, url: string, userId?: string) {
+export function addPeer(peer: Peer, channel: WebSocketChannel, url: string, userId?: string) {
   peerSessions.set(peer.id, {
     channel,
     peer,
     url,
     userId,
   })
-
-  await broadcastConnections()
 }
 
-export async function removePeer(peer: Peer) {
+export function removePeer(peer: Peer) {
   peerSessions.delete(peer.id)
-
-  await broadcastConnections()
 }
 
 /** Returns peer info derived from the in-memory peer map. */
@@ -62,6 +49,23 @@ export async function getPeers(channel?: WebSocketChannel): Promise<PeerInfo[]> 
     channel: session.channel,
     userId: session.userId,
   }))
+}
+
+/** Counts current peer sessions, optionally restricted to one channel. */
+export function getPeerCount(channel?: WebSocketChannel): number {
+  if (!channel) {
+    return peerSessions.size
+  }
+
+  let count = 0
+
+  for (const session of peerSessions.values()) {
+    if (session.channel === channel) {
+      count += 1
+    }
+  }
+
+  return count
 }
 
 export function broadcast(event: string, data: unknown, channel?: WebSocketChannel) {
@@ -95,43 +99,6 @@ export function sendToUser(userId: string, event: string, data: unknown, channel
     }
   }
   return delivered
-}
-
-export async function broadcastConnections() {
-  const allPeers = await getPeers()
-  broadcast('connections-update', { totalConnections: allPeers.length })
-}
-
-export function scheduleResultsUpdate(data: Results, channel: WebSocketChannel) {
-  const state = resultsBuffers.get(channel) || {}
-  state.latest = data
-
-  if (!state.timeoutId) {
-    state.timeoutId = setTimeout(() => {
-      if (state.latest) {
-        broadcast('results-update', state.latest, channel)
-      }
-
-      resultsBuffers.delete(channel)
-    }, 2000)
-  }
-
-  resultsBuffers.set(channel, state)
-}
-
-/** Cancels a buffered results update so cleared state cannot be overwritten later. */
-export function clearScheduledResultsUpdate(channel: WebSocketChannel) {
-  const state = resultsBuffers.get(channel)
-
-  if (!state) {
-    return
-  }
-
-  if (state.timeoutId) {
-    clearTimeout(state.timeoutId)
-  }
-
-  resultsBuffers.delete(channel)
 }
 
 function scheduleEmojiBatch(): void {

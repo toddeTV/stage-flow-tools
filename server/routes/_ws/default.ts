@@ -37,12 +37,12 @@ export default defineWebSocketHandler({
       }
     }
 
-    await addPeer(peer, query.output.channel as WebSocketChannel, url, query.output.userId)
+    addPeer(peer, query.output.channel as WebSocketChannel, url, query.output.userId)
   },
 
-  async close(peer: Peer) {
+  close(peer: Peer) {
     logger('WebSocket connection closed')
-    await removePeer(peer)
+    removePeer(peer)
   },
 
   error(peer: Peer, error: Error) {

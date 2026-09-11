@@ -69,5 +69,7 @@ The next server start recreates the SQLite database file.
 ## Performance Notes
 
 - Reads and writes are local SQLite operations.
+- Re-submitting an answer uses the `(question_id, user_id)` unique index for one upsert.
+- Result changes are coalesced before the current question's answers are read and counted.
 - Current architecture is fine for single-instance conference and workshop use.
 - Multi-instance scaling would need a different shared storage layer and shared realtime coordination.

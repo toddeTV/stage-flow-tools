@@ -18,6 +18,10 @@ services:
     #   - .env
     volumes:
       - ./.data:/app/.data
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     networks:
       - traefik-public
     labels:

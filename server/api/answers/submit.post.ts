@@ -1,4 +1,4 @@
-import { WebSocketChannel, type LocalizedString } from '~/types'
+import type { LocalizedString } from '~/types'
 import { AnswerSubmitSchema } from '#shared/utils/validation'
 
 export default defineApiHandler(async (event) => {
@@ -46,11 +46,7 @@ export default defineApiHandler(async (event) => {
     selected_answer: originalAnswer ? originalAnswer.text : selected_answer,
   })
 
-  // Schedule bundled results update
-  const results = await getCurrentResults()
-  if (results) {
-    scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
-  }
+  requestResultsUpdate()
 
   return { success: true }
 })

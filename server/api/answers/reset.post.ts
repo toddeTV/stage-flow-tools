@@ -12,6 +12,7 @@ export default defineApiHandler(async (event) => {
   }
 
   await clearAnswersForQuestion(activeQuestion.id)
+  cancelPendingResultsUpdate()
 
   const results = await getResultsForQuestion(activeQuestion.id)
 
