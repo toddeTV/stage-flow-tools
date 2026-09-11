@@ -41,6 +41,8 @@ jobs:
             command: vp run test:type
           - name: Unit Tests
             command: vp run test:unit
+          - name: Integration Tests
+            command: vp run test:integration
 
     steps:
       # Check out the repository

@@ -6,7 +6,7 @@ This is an inventory, not a complete redistribution license bundle.
 
 Project source code remains governed by `LICENSE`. Third-party packages remain governed by their own license terms.
 
-Package count: 44
+Package count: 46
 
 ## Packages
 
@@ -134,6 +134,16 @@ Package count: 44
 - License: MIT
 - Repository: git+https://github.com/vitejs/vite-plugin-vue.git
 - Homepage: https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue#readme
+- Included license files: LICENSE
+- Included notice files: none found
+
+### @vue/test-utils
+
+- Declared as: devDependencies (~2.5.0)
+- Installed version: 2.5.0
+- License: MIT
+- Repository: git+https://github.com/vuejs/test-utils.git
+- Homepage: https://github.com/vuejs/test-utils
 - Included license files: LICENSE
 - Included notice files: none found
 
@@ -292,6 +302,16 @@ Package count: 44
 - License: MIT
 - Repository: git+https://github.com/ota-meshi/eslint-plugin-yml.git
 - Homepage: https://ota-meshi.github.io/eslint-plugin-yml/
+- Included license files: LICENSE
+- Included notice files: none found
+
+### happy-dom
+
+- Declared as: devDependencies (~20.14.3)
+- Installed version: 20.14.3
+- License: MIT
+- Repository: https://github.com/capricorn86/happy-dom
+- Homepage: https://github.com/capricorn86/happy-dom
 - Included license files: LICENSE
 - Included notice files: none found
 

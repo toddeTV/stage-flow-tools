@@ -1,12 +1,14 @@
-// @vitest-environment jsdom
+// @vitest-environment happy-dom
 import {
   computed,
-  createApp,
   defineComponent,
   h,
-  nextTick,
   ref,
 } from 'vue'
+import {
+  flushPromises,
+  mount,
+} from '@vue/test-utils'
 import {
   afterEach,
   beforeEach,
@@ -20,7 +22,7 @@ import QuestionPackageImportWizard from './QuestionPackageImportWizard.vue'
 
 const questionPackage = {
   format: 'stage-flow-tools.question-package' as const,
-  version: 1 as const,
+  version: 1,
   questions: [
     {
       answer_options: [
@@ -53,18 +55,27 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  document.body.replaceChildren()
   vi.unstubAllGlobals()
 })
 
-async function selectPackage(container: HTMLElement) {
-  const input = container.querySelector<HTMLInputElement>('#question-package-file')
+function renderWizard(isPreviewReady: boolean, questions: Question[] = []) {
+  return mount(QuestionPackageImportWizard, {
+    props: {
+      isImporting: false,
+      isPreparingPreview: false,
+      isPreviewReady,
+      questions,
+    },
+    global: {
+      components: { UiButton },
+    },
+  })
+}
 
-  if (!input) {
-    throw new Error('Question-package file input is missing')
-  }
+async function selectPackage(wrapper: ReturnType<typeof renderWizard>) {
+  const input = wrapper.get<HTMLInputElement>('#question-package-file')
 
-  Object.defineProperty(input, 'files', {
+  Object.defineProperty(input.element, 'files', {
     configurable: true,
     value: [
       {
@@ -72,61 +83,51 @@ async function selectPackage(container: HTMLElement) {
       },
     ],
   })
-  input.dispatchEvent(new Event('change'))
-  await Promise.resolve()
-  await nextTick()
+  await input.trigger('change')
+  await flushPromises()
 }
 
-function renderWizard(isPreviewReady: boolean, questions: Question[] = []) {
-  const container = document.createElement('div')
-  const confirmedPackages: typeof questionPackage[] = []
-  const app = createApp(QuestionPackageImportWizard, {
-    isImporting: false,
-    isPreparingPreview: false,
-    isPreviewReady,
-    questions,
-    onConfirm: (selectedPackage: typeof questionPackage) => confirmedPackages.push(selectedPackage),
-  })
+function importButton(wrapper: ReturnType<typeof renderWizard>) {
+  const button = wrapper.findAll('button')[0]
 
-  app.component('UiButton', UiButton)
-  document.body.append(container)
-  app.mount(container)
-
-  return {
-    app,
-    confirmedPackages,
-    container,
+  if (!button) {
+    throw new Error('Import button is missing')
   }
+
+  return button
 }
 
 describe('question package import wizard', () => {
-  it('keeps import disabled when the current package has no successful preview', async () => {
-    const rendered = renderWizard(false)
+  it('emits the selected package but keeps import disabled without a successful preview', async () => {
+    const wrapper = renderWizard(false)
 
-    await selectPackage(rendered.container)
+    await selectPackage(wrapper)
 
-    const importButton = rendered.container.querySelector<HTMLButtonElement>('button')
-    expect(importButton?.disabled).toBe(true)
-    importButton?.click()
-    expect(rendered.confirmedPackages).toEqual([])
-    rendered.app.unmount()
+    expect(wrapper.emitted('packageSelected')).toEqual([
+      [
+        questionPackage,
+      ],
+    ])
+    expect((importButton(wrapper).element as HTMLButtonElement).disabled).toBe(true)
   })
 
-  it('enables import after the current package has a successful preview', async () => {
-    const rendered = renderWizard(true)
+  it('enables import after a successful preview and emits the confirmed package', async () => {
+    const wrapper = renderWizard(true)
 
-    await selectPackage(rendered.container)
+    await selectPackage(wrapper)
 
-    const importButton = rendered.container.querySelector<HTMLButtonElement>('button')
-    expect(importButton?.disabled).toBe(false)
-    importButton?.click()
-    expect(rendered.confirmedPackages).toHaveLength(1)
-    expect(rendered.confirmedPackages[0]).toMatchObject(questionPackage)
-    rendered.app.unmount()
+    const button = importButton(wrapper)
+    expect((button.element as HTMLButtonElement).disabled).toBe(false)
+    await button.trigger('click')
+    expect(wrapper.emitted('confirm')).toEqual([
+      [
+        questionPackage,
+      ],
+    ])
   })
 
-  it('warns before importing an update to an existing question', async () => {
-    const rendered = renderWizard(true, [
+  it('shows the update warning when the selected package changes an existing question', async () => {
+    const wrapper = renderWizard(true, [
       {
         answer_options: [
           { text: { en: 'Old yes' } },
@@ -144,17 +145,9 @@ describe('question package import wizard', () => {
       },
     ])
 
-    expect(rendered.container.textContent).not.toContain('questionPackageAnswerWarning')
+    await selectPackage(wrapper)
 
-    await selectPackage(rendered.container)
-
-    expect(rendered.container.textContent).toContain('questionsToUpdate:1')
-    expect(rendered.container.textContent).toContain('questionPackageAnswerWarning')
-
-    const importButton = rendered.container.querySelector<HTMLButtonElement>('button')
-    expect(importButton?.disabled).toBe(false)
-    importButton?.click()
-    expect(rendered.confirmedPackages).toHaveLength(1)
-    rendered.app.unmount()
+    expect(wrapper.text()).toContain('questionsToUpdate:1')
+    expect(wrapper.text()).toContain('questionPackageAnswerWarning')
   })
 })

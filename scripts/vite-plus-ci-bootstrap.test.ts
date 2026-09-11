@@ -60,7 +60,7 @@ describe('Vite+ CI bootstrap', () => {
     expect(workflow).not.toContain('voidzero-dev/setup-vp@')
     expect(workflow).not.toContain('vp run graphify:test')
     expect(workflow).not.toContain('warning_summary')
-    expect(workflow.match(/^\s+command: /gm)).toHaveLength(5)
+    expect(workflow.match(/^\s+command: /gm)).toHaveLength(6)
   })
 
   it('provides a manual warm-cache installer-failure validation workflow', () => {

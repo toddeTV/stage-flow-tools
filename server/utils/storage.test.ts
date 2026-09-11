@@ -338,6 +338,42 @@ describe('question queue storage', () => {
     ])
   })
 
+  it('keeps one participant answer isolated to each question', async () => {
+    const firstQuestion = await createQuestion(createInputQuestion('first-question'))
+    const secondQuestion = await createQuestion(createInputQuestion('second-question'))
+
+    testClient.db.update(questions).set({ isActive: true }).where(eq(questions.id, firstQuestion.id)).run()
+    await submitAnswer({
+      question_id: firstQuestion.id,
+      selected_answer: { en: 'One' },
+      user_id: 'participant-id',
+      user_nickname: 'Participant',
+    })
+    testClient.db.update(questions).set({ isActive: false }).where(eq(questions.id, firstQuestion.id)).run()
+    testClient.db.update(questions).set({ isActive: true }).where(eq(questions.id, secondQuestion.id)).run()
+    await submitAnswer({
+      question_id: secondQuestion.id,
+      selected_answer: { en: 'Two' },
+      user_id: 'participant-id',
+      user_nickname: 'Participant',
+    })
+
+    await expect(getAnswersForQuestion(firstQuestion.id)).resolves.toMatchObject([
+      {
+        question_id: firstQuestion.id,
+        selected_answer: { en: 'One' },
+        user_id: 'participant-id',
+      },
+    ])
+    await expect(getAnswersForQuestion(secondQuestion.id)).resolves.toMatchObject([
+      {
+        question_id: secondQuestion.id,
+        selected_answer: { en: 'Two' },
+        user_id: 'participant-id',
+      },
+    ])
+  })
+
   it('counts only participant WebSockets in current results', async () => {
     const question = await createQuestion(createInputQuestion('participant-count'))
     const createPeer = (id: string) => ({
