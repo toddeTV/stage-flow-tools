@@ -89,6 +89,7 @@ describe('release workflow configuration', () => {
 
     expect(releaseJob).toContain('release_sha: ${{ steps.release.outputs.sha }}')
     expect(dockerPublishJob).toContain('ref: ${{ needs.release-please.outputs.release_sha }}')
+    expect(dockerPublishJob).toContain('context: git')
     expect(workflow).toContain('release_sha: ${{ needs.release-please.outputs.release_sha }}')
     expect(smokeWorkflow).toContain('release_sha:')
     expect(smokeWorkflow).toContain('ref: ${{ inputs.release_sha || github.sha }}')
