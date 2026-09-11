@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           if [ -z "${RELEASE_BOT_PAT_TOKEN}" ]; then
-            echo "Missing RELEASE_BOT_PAT_TOKEN. Release Please must use a PAT or GitHub App token so release PR validation workflows run without manual approval."
+            echo "Missing RELEASE_BOT_PAT_TOKEN. Release Please needs a fine-grained personal access token so release PR validation workflows run without manual approval."
             exit 1
           fi
 

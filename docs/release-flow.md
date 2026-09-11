@@ -27,11 +27,15 @@ Release Please uses the repository secret `RELEASE_BOT_PAT_TOKEN`, not
 `GITHUB_TOKEN`. This lets the generated release PR start the normal
 `pull_request` validation workflow without manual approval.
 
-Create a fine-grained personal access token or GitHub App token that is limited
-to this repository. Grant Contents, Issues, and Pull requests read/write
-access; Metadata read access is automatic. Set an expiration date, rotate the
-token before it expires, and store it as the `RELEASE_BOT_PAT_TOKEN`
-repository secret.
+Create a fine-grained personal access token limited to this repository. Grant
+Contents, Issues, and Pull requests read/write access; Metadata read access is
+automatic. Set an expiration date, rotate the token before it expires, and
+store it as the `RELEASE_BOT_PAT_TOKEN` repository secret.
+
+Do not store a GitHub App installation access token in this static secret:
+those tokens are short-lived. Supporting a GitHub App would require generating
+a fresh installation token for every workflow run, which this workflow does not
+implement.
 
 GitHub Actions must be allowed to create pull requests in the repository
 settings. The Docker publish job continues to use its separate
