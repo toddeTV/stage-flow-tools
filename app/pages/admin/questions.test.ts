@@ -18,6 +18,7 @@ import {
 } from 'vite-plus/test'
 import QuestionsPage from './questions.vue'
 import QuestionPackageImportWizard from '~/components/questions/QuestionPackageImportWizard.vue'
+import AdminBackLink from '~/components/admin/AdminBackLink.vue'
 import type {
   Question,
   QuestionPackage,
@@ -118,6 +119,7 @@ function renderPage() {
   const container = document.createElement('div')
   const app = createApp(QuestionsPage)
 
+  app.component('AdminBackLink', AdminBackLink)
   app.component('Icon', Passthrough)
   app.component('NuxtLink', Passthrough)
   app.component('QuestionPackageImportWizard', QuestionPackageImportWizard)

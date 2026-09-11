@@ -273,6 +273,7 @@ watch(refreshIntervalMs, restartPolling)
 <template>
   <div class="min-h-screen" :style="backgroundStyles">
     <div :class="isCoreView ? 'min-h-screen' : 'mx-auto max-w-3xl p-5'" :style="coreViewStyles">
+      <AdminBackLink v-if="!isCoreView" />
       <UiPageTitle v-if="!isCoreView">
         {{ t('title') }}
       </UiPageTitle>

@@ -24,6 +24,7 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto max-w-6xl p-5">
+    <AdminBackLink />
     <UiPageTitle>{{ t('title') }}</UiPageTitle>
 
     <p class="mb-5 text-center text-sm text-gray-600">
@@ -31,14 +32,6 @@ onMounted(() => {
     </p>
 
     <div class="mb-5 flex flex-wrap justify-center gap-3">
-      <NuxtLink
-        class="block border-[3px] border-black bg-white px-4 py-3 text-sm uppercase transition-all duration-200
-          hover:translate-x-1 hover:shadow-[-5px_5px_0_#000]"
-        to="/admin"
-      >
-        {{ t('back') }}
-      </NuxtLink>
-
       <a
         v-if="studioUrl"
         class="block border-[3px] border-black bg-black px-4 py-3 text-sm text-white uppercase
@@ -73,21 +66,18 @@ onMounted(() => {
 en:
   title: Database
   description: Browse and edit the SQLite database through a server-side Drizzle Studio proxy.
-  back: Back to Admin
   openNewTab: Open in New Tab
   iframeTitle: Drizzle Studio
   loading: Loading Studio
 de:
   title: Datenbank
   description: SQLite-Datenbank über einen serverseitigen Drizzle-Studio-Proxy durchsuchen und bearbeiten.
-  back: Zurück zur Admin
   openNewTab: In neuem Tab öffnen
   iframeTitle: Drizzle Studio
   loading: Studio wird geladen
 ja:
   title: データベース
   description: サーバー側の Drizzle Studio プロキシ経由で SQLite データベースを参照、編集します。
-  back: 管理画面に戻る
   openNewTab: 新しいタブで開く
   iframeTitle: Drizzle Studio
   loading: Studio を読み込み中
