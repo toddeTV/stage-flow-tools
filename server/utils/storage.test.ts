@@ -31,10 +31,12 @@ import {
   getAnswersForQuestion,
   getNextPublishableQuestion,
   getQuestions,
+  getResultsForQuestion,
   importQuestionPackage,
   moveQuestion,
   publishQuestion,
   QuestionAnswerOptionsResetRequiredError,
+  submitAnswer,
   toggleQuestionDisabled,
   updateQuestion,
 } from './storage'
@@ -310,8 +312,34 @@ describe('question queue storage', () => {
     })
   })
 
-  it('sends publication results only to results peers', async () => {
-    const question = await createQuestion(createInputQuestion('published-question'))
+  it('upserts a participant answer without replacing its original nickname', async () => {
+    const question = await createQuestion(createInputQuestion('answer-upsert'))
+    testClient.db.update(questions).set({ isActive: true }).where(eq(questions.id, question.id)).run()
+
+    await expect(submitAnswer({
+      question_id: question.id,
+      selected_answer: { en: 'One' },
+      user_id: 'participant-id',
+      user_nickname: 'Original nickname',
+    })).resolves.toBeUndefined()
+    await expect(submitAnswer({
+      question_id: question.id,
+      selected_answer: { en: 'Two' },
+      user_id: 'participant-id',
+      user_nickname: 'Changed nickname',
+    })).resolves.toBeUndefined()
+
+    await expect(getAnswersForQuestion(question.id)).resolves.toMatchObject([
+      {
+        selected_answer: { en: 'Two' },
+        user_id: 'participant-id',
+        user_nickname: 'Original nickname',
+      },
+    ])
+  })
+
+  it('counts only participant WebSockets in current results', async () => {
+    const question = await createQuestion(createInputQuestion('participant-count'))
     const createPeer = (id: string) => ({
       id,
       send: vi.fn(),
@@ -328,13 +356,8 @@ describe('question queue storage', () => {
     emojiPeer.send.mockClear()
 
     try {
-      await publishQuestion(question.id)
-
-      expect(defaultPeer.send).not.toHaveBeenCalled()
-      expect(emojiPeer.send).not.toHaveBeenCalled()
-      expect(JSON.parse(resultsPeer.send.mock.calls[0]![0])).toMatchObject({
-        event: 'results-update',
-        data: { question: { id: question.id } },
+      await expect(getResultsForQuestion(question.id)).resolves.toMatchObject({
+        totalConnections: 1,
       })
     }
     finally {

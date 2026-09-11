@@ -7,7 +7,7 @@ export default defineApiHandler(async (event) => {
 
   const deletedQuestionCount = await deleteAllQuestions()
 
-  clearScheduledResultsUpdate(WebSocketChannel.RESULTS)
+  cancelPendingResultsUpdate()
   broadcast('new-question', null)
   broadcast('results-update', null, WebSocketChannel.RESULTS)
 

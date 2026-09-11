@@ -47,7 +47,7 @@ export default defineApiHandler(async (event) => {
   }
 
   if (question.is_active) {
-    clearScheduledResultsUpdate(WebSocketChannel.RESULTS)
+    cancelPendingResultsUpdate()
     broadcast('new-question', serializePublicQuestion(question))
 
     const results = await getResultsForQuestion(question.id)

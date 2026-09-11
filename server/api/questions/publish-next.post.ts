@@ -21,11 +21,9 @@ export default defineApiHandler(async (event) => {
   // Broadcast new question to all connected clients
   broadcast('new-question', serializePublicQuestion(question))
 
-  // Also broadcast an empty results update to clear previous results
+  cancelPendingResultsUpdate()
   const results = await getResultsForQuestion(question.id)
-  if (results) {
-    scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
-  }
+  broadcast('results-update', results, WebSocketChannel.RESULTS)
 
   return question
 })

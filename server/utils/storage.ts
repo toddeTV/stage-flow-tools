@@ -30,10 +30,7 @@ import {
   questions,
 } from '../database/schema'
 import { buildQuestionOptionResults } from './quiz-results'
-import {
-  broadcast,
-  getPeers,
-} from './websocket'
+import { getPeerCount } from './websocket'
 
 let storageInitialized = false
 
@@ -336,14 +333,7 @@ export async function publishQuestion(questionIdentifier: string): Promise<Quest
     }).where(eq(questions.id, questionRow.id)).run()
   })
 
-  const publishedQuestion = await getActiveQuestion()
-
-  if (publishedQuestion) {
-    const results = await getResultsForQuestion(publishedQuestion.id)
-    broadcast('results-update', results, WebSocketChannel.RESULTS)
-  }
-
-  return publishedQuestion
+  return getActiveQuestion()
 }
 
 /** Returns the next enabled question after the active one in persistent queue order. */
@@ -503,7 +493,7 @@ export async function getAnswers(): Promise<Answer[]> {
     .map(deserializeAnswer)
 }
 
-export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>): Promise<Answer[]> {
+export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>): Promise<void> {
   await initStorage()
   const question = getQuestionById(answerData.question_id)
 
@@ -523,33 +513,25 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
     throw new Error('Invalid answer option')
   }
 
-  const existingAnswer = getDatabase()
-    .select()
-    .from(answers)
-    .where(and(
-      eq(answers.questionId, answerData.question_id),
-      eq(answers.userId, answerData.user_id),
-    ))
-    .get()
+  const timestamp = new Date().toISOString()
 
-  if (existingAnswer) {
-    getDatabase()
-      .update(answers)
-      .set({
-        selectedAnswer: JSON.stringify(answerData.selected_answer),
-        timestamp: new Date().toISOString(),
-      })
-      .where(eq(answers.id, existingAnswer.id))
-      .run()
-  }
-  else {
-    getDatabase().insert(answers).values(createStoredAnswerInsert({
+  getDatabase()
+    .insert(answers)
+    .values(createStoredAnswerInsert({
       ...answerData,
-      timestamp: new Date().toISOString(),
-    })).run()
-  }
-
-  return getAnswers()
+      timestamp,
+    }))
+    .onConflictDoUpdate({
+      target: [
+        answers.questionId,
+        answers.userId,
+      ],
+      set: {
+        selectedAnswer: JSON.stringify(answerData.selected_answer),
+        timestamp,
+      },
+    })
+    .run()
 }
 
 export async function getAnswersForQuestion(questionId: string): Promise<Answer[]> {
@@ -564,7 +546,7 @@ export async function getAnswersForQuestion(questionId: string): Promise<Answer[
     .map(deserializeAnswer)
 }
 
-export async function retractAnswer(userId: string, questionId: string): Promise<Answer[]> {
+export async function retractAnswer(userId: string, questionId: string): Promise<void> {
   await initStorage()
 
   getDatabase()
@@ -574,8 +556,6 @@ export async function retractAnswer(userId: string, questionId: string): Promise
       eq(answers.questionId, questionId),
     ))
     .run()
-
-  return getAnswersForQuestion(questionId)
 }
 
 /** Deletes all stored answers for one question. */
@@ -598,23 +578,21 @@ export async function validateAdmin(username: string, password: string, event?: 
 // Get results for current question
 export async function getResultsForQuestion(
   questionId: string,
-  allQuestions?: Question[],
-  allAnswers?: Answer[],
 ): Promise<Results | null> {
-  const questionList = allQuestions || await getQuestions()
-  const question = questionList.find(item => item.id === questionId)
+  await initStorage()
+  const question = getQuestionById(questionId)
 
   if (!question) {
     return null
   }
 
-  const answerList = allAnswers || await getAnswersForQuestion(question.id)
+  const answerList = await getAnswersForQuestion(question.id)
 
   return {
     question,
     results: buildQuestionOptionResults(question, answerList),
     totalVotes: answerList.length,
-    totalConnections: (await getPeers()).length,
+    totalConnections: getPeerCount(WebSocketChannel.DEFAULT),
   }
 }
 

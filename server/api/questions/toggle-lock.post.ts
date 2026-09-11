@@ -1,4 +1,3 @@
-import { WebSocketChannel } from '~/types'
 import { ToggleQuestionLockSchema } from '#shared/utils/validation'
 
 export default defineApiHandler(async (event) => {
@@ -16,11 +15,7 @@ export default defineApiHandler(async (event) => {
   if (question) {
     broadcast('lock-status', { questionId, is_locked: question.is_locked })
 
-    // Also broadcast a results update
-    const results = await getResultsForQuestion(questionId)
-    if (results) {
-      scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
-    }
+    requestResultsUpdate()
   }
 
   return question

@@ -10,7 +10,7 @@ export default defineApiHandler(async (event) => {
   const result = await importQuestionPackage(questionPackage)
 
   if (result.activeQuestion) {
-    clearScheduledResultsUpdate(WebSocketChannel.RESULTS)
+    cancelPendingResultsUpdate()
     broadcast('new-question', serializePublicQuestion(result.activeQuestion))
 
     const results = await getResultsForQuestion(result.activeQuestion.id)

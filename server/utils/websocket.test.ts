@@ -1,17 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import type { Peer } from 'crossws'
 
-import {
-  WebSocketChannel,
-  type Results,
-} from '~/types'
+import { WebSocketChannel } from '~/types'
 import {
   addPeer,
-  broadcast,
-  clearScheduledResultsUpdate,
   enqueueEmoji,
+  getPeerCount,
   removePeer,
-  scheduleResultsUpdate,
 } from './websocket'
 
 const runtimeConfig = {
@@ -25,26 +20,26 @@ const peers: Peer[] = []
 vi.stubGlobal('logger_error', vi.fn())
 vi.stubGlobal('useRuntimeConfig', () => runtimeConfig)
 
-async function addPeerForChannel(channel: WebSocketChannel): Promise<Peer & { send: ReturnType<typeof vi.fn> }> {
+function addPeerForChannel(channel: WebSocketChannel): Peer & { send: ReturnType<typeof vi.fn> } {
   const peer = {
     id: 'peer-' + peers.length,
     send: vi.fn(),
   } as unknown as Peer & { send: ReturnType<typeof vi.fn> }
 
   peers.push(peer)
-  await addPeer(peer, channel, '/_ws/default')
+  addPeer(peer, channel, '/_ws/default')
   peer.send.mockClear()
 
   return peer
 }
 
-async function addEmojiPeer() {
+function addEmojiPeer() {
   return addPeerForChannel(WebSocketChannel.EMOJIS)
 }
 
-afterEach(async () => {
+afterEach(() => {
   for (const peer of peers.splice(0)) {
-    await removePeer(peer)
+    removePeer(peer)
   }
 
   vi.runAllTimers()
@@ -54,7 +49,7 @@ afterEach(async () => {
 describe('enqueueEmoji', () => {
   it('emits an ordered batch only after the configured tick', async () => {
     vi.useFakeTimers()
-    const peer = await addEmojiPeer()
+    const peer = addEmojiPeer()
 
     enqueueEmoji({ emoji: '🔥', id: 'first' })
     enqueueEmoji({ emoji: '👏', id: 'second' })
@@ -75,7 +70,7 @@ describe('enqueueEmoji', () => {
 
   it('continues on later ticks when a batch reaches the configured maximum', async () => {
     vi.useFakeTimers()
-    const peer = await addEmojiPeer()
+    const peer = addEmojiPeer()
 
     for (let index = 0; index < runtimeConfig.emojiBatchMaxSize + 1; index++) {
       enqueueEmoji({ emoji: '🔥', id: String(index) })
@@ -107,51 +102,22 @@ describe('enqueueEmoji', () => {
   })
 })
 
-describe('scheduled results updates', () => {
-  it('keeps pending updates isolated between channels', async () => {
+describe('peer tracking', () => {
+  it('counts channels without broadcasting connection changes', () => {
     vi.useFakeTimers()
-    const defaultPeer = await addPeerForChannel(WebSocketChannel.DEFAULT)
-    const resultsPeer = await addPeerForChannel(WebSocketChannel.RESULTS)
-    defaultPeer.send.mockClear()
-    resultsPeer.send.mockClear()
-
-    const defaultResults = { totalVotes: 1 } as Results
-    const results = { totalVotes: 2 } as Results
-
-    scheduleResultsUpdate(defaultResults, WebSocketChannel.DEFAULT)
-    scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
-    vi.advanceTimersByTime(1999)
+    const defaultPeer = addPeerForChannel(WebSocketChannel.DEFAULT)
+    const resultsPeer = addPeerForChannel(WebSocketChannel.RESULTS)
+    const emojiPeer = addPeerForChannel(WebSocketChannel.EMOJIS)
 
     expect(defaultPeer.send).not.toHaveBeenCalled()
     expect(resultsPeer.send).not.toHaveBeenCalled()
+    expect(emojiPeer.send).not.toHaveBeenCalled()
+    expect(getPeerCount()).toBe(3)
+    expect(getPeerCount(WebSocketChannel.DEFAULT)).toBe(1)
 
-    vi.advanceTimersByTime(1)
-
-    expect(defaultPeer.send).toHaveBeenCalledTimes(1)
-    expect(JSON.parse(defaultPeer.send.mock.calls[0]![0])).toEqual({
-      data: defaultResults,
-      event: 'results-update',
-    })
-    expect(resultsPeer.send).toHaveBeenCalledTimes(1)
-    expect(JSON.parse(resultsPeer.send.mock.calls[0]![0])).toEqual({
-      data: results,
-      event: 'results-update',
-    })
-  })
-
-  it('does not send stale results after the channel is cleared', async () => {
-    vi.useFakeTimers()
-    const peer = await addPeerForChannel(WebSocketChannel.RESULTS)
-
-    scheduleResultsUpdate({} as Results, WebSocketChannel.RESULTS)
-    clearScheduledResultsUpdate(WebSocketChannel.RESULTS)
-    broadcast('results-update', null, WebSocketChannel.RESULTS)
-    vi.advanceTimersByTime(2000)
-
-    expect(peer.send).toHaveBeenCalledTimes(1)
-    expect(JSON.parse(peer.send.mock.calls[0]![0])).toEqual({
-      data: null,
-      event: 'results-update',
-    })
+    removePeer(defaultPeer)
+    expect(getPeerCount(WebSocketChannel.DEFAULT)).toBe(0)
+    expect(resultsPeer.send).not.toHaveBeenCalled()
+    expect(emojiPeer.send).not.toHaveBeenCalled()
   })
 })

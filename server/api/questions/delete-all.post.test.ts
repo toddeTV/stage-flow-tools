@@ -8,13 +8,13 @@ import {
 import { WebSocketChannel } from '~/types'
 
 const broadcast = vi.fn()
-const clearScheduledResultsUpdate = vi.fn()
+const cancelPendingResultsUpdate = vi.fn()
 const deleteAllQuestions = vi.fn()
 const readValidatedRequestBody = vi.fn()
 const verifyAdmin = vi.fn()
 
 vi.stubGlobal('broadcast', broadcast)
-vi.stubGlobal('clearScheduledResultsUpdate', clearScheduledResultsUpdate)
+vi.stubGlobal('cancelPendingResultsUpdate', cancelPendingResultsUpdate)
 vi.stubGlobal('defineApiHandler', <T>(handler: T) => handler)
 vi.stubGlobal('deleteAllQuestions', deleteAllQuestions)
 vi.stubGlobal('readValidatedRequestBody', readValidatedRequestBody)
@@ -44,7 +44,7 @@ describe('POST /api/questions/delete-all', () => {
       success: true,
     })
     expect(verifyAdmin).toHaveBeenCalled()
-    expect(clearScheduledResultsUpdate).toHaveBeenCalledWith(WebSocketChannel.RESULTS)
+    expect(cancelPendingResultsUpdate).toHaveBeenCalledOnce()
     expect(broadcast).toHaveBeenCalledWith('new-question', null)
     expect(broadcast).toHaveBeenCalledWith('results-update', null, WebSocketChannel.RESULTS)
   })

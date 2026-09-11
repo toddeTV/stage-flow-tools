@@ -1,4 +1,3 @@
-import { WebSocketChannel } from '~/types'
 import { AnswerRetractSchema } from '#shared/utils/validation'
 
 export default defineApiHandler(async (event) => {
@@ -9,11 +8,7 @@ export default defineApiHandler(async (event) => {
 
   await retractAnswer(user_id, question_id)
 
-  // Schedule bundled results update
-  const results = await getCurrentResults()
-  if (results) {
-    scheduleResultsUpdate(results, WebSocketChannel.RESULTS)
-  }
+  requestResultsUpdate()
 
   return { success: true }
 })

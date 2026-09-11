@@ -8,14 +8,14 @@ import {
 import { WebSocketChannel } from '~/types'
 
 const broadcast = vi.fn()
-const clearScheduledResultsUpdate = vi.fn()
+const cancelPendingResultsUpdate = vi.fn()
 const getResultsForQuestion = vi.fn()
 const importQuestionPackage = vi.fn()
 const readValidatedRequestBody = vi.fn()
 const verifyAdmin = vi.fn()
 
 vi.stubGlobal('broadcast', broadcast)
-vi.stubGlobal('clearScheduledResultsUpdate', clearScheduledResultsUpdate)
+vi.stubGlobal('cancelPendingResultsUpdate', cancelPendingResultsUpdate)
 vi.stubGlobal('defineApiHandler', <T>(handler: T) => handler)
 vi.stubGlobal('getResultsForQuestion', getResultsForQuestion)
 vi.stubGlobal('importQuestionPackage', importQuestionPackage)
@@ -59,7 +59,7 @@ describe('POST /api/questions/import', () => {
       updatedCount: 1,
     })
     expect(verifyAdmin).toHaveBeenCalled()
-    expect(clearScheduledResultsUpdate).toHaveBeenCalledWith(WebSocketChannel.RESULTS)
+    expect(cancelPendingResultsUpdate).toHaveBeenCalledOnce()
     expect(broadcast).toHaveBeenCalledWith('new-question', {
       answer_options: activeQuestion.answer_options,
       createdAt: activeQuestion.createdAt,

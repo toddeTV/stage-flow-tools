@@ -12,7 +12,7 @@ export default defineApiHandler(async (event) => {
   }
 
   if (question.is_active) {
-    clearScheduledResultsUpdate(WebSocketChannel.RESULTS)
+    cancelPendingResultsUpdate()
     broadcast('new-question', null)
     broadcast('results-update', null, WebSocketChannel.RESULTS)
   }
