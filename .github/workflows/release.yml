@@ -8,21 +8,34 @@ on:
 jobs:
   release-please:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: write
+      issues: write
       pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
+      release_sha: ${{ steps.release.outputs.sha }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
+      - name: Check Release Bot Token
+        env:
+          RELEASE_BOT_PAT_TOKEN: ${{ secrets.RELEASE_BOT_PAT_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "${RELEASE_BOT_PAT_TOKEN}" ]; then
+            echo "Missing RELEASE_BOT_PAT_TOKEN. Release Please needs a fine-grained personal access token so release PR validation workflows run without manual approval."
+            exit 1
+          fi
+
       - name: Release Please Action
         id: release
         # googleapis/release-please-action@v5.0.0
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: node
+          token: ${{ secrets.RELEASE_BOT_PAT_TOKEN }}
           config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
 
   publish-docker-image:
     needs:
@@ -39,6 +52,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
+          ref: ${{ needs.release-please.outputs.release_sha }}
 
       - name: Log in to GitHub Container Registry
         # docker/login-action@v4.6.0
@@ -53,12 +67,12 @@ jobs:
         # docker/metadata-action@v6.2.0
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302
         with:
+          context: git
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            latest=auto
+            type=semver,pattern={{version}},value=${{ needs.release-please.outputs.tag_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release-please.outputs.tag_name }}
+            type=semver,pattern={{major}},value=${{ needs.release-please.outputs.tag_name }}
 
       - name: Build and push Docker image
         # docker/build-push-action@v7.3.0
@@ -73,3 +87,5 @@ jobs:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
     uses: ./.github/workflows/docker-smoke.yml
+    with:
+      release_sha: ${{ needs.release-please.outputs.release_sha }}
