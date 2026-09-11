@@ -18,6 +18,8 @@ Deploy the application on your own Linux server using Docker Compose and a Traef
 - A domain or subdomain pointed to the server's IP address (A or AAAA DNS record).
 - At least 65,536 open files allowed for the host, Traefik process, and application container when serving large audiences.
 
+Cloudflare can optionally sit in front of this setup without changing the application runtime. Complete the direct deployment first, then follow [Optional Cloudflare Proxy/CDN](deployment-cloudflare-proxy.md).
+
 ## Setup
 
 ### 1. Clone the Repository

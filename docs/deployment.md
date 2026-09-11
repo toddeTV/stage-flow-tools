@@ -7,6 +7,7 @@ This project has one supported production deployment path: Docker.
 Use Docker Compose on a Linux host with a reverse proxy such as Traefik.
 
 - [Docker Deployment Guide](deployment-docker.md)
+- [Optional Cloudflare Proxy/CDN](deployment-cloudflare-proxy.md)
 - [Production Deployment](setup-production.md)
 - [Deployment-Specific Legal Documents](legal-texts.md)
 - [Release Flow](release-flow.md)
