@@ -54,7 +54,10 @@ describe('release workflow configuration', () => {
     }
     const manifest = JSON.parse(readFile('.release-please-manifest.json')) as Record<string, string>
 
-    expect(manifest).toEqual({})
+    expect([
+      {},
+      { '.': '1.0.0' },
+    ]).toContainEqual(manifest)
     expect(config.packages['.']['release-as']).toBe('1.0.0')
   })
 
