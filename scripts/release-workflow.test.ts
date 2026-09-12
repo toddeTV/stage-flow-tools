@@ -61,10 +61,10 @@ describe('release workflow configuration', () => {
     expect(config.packages['.']['release-as']).toBe('1.0.0')
   })
 
-  it('declares the release bot secret in the environment contract', () => {
+  it('declares the release bot secret in the maintainer repository configuration', () => {
     const environmentExample = readFile(environmentExamplePath)
 
-    expect(environmentExample).toContain('GitHub Actions repository secret')
+    expect(environmentExample).toContain('GitHub Actions maintainer repository config')
     expect(environmentExample).toContain('RELEASE_BOT_PAT_TOKEN=')
   })
 
