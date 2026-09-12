@@ -2,6 +2,10 @@ import type {
   Answer,
   Question,
 } from '~/types'
+import {
+  getCorrectAnswerTexts,
+  isCorrectAnswer,
+} from './quiz-results'
 
 export interface LeaderboardEntry {
   rank: number
@@ -22,12 +26,7 @@ export function buildLeaderboardResults(questionList: Question[], answerList: An
   const correctAnswersByQuestion = new Map<string, Set<string>>()
 
   for (const question of publishedQuestions) {
-    const correctTexts = new Set<string>()
-    for (const option of question.answer_options) {
-      if (option.emoji === '⭐') {
-        correctTexts.add(option.text.en.toLowerCase())
-      }
-    }
+    const correctTexts = getCorrectAnswerTexts(question)
     if (correctTexts.size > 0) {
       correctAnswersByQuestion.set(question.id, correctTexts)
     }
@@ -41,7 +40,7 @@ export function buildLeaderboardResults(questionList: Question[], answerList: An
 
     const existing = userScores.get(answer.user_id)
     if (existing) {
-      if (correctTexts.has(answer.selected_answer.en.toLowerCase())) {
+      if (isCorrectAnswer(correctTexts, answer.selected_answer)) {
         existing.correctAnswers++
       }
       continue
@@ -49,7 +48,7 @@ export function buildLeaderboardResults(questionList: Question[], answerList: An
 
     userScores.set(answer.user_id, {
       nickname: answer.user_nickname,
-      correctAnswers: correctTexts.has(answer.selected_answer.en.toLowerCase()) ? 1 : 0,
+      correctAnswers: isCorrectAnswer(correctTexts, answer.selected_answer) ? 1 : 0,
     })
   }
 

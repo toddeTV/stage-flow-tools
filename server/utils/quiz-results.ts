@@ -1,8 +1,26 @@
 import type {
   Answer,
+  LocalizedString,
   Question,
   Results,
 } from '~/types'
+
+/** Returns English option labels marked as correct, normalized for comparison. */
+export function getCorrectAnswerTexts(question: Question): Set<string> {
+  return new Set(
+    question.answer_options
+      .filter(option => option.emoji === '⭐')
+      .map(option => option.text.en.toLowerCase()),
+  )
+}
+
+/** Checks whether an answer's English label matches one of the correct options. */
+export function isCorrectAnswer(
+  correctAnswerTexts: ReadonlySet<string>,
+  selectedAnswer: LocalizedString,
+): boolean {
+  return correctAnswerTexts.has(selectedAnswer.en.toLowerCase())
+}
 
 /** Builds per-option vote counts keyed by the English option label. */
 export function buildQuestionOptionResults(question: Question, answerList: Answer[]): Results['results'] {
