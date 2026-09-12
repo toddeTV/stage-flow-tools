@@ -1,0 +1,226 @@
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+} from 'vue'
+import type { PresenterCurrentState, Question } from '~/types'
+import {
+  getInitialPresenterQuizStep,
+  getNextPresenterQuizStep,
+  getPreviousPresenterQuizStep,
+  type PresenterQuizStep,
+} from '~/utils/presenter-quiz-state'
+
+const PRESENTER_POLL_INTERVAL_MS = 2000
+
+export type PresenterErrorKind = 'load' | 'refresh' | 'sync'
+export type PresenterBoundaryMessage = {
+  direction: 'next' | 'previous'
+  type: 'stage-flow-tools:presenter-boundary'
+}
+
+export interface PresenterQuizApi {
+  getCurrentState: () => Promise<PresenterCurrentState>
+  getQuestions: () => Promise<Question[]>
+  publishQuestion: (key: string) => Promise<unknown>
+  toggleQuestionLock: (questionId: string) => Promise<unknown>
+  unpublishActiveQuestion: () => Promise<unknown>
+}
+
+interface PresenterQuizControllerOptions {
+  api: PresenterQuizApi
+  emitBoundary: (direction: PresenterBoundaryMessage['direction']) => void
+}
+
+/** Owns server-confirmed presenter navigation and polling. */
+export function createPresenterQuizController({ api, emitBoundary }: PresenterQuizControllerOptions) {
+  const currentState = shallowRef<PresenterCurrentState | null>(null)
+  const errorKind = ref<PresenterErrorKind | null>(null)
+  const isInitialized = ref(false)
+  const isLoading = ref(false)
+  const isTransitioning = ref(false)
+  const questions = shallowRef<Question[]>([])
+  const step = ref<PresenterQuizStep | null>(null)
+  let pollingHandle: ReturnType<typeof setInterval> | undefined
+
+  const currentQuestion = computed(() => {
+    if (step.value?.kind !== 'question') return null
+    return questions.value[step.value.questionIndex] ?? null
+  })
+
+  async function fetchCurrentState() {
+    const state = await api.getCurrentState()
+    currentState.value = state
+    return state
+  }
+
+  async function syncQuestionStep(target: Extract<PresenterQuizStep, { kind: 'question' }>) {
+    const question = questions.value[target.questionIndex]
+    if (!question) throw new Error('Presenter question is missing.')
+
+    let state = await fetchCurrentState()
+    if (state.currentQuestion?.key !== question.key) {
+      await api.publishQuestion(question.key)
+      state = await fetchCurrentState()
+    }
+
+    const shouldBeLocked = target.phase === 'reveal'
+    if (state.currentQuestion?.key === question.key && state.currentQuestion.is_locked !== shouldBeLocked) {
+      await api.toggleQuestionLock(question.id)
+      await fetchCurrentState()
+    }
+  }
+
+  async function syncLeaderboardStep() {
+    const state = await fetchCurrentState()
+    if (!state.hasActiveQuestion) return
+
+    await api.unpublishActiveQuestion()
+    await fetchCurrentState()
+  }
+
+  async function syncVisibleStep(target: PresenterQuizStep) {
+    if (target.kind === 'question') await syncQuestionStep(target)
+    else await syncLeaderboardStep()
+  }
+
+  async function initialize() {
+    if (isLoading.value) return
+    isLoading.value = true
+    errorKind.value = null
+
+    try {
+      const [
+        allQuestions,
+        state,
+      ] = await Promise.all([
+        api.getQuestions(),
+        api.getCurrentState(),
+      ])
+      questions.value = allQuestions.filter(question => !question.is_disabled)
+      currentState.value = state
+      const initialStep = getInitialPresenterQuizStep(questions.value, state)
+
+      const initialQuestion = initialStep?.kind === 'question'
+        ? questions.value[initialStep.questionIndex]
+        : undefined
+      if (initialStep && (!state.hasActiveQuestion || state.currentQuestion?.key !== initialQuestion?.key)) {
+        await syncVisibleStep(initialStep)
+      }
+
+      step.value = initialStep
+      isInitialized.value = true
+    }
+    catch (error: unknown) {
+      logger_error('Failed to initialize presenter quiz', error)
+      errorKind.value = 'load'
+    }
+    finally {
+      isLoading.value = false
+    }
+  }
+
+  async function refresh() {
+    if (!isInitialized.value || isTransitioning.value) return
+
+    try {
+      const state = await api.getCurrentState()
+      if (!isTransitioning.value) currentState.value = state
+      if (errorKind.value === 'refresh') errorKind.value = null
+    }
+    catch (error: unknown) {
+      logger_error('Failed to refresh presenter state', error)
+      errorKind.value = 'refresh'
+    }
+  }
+
+  async function navigate(direction: 'next' | 'previous') {
+    if (!step.value || isTransitioning.value) return
+
+    const transition = direction === 'next'
+      ? getNextPresenterQuizStep(step.value, questions.value.length)
+      : getPreviousPresenterQuizStep(step.value, questions.value.length)
+
+    isTransitioning.value = true
+    errorKind.value = null
+
+    try {
+      if (transition.kind === 'boundary') {
+        if (transition.direction === 'previous') await syncLeaderboardStep()
+        emitBoundary(transition.direction)
+        return
+      }
+
+      await syncVisibleStep(transition)
+      step.value = transition
+    }
+    catch (error: unknown) {
+      logger_error('Failed to synchronize presenter quiz step', error)
+      errorKind.value = 'sync'
+    }
+    finally {
+      isTransitioning.value = false
+    }
+  }
+
+  function startPolling() {
+    stopPolling()
+    if (!isInitialized.value) return
+    pollingHandle = setInterval(() => void refresh(), PRESENTER_POLL_INTERVAL_MS)
+  }
+
+  function stopPolling() {
+    if (pollingHandle === undefined) return
+    clearInterval(pollingHandle)
+    pollingHandle = undefined
+  }
+
+  return {
+    currentQuestion,
+    currentState,
+    errorKind,
+    initialize,
+    isInitialized,
+    isLoading,
+    isTransitioning,
+    navigate,
+    questions,
+    refresh,
+    startPolling,
+    step,
+    stopPolling,
+  }
+}
+
+/** Connects the presenter controller to same-origin APIs and page lifecycle. */
+export function usePresenterQuiz() {
+  const controller = createPresenterQuizController({
+    api: {
+      getCurrentState: () => $fetch<PresenterCurrentState>('/api/admin/presenter/current-state'),
+      getQuestions: () => $fetch<Question[]>('/api/questions'),
+      publishQuestion: key => $fetch('/api/questions/publish', { body: { key }, method: 'POST' }),
+      toggleQuestionLock: questionId => $fetch('/api/questions/toggle-lock', { body: { questionId }, method: 'POST' }),
+      unpublishActiveQuestion: () => $fetch('/api/questions/unpublish-active', { body: {}, method: 'POST' }),
+    },
+    emitBoundary(direction) {
+      window.parent.postMessage({
+        direction,
+        type: 'stage-flow-tools:presenter-boundary',
+      } satisfies PresenterBoundaryMessage, '*')
+    },
+  })
+
+  onMounted(() => {
+    void controller.initialize().then(() => controller.startPolling())
+    window.addEventListener('focus', controller.refresh)
+  })
+
+  onBeforeUnmount(() => {
+    controller.stopPolling()
+    window.removeEventListener('focus', controller.refresh)
+  })
+
+  return controller
+}
