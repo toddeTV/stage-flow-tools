@@ -13,6 +13,8 @@ describe('parsePresenterParameters', () => {
       language: undefined,
       leaderboardBackground: undefined,
       leaderboardColorMode: 'light',
+      recapBackground: undefined,
+      recapColorMode: 'light',
     })
     expect(parsePresenterParameters({ leaderboardShowUserId: 'true' }).leaderboardShowUserId).toBe(true)
   })
@@ -36,6 +38,13 @@ describe('parsePresenterParameters', () => {
       leaderboardScale: '1.25',
       leaderboardShowUserId: 'false',
       presenterRefresh: '0.5',
+      recapBackground: '#a1b2c3',
+      recapColorMode: 'light',
+      recapCore: 'true',
+      recapCount: '3',
+      recapPadding: '12',
+      recapRefresh: '15',
+      recapScale: '1.5',
       stageScale: '0.75',
       textScale: '1.1',
     })).toEqual({
@@ -56,6 +65,13 @@ describe('parsePresenterParameters', () => {
       leaderboardScale: 1.25,
       leaderboardShowUserId: false,
       presenterRefresh: 0.5,
+      recapBackground: '#a1b2c3',
+      recapColorMode: 'light',
+      recapCore: true,
+      recapCount: 3,
+      recapPadding: 12,
+      recapRefresh: 15,
+      recapScale: 1.5,
       stageScale: 0.75,
       textScale: 1.1,
     })
@@ -92,6 +108,9 @@ describe('parsePresenterParameters', () => {
         'false',
       ],
       presenterRefresh: '-1',
+      recapCount: '1.5',
+      recapRefresh: '1.5',
+      recapScale: '0',
       stageScale: '0',
       textScale: 'NaN',
     })).toMatchObject({
@@ -107,6 +126,9 @@ describe('parsePresenterParameters', () => {
       leaderboardScale: 1,
       leaderboardShowUserId: false,
       presenterRefresh: 2,
+      recapCount: 4,
+      recapRefresh: 5,
+      recapScale: 1,
       stageScale: 1,
       textScale: 1,
     })
@@ -127,6 +149,17 @@ describe('parsePresenterParameters', () => {
       '1',
     ] }).stageScale).toBe(1)
   })
+
+  it('accepts only one recap count from one through four', () => {
+    expect(parsePresenterParameters({ recapCount: '1' }).recapCount).toBe(1)
+    expect(parsePresenterParameters({ recapCount: '4' }).recapCount).toBe(4)
+    expect(parsePresenterParameters({ recapCount: '0' }).recapCount).toBe(4)
+    expect(parsePresenterParameters({ recapCount: '5' }).recapCount).toBe(4)
+    expect(parsePresenterParameters({ recapCount: [
+      '2',
+      '3',
+    ] }).recapCount).toBe(4)
+  })
 })
 
 describe('buildPresenterIframeUrls', () => {
@@ -135,9 +168,15 @@ describe('buildPresenterIframeUrls', () => {
       emojiBackground: '#abcdef',
       leaderboardBackground: '#fedcba',
       leaderboardCore: 'true',
+      language: 'de-DE',
       presenterRefresh: '0.5',
+      recapBackground: '#123456',
+      recapCore: 'true',
+      recapCount: '2',
+      recapPadding: '10',
       stageScale: '0.75',
       token: 'secret',
+      unknown: 'leak',
     })
     const urls = buildPresenterIframeUrls(parameters)
 
@@ -145,8 +184,12 @@ describe('buildPresenterIframeUrls', () => {
     expect(urls.leaderboardUrl).toBe(
       '/admin/leaderboard?colorMode=light&padding=0&refresh=5&scale=1&showUserId=false&core=&background=%23fedcba',
     )
+    expect(urls.recapUrl).toBe(
+      '/admin/recap?colorMode=light&count=2&padding=10&refresh=5&scale=1&core=&background=%23123456&language=de-DE',
+    )
     expect(JSON.stringify(urls)).not.toContain('presenterRefresh')
     expect(JSON.stringify(urls)).not.toContain('stageScale')
+    expect(JSON.stringify(urls)).not.toContain('unknown')
     expect(JSON.stringify(urls)).not.toContain('secret')
   })
 })

@@ -12,6 +12,11 @@ export const PRESENTER_PARAMETER_DEFAULTS = {
   leaderboardScale: 1,
   leaderboardShowUserId: false,
   presenterRefresh: 2,
+  recapCore: false,
+  recapCount: 4,
+  recapPadding: 0,
+  recapRefresh: 5,
+  recapScale: 1,
   stageScale: 1,
   textScale: 1,
 } as const
@@ -39,6 +44,13 @@ export interface PresenterParameters {
   leaderboardScale: number
   leaderboardShowUserId: boolean
   presenterRefresh: number
+  recapBackground?: string
+  recapColorMode: PresenterColorMode
+  recapCore: boolean
+  recapCount: number
+  recapPadding: number
+  recapRefresh: number
+  recapScale: number
   stageScale: number
   textScale: number
 }
@@ -87,6 +99,13 @@ function refreshSeconds(value: string | undefined): number {
   return Number.isInteger(parsed) ? parsed : PRESENTER_PARAMETER_DEFAULTS.leaderboardRefresh
 }
 
+function recapCount(value: string | undefined): number {
+  const parsed = finiteNumber(value, PRESENTER_PARAMETER_DEFAULTS.recapCount)
+  return Number.isInteger(parsed) && parsed >= 1 && parsed <= 4
+    ? parsed
+    : PRESENTER_PARAMETER_DEFAULTS.recapCount
+}
+
 function presenterRefreshSeconds(value: string | undefined): number {
   const parsed = finiteNumber(value, PRESENTER_PARAMETER_DEFAULTS.presenterRefresh)
   if (parsed < 0) return PRESENTER_PARAMETER_DEFAULTS.presenterRefresh
@@ -132,6 +151,13 @@ export function parsePresenterParameters(query: PresenterQuery): PresenterParame
       singleValue(query, 'leaderboardShowUserId'), PRESENTER_PARAMETER_DEFAULTS.leaderboardShowUserId,
     ),
     presenterRefresh: presenterRefreshSeconds(singleValue(query, 'presenterRefresh')),
+    recapBackground: color(singleValue(query, 'recapBackground')),
+    recapColorMode: colorMode(singleValue(query, 'recapColorMode'), parsedColorMode),
+    recapCore: booleanValue(singleValue(query, 'recapCore'), PRESENTER_PARAMETER_DEFAULTS.recapCore),
+    recapCount: recapCount(singleValue(query, 'recapCount')),
+    recapPadding: nonNegativeNumber(singleValue(query, 'recapPadding'), PRESENTER_PARAMETER_DEFAULTS.recapPadding),
+    recapRefresh: refreshSeconds(singleValue(query, 'recapRefresh')),
+    recapScale: positiveNumber(singleValue(query, 'recapScale'), PRESENTER_PARAMETER_DEFAULTS.recapScale),
     stageScale: stageScale(singleValue(query, 'stageScale')),
     textScale: positiveNumber(singleValue(query, 'textScale'), PRESENTER_PARAMETER_DEFAULTS.textScale),
   }
@@ -155,8 +181,20 @@ export function buildPresenterIframeUrls(parameters: PresenterParameters) {
   if (parameters.leaderboardCore) leaderboard.set('core', '')
   if (parameters.leaderboardBackground) leaderboard.set('background', parameters.leaderboardBackground)
 
+  const recap = new URLSearchParams({
+    colorMode: parameters.recapColorMode,
+    count: String(parameters.recapCount),
+    padding: String(parameters.recapPadding),
+    refresh: String(parameters.recapRefresh),
+    scale: String(parameters.recapScale),
+  })
+  if (parameters.recapCore) recap.set('core', '')
+  if (parameters.recapBackground) recap.set('background', parameters.recapBackground)
+  if (parameters.language) recap.set('language', parameters.language)
+
   return {
     emojiUrl: `/admin/emojis?${emoji.toString()}`,
     leaderboardUrl: `/admin/leaderboard?${leaderboard.toString()}`,
+    recapUrl: `/admin/recap?${recap.toString()}`,
   }
 }
