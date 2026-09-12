@@ -15,13 +15,25 @@ definePageMeta({
 const route = useRoute()
 const { t } = useI18n()
 const parameters = computed(() => parsePresenterParameters(route.query))
+const presenterRefresh = computed(() => parameters.value.presenterRefresh)
 const iframeUrls = computed(() => buildPresenterIframeUrls(parameters.value))
 const presenterStyles = computed<CSSProperties>(() => ({
   '--presenter-foreground-opacity': parameters.value.foregroundOpacity,
   '--presenter-inset-x': `${parameters.value.foregroundInsetX}px`,
   '--presenter-inset-y': `${parameters.value.foregroundInsetY}px`,
+  '--presenter-stage-scale': parameters.value.stageScale,
   '--presenter-text-scale': parameters.value.textScale,
 }))
+const stageStyles = computed<CSSProperties>(() => {
+  const inverseSize = `${100 / parameters.value.stageScale}%`
+
+  return {
+    height: inverseSize,
+    transform: `scale(${parameters.value.stageScale})`,
+    transformOrigin: 'top left',
+    width: inverseSize,
+  }
+})
 const {
   currentQuestion,
   currentState,
@@ -32,7 +44,7 @@ const {
   navigate,
   questions,
   step,
-} = usePresenterQuiz()
+} = usePresenterQuiz(presenterRefresh)
 const leaderboardFrame = ref<HTMLIFrameElement>()
 let leaderboardWindow: Window | null = null
 
@@ -84,83 +96,85 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="presenter-stage"
+    class="presenter-viewport"
     :data-color-mode="parameters.colorMode"
     :style="presenterStyles"
   >
-    <div
-      aria-hidden="true"
-      class="emoji-layer"
-      :class="parameters.emojiLayer === 'foreground' ? 'is-foreground' : 'is-background'"
-      style="pointer-events: none"
-    >
-      <iframe
-        :src="iframeUrls.emojiUrl"
+    <div class="presenter-stage" :style="stageStyles">
+      <div
+        aria-hidden="true"
+        class="emoji-layer"
+        :class="parameters.emojiLayer === 'foreground' ? 'is-foreground' : 'is-background'"
         style="pointer-events: none"
-        tabindex="-1"
-        title="" />
-    </div>
-
-    <main class="presenter-content">
-      <section v-if="isLoading && !isInitialized" aria-live="polite" class="state-panel">
-        <h1>{{ t('preparing') }}</h1>
-        <p>{{ t('loading') }}</p>
-      </section>
-
-      <section v-else-if="isInitialized && questions.length === 0" class="state-panel">
-        <h1>{{ t('noQuestionsTitle') }}</h1>
-        <p>{{ t('noQuestions') }}</p>
-      </section>
-
-      <PresenterQuizView
-        v-else-if="step?.kind === 'question' && currentQuestion"
-        :busy="isTransitioning"
-        :current-state="currentState"
-        :parameters="parameters"
-        :phase="step.phase"
-        :question="currentQuestion"
-        :question-index="step.questionIndex"
-        :questions="questions"
-        @navigate="navigate"
-      />
-
-      <template v-else-if="step?.kind === 'leaderboard'">
+      >
         <iframe
-          ref="leaderboardFrame"
-          class="leaderboard-frame"
-          :src="iframeUrls.leaderboardUrl"
-          :title="t('leaderboard')"
-          @load="attachLeaderboardKeyboard"
-        />
-        <nav :aria-label="t('quizNavigation')" class="leaderboard-navigation">
-          <button
-            :aria-label="t('previous')"
-            :disabled="isTransitioning"
-            type="button"
-            @click="navigate('previous')"
-          >
-            <Icon aria-hidden="true" name="ph:caret-left" />
-          </button>
-          <span>{{ t('leaderboard') }}</span>
-          <button
-            :aria-label="t('next')"
-            :disabled="isTransitioning"
-            type="button"
-            @click="navigate('next')"
-          >
-            <Icon aria-hidden="true" name="ph:caret-right" />
-          </button>
-        </nav>
-      </template>
-    </main>
+          :src="iframeUrls.emojiUrl"
+          style="pointer-events: none"
+          tabindex="-1"
+          title="" />
+      </div>
 
-    <p
-      v-if="errorMessage"
-      aria-live="polite"
-      class="status-banner"
-      role="status">
-      {{ errorMessage }}
-    </p>
+      <main class="presenter-content">
+        <section v-if="isLoading && !isInitialized" aria-live="polite" class="state-panel">
+          <h1>{{ t('preparing') }}</h1>
+          <p>{{ t('loading') }}</p>
+        </section>
+
+        <section v-else-if="isInitialized && questions.length === 0" class="state-panel">
+          <h1>{{ t('noQuestionsTitle') }}</h1>
+          <p>{{ t('noQuestions') }}</p>
+        </section>
+
+        <PresenterQuizView
+          v-else-if="step?.kind === 'question' && currentQuestion"
+          :busy="isTransitioning"
+          :current-state="currentState"
+          :parameters="parameters"
+          :phase="step.phase"
+          :question="currentQuestion"
+          :question-index="step.questionIndex"
+          :questions="questions"
+          @navigate="navigate"
+        />
+
+        <template v-else-if="step?.kind === 'leaderboard'">
+          <iframe
+            ref="leaderboardFrame"
+            class="leaderboard-frame"
+            :src="iframeUrls.leaderboardUrl"
+            :title="t('leaderboard')"
+            @load="attachLeaderboardKeyboard"
+          />
+          <nav :aria-label="t('quizNavigation')" class="leaderboard-navigation">
+            <button
+              :aria-label="t('previous')"
+              :disabled="isTransitioning"
+              type="button"
+              @click="navigate('previous')"
+            >
+              <Icon aria-hidden="true" name="ph:caret-left" />
+            </button>
+            <span>{{ t('leaderboard') }}</span>
+            <button
+              :aria-label="t('next')"
+              :disabled="isTransitioning"
+              type="button"
+              @click="navigate('next')"
+            >
+              <Icon aria-hidden="true" name="ph:caret-right" />
+            </button>
+          </nav>
+        </template>
+      </main>
+
+      <p
+        v-if="errorMessage"
+        aria-live="polite"
+        class="status-banner"
+        role="status">
+        {{ errorMessage }}
+      </p>
+    </div>
   </div>
 </template>
 
@@ -206,7 +220,7 @@ ja:
 <style scoped>
 @reference "../../assets/css/main.css";
 
-.presenter-stage {
+.presenter-viewport {
   --presenter-answer-rgb: 241 245 249;
   --presenter-border: #e2e8f0;
   --presenter-control: #fff;
@@ -214,11 +228,11 @@ ja:
   --presenter-muted: #64748b;
   --presenter-panel-rgb: 255 255 255;
   --presenter-text: #0f172a;
-  @apply relative h-dvh min-h-[480px] w-full overflow-hidden bg-slate-50;
+  @apply relative h-dvh w-full overflow-hidden bg-slate-50;
   color: var(--presenter-text);
 }
 
-.presenter-stage[data-color-mode='dark'] {
+.presenter-viewport[data-color-mode='dark'] {
   --presenter-answer-rgb: 30 41 59;
   --presenter-border: #475569;
   --presenter-control: #1e293b;
@@ -227,6 +241,12 @@ ja:
   --presenter-panel-rgb: 15 23 42;
   --presenter-text: #f8fafc;
   @apply bg-slate-950;
+}
+
+.presenter-stage {
+  @apply relative overflow-hidden;
+  container-name: presenter-stage;
+  container-type: inline-size;
 }
 
 .presenter-content {
@@ -299,7 +319,7 @@ ja:
   @apply border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-xs font-semibold text-amber-950 shadow-lg;
 }
 
-@media (max-width: 860px) {
+@container presenter-stage (max-width: 860px) {
   .presenter-content {
     padding-right: min(var(--presenter-inset-x), 1rem);
     padding-left: min(var(--presenter-inset-x), 1rem);

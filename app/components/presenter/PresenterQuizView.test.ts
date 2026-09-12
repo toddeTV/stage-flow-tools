@@ -49,13 +49,16 @@ const state: PresenterCurrentState = {
   totalUsers: 5,
 }
 
-function render(phase: 'open' | 'reveal' = 'reveal') {
+function render(
+  phase: 'open' | 'reveal' = 'reveal',
+  query: Record<string, unknown> = {},
+) {
   return mount(PresenterQuizView, {
     global: { components: { Icon } },
     props: {
       busy: false,
       currentState: state,
-      parameters: parsePresenterParameters({ language: 'de' }),
+      parameters: parsePresenterParameters({ language: 'de', ...query }),
       phase,
       question,
       questionIndex: 0,
@@ -121,7 +124,7 @@ describe('PresenterQuizView', () => {
   })
 
   it('opens notes with N or Numpad Plus, closes with Escape, and ignores editable targets', async () => {
-    const wrapper = render()
+    const wrapper = render('reveal', { stageScale: '0.75' })
     const select = wrapper.get('select').element
 
     select.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'n' }))
@@ -131,6 +134,8 @@ describe('PresenterQuizView', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'NumpadAdd', key: '+' }))
     await nextTick()
     expect(wrapper.get('dialog').attributes('open')).toBeDefined()
+    expect((wrapper.get('dialog').element as HTMLDialogElement).style.transform).toBe('scale(0.75)')
+    expect((wrapper.get('dialog').element as HTMLDialogElement).style.transformOrigin).toBe('center')
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await nextTick()

@@ -11,6 +11,8 @@ export const PRESENTER_PARAMETER_DEFAULTS = {
   leaderboardRefresh: 5,
   leaderboardScale: 1,
   leaderboardShowUserId: true,
+  presenterRefresh: 2,
+  stageScale: 1,
   textScale: 1,
 } as const
 
@@ -36,6 +38,8 @@ export interface PresenterParameters {
   leaderboardRefresh: number
   leaderboardScale: number
   leaderboardShowUserId: boolean
+  presenterRefresh: number
+  stageScale: number
   textScale: number
 }
 
@@ -83,6 +87,19 @@ function refreshSeconds(value: string | undefined): number {
   return Number.isInteger(parsed) ? parsed : PRESENTER_PARAMETER_DEFAULTS.leaderboardRefresh
 }
 
+function presenterRefreshSeconds(value: string | undefined): number {
+  const parsed = finiteNumber(value, PRESENTER_PARAMETER_DEFAULTS.presenterRefresh)
+  if (parsed < 0) return PRESENTER_PARAMETER_DEFAULTS.presenterRefresh
+  return parsed === 0 ? 0 : Math.max(parsed, 0.1)
+}
+
+function stageScale(value: string | undefined): number {
+  const parsed = finiteNumber(value, PRESENTER_PARAMETER_DEFAULTS.stageScale)
+  return parsed > 0 && Number.isFinite(100 / parsed)
+    ? parsed
+    : PRESENTER_PARAMETER_DEFAULTS.stageScale
+}
+
 /** Parses the public presenter iframe query contract without retaining unknown keys. */
 export function parsePresenterParameters(query: PresenterQuery): PresenterParameters {
   const parsedColorMode = colorMode(singleValue(query, 'colorMode'), PRESENTER_PARAMETER_DEFAULTS.colorMode)
@@ -114,6 +131,8 @@ export function parsePresenterParameters(query: PresenterQuery): PresenterParame
     leaderboardShowUserId: booleanValue(
       singleValue(query, 'leaderboardShowUserId'), PRESENTER_PARAMETER_DEFAULTS.leaderboardShowUserId,
     ),
+    presenterRefresh: presenterRefreshSeconds(singleValue(query, 'presenterRefresh')),
+    stageScale: stageScale(singleValue(query, 'stageScale')),
     textScale: positiveNumber(singleValue(query, 'textScale'), PRESENTER_PARAMETER_DEFAULTS.textScale),
   }
 }

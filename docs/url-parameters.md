@@ -191,6 +191,8 @@ sends a boundary message to the parent presentation.
 | `foregroundInsetY` | Non-negative number in pixels | `40` | Sets vertical quiz content insets. The fixed 18-pixel lower reserve remains. |
 | `textScale` | Positive number | `1` | Scales quiz typography and presenter controls. |
 | `language` | Locale string | Automatic | Selects question content language before stored and browser preferences. |
+| `presenterRefresh` | Non-negative number in seconds | `2` | Refreshes presenter state at a decimal interval. Use `0` to disable periodic polling. Values between `0` and `0.1` use `0.1`. |
+| `stageScale` | Positive number | `1` | Scales the complete virtual presenter stage. Values below `1` create more logical space; values above `1` enlarge the interface. |
 | `emojiLayer` | `background` \| `foreground` | `background` | Places emoji below or above presentation content. Emoji layers never accept pointer input. |
 | `emojiScale` | Positive number | `0.3` | Passes `scale` to the embedded `/admin/emojis` page. |
 | `emojiOpacity` | Number, clamped to `0`–`1` | `0.8` | Passes `transparency` to the embedded emoji page. |
@@ -204,8 +206,17 @@ sends a boundary message to the parent presentation.
 | `leaderboardColorMode` | `light` \| `dark` | Inherits `colorMode` | Overrides only the embedded leaderboard theme. |
 
 Invalid numeric values use the documented defaults. Opacity values are clamped. Repeated query values and invalid
-enums or colors are rejected. The `language` fallback order is URL value, local storage, browser locale, English,
-then the first available question language.
+enums or colors are rejected. `presenterRefresh` accepts decimal seconds such as `0.5`; `0` disables only periodic
+polling, while initial loading, focus refreshes, and navigation still synchronize state. The `language` fallback
+order is URL value, local storage, browser locale, English, then the first available question language.
+
+`stageScale` uses the iframe dimensions automatically; no aspect-ratio parameter is required. Its logical dimensions
+are `iframe width / stageScale` by `iframe height / stageScale`. The two-column quiz layout activates above 860
+logical pixels. For example, a 640-pixel-wide iframe with `stageScale=0.7` has about 914 logical pixels and therefore
+uses two columns. The parameter is not forwarded to the embedded emoji or leaderboard pages; `emojiScale` and
+`leaderboardScale` apply in addition to it. Positive finite values are not clamped. Extremely small or large values
+can make text and hit targets unreadable or increase rendering cost. Zero, negative, empty, repeated, non-finite, or
+non-invertible values fall back to `1`.
 
 ### Examples
 
@@ -218,6 +229,12 @@ Dark quiz layout with click-through emoji reactions above the content.
 
 /admin/presenter?foregroundInsetX=32&foregroundInsetY=24&textScale=1.15&language=de
 German question content with smaller insets and larger quiz text.
+
+/admin/presenter?presenterRefresh=0.5
+Standard quiz flow with presenter results refreshed every half-second.
+
+/admin/presenter?stageScale=0.7
+More logical space for retaining the two-column quiz layout in a small iframe.
 
 /admin/presenter?leaderboardCore=true&leaderboardPadding=24&leaderboardScale=0.9&leaderboardShowUserId=false
 Standard quiz flow with a projector-oriented leaderboard and hidden technical IDs.

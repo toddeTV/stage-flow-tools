@@ -339,6 +339,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
       ref="noteDialog"
       aria-labelledby="presenter-note-title"
       class="note-modal"
+      :style="{
+        transform: `scale(${parameters.stageScale})`,
+        transformOrigin: 'center',
+      }"
       @click.self="closeNoteModal"
       @close="isNoteModalOpen = false"
     >
@@ -662,7 +666,7 @@ ja:
   font-size: 1.125em;
 }
 
-@media (max-width: 860px) {
+@container presenter-stage (max-width: 860px) {
   .quiz-layout {
     @apply grid-cols-1 overflow-y-auto;
   }

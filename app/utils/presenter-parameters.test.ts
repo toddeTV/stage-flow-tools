@@ -34,6 +34,8 @@ describe('parsePresenterParameters', () => {
       leaderboardRefresh: '10',
       leaderboardScale: '1.25',
       leaderboardShowUserId: 'false',
+      presenterRefresh: '0.5',
+      stageScale: '0.75',
       textScale: '1.1',
     })).toEqual({
       colorMode: 'dark',
@@ -52,8 +54,22 @@ describe('parsePresenterParameters', () => {
       leaderboardRefresh: 10,
       leaderboardScale: 1.25,
       leaderboardShowUserId: false,
+      presenterRefresh: 0.5,
+      stageScale: 0.75,
       textScale: 1.1,
     })
+  })
+
+  it('supports safe presenter polling intervals in fractional seconds', () => {
+    expect(parsePresenterParameters({ presenterRefresh: '0' }).presenterRefresh).toBe(0)
+    expect(parsePresenterParameters({ presenterRefresh: '0.05' }).presenterRefresh).toBe(0.1)
+    expect(parsePresenterParameters({ presenterRefresh: '2.25' }).presenterRefresh).toBe(2.25)
+  })
+
+  it('accepts every positive stage scale with a representable inverse', () => {
+    expect(parsePresenterParameters({ stageScale: '0.000001' }).stageScale).toBe(0.000001)
+    expect(parsePresenterParameters({ stageScale: '10' }).stageScale).toBe(10)
+    expect(parsePresenterParameters({ stageScale: '1e100' }).stageScale).toBe(1e100)
   })
 
   it('clamps opacity and falls back for invalid or repeated values', () => {
@@ -74,6 +90,8 @@ describe('parsePresenterParameters', () => {
       leaderboardShowUserId: [
         'false',
       ],
+      presenterRefresh: '-1',
+      stageScale: '0',
       textScale: 'NaN',
     })).toMatchObject({
       colorMode: 'light',
@@ -87,8 +105,26 @@ describe('parsePresenterParameters', () => {
       leaderboardRefresh: 5,
       leaderboardScale: 1,
       leaderboardShowUserId: true,
+      presenterRefresh: 2,
+      stageScale: 1,
       textScale: 1,
     })
+
+    expect(parsePresenterParameters({ presenterRefresh: '' }).presenterRefresh).toBe(2)
+    expect(parsePresenterParameters({ presenterRefresh: 'Infinity' }).presenterRefresh).toBe(2)
+    expect(parsePresenterParameters({ presenterRefresh: [
+      '0.5',
+      '1',
+    ] }).presenterRefresh).toBe(2)
+    expect(parsePresenterParameters({ stageScale: '-1' }).stageScale).toBe(1)
+    expect(parsePresenterParameters({ stageScale: '' }).stageScale).toBe(1)
+    expect(parsePresenterParameters({ stageScale: '5e-324' }).stageScale).toBe(1)
+    expect(parsePresenterParameters({ stageScale: 'Infinity' }).stageScale).toBe(1)
+    expect(parsePresenterParameters({ stageScale: 'not-a-number' }).stageScale).toBe(1)
+    expect(parsePresenterParameters({ stageScale: [
+      '0.75',
+      '1',
+    ] }).stageScale).toBe(1)
   })
 })
 
@@ -98,6 +134,8 @@ describe('buildPresenterIframeUrls', () => {
       emojiBackground: '#abcdef',
       leaderboardBackground: '#fedcba',
       leaderboardCore: 'true',
+      presenterRefresh: '0.5',
+      stageScale: '0.75',
       token: 'secret',
     })
     const urls = buildPresenterIframeUrls(parameters)
@@ -106,6 +144,8 @@ describe('buildPresenterIframeUrls', () => {
     expect(urls.leaderboardUrl).toBe(
       '/admin/leaderboard?colorMode=light&padding=0&refresh=5&scale=1&showUserId=true&core=&background=%23fedcba',
     )
+    expect(JSON.stringify(urls)).not.toContain('presenterRefresh')
+    expect(JSON.stringify(urls)).not.toContain('stageScale')
     expect(JSON.stringify(urls)).not.toContain('secret')
   })
 })

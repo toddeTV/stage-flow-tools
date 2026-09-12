@@ -174,20 +174,45 @@ describe('createPresenterQuizController', () => {
     expect(controller.step.value).toEqual({ kind: 'question', phase: 'open', questionIndex: 0 })
   })
 
-  it('polls the presenter state every two seconds', async () => {
+  it('polls with a configurable interval and restarts the timer', async () => {
     vi.useFakeTimers()
     const { calls, controller } = setup(state('one'))
     await controller.initialize()
     calls.length = 0
-    controller.startPolling()
+    controller.startPolling(500)
 
-    await vi.advanceTimersByTimeAsync(1999)
+    await vi.advanceTimersByTimeAsync(499)
+    expect(calls).toEqual([])
+    await vi.advanceTimersByTimeAsync(1)
+    expect(calls).toEqual([
+      'state',
+    ])
+
+    calls.length = 0
+    controller.startPolling(1000)
+    await vi.advanceTimersByTimeAsync(999)
     expect(calls).toEqual([])
     await vi.advanceTimersByTimeAsync(1)
     expect(calls).toEqual([
       'state',
     ])
     controller.stopPolling()
+  })
+
+  it('disables only periodic polling when the interval is zero', async () => {
+    vi.useFakeTimers()
+    const { calls, controller } = setup(state('one'))
+    await controller.initialize()
+    calls.length = 0
+    controller.startPolling(0)
+
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(calls).toEqual([])
+
+    await controller.refresh()
+    expect(calls).toEqual([
+      'state',
+    ])
   })
 
   it('keeps the last successful state when polling fails', async () => {

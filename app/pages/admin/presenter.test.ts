@@ -1,14 +1,16 @@
 // @vitest-environment happy-dom
 import { mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick, ref } from 'vue'
+import { defineComponent, h, nextTick, reactive, ref } from 'vue'
+import type { Ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import type { PresenterCurrentState, Question } from '~/types'
 import type { PresenterErrorKind } from '~/composables/usePresenterQuiz'
 import type { PresenterQuizStep } from '~/utils/presenter-quiz-state'
 import PresenterPage from './presenter.vue'
 
-const route = { query: {} as Record<string, unknown> }
+const route = reactive({ query: {} as Record<string, unknown> })
 const navigate = vi.fn()
+const pollingIntervalInputs: Array<Readonly<Ref<number>>> = []
 const question: Question = {
   alreadyPublished: true,
   answer_options: [],
@@ -42,7 +44,10 @@ const controller = {
 }
 
 vi.mock('~/composables/usePresenterQuiz', () => ({
-  usePresenterQuiz: () => controller,
+  usePresenterQuiz: (pollIntervalSeconds: Readonly<Ref<number>>) => {
+    pollingIntervalInputs.push(pollIntervalSeconds)
+    return controller
+  },
 }))
 
 const Icon = defineComponent({
@@ -74,6 +79,7 @@ beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
   route.query = {}
   navigate.mockReset()
+  pollingIntervalInputs.length = 0
   controller.step.value = { kind: 'question', phase: 'open', questionIndex: 0 }
   controller.isTransitioning.value = false
   controller.errorKind.value = null
@@ -89,6 +95,41 @@ afterEach(() => {
 })
 
 describe('presenter page', () => {
+  it('scales a reactive virtual stage without changing the iframe URLs', async () => {
+    route.query = { stageScale: '0.75' }
+    const wrapper = render()
+    const viewport = wrapper.get('.presenter-viewport')
+    const stage = wrapper.get('.presenter-stage')
+
+    expect(viewport.attributes('data-color-mode')).toBe('light')
+    expect((viewport.element as HTMLElement).style.getPropertyValue('--presenter-stage-scale')).toBe('0.75')
+    expect((stage.element as HTMLElement).style.width).toBe(`${100 / 0.75}%`)
+    expect((stage.element as HTMLElement).style.height).toBe(`${100 / 0.75}%`)
+    expect((stage.element as HTMLElement).style.transform).toBe('scale(0.75)')
+    expect((stage.element as HTMLElement).style.transformOrigin).toBe('top left')
+    expect(wrapper.get('.emoji-layer iframe').attributes('src')).not.toContain('stageScale')
+
+    route.query = { stageScale: '2' }
+    await nextTick()
+    expect((stage.element as HTMLElement).style.width).toBe('50%')
+    expect((stage.element as HTMLElement).style.height).toBe('50%')
+    expect((stage.element as HTMLElement).style.transform).toBe('scale(2)')
+    wrapper.unmount()
+  })
+
+  it('passes reactive presenter polling seconds to the controller', async () => {
+    route.query = { presenterRefresh: '0.5' }
+    const wrapper = render()
+
+    expect(pollingIntervalInputs).toHaveLength(1)
+    expect(pollingIntervalInputs[0]?.value).toBe(0.5)
+
+    route.query = { presenterRefresh: '1.25' }
+    await nextTick()
+    expect(pollingIntervalInputs[0]?.value).toBe(1.25)
+    wrapper.unmount()
+  })
+
   it('builds click-through emoji and leaderboard frames from prefixed parameters', async () => {
     route.query = {
       colorMode: 'dark',
@@ -96,6 +137,7 @@ describe('presenter page', () => {
       emojiLayer: 'foreground',
       leaderboardCore: 'true',
       leaderboardPadding: '8',
+      stageScale: '0.7',
     }
     controller.step.value = { kind: 'leaderboard' }
     const wrapper = render()
@@ -103,7 +145,7 @@ describe('presenter page', () => {
 
     const emojiLayer = wrapper.get('.emoji-layer')
     const frames = wrapper.findAll('iframe')
-    expect(wrapper.attributes('data-color-mode')).toBe('dark')
+    expect(wrapper.get('.presenter-viewport').attributes('data-color-mode')).toBe('dark')
     expect(emojiLayer.classes()).toContain('is-foreground')
     expect(emojiLayer.get('iframe').attributes('tabindex')).toBe('-1')
     expect((emojiLayer.element as HTMLElement).style.pointerEvents).toBe('none')
@@ -112,6 +154,7 @@ describe('presenter page', () => {
     expect(frames[0]?.attributes('src')).toContain('background=%23112233')
     expect(frames[1]?.attributes('src')).toContain('/admin/leaderboard?colorMode=dark&padding=8')
     expect(frames[1]?.attributes('src')).toContain('core=')
+    expect(frames.every(frame => !frame.attributes('src')?.includes('stageScale'))).toBe(true)
     expect(frames.every(frame => !frame.attributes('src')?.includes('token'))).toBe(true)
     wrapper.unmount()
   })

@@ -4,7 +4,9 @@ import {
   onMounted,
   ref,
   shallowRef,
+  watch,
 } from 'vue'
+import type { Ref } from 'vue'
 import type { PresenterCurrentState, Question } from '~/types'
 import {
   getInitialPresenterQuizStep,
@@ -12,8 +14,6 @@ import {
   getPreviousPresenterQuizStep,
   type PresenterQuizStep,
 } from '~/utils/presenter-quiz-state'
-
-const PRESENTER_POLL_INTERVAL_MS = 2000
 
 export type PresenterErrorKind = 'load' | 'refresh' | 'sync'
 export type PresenterBoundaryMessage = {
@@ -165,10 +165,10 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
     }
   }
 
-  function startPolling() {
+  function startPolling(intervalMs: number) {
     stopPolling()
-    if (!isInitialized.value) return
-    pollingHandle = setInterval(() => void refresh(), PRESENTER_POLL_INTERVAL_MS)
+    if (!isInitialized.value || intervalMs <= 0) return
+    pollingHandle = setInterval(() => void refresh(), intervalMs)
   }
 
   function stopPolling() {
@@ -195,7 +195,7 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
 }
 
 /** Connects the presenter controller to same-origin APIs and page lifecycle. */
-export function usePresenterQuiz() {
+export function usePresenterQuiz(pollIntervalSeconds: Readonly<Ref<number>>) {
   const controller = createPresenterQuizController({
     api: {
       getCurrentState: () => $fetch<PresenterCurrentState>('/api/admin/presenter/current-state'),
@@ -212,12 +212,17 @@ export function usePresenterQuiz() {
     },
   })
 
+  const stopPollingIntervalWatch = watch(pollIntervalSeconds, (seconds) => {
+    if (controller.isInitialized.value) controller.startPolling(seconds * 1000)
+  })
+
   onMounted(() => {
-    void controller.initialize().then(() => controller.startPolling())
+    void controller.initialize().then(() => controller.startPolling(pollIntervalSeconds.value * 1000))
     window.addEventListener('focus', controller.refresh)
   })
 
   onBeforeUnmount(() => {
+    stopPollingIntervalWatch()
     controller.stopPolling()
     window.removeEventListener('focus', controller.refresh)
   })
