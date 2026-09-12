@@ -151,6 +151,25 @@ The final image does not run a second package install step. Nuxt's production bu
 
 ## Maintenance
 
+### Maintainer deployments from GitHub Actions
+
+After this Docker Compose deployment is working, repository maintainers can run
+the `Deploy main to maintainer server` workflow manually. It builds the current
+`main` revision, smoke-tests that exact image, and transfers it directly to the
+server over SSH. The workflow recreates only the Compose `app` service, so
+Traefik keeps its existing network and routing configuration.
+
+Prepare a dedicated SSH deploy user with Docker and Docker Compose access. Its
+deployment key must be accepted by the server, and the GitHub repository must
+store the server's verified `known_hosts` entry. Configure the repository
+variables and secret documented in [`.env.example`](../.env.example); the
+Compose path must contain the existing `docker-compose.yml` and runtime `.env`.
+
+The workflow verifies the loaded image revision, the recreated container image,
+and the active-question API. If a later deployment fails, it restores the prior
+container image automatically. A first deployment has no earlier image to roll
+back to.
+
 ### Updating the Application
 
 To update the application to the latest version:
