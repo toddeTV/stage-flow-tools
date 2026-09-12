@@ -115,6 +115,29 @@ describe('createPresenterQuizController', () => {
     ])
   })
 
+  it('unpublishes an active disabled question when no enabled questions remain', async () => {
+    const { api, calls, controller } = setup(state('disabled'))
+    api.getQuestions = async () => {
+      calls.push('questions')
+      return [
+        question('disabled', true),
+      ]
+    }
+
+    await controller.initialize()
+
+    expect(controller.questions.value).toEqual([])
+    expect(controller.step.value).toBeNull()
+    expect(controller.currentState.value).toEqual(state())
+    expect(calls).toEqual([
+      'questions',
+      'state',
+      'state',
+      'unpublish',
+      'state',
+    ])
+  })
+
   it('confirms lock, publish, unlock, and unpublish before changing steps', async () => {
     const { calls, controller } = setup()
     await controller.initialize()

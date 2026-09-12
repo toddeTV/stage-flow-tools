@@ -111,6 +111,9 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
       if (initialStep && (!state.hasActiveQuestion || state.currentQuestion?.key !== initialQuestion?.key)) {
         await syncVisibleStep(initialStep)
       }
+      else if (!initialStep && state.hasActiveQuestion) {
+        await syncLeaderboardStep()
+      }
 
       step.value = initialStep
       isInitialized.value = true
