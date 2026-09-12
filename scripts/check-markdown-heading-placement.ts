@@ -392,6 +392,21 @@ function getDiff(mode: MarkdownStructureCheckMode, change: ChangedPath) {
   ])
 }
 
+function resolveRevisionBase(mode: MarkdownStructureCheckMode) {
+  if (mode.kind !== 'revisions') {
+    return mode
+  }
+
+  return {
+    ...mode,
+    base: runGit([
+      'merge-base',
+      mode.base,
+      mode.head,
+    ]).trim(),
+  }
+}
+
 export function parseMarkdownStructureCheckMode(
   args: string[],
   environment: NodeJS.ProcessEnv = process.env,
@@ -474,7 +489,7 @@ export function runMarkdownHeadingPlacementCheck(
   args = process.argv.slice(2),
   environment: NodeJS.ProcessEnv = process.env,
 ) {
-  const mode = parseMarkdownStructureCheckMode(args, environment)
+  const mode = resolveRevisionBase(parseMarkdownStructureCheckMode(args, environment))
   const violations = getChangedPaths(mode).flatMap(change => {
     const {
       baseSource,

@@ -1,3 +1,12 @@
+import { execFileSync } from 'node:child_process'
+import {
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
 import {
   describe,
   expect,
@@ -8,6 +17,7 @@ import {
   findHeadingPlacementViolations,
   parseMarkdownStructureCheckMode,
   parseUnifiedDiff,
+  runMarkdownHeadingPlacementCheck,
 } from './check-markdown-heading-placement'
 
 describe('Markdown heading placement check', () => {
@@ -246,5 +256,115 @@ describe('Markdown heading placement check', () => {
       '--',
       '--staged',
     ])).toEqual({ kind: 'staged' })
+  })
+
+  it('uses the merge base when the revision base branch has advanced', () => {
+    const root = mkdtempSync(join(tmpdir(), 'markdown-heading-placement-'))
+    const originalCwd = process.cwd()
+    const runGit = (args: string[]) => {
+      execFileSync('git', args, {
+        cwd: root,
+        stdio: 'ignore',
+      })
+    }
+
+    try {
+      runGit([
+        'init',
+      ])
+      runGit([
+        'config',
+        'user.email',
+        'test@localhost',
+      ])
+      runGit([
+        'config',
+        'user.name',
+        'Test User',
+      ])
+      writeFileSync(join(root, 'guide.md'), [
+        '# Guide',
+        '',
+        '## Old title',
+        '',
+        'Existing content.',
+      ].join('\n'))
+      runGit([
+        'add',
+        'guide.md',
+      ])
+      runGit([
+        'commit',
+        '-m',
+        'initial',
+      ])
+      runGit([
+        'branch',
+        'feature',
+      ])
+
+      writeFileSync(join(root, 'guide.md'), [
+        '# Guide',
+        '',
+        '<!-- Base-only note. -->',
+        '<!-- Another base-only note. -->',
+        '',
+        '## Old title',
+        '',
+        'Existing content.',
+      ].join('\n'))
+      runGit([
+        'commit',
+        '-am',
+        'advance base',
+      ])
+      const base = execFileSync('git', [
+        'rev-parse',
+        'HEAD',
+      ], {
+        cwd: root,
+        encoding: 'utf8',
+      }).trim()
+
+      runGit([
+        'checkout',
+        'feature',
+      ])
+      writeFileSync(join(root, 'guide.md'), [
+        '# Guide',
+        '',
+        '## New title',
+        '',
+        'Existing content.',
+      ].join('\n'))
+      runGit([
+        'commit',
+        '-am',
+        'rename heading',
+      ])
+      const head = execFileSync('git', [
+        'rev-parse',
+        'HEAD',
+      ], {
+        cwd: root,
+        encoding: 'utf8',
+      }).trim()
+
+      process.chdir(root)
+
+      expect(() => runMarkdownHeadingPlacementCheck([
+        '--base',
+        base,
+        '--head',
+        head,
+      ])).not.toThrow()
+    }
+    finally {
+      process.chdir(originalCwd)
+      rmSync(root, {
+        force: true,
+        recursive: true,
+      })
+    }
   })
 })
