@@ -44,6 +44,8 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
   const questions = shallowRef<Question[]>([])
   const step = ref<PresenterQuizStep | null>(null)
   let pollingHandle: ReturnType<typeof setInterval> | undefined
+  let refreshInFlight = false
+  let syncRevision = 0
 
   const currentQuestion = computed(() => {
     if (step.value?.kind !== 'question') return null
@@ -123,22 +125,31 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
   }
 
   async function refresh() {
-    if (!isInitialized.value || isTransitioning.value) return
+    if (!isInitialized.value || isTransitioning.value || refreshInFlight) return
+
+    refreshInFlight = true
+    const revision = syncRevision
 
     try {
       const state = await api.getCurrentState()
-      if (!isTransitioning.value) currentState.value = state
-      if (errorKind.value === 'refresh') errorKind.value = null
+      if (!isTransitioning.value && revision === syncRevision) {
+        currentState.value = state
+        if (errorKind.value === 'refresh') errorKind.value = null
+      }
     }
     catch (error: unknown) {
       logger_error('Failed to refresh presenter state', error)
-      errorKind.value = 'refresh'
+      if (revision === syncRevision) errorKind.value = 'refresh'
+    }
+    finally {
+      refreshInFlight = false
     }
   }
 
   async function activate() {
     if (!isInitialized.value || !step.value || isTransitioning.value) return
 
+    syncRevision += 1
     isTransitioning.value = true
     errorKind.value = null
 
@@ -161,6 +172,7 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
       ? getNextPresenterQuizStep(step.value, questions.value.length)
       : getPreviousPresenterQuizStep(step.value, questions.value.length)
 
+    syncRevision += 1
     isTransitioning.value = true
     errorKind.value = null
 

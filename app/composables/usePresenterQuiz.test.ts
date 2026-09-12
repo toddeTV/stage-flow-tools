@@ -73,7 +73,7 @@ function setup(initialState = state()) {
   }
   const emitBoundary = vi.fn()
   const controller = createPresenterQuizController({ api, emitBoundary })
-  return { calls, controller, emitBoundary }
+  return { api, calls, controller, emitBoundary }
 }
 
 describe('createPresenterQuizController', () => {
@@ -217,6 +217,68 @@ describe('createPresenterQuizController', () => {
       'state',
     ])
     controller.stopPolling()
+  })
+
+  it('keeps only one polling refresh request in flight', async () => {
+    vi.useFakeTimers()
+    const { api, controller } = setup(state('one'))
+    await controller.initialize()
+
+    let resolveRefresh!: (value: PresenterCurrentState) => void
+    const pendingRefresh = new Promise<PresenterCurrentState>((resolve) => {
+      resolveRefresh = resolve
+    })
+    const getCurrentState = vi.fn()
+      .mockReturnValueOnce(pendingRefresh)
+      .mockResolvedValue(state('one'))
+    api.getCurrentState = getCurrentState
+    controller.startPolling(100)
+
+    await vi.advanceTimersByTimeAsync(100)
+    expect(getCurrentState).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(300)
+    expect(getCurrentState).toHaveBeenCalledTimes(1)
+
+    resolveRefresh(state('one'))
+    await pendingRefresh
+    await vi.advanceTimersByTimeAsync(100)
+    expect(getCurrentState).toHaveBeenCalledTimes(2)
+    controller.stopPolling()
+  })
+
+  it('ignores a refresh response started before navigation', async () => {
+    let current = state('one')
+    let resolveRefresh!: (value: PresenterCurrentState) => void
+    const pendingRefresh = new Promise<PresenterCurrentState>((resolve) => {
+      resolveRefresh = resolve
+    })
+    const getCurrentState = vi.fn()
+      .mockResolvedValueOnce(current)
+      .mockReturnValueOnce(pendingRefresh)
+      .mockImplementation(async () => current)
+    const controller = createPresenterQuizController({
+      api: {
+        getCurrentState,
+        getQuestions: async () => [
+          question('one'),
+        ],
+        publishQuestion: vi.fn(),
+        toggleQuestionLock: async () => {
+          current = state('one', true)
+        },
+        unpublishActiveQuestion: vi.fn(),
+      },
+      emitBoundary: vi.fn(),
+    })
+    await controller.initialize()
+
+    const refresh = controller.refresh()
+    await controller.navigate('next')
+    resolveRefresh(state('one'))
+    await refresh
+
+    expect(controller.currentState.value).toEqual(state('one', true))
+    expect(controller.step.value).toEqual({ kind: 'question', phase: 'reveal', questionIndex: 0 })
   })
 
   it('disables only periodic polling when the interval is zero', async () => {
