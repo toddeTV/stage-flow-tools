@@ -14,6 +14,7 @@ const subPages = computed(() => [
   { path: '/admin/presenter', label: t('presenter'), description: t('presenterDesc') },
   { path: '/admin/results', label: t('results'), description: t('resultsDesc') },
   { path: '/admin/leaderboard', label: t('leaderboard'), description: t('leaderboardDesc') },
+  { path: '/admin/recap', label: t('recap'), description: t('recapDesc') },
   { path: '/admin/emojis', label: t('emojis'), description: t('emojisDesc') },
   { path: '/admin/database', label: t('database'), description: t('databaseDesc') },
 ])
@@ -76,6 +77,8 @@ en:
   resultsDesc: View real-time voting results with animated bars.
   leaderboard: Leaderboard
   leaderboardDesc: Aggregated player scores across all published questions.
+  recap: Quiz Recap
+  recapDesc: Show memorable quiz statistics after the game.
   emojis: Emoji Overlay
   emojisDesc: Floating emoji reactions overlay for presentations.
   database: Database
@@ -92,6 +95,8 @@ de:
   resultsDesc: Echtzeit-Abstimmungsergebnisse mit animierten Balken anzeigen.
   leaderboard: Bestenliste
   leaderboardDesc: Gesammelte Spielerpunktzahlen aller veröffentlichten Fragen.
+  recap: Quiz-Rückblick
+  recapDesc: Prägnante Quiz-Statistiken nach dem Spiel zeigen.
   emojis: Emoji-Overlay
   emojisDesc: Schwebende Emoji-Reaktionen als Overlay für Präsentationen.
   database: Datenbank
@@ -108,6 +113,8 @@ ja:
   resultsDesc: アニメーションバー付きのリアルタイム投票結果を表示します。
   leaderboard: リーダーボード
   leaderboardDesc: 公開された全質問の累計プレイヤースコア。
+  recap: クイズの振り返り
+  recapDesc: クイズ終了後に印象的な統計を表示します。
   emojis: 絵文字オーバーレイ
   emojisDesc: プレゼンテーション用の浮遊する絵文字リアクションオーバーレイ。
   database: データベース

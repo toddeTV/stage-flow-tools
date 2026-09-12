@@ -56,6 +56,43 @@ export interface Results {
   totalConnections: number
 }
 
+export interface QuizRecapOption {
+  text: LocalizedString
+  emoji?: string
+  count: number
+}
+
+export type QuizRecapHighlight =
+  | {
+    kind: 'best-known' | 'hardest'
+    question: { id: string, text: LocalizedString }
+    answerCount: number
+    correctAnswerCount: number
+  }
+  | {
+    kind: 'most-answered'
+    question: { id: string, text: LocalizedString }
+    answerCount: number
+  }
+  | {
+    kind: 'closest-call'
+    question: { id: string, text: LocalizedString }
+    answerCount: number
+    leadingOptions: [QuizRecapOption, QuizRecapOption]
+  }
+
+export interface QuizRecap {
+  totals: {
+    publishedQuestions: number
+    answeredQuestions: number
+    participants: number
+    answers: number
+    scoredAnswers: number
+    correctAnswers: number
+  }
+  highlights: QuizRecapHighlight[]
+}
+
 export interface PresenterQuestionOverviewItem {
   id: string
   key: string

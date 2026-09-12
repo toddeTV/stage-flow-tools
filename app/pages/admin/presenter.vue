@@ -45,8 +45,16 @@ const {
   questions,
   step,
 } = usePresenterQuiz(presenterRefresh)
-const leaderboardFrame = ref<HTMLIFrameElement>()
-let leaderboardWindow: Window | null = null
+const endscreenFrame = ref<HTMLIFrameElement>()
+let endscreenWindow: Window | null = null
+
+const endscreenStep = computed(() => step.value?.kind === 'leaderboard' || step.value?.kind === 'recap'
+  ? step.value
+  : null)
+const endscreenUrl = computed(() => endscreenStep.value?.kind === 'recap'
+  ? iframeUrls.value.recapUrl
+  : iframeUrls.value.leaderboardUrl)
+const endscreenTitle = computed(() => t(endscreenStep.value?.kind === 'recap' ? 'recap' : 'leaderboard'))
 
 const errorMessage = computed(() => errorKind.value ? t(errorMessageKey(errorKind.value)) : '')
 
@@ -72,25 +80,25 @@ function handleNavigationKeydown(event: KeyboardEvent) {
   void navigate(event.key === 'ArrowLeft' ? 'previous' : 'next')
 }
 
-function detachLeaderboardKeyboard() {
-  leaderboardWindow?.removeEventListener('keydown', handleNavigationKeydown)
-  leaderboardWindow = null
+function detachEndscreenKeyboard() {
+  endscreenWindow?.removeEventListener('keydown', handleNavigationKeydown)
+  endscreenWindow = null
 }
 
-function attachLeaderboardKeyboard() {
-  detachLeaderboardKeyboard()
-  leaderboardWindow = leaderboardFrame.value?.contentWindow ?? null
-  leaderboardWindow?.addEventListener('keydown', handleNavigationKeydown)
+function attachEndscreenKeyboard() {
+  detachEndscreenKeyboard()
+  endscreenWindow = endscreenFrame.value?.contentWindow ?? null
+  endscreenWindow?.addEventListener('keydown', handleNavigationKeydown)
 }
 
-watch(step, (newStep) => {
-  if (newStep?.kind !== 'leaderboard') detachLeaderboardKeyboard()
+watch(endscreenStep, (newStep) => {
+  if (!newStep) detachEndscreenKeyboard()
 })
 
 onMounted(() => window.addEventListener('keydown', handleNavigationKeydown))
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleNavigationKeydown)
-  detachLeaderboardKeyboard()
+  detachEndscreenKeyboard()
 })
 </script>
 
@@ -137,15 +145,15 @@ onBeforeUnmount(() => {
           @navigate="navigate"
         />
 
-        <template v-else-if="step?.kind === 'leaderboard'">
+        <template v-else-if="endscreenStep">
           <iframe
-            ref="leaderboardFrame"
-            class="leaderboard-frame"
-            :src="iframeUrls.leaderboardUrl"
-            :title="t('leaderboard')"
-            @load="attachLeaderboardKeyboard"
+            ref="endscreenFrame"
+            class="endscreen-frame"
+            :src="endscreenUrl"
+            :title="endscreenTitle"
+            @load="attachEndscreenKeyboard"
           />
-          <nav :aria-label="t('quizNavigation')" class="leaderboard-navigation">
+          <nav :aria-label="t('quizNavigation')" class="endscreen-navigation">
             <button
               :aria-label="t('previous')"
               :disabled="isTransitioning"
@@ -154,7 +162,7 @@ onBeforeUnmount(() => {
             >
               <Icon aria-hidden="true" name="ph:caret-left" />
             </button>
-            <span>{{ t('leaderboard') }}</span>
+            <span>{{ endscreenTitle }}</span>
             <button
               :aria-label="t('next')"
               :disabled="isTransitioning"
@@ -185,6 +193,7 @@ en:
   noQuestionsTitle: No active quiz questions
   noQuestions: Enable at least one question in the admin area, then reload this page.
   leaderboard: Leaderboard
+  recap: Quiz recap
   quizNavigation: Quiz navigation
   previous: Previous presenter step
   next: Next presenter step
@@ -197,6 +206,7 @@ de:
   noQuestionsTitle: Keine aktiven Quiz-Fragen
   noQuestions: Aktiviere mindestens eine Frage im Adminbereich und lade diese Seite neu.
   leaderboard: Bestenliste
+  recap: Quiz-Rückblick
   quizNavigation: Quiz-Navigation
   previous: Vorheriger Präsentationsschritt
   next: Nächster Präsentationsschritt
@@ -209,6 +219,7 @@ ja:
   noQuestionsTitle: 有効なクイズ質問がありません
   noQuestions: 管理画面で少なくとも1つの質問を有効にして、このページを再読み込みしてください。
   leaderboard: リーダーボード
+  recap: クイズのまとめ
   quizNavigation: クイズナビゲーション
   previous: 前のプレゼンターステップ
   next: 次のプレゼンターステップ
@@ -283,11 +294,11 @@ ja:
   color: var(--presenter-copy);
 }
 
-.leaderboard-frame {
+.endscreen-frame {
   @apply absolute inset-0 z-10 h-full w-full border-0;
 }
 
-.leaderboard-navigation {
+.endscreen-navigation {
   @apply absolute top-2 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1;
   @apply rounded-full border px-1 shadow-sm backdrop-blur-sm;
   background: rgb(var(--presenter-panel-rgb) / .9);
@@ -299,18 +310,18 @@ ja:
   text-transform: uppercase;
 }
 
-.leaderboard-navigation button {
+.endscreen-navigation button {
   @apply flex cursor-pointer items-center justify-center rounded-full border-0 bg-transparent;
   @apply transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50;
   min-height: max(44px, calc(44px * var(--presenter-text-scale)));
   min-width: max(44px, calc(44px * var(--presenter-text-scale)));
 }
 
-.leaderboard-navigation button:hover:not(:disabled) {
+.endscreen-navigation button:hover:not(:disabled) {
   @apply bg-slate-950 text-white;
 }
 
-.leaderboard-navigation button:focus-visible {
+.endscreen-navigation button:focus-visible {
   @apply outline-3 outline-offset-2 outline-blue-600;
 }
 

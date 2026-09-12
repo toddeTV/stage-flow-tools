@@ -66,19 +66,23 @@ describe('presenter quiz state', () => {
     const q2Open = getNextPresenterQuizStep(q1Reveal as never, 2)
     const q2Reveal = getNextPresenterQuizStep(q2Open as never, 2)
     const leaderboard = getNextPresenterQuizStep(q2Reveal as never, 2)
+    const recap = getNextPresenterQuizStep(leaderboard as never, 2)
 
     expect([
       q1Reveal,
       q2Open,
       q2Reveal,
       leaderboard,
+      recap,
     ]).toEqual([
       { kind: 'question', phase: 'reveal', questionIndex: 0 },
       { kind: 'question', phase: 'open', questionIndex: 1 },
       { kind: 'question', phase: 'reveal', questionIndex: 1 },
       { kind: 'leaderboard' },
+      { kind: 'recap' },
     ])
-    expect(getNextPresenterQuizStep(leaderboard as never, 2)).toEqual({ direction: 'next', kind: 'boundary' })
+    expect(getNextPresenterQuizStep(recap as never, 2)).toEqual({ direction: 'next', kind: 'boundary' })
+    expect(getPreviousPresenterQuizStep(recap as never, 2)).toEqual(leaderboard)
     expect(getPreviousPresenterQuizStep(leaderboard as never, 2)).toEqual(q2Reveal)
     expect(getPreviousPresenterQuizStep(q2Reveal as never, 2)).toEqual(q2Open)
     expect(getPreviousPresenterQuizStep(q2Open as never, 2)).toEqual(q1Reveal)
@@ -90,6 +94,7 @@ describe('presenter quiz state', () => {
     const open = { kind: 'question', phase: 'open', questionIndex: 0 } as const
     const reveal = getNextPresenterQuizStep(open, 1)
     expect(getNextPresenterQuizStep(reveal as never, 1)).toEqual({ kind: 'leaderboard' })
+    expect(getNextPresenterQuizStep({ kind: 'leaderboard' }, 1)).toEqual({ kind: 'recap' })
     expect(getPreviousPresenterQuizStep({ kind: 'leaderboard' }, 0)).toEqual({
       direction: 'previous', kind: 'boundary',
     })

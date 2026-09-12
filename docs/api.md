@@ -582,6 +582,52 @@ Get aggregated player leaderboard across all published questions (admin only). A
 }
 ```
 
+### GET `/api/results/recap`
+
+Get post-quiz totals and question highlights across all published questions (admin only). Correct answers use the
+same `⭐` convention as the leaderboard. The response contains no participant identifiers or nicknames.
+
+**Response:**
+
+```json
+{
+  "totals": {
+    "publishedQuestions": 12,
+    "answeredQuestions": 10,
+    "participants": 42,
+    "answers": 380,
+    "scoredAnswers": 350,
+    "correctAnswers": 287
+  },
+  "highlights": [
+    {
+      "kind": "best-known",
+      "question": {
+        "id": "question-id",
+        "text": { "en": "Which answer is correct?" }
+      },
+      "answerCount": 40,
+      "correctAnswerCount": 36
+    },
+    {
+      "kind": "closest-call",
+      "question": {
+        "id": "another-question-id",
+        "text": { "en": "Choose one." }
+      },
+      "answerCount": 39,
+      "leadingOptions": [
+        { "text": { "en": "First" }, "count": 20 },
+        { "text": { "en": "Second" }, "count": 19 }
+      ]
+    }
+  ]
+}
+```
+
+Highlights use the fixed order `best-known`, `hardest`, `most-answered`, and `closest-call`. A highlight is omitted
+when the stored answers cannot support it.
+
 ## WebSocket Connections
 
 ### GET `/api/websockets/connections`

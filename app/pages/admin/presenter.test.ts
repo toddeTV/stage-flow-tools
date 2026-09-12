@@ -130,13 +130,15 @@ describe('presenter page', () => {
     wrapper.unmount()
   })
 
-  it('builds click-through emoji and leaderboard frames from prefixed parameters', async () => {
+  it('builds click-through emoji and terminal frames from prefixed parameters', async () => {
     route.query = {
       colorMode: 'dark',
       emojiBackground: '#112233',
       emojiLayer: 'foreground',
       leaderboardCore: 'true',
       leaderboardPadding: '8',
+      recapCount: '2',
+      recapPadding: '6',
       stageScale: '0.7',
     }
     controller.step.value = { kind: 'leaderboard' }
@@ -157,6 +159,36 @@ describe('presenter page', () => {
     expect(frames[1]?.attributes('src')).toContain('showUserId=false')
     expect(frames.every(frame => !frame.attributes('src')?.includes('stageScale'))).toBe(true)
     expect(frames.every(frame => !frame.attributes('src')?.includes('token'))).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('reuses terminal controls for the recap iframe and forwards only its safe parameters', async () => {
+    route.query = {
+      colorMode: 'dark',
+      language: 'de-DE',
+      recapCore: 'true',
+      recapCount: '2',
+      recapPadding: '6',
+      recapRefresh: '10',
+      recapScale: '1.2',
+      stageScale: '0.7',
+      presenterRefresh: '0.5',
+      token: 'secret',
+    }
+    controller.step.value = { kind: 'recap' }
+    const wrapper = render()
+    await nextTick()
+
+    const frame = wrapper.get('.endscreen-frame')
+    const navigation = wrapper.get('.endscreen-navigation')
+    expect(frame.attributes('src')).toBe(
+      '/admin/recap?colorMode=dark&count=2&padding=6&refresh=10&scale=1.2&core=&language=de-DE',
+    )
+    expect(frame.attributes('title')).toBe('recap')
+    expect(navigation.text()).toContain('recap')
+    expect(frame.attributes('src')).not.toContain('stageScale')
+    expect(frame.attributes('src')).not.toContain('presenterRefresh')
+    expect(frame.attributes('src')).not.toContain('secret')
     wrapper.unmount()
   })
 
@@ -184,21 +216,21 @@ describe('presenter page', () => {
     wrapper.unmount()
   })
 
-  it('routes mouse controls and focused leaderboard iframe arrows to the same controller', async () => {
-    controller.step.value = { kind: 'leaderboard' }
+  it('routes mouse controls and focused terminal iframe arrows to the same controller', async () => {
+    controller.step.value = { kind: 'recap' }
     const wrapper = render()
     await nextTick()
 
-    const buttons = wrapper.findAll('.leaderboard-navigation button')
+    const buttons = wrapper.findAll('.endscreen-navigation button')
     await buttons[0]?.trigger('click')
     await buttons[1]?.trigger('click')
-    const frame = wrapper.get('.leaderboard-frame').element as HTMLIFrameElement
+    const frame = wrapper.get('.endscreen-frame').element as HTMLIFrameElement
     const childWindow = new EventTarget()
     Object.defineProperty(frame, 'contentWindow', {
       configurable: true,
       value: childWindow,
     })
-    await wrapper.get('.leaderboard-frame').trigger('load')
+    await wrapper.get('.endscreen-frame').trigger('load')
     childWindow.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }))
 
     expect(navigate.mock.calls).toEqual([

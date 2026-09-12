@@ -170,22 +170,90 @@ Standard leaderboard with its local dark color theme.
 
 For `background`, encode the `#` character as `%23` in URLs.
 
+## `/admin/recap` Page
+
+`/admin/recap` summarizes all final answers to previously published questions. It shows aggregate quiz totals and
+up to four question highlights without exposing participant identifiers or nicknames.
+
+### `colorMode`
+
+- **Type**: String (`light` | `dark`)
+- **Default**: `light`
+- **Effect**: Applies a local color theme to the recap. It does not change the application's global theme.
+
+### `core`
+
+- **Type**: Flag (presence check)
+- **Default**: Not set
+- **Effect**: Uses the presentation-oriented recap layout without the page title or admin back link.
+
+### `padding`
+
+- **Type**: Non-negative number (pixels)
+- **Default**: `0`
+- **Effect**: Adds padding around the recap content in core view mode.
+
+### `scale`
+
+- **Type**: Positive number (decimal)
+- **Default**: `1`
+- **Effect**: Scales recap content in core view mode.
+
+### `background`
+
+- **Type**: Hex color (`#RRGGBB`)
+- **Default**: Not set (the existing recap background)
+- **Effect**: Replaces the recap page background with the supplied color. Invalid values preserve the existing background.
+
+### `refresh`
+
+- **Type**: Non-negative integer (seconds)
+- **Default**: `5`
+- **Effect**: Fetches fresh recap data at the selected interval without reloading the page. Set to `0` to disable automatic refresh. Invalid or negative values use the five-second default.
+
+### `count`
+
+- **Type**: Integer from `1` to `4`
+- **Default**: `4`
+- **Effect**: Limits the number of available highlight cards. Invalid, empty, or repeated values use the default.
+
+### `language`
+
+- **Type**: Locale string
+- **Default**: Automatic
+- **Effect**: Selects the language for question and answer-option text. Resolution tries the complete locale, its base language, the current UI language, English, and then the first available text.
+
+### Examples
+
+```text
+/admin/recap
+Standard recap with four highlights and five-second data refresh.
+
+/admin/recap?core&padding=24&scale=0.9&colorMode=dark&count=4&refresh=0&language=de
+Static German recap for a dark presentation frame.
+
+/admin/recap?core&count=2&background=%23ffffff
+Presentation recap limited to its first two available highlights on a white background.
+```
+
+For `background`, encode the `#` character as `%23` in URLs.
+
 ## `/admin/presenter` Page
 
 `/admin/presenter` runs the complete quiz sequence in one iframe. It displays the emoji stream, each enabled
-question in queue order, the open and revealed states, and the existing leaderboard. The left and right arrow keys
-and the visible navigation buttons follow this sequence:
+question in queue order, the open and revealed states, the existing leaderboard, and the quiz recap. The left and
+right arrow keys and the visible navigation buttons follow this sequence:
 
 ```text
-Question 1 open → Question 1 revealed → Question 2 open → … → Last question revealed → Leaderboard
+Question 1 open → Question 1 revealed → Question 2 open → … → Last question revealed → Leaderboard → Recap
 ```
 
-Backward navigation reverses the sequence. Moving left from the first open question or right from the leaderboard
+Backward navigation reverses the sequence. Moving left from the first open question or right from the recap
 sends a boundary message to the parent presentation.
 
 | Parameter | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `colorMode` | `light` \| `dark` | `light` | Sets the local quiz theme and the inherited leaderboard theme. |
+| `colorMode` | `light` \| `dark` | `light` | Sets the local quiz theme and the inherited leaderboard and recap themes. |
 | `foregroundOpacity` | Number, clamped to `0`–`1` | `1` | Multiplies panel opacity without changing text or control opacity. |
 | `foregroundInsetX` | Non-negative number in pixels | `56` | Sets horizontal quiz content insets. |
 | `foregroundInsetY` | Non-negative number in pixels | `40` | Sets vertical quiz content insets. The fixed 18-pixel lower reserve remains. |
@@ -204,18 +272,26 @@ sends a boundary message to the parent presentation.
 | `leaderboardShowUserId` | Boolean | `false` | Passes `showUserId` to the leaderboard. Set it to `true` to show technical participant IDs. |
 | `leaderboardRefresh` | Non-negative integer in seconds | `5` | Passes `refresh` to the leaderboard. Use `0` to disable polling. |
 | `leaderboardColorMode` | `light` \| `dark` | Inherits `colorMode` | Overrides only the embedded leaderboard theme. |
+| `recapCore` | Boolean | `false` | Passes the existing `core` flag to the recap when `true`. |
+| `recapPadding` | Non-negative number in pixels | `0` | Passes `padding` to the recap. |
+| `recapScale` | Positive number | `1` | Passes `scale` to the recap. |
+| `recapBackground` | Hex color (`#RRGGBB`) | Not set | Passes `background` to the recap. |
+| `recapRefresh` | Non-negative integer in seconds | `5` | Passes `refresh` to the recap. Use `0` to disable polling. |
+| `recapCount` | Integer from `1` to `4` | `4` | Limits the number of embedded recap highlights. |
+| `recapColorMode` | `light` \| `dark` | Inherits `colorMode` | Overrides only the embedded recap theme. |
 
 Invalid numeric values use the documented defaults. Opacity values are clamped. Repeated query values and invalid
 enums or colors are rejected. `presenterRefresh` accepts decimal seconds such as `0.5`; `0` disables only periodic
 polling, while initial loading, focus refreshes, and navigation still synchronize state. The `language` fallback
 order is URL value, local storage, browser locale, English, then the first available question language.
+The selected `language` is also forwarded to the recap for its question and answer-option text.
 
 `stageScale` uses the iframe dimensions automatically; no aspect-ratio parameter is required. Its logical dimensions
 are `iframe width / stageScale` by `iframe height / stageScale`. The two-column quiz layout activates above 860
 logical pixels. For example, a 640-pixel-wide iframe with `stageScale=0.7` has about 914 logical pixels and therefore
-uses two columns. The parameter is not forwarded to the embedded emoji or leaderboard pages; `emojiScale` and
-`leaderboardScale` apply in addition to it. Positive finite values are not clamped. Extremely small or large values
-can make text and hit targets unreadable or increase rendering cost. Zero, negative, empty, repeated, non-finite, or
+uses two columns. The parameter is not forwarded to the embedded emoji, leaderboard, or recap pages; `emojiScale`,
+`leaderboardScale`, and `recapScale` apply in addition to it. Positive finite values are not clamped. Extremely small
+or large values can make text and hit targets unreadable or increase rendering cost. Zero, negative, empty, repeated, non-finite, or
 non-invertible values fall back to `1`.
 
 ### Examples
@@ -238,17 +314,20 @@ More logical space for retaining the two-column quiz layout in a small iframe.
 
 /admin/presenter?leaderboardCore=true&leaderboardPadding=24&leaderboardScale=0.9&leaderboardShowUserId=true
 Standard quiz flow with a projector-oriented leaderboard and explicitly enabled technical IDs.
+
+/admin/presenter?recapCore=true&recapPadding=24&recapScale=0.9&recapCount=2&recapRefresh=0
+Standard quiz flow with a static, projector-oriented recap limited to two highlights.
 ```
 
-Encode `#` as `%23` when using either background parameter.
+Encode `#` as `%23` when using any background parameter.
 
 ### Authentication
 
-The presenter page and both embedded pages use the existing admin session. Sign in to the Stage Flow Tools origin
+The presenter page and all embedded pages use the existing admin session. Sign in to the Stage Flow Tools origin
 before entering the Slidev slide. Browser privacy settings must allow that session cookie inside the iframe.
 
 `?token=` remains an authentication bootstrap handled by the existing middleware. The middleware removes it from
-the URL, and the presenter page never forwards it to the emoji or leaderboard iframe. Do not put an admin token in
+the URL, and the presenter page never forwards it to the emoji, leaderboard, or recap iframe. Do not put an admin token in
 a public Slidev repository, generated deck, presentation URL, log, or screenshot. Prefer an established HTTP-only
 admin session.
 

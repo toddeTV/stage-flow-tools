@@ -75,7 +75,7 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
     }
   }
 
-  async function syncLeaderboardStep() {
+  async function syncNonQuestionStep() {
     const state = await fetchCurrentState()
     if (!state.hasActiveQuestion) return
 
@@ -85,7 +85,7 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
 
   async function syncVisibleStep(target: PresenterQuizStep) {
     if (target.kind === 'question') await syncQuestionStep(target)
-    else await syncLeaderboardStep()
+    else await syncNonQuestionStep()
   }
 
   async function initialize() {
@@ -112,7 +112,7 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
         await syncVisibleStep(initialStep)
       }
       else if (!initialStep && state.hasActiveQuestion) {
-        await syncLeaderboardStep()
+        await syncNonQuestionStep()
       }
 
       step.value = initialStep
@@ -181,7 +181,7 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
 
     try {
       if (transition.kind === 'boundary') {
-        if (transition.direction === 'previous') await syncLeaderboardStep()
+        if (transition.direction === 'previous') await syncNonQuestionStep()
         emitBoundary(transition.direction)
         return
       }
