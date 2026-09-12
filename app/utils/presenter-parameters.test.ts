@@ -14,6 +14,7 @@ describe('parsePresenterParameters', () => {
       leaderboardBackground: undefined,
       leaderboardColorMode: 'light',
     })
+    expect(parsePresenterParameters({ leaderboardShowUserId: 'true' }).leaderboardShowUserId).toBe(true)
   })
 
   it('parses themes, layers, colors, booleans, and prefixed values', () => {
@@ -104,7 +105,7 @@ describe('parsePresenterParameters', () => {
       leaderboardCore: false,
       leaderboardRefresh: 5,
       leaderboardScale: 1,
-      leaderboardShowUserId: true,
+      leaderboardShowUserId: false,
       presenterRefresh: 2,
       stageScale: 1,
       textScale: 1,
@@ -142,7 +143,7 @@ describe('buildPresenterIframeUrls', () => {
 
     expect(urls.emojiUrl).toBe('/admin/emojis?scale=0.3&transparency=0.8&background=%23abcdef')
     expect(urls.leaderboardUrl).toBe(
-      '/admin/leaderboard?colorMode=light&padding=0&refresh=5&scale=1&showUserId=true&core=&background=%23fedcba',
+      '/admin/leaderboard?colorMode=light&padding=0&refresh=5&scale=1&showUserId=false&core=&background=%23fedcba',
     )
     expect(JSON.stringify(urls)).not.toContain('presenterRefresh')
     expect(JSON.stringify(urls)).not.toContain('stageScale')

@@ -10,7 +10,7 @@ export const PRESENTER_PARAMETER_DEFAULTS = {
   leaderboardPadding: 0,
   leaderboardRefresh: 5,
   leaderboardScale: 1,
-  leaderboardShowUserId: true,
+  leaderboardShowUserId: false,
   presenterRefresh: 2,
   stageScale: 1,
   textScale: 1,

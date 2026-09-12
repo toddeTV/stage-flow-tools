@@ -201,7 +201,7 @@ sends a boundary message to the parent presentation.
 | `leaderboardPadding` | Non-negative number in pixels | `0` | Passes `padding` to the leaderboard. |
 | `leaderboardScale` | Positive number | `1` | Passes `scale` to the leaderboard. |
 | `leaderboardBackground` | Hex color (`#RRGGBB`) | Not set | Passes `background` to the leaderboard. |
-| `leaderboardShowUserId` | Boolean | `true` | Passes `showUserId` to the leaderboard. |
+| `leaderboardShowUserId` | Boolean | `false` | Passes `showUserId` to the leaderboard. Set it to `true` to show technical participant IDs. |
 | `leaderboardRefresh` | Non-negative integer in seconds | `5` | Passes `refresh` to the leaderboard. Use `0` to disable polling. |
 | `leaderboardColorMode` | `light` \| `dark` | Inherits `colorMode` | Overrides only the embedded leaderboard theme. |
 
@@ -222,7 +222,7 @@ non-invertible values fall back to `1`.
 
 ```text
 /admin/presenter
-Legacy-compatible light quiz layout with background emojis and the standard leaderboard.
+Light quiz layout with background emojis and a leaderboard without technical participant IDs.
 
 /admin/presenter?colorMode=dark&emojiLayer=foreground&foregroundOpacity=0.85
 Dark quiz layout with click-through emoji reactions above the content.
@@ -236,8 +236,8 @@ Standard quiz flow with presenter results refreshed every half-second.
 /admin/presenter?stageScale=0.7
 More logical space for retaining the two-column quiz layout in a small iframe.
 
-/admin/presenter?leaderboardCore=true&leaderboardPadding=24&leaderboardScale=0.9&leaderboardShowUserId=false
-Standard quiz flow with a projector-oriented leaderboard and hidden technical IDs.
+/admin/presenter?leaderboardCore=true&leaderboardPadding=24&leaderboardScale=0.9&leaderboardShowUserId=true
+Standard quiz flow with a projector-oriented leaderboard and explicitly enabled technical IDs.
 ```
 
 Encode `#` as `%23` when using either background parameter.

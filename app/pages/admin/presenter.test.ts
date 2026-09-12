@@ -154,6 +154,7 @@ describe('presenter page', () => {
     expect(frames[0]?.attributes('src')).toContain('background=%23112233')
     expect(frames[1]?.attributes('src')).toContain('/admin/leaderboard?colorMode=dark&padding=8')
     expect(frames[1]?.attributes('src')).toContain('core=')
+    expect(frames[1]?.attributes('src')).toContain('showUserId=false')
     expect(frames.every(frame => !frame.attributes('src')?.includes('stageScale'))).toBe(true)
     expect(frames.every(frame => !frame.attributes('src')?.includes('token'))).toBe(true)
     wrapper.unmount()
