@@ -8,6 +8,8 @@ export type PresenterQuizStep = {
   questionIndex: number
 } | {
   kind: 'leaderboard'
+} | {
+  kind: 'recap'
 }
 
 export type PresenterQuizTransition = PresenterQuizStep | {
@@ -39,7 +41,8 @@ export function getNextPresenterQuizStep(
   step: PresenterQuizStep,
   totalQuestions: number,
 ): PresenterQuizTransition {
-  if (step.kind === 'leaderboard') return { direction: 'next', kind: 'boundary' }
+  if (step.kind === 'recap') return { direction: 'next', kind: 'boundary' }
+  if (step.kind === 'leaderboard') return { kind: 'recap' }
   if (step.phase === 'open') return { ...step, phase: 'reveal' }
   if (step.questionIndex + 1 < totalQuestions) {
     return { kind: 'question', phase: 'open', questionIndex: step.questionIndex + 1 }
@@ -52,6 +55,7 @@ export function getPreviousPresenterQuizStep(
   step: PresenterQuizStep,
   totalQuestions: number,
 ): PresenterQuizTransition {
+  if (step.kind === 'recap') return { kind: 'leaderboard' }
   if (step.kind === 'leaderboard') {
     return totalQuestions > 0
       ? { kind: 'question', phase: 'reveal', questionIndex: totalQuestions - 1 }
