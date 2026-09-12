@@ -136,6 +136,24 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
     }
   }
 
+  async function activate() {
+    if (!isInitialized.value || !step.value || isTransitioning.value) return
+
+    isTransitioning.value = true
+    errorKind.value = null
+
+    try {
+      await syncVisibleStep(step.value)
+    }
+    catch (error: unknown) {
+      logger_error('Failed to reactivate presenter quiz step', error)
+      errorKind.value = 'sync'
+    }
+    finally {
+      isTransitioning.value = false
+    }
+  }
+
   async function navigate(direction: 'next' | 'previous') {
     if (!step.value || isTransitioning.value) return
 
@@ -178,6 +196,7 @@ export function createPresenterQuizController({ api, emitBoundary }: PresenterQu
   }
 
   return {
+    activate,
     currentQuestion,
     currentState,
     errorKind,
@@ -218,13 +237,13 @@ export function usePresenterQuiz(pollIntervalSeconds: Readonly<Ref<number>>) {
 
   onMounted(() => {
     void controller.initialize().then(() => controller.startPolling(pollIntervalSeconds.value * 1000))
-    window.addEventListener('focus', controller.refresh)
+    window.addEventListener('focus', controller.activate)
   })
 
   onBeforeUnmount(() => {
     stopPollingIntervalWatch()
     controller.stopPolling()
-    window.removeEventListener('focus', controller.refresh)
+    window.removeEventListener('focus', controller.activate)
   })
 
   return controller

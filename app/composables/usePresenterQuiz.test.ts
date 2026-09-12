@@ -152,7 +152,7 @@ describe('createPresenterQuizController', () => {
     expect(controller.step.value).toEqual({ kind: 'leaderboard' })
   })
 
-  it('unpublishes before the previous boundary and blocks concurrent input', async () => {
+  it('unpublishes before the previous boundary, then restores the open step before reveal', async () => {
     const { calls, controller, emitBoundary } = setup(state('one'))
     await controller.initialize()
     controller.currentState.value = state('one')
@@ -172,6 +172,26 @@ describe('createPresenterQuizController', () => {
       'state',
     ])
     expect(controller.step.value).toEqual({ kind: 'question', phase: 'open', questionIndex: 0 })
+
+    calls.length = 0
+    await controller.activate()
+
+    expect(calls).toEqual([
+      'state',
+      'publish:one',
+      'state',
+    ])
+    expect(controller.currentState.value).toEqual(state('one'))
+
+    calls.length = 0
+    await controller.navigate('next')
+
+    expect(calls).toEqual([
+      'state',
+      'toggle:one',
+      'state',
+    ])
+    expect(controller.step.value).toEqual({ kind: 'question', phase: 'reveal', questionIndex: 0 })
   })
 
   it('polls with a configurable interval and restarts the timer', async () => {
