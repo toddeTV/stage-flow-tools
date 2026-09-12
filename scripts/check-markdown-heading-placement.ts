@@ -20,9 +20,16 @@ type Heading = {
   text: string
 }
 
+type UnchangedDiffLine = {
+  baseLine: number
+  headLine: number
+  text: string
+}
+
 export type DiffHunk = {
   addedLines: Set<number>
   removedLines: Set<number>
+  unchangedLines: UnchangedDiffLine[]
 }
 
 export type HeadingPlacementViolation = {
@@ -123,8 +130,20 @@ function isHeadingRename(
     return false
   }
 
-  const addedHeadings = headHeadings.filter(candidate => headingTouchesLines(candidate, hunk.addedLines))
-  const removedHeadings = baseHeadings.filter(candidate => headingTouchesLines(candidate, hunk.removedLines))
+  const countUnchangedLinesBeforeHeading = (candidate: Heading, line: 'baseLine' | 'headLine') => (
+    hunk.unchangedLines.filter(unchangedLine => (
+      unchangedLine.text.trim() && unchangedLine[line] < candidate.line
+    )).length
+  )
+  const headingBoundary = countUnchangedLinesBeforeHeading(heading, 'headLine')
+  const addedHeadings = headHeadings.filter(candidate => (
+    headingTouchesLines(candidate, hunk.addedLines)
+    && countUnchangedLinesBeforeHeading(candidate, 'headLine') === headingBoundary
+  ))
+  const removedHeadings = baseHeadings.filter(candidate => (
+    headingTouchesLines(candidate, hunk.removedLines)
+    && countUnchangedLinesBeforeHeading(candidate, 'baseLine') === headingBoundary
+  ))
 
   return addedHeadings.length === removedHeadings.length
 }
@@ -145,6 +164,7 @@ export function parseUnifiedDiff(diff: string): DiffHunk[] {
       currentHunk = {
         addedLines: new Set(),
         removedLines: new Set(),
+        unchangedLines: [],
       }
       hunks.push(currentHunk)
       continue
@@ -167,6 +187,11 @@ export function parseUnifiedDiff(diff: string): DiffHunk[] {
     }
 
     if (line.startsWith(' ')) {
+      currentHunk.unchangedLines.push({
+        baseLine: currentOldLine,
+        headLine: currentNewLine,
+        text: line.slice(1),
+      })
       currentOldLine += 1
       currentNewLine += 1
     }

@@ -139,6 +139,30 @@ describe('Markdown heading placement check', () => {
     )).toEqual([])
   })
 
+  it('rejects a renamed heading moved across unchanged content', () => {
+    const baseSource = [
+      'Existing intro.',
+      '## Old title',
+    ].join('\n')
+    const headSource = [
+      '## New title',
+      'Existing intro.',
+    ].join('\n')
+
+    expect(findHeadingPlacementViolations(
+      baseSource,
+      headSource,
+      parseUnifiedDiff('@@ -1,2 +1,2 @@\n+## New title\n Existing intro.\n-## Old title\n'),
+    )).toEqual([
+      {
+        capturedLine: 2,
+        capturedText: 'Existing intro.',
+        headingLine: 1,
+        headingText: 'New title',
+      },
+    ])
+  })
+
   it('accepts an in-place re-leveled existing heading', () => {
     const baseSource = [
       '# Guide',
