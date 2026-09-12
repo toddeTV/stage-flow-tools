@@ -3,9 +3,11 @@ import type { CSSProperties } from 'vue'
 export const DEFAULT_REFRESH_INTERVAL_SECONDS = 5
 
 type DisplayQuery = Record<string, unknown>
+export type DisplayColorMode = 'dark' | 'light'
 
 export type DisplayParameters = {
   backgroundColor?: string
+  colorMode: DisplayColorMode
   isCoreView: boolean
   padding: number
   refreshIntervalMs: number
@@ -54,12 +56,17 @@ function parseBackgroundColor(value: string | undefined): string | undefined {
     : undefined
 }
 
+function parseColorMode(value: string | undefined): DisplayColorMode {
+  return value === 'dark' ? 'dark' : 'light'
+}
+
 /** Parses shared, presentation-oriented query parameters. */
 export function parseDisplayParameters(query: DisplayQuery): DisplayParameters {
   const transparency = parseNumber(getSingleQueryValue(query, 'transparency'), 1)
 
   return {
     backgroundColor: parseBackgroundColor(getSingleQueryValue(query, 'background')),
+    colorMode: parseColorMode(getSingleQueryValue(query, 'colorMode')),
     isCoreView: query.core !== undefined,
     padding: parseNonNegativeNumber(getSingleQueryValue(query, 'padding'), 0),
     refreshIntervalMs: parseRefreshInterval(getSingleQueryValue(query, 'refresh')),
@@ -93,6 +100,7 @@ export function useDisplayParameters() {
 
   return {
     backgroundStyles,
+    colorMode: computed(() => parameters.value.colorMode),
     coreViewStyles,
     isCoreView: computed(() => parameters.value.isCoreView),
     refreshIntervalMs: computed(() => parameters.value.refreshIntervalMs),

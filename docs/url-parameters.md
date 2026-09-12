@@ -109,6 +109,12 @@ Emojis on a black background. Encode the `#` character as `%23` in URLs.
 
 ## `/admin/leaderboard` Page
 
+### `colorMode`
+
+- **Type**: String (`light` | `dark`)
+- **Default**: `light`
+- **Effect**: Applies a local color theme to the leaderboard. It does not change the application's global theme.
+
 ### `core`
 
 - **Type**: Flag (presence check)
@@ -157,6 +163,146 @@ Projector-oriented leaderboard with a white background, hidden technical IDs, an
 
 /admin/leaderboard?refresh=0
 Standard leaderboard with manual refresh only.
+
+/admin/leaderboard?colorMode=dark
+Standard leaderboard with its local dark color theme.
 ```
 
 For `background`, encode the `#` character as `%23` in URLs.
+
+## `/admin/presenter` Page
+
+`/admin/presenter` runs the complete quiz sequence in one iframe. It displays the emoji stream, each enabled
+question in queue order, the open and revealed states, and the existing leaderboard. The left and right arrow keys
+and the visible navigation buttons follow this sequence:
+
+```text
+Question 1 open → Question 1 revealed → Question 2 open → … → Last question revealed → Leaderboard
+```
+
+Backward navigation reverses the sequence. Moving left from the first open question or right from the leaderboard
+sends a boundary message to the parent presentation.
+
+| Parameter | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `colorMode` | `light` \| `dark` | `light` | Sets the local quiz theme and the inherited leaderboard theme. |
+| `foregroundOpacity` | Number, clamped to `0`–`1` | `1` | Multiplies panel opacity without changing text or control opacity. |
+| `foregroundInsetX` | Non-negative number in pixels | `56` | Sets horizontal quiz content insets. |
+| `foregroundInsetY` | Non-negative number in pixels | `40` | Sets vertical quiz content insets. The fixed 18-pixel lower reserve remains. |
+| `textScale` | Positive number | `1` | Scales quiz typography and presenter controls. |
+| `language` | Locale string | Automatic | Selects question content language before stored and browser preferences. |
+| `presenterRefresh` | Non-negative number in seconds | `2` | Refreshes presenter state at a decimal interval. Use `0` to disable periodic polling. Values between `0` and `0.1` use `0.1`. |
+| `stageScale` | Positive number | `1` | Scales the complete virtual presenter stage. Values below `1` create more logical space; values above `1` enlarge the interface. |
+| `emojiLayer` | `background` \| `foreground` | `background` | Places emoji below or above presentation content. Emoji layers never accept pointer input. |
+| `emojiScale` | Positive number | `0.3` | Passes `scale` to the embedded `/admin/emojis` page. |
+| `emojiOpacity` | Number, clamped to `0`–`1` | `0.8` | Passes `transparency` to the embedded emoji page. |
+| `emojiBackground` | Hex color (`#RRGGBB`) | Transparent | Passes `background` to the embedded emoji page. |
+| `leaderboardCore` | Boolean | `false` | Passes the existing `core` flag to the leaderboard when `true`. |
+| `leaderboardPadding` | Non-negative number in pixels | `0` | Passes `padding` to the leaderboard. |
+| `leaderboardScale` | Positive number | `1` | Passes `scale` to the leaderboard. |
+| `leaderboardBackground` | Hex color (`#RRGGBB`) | Not set | Passes `background` to the leaderboard. |
+| `leaderboardShowUserId` | Boolean | `false` | Passes `showUserId` to the leaderboard. Set it to `true` to show technical participant IDs. |
+| `leaderboardRefresh` | Non-negative integer in seconds | `5` | Passes `refresh` to the leaderboard. Use `0` to disable polling. |
+| `leaderboardColorMode` | `light` \| `dark` | Inherits `colorMode` | Overrides only the embedded leaderboard theme. |
+
+Invalid numeric values use the documented defaults. Opacity values are clamped. Repeated query values and invalid
+enums or colors are rejected. `presenterRefresh` accepts decimal seconds such as `0.5`; `0` disables only periodic
+polling, while initial loading, focus refreshes, and navigation still synchronize state. The `language` fallback
+order is URL value, local storage, browser locale, English, then the first available question language.
+
+`stageScale` uses the iframe dimensions automatically; no aspect-ratio parameter is required. Its logical dimensions
+are `iframe width / stageScale` by `iframe height / stageScale`. The two-column quiz layout activates above 860
+logical pixels. For example, a 640-pixel-wide iframe with `stageScale=0.7` has about 914 logical pixels and therefore
+uses two columns. The parameter is not forwarded to the embedded emoji or leaderboard pages; `emojiScale` and
+`leaderboardScale` apply in addition to it. Positive finite values are not clamped. Extremely small or large values
+can make text and hit targets unreadable or increase rendering cost. Zero, negative, empty, repeated, non-finite, or
+non-invertible values fall back to `1`.
+
+### Examples
+
+```text
+/admin/presenter
+Light quiz layout with background emojis and a leaderboard without technical participant IDs.
+
+/admin/presenter?colorMode=dark&emojiLayer=foreground&foregroundOpacity=0.85
+Dark quiz layout with click-through emoji reactions above the content.
+
+/admin/presenter?foregroundInsetX=32&foregroundInsetY=24&textScale=1.15&language=de
+German question content with smaller insets and larger quiz text.
+
+/admin/presenter?presenterRefresh=0.5
+Standard quiz flow with presenter results refreshed every half-second.
+
+/admin/presenter?stageScale=0.7
+More logical space for retaining the two-column quiz layout in a small iframe.
+
+/admin/presenter?leaderboardCore=true&leaderboardPadding=24&leaderboardScale=0.9&leaderboardShowUserId=true
+Standard quiz flow with a projector-oriented leaderboard and explicitly enabled technical IDs.
+```
+
+Encode `#` as `%23` when using either background parameter.
+
+### Authentication
+
+The presenter page and both embedded pages use the existing admin session. Sign in to the Stage Flow Tools origin
+before entering the Slidev slide. Browser privacy settings must allow that session cookie inside the iframe.
+
+`?token=` remains an authentication bootstrap handled by the existing middleware. The middleware removes it from
+the URL, and the presenter page never forwards it to the emoji or leaderboard iframe. Do not put an admin token in
+a public Slidev repository, generated deck, presentation URL, log, or screenshot. Prefer an established HTTP-only
+admin session.
+
+### Slidev boundary wrapper
+
+The presenter sends this message after it crosses its first or last internal step:
+
+```ts
+type PresenterBoundaryMessage = {
+  type: 'stage-flow-tools:presenter-boundary'
+  direction: 'previous' | 'next'
+}
+```
+
+Use a wrapper component like the following in Slidev. Replace the URL with the deployed Stage Flow Tools origin.
+The wrapper focuses the iframe when its slide becomes active and accepts messages only from that iframe and origin.
+
+```vue
+<script setup lang="ts">
+import { onSlideEnter, useNav } from '@slidev/client'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+
+const presenterUrl = 'https://quiz.example.com/admin/presenter'
+const presenterOrigin = new URL(presenterUrl).origin
+const presenterFrame = ref<HTMLIFrameElement>()
+const nav = useNav()
+
+function focusPresenter() {
+  presenterFrame.value?.contentWindow?.focus()
+}
+
+function handlePresenterBoundary(event: MessageEvent) {
+  if (event.origin !== presenterOrigin || event.source !== presenterFrame.value?.contentWindow) return
+  if (!event.data || event.data.type !== 'stage-flow-tools:presenter-boundary') return
+
+  if (event.data.direction === 'next') void nav.nextSlide()
+  if (event.data.direction === 'previous') void nav.prevSlide(true)
+}
+
+onMounted(() => window.addEventListener('message', handlePresenterBoundary))
+onBeforeUnmount(() => window.removeEventListener('message', handlePresenterBoundary))
+onSlideEnter(focusPresenter)
+</script>
+
+<template>
+  <iframe
+    ref="presenterFrame"
+    class="absolute inset-0 h-full w-full border-0"
+    :src="presenterUrl"
+    title="Live quiz"
+    @load="focusPresenter"
+  />
+</template>
+```
+
+`nextSlide()` and `prevSlide(true)` come from Slidev's
+[`useNav()` navigation API](https://github.com/slidevjs/slidev/blob/main/packages/client/composables/useNav.ts).

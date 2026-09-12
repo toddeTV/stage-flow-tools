@@ -191,6 +191,20 @@ describe('leaderboard display mode', () => {
     rendered.app.unmount()
   })
 
+  it('keeps light mode as the default and applies the dark override locally', async () => {
+    vi.stubGlobal('$fetch', vi.fn().mockResolvedValue(initialResponse))
+    let rendered = renderPage()
+    await flushAsyncState()
+    expect(rendered.container.firstElementChild?.getAttribute('data-color-mode')).toBe('light')
+    rendered.app.unmount()
+
+    route.query = { colorMode: 'dark', refresh: '0' }
+    rendered = renderPage()
+    await flushAsyncState()
+    expect(rendered.container.firstElementChild?.getAttribute('data-color-mode')).toBe('dark')
+    rendered.app.unmount()
+  })
+
   it('refreshes leaderboard data every five seconds without reloading the page', async () => {
     vi.useFakeTimers()
     const fetchLeaderboard = vi.fn().mockResolvedValue(initialResponse)

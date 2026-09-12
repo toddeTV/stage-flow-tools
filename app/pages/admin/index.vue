@@ -11,6 +11,7 @@ const { t } = useI18n()
 
 const subPages = computed(() => [
   { path: '/admin/questions', label: t('questions'), description: t('questionsDesc') },
+  { path: '/admin/presenter', label: t('presenter'), description: t('presenterDesc') },
   { path: '/admin/results', label: t('results'), description: t('resultsDesc') },
   { path: '/admin/leaderboard', label: t('leaderboard'), description: t('leaderboardDesc') },
   { path: '/admin/emojis', label: t('emojis'), description: t('emojisDesc') },
@@ -69,6 +70,8 @@ en:
   title: Admin
   questions: Questions
   questionsDesc: Create, publish, and manage quiz questions.
+  presenter: Presenter Quiz
+  presenterDesc: Run the complete quiz sequence in a presentation-ready frame.
   results: Live Results
   resultsDesc: View real-time voting results with animated bars.
   leaderboard: Leaderboard
@@ -83,6 +86,8 @@ de:
   title: Admin
   questions: Fragen
   questionsDesc: Quiz-Fragen erstellen, veröffentlichen und verwalten.
+  presenter: Presenter-Quiz
+  presenterDesc: Den vollständigen Quiz-Ablauf in einer präsentationsfertigen Ansicht steuern.
   results: Live-Ergebnisse
   resultsDesc: Echtzeit-Abstimmungsergebnisse mit animierten Balken anzeigen.
   leaderboard: Bestenliste
@@ -97,6 +102,8 @@ ja:
   title: 管理
   questions: 質問
   questionsDesc: クイズの質問を作成、公開、管理します。
+  presenter: プレゼンタークイズ
+  presenterDesc: プレゼンテーション用画面でクイズ全体を進行します。
   results: ライブ結果
   resultsDesc: アニメーションバー付きのリアルタイム投票結果を表示します。
   leaderboard: リーダーボード

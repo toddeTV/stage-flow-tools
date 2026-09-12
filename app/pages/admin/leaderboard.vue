@@ -13,6 +13,7 @@ definePageMeta({
 const { t } = useI18n()
 const {
   backgroundStyles,
+  colorMode,
   coreViewStyles,
   isCoreView,
   refreshIntervalMs,
@@ -271,15 +272,19 @@ watch(refreshIntervalMs, restartPolling)
 </script>
 
 <template>
-  <div class="min-h-screen" :style="backgroundStyles">
-    <div :class="isCoreView ? 'min-h-screen' : 'mx-auto max-w-3xl p-5'" :style="coreViewStyles">
+  <div class="leaderboard-page min-h-screen" :data-color-mode="colorMode" :style="backgroundStyles">
+    <div
+      class="leaderboard-content"
+      :class="isCoreView ? 'min-h-screen' : 'mx-auto max-w-3xl p-5'"
+      :style="coreViewStyles"
+    >
       <AdminBackLink v-if="!isCoreView" />
-      <UiPageTitle v-if="!isCoreView">
+      <UiPageTitle v-if="!isCoreView" class="leaderboard-title">
         {{ t('title') }}
       </UiPageTitle>
 
       <div class="mb-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p class="text-sm text-gray-500">
+        <p class="score-summary text-sm text-gray-500">
           {{ t('scoredQuestions', { count: totalQuestionsWithCorrectAnswers }) }}
         </p>
         <div class="flex flex-wrap gap-2">
@@ -322,7 +327,7 @@ watch(refreshIntervalMs, restartPolling)
         </div>
       </div>
 
-      <UiSection :bare="isCoreView">
+      <UiSection :bare="isCoreView" class="leaderboard-section">
         <p v-if="isLoading && !hasLoadedLeaderboard" class="status-message">
           {{ t('loading') }}
         </p>
@@ -341,7 +346,11 @@ watch(refreshIntervalMs, restartPolling)
           {{ t('empty') }}
         </p>
 
-        <table v-else :class="isCoreView ? 'w-full border-collapse bg-white' : 'w-full border-collapse'">
+        <table
+          v-else
+          class="leaderboard-table"
+          :class="isCoreView ? 'w-full border-collapse bg-white' : 'w-full border-collapse'"
+        >
           <thead>
             <tr
               :class="isCoreView
@@ -363,6 +372,7 @@ watch(refreshIntervalMs, restartPolling)
             <tr
               v-for="entry in leaderboard"
               :key="entry.userId"
+              class="leaderboard-row"
               :class="isCoreView
                 ? [
                   'border-b border-black',
@@ -377,6 +387,7 @@ watch(refreshIntervalMs, restartPolling)
                 {{ entry.nickname }}
                 <span
                   v-if="showUserId"
+                  class="user-id"
                   :class="isCoreView ? 'ml-2 text-lg font-normal opacity-70' : 'ml-1 text-xs text-gray-400'"
                 >
                   ({{ entry.userId }})
@@ -396,7 +407,7 @@ watch(refreshIntervalMs, restartPolling)
         :aria-busy="winnerModalPhase === 'drawing'"
         :aria-describedby="winnerModalPhase === 'ready' ? 'winner-modal-description' : undefined"
         aria-labelledby="winner-modal-title"
-        class="m-auto max-h-[calc(100dvh-2.5rem)] w-[calc(100%-2.5rem)] max-w-md
+        class="winner-dialog m-auto max-h-[calc(100dvh-2.5rem)] w-[calc(100%-2.5rem)] max-w-md
         border-[3px] border-black bg-white p-6 text-black backdrop:bg-black/50"
         @click.self="closeWinnerModal"
         @close="resetWinnerModal"
@@ -421,7 +432,7 @@ watch(refreshIntervalMs, restartPolling)
               <UiButton @click="startWinnerDraw">
                 {{ t('drawWinner') }}
               </UiButton>
-              <p id="winner-modal-description" class="mt-3 text-sm text-gray-600">
+              <p id="winner-modal-description" class="winner-hint mt-3 text-sm text-gray-600">
                 {{ t('winnerDrawHint') }}
               </p>
             </div>
@@ -432,7 +443,11 @@ watch(refreshIntervalMs, restartPolling)
               {{ t('drawingWinner') }}
             </h2>
 
-            <div aria-live="polite" class="mt-6 border-[3px] border-black bg-gray-100 p-8 text-center" role="status">
+            <div
+              aria-live="polite"
+              class="winner-drawing mt-6 border-[3px] border-black bg-gray-100 p-8 text-center"
+              role="status"
+            >
               <div
                 aria-hidden="true"
                 class="mx-auto size-16 animate-spin border-[6px] border-black border-t-gray-300
@@ -464,7 +479,7 @@ watch(refreshIntervalMs, restartPolling)
                 </dt>
                 <dd class="winner-stat-value">
                   {{ selectedWinner.correctAnswers }}
-                  <span class="ml-1 text-lg font-normal text-gray-400">
+                  <span class="winner-total ml-1 text-lg font-normal text-gray-400">
                     / {{ selectedWinnerTotalPublishedQuestions }}
                   </span>
                 </dd>
@@ -560,5 +575,43 @@ ja:
 
 .winner-stat-value {
   @apply mt-1 text-2xl font-bold;
+}
+
+.leaderboard-page[data-color-mode='dark'] {
+  @apply bg-slate-950 text-slate-50;
+}
+
+.leaderboard-page[data-color-mode='dark'] .score-summary,
+.leaderboard-page[data-color-mode='dark'] .status-message,
+.leaderboard-page[data-color-mode='dark'] .user-id,
+.leaderboard-page[data-color-mode='dark'] .winner-total {
+  @apply text-slate-300;
+}
+
+.leaderboard-page[data-color-mode='dark'] .leaderboard-section,
+.leaderboard-page[data-color-mode='dark'] .leaderboard-table {
+  @apply border-slate-500 bg-slate-900 text-slate-50;
+}
+
+.leaderboard-page[data-color-mode='dark'] .leaderboard-table thead tr,
+.leaderboard-page[data-color-mode='dark'] .leaderboard-row {
+  @apply border-slate-500;
+}
+
+.leaderboard-page[data-color-mode='dark'] .leaderboard-title {
+  @apply border-slate-400;
+}
+
+.leaderboard-page[data-color-mode='dark'] .winner-dialog {
+  @apply border-slate-400 bg-slate-900 text-slate-50;
+}
+
+.leaderboard-page[data-color-mode='dark'] .winner-stat,
+.leaderboard-page[data-color-mode='dark'] .winner-drawing {
+  @apply border-slate-400 bg-slate-800;
+}
+
+.leaderboard-page[data-color-mode='dark'] .winner-hint {
+  @apply text-slate-300;
 }
 </style>

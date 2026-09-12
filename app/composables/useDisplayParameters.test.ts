@@ -20,6 +20,7 @@ describe('parseDisplayParameters', () => {
       transparency: '0.4',
     })).toEqual({
       backgroundColor: '#12aBcD',
+      colorMode: 'light',
       isCoreView: true,
       padding: 20,
       refreshIntervalMs: 10000,
@@ -39,6 +40,7 @@ describe('parseDisplayParameters', () => {
       transparency: '2',
     })).toEqual({
       backgroundColor: undefined,
+      colorMode: 'light',
       isCoreView: false,
       padding: 0,
       refreshIntervalMs: DEFAULT_REFRESH_INTERVAL_SECONDS * 1000,
@@ -46,6 +48,13 @@ describe('parseDisplayParameters', () => {
       showUserId: true,
       transparency: 1,
     })
+  })
+
+  it('supports a local dark mode and rejects repeated values', () => {
+    expect(parseDisplayParameters({ colorMode: 'dark' })).toMatchObject({ colorMode: 'dark' })
+    expect(parseDisplayParameters({ colorMode: [
+      'dark',
+    ] })).toMatchObject({ colorMode: 'light' })
   })
 
   it('uses defaults for blank numeric values', () => {
