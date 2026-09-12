@@ -234,28 +234,61 @@ describe('quiz recap display mode', () => {
     rendered.app.unmount()
   })
 
-  it('keeps last successful recap visible after a failed background refresh', async () => {
+  it('keeps recap visible, warns, and retries after a failed core polling refresh', async () => {
     vi.useFakeTimers()
-    let rejectRefresh: (reason?: unknown) => void
-    const pendingRefresh = new Promise<typeof recap>((_resolve, reject) => {
-      rejectRefresh = reject
-    })
     const fetchRecap = vi.fn()
       .mockResolvedValueOnce(recap)
-      .mockReturnValueOnce(pendingRefresh)
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce(recap)
     vi.stubGlobal('$fetch', fetchRecap)
+    route.query = { core: '' }
 
     const rendered = renderPage()
     await flushAsyncState()
     await vi.advanceTimersByTimeAsync(5000)
-    await nextTick()
 
-    expect(rendered.container.textContent).toContain('Deutsche Basisfrage')
-    rejectRefresh!(new Error('Network error'))
     await flushAsyncState()
 
     expect(rendered.container.textContent).toContain('Deutsche Basisfrage')
-    expect(rendered.container.textContent).not.toContain('error')
+    expect(rendered.container.querySelector('.recap-stale-message [role="status"]')).not.toBeNull()
+
+    const retry = Array.from(rendered.container.querySelectorAll('button'))
+      .find(button => button.textContent?.includes('retry'))
+    expect(retry).toBeDefined()
+    retry?.click()
+    await flushAsyncState()
+
+    expect(rendered.container.querySelector('.recap-stale-message')).toBeNull()
+    rendered.app.unmount()
+  })
+
+  it('warns and retries after a failed manual refresh in normal mode', async () => {
+    const fetchRecap = vi.fn()
+      .mockResolvedValueOnce(recap)
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce(recap)
+    vi.stubGlobal('$fetch', fetchRecap)
+    route.query = { refresh: '0' }
+
+    const rendered = renderPage()
+    await flushAsyncState()
+
+    const refresh = Array.from(rendered.container.querySelectorAll('button'))
+      .find(button => button.textContent?.includes('refresh'))
+    expect(refresh).toBeDefined()
+    refresh?.click()
+    await flushAsyncState()
+
+    expect(rendered.container.textContent).toContain('Deutsche Basisfrage')
+    expect(rendered.container.querySelector('.recap-stale-message [role="status"]')).not.toBeNull()
+
+    const retry = Array.from(rendered.container.querySelectorAll('button'))
+      .find(button => button.textContent?.includes('retry'))
+    expect(retry).toBeDefined()
+    retry?.click()
+    await flushAsyncState()
+
+    expect(rendered.container.querySelector('.recap-stale-message')).toBeNull()
     rendered.app.unmount()
   })
 })

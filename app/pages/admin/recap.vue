@@ -27,6 +27,7 @@ const {
 const isLoading = ref(false)
 const hasError = ref(false)
 const hasLoadedRecap = ref(false)
+const hasRefreshError = ref(false)
 const recap = ref<QuizRecap>()
 let refreshTimer: ReturnType<typeof setInterval> | undefined
 
@@ -116,10 +117,12 @@ async function fetchRecap() {
     recap.value = await $fetch<QuizRecap>('/api/results/recap')
     hasLoadedRecap.value = true
     hasError.value = false
+    hasRefreshError.value = false
   }
   catch (error: unknown) {
     logger_error('Failed to fetch quiz recap', error)
-    if (!hasLoadedRecap.value) hasError.value = true
+    if (hasLoadedRecap.value) hasRefreshError.value = true
+    else hasError.value = true
   }
   finally {
     isLoading.value = false
@@ -199,6 +202,21 @@ watch(refreshIntervalMs, restartPolling)
           </p>
         </section>
 
+        <div v-if="hasRefreshError" class="recap-stale-message border-b-[3px] border-black bg-gray-100 p-5">
+          <p aria-live="polite" role="status">
+            {{ t('refreshError') }}
+          </p>
+          <UiButton
+            class="mt-3"
+            :disabled="isLoading"
+            size="small"
+            variant="secondary"
+            @click="fetchRecap"
+          >
+            {{ t('retry') }}
+          </UiButton>
+        </div>
+
         <dl class="grid grid-cols-1 border-b-[3px] border-black sm:grid-cols-3">
           <div class="recap-total border-b-[3px] border-black p-5 sm:border-r-[3px] sm:border-b-0">
             <dt>{{ t('publishedQuestions') }}</dt>
@@ -262,6 +280,7 @@ en:
   retry: Try again
   loading: Loading quiz recap...
   error: Quiz recap could not be loaded. Please try again.
+  refreshError: Quiz recap could not be refreshed. The last successful data remains visible.
   empty: No answers submitted yet.
   overallAccuracy: Overall accuracy
   correctOf: "{correct} correct out of {total} answers"
@@ -282,6 +301,7 @@ de:
   retry: Erneut versuchen
   loading: Quiz-Rückblick wird geladen...
   error: Der Quiz-Rückblick konnte nicht geladen werden. Bitte erneut versuchen.
+  refreshError: Der Quiz-Rückblick konnte nicht aktualisiert werden. Der letzte erfolgreiche Stand bleibt sichtbar.
   empty: Noch keine Antworten eingereicht.
   overallAccuracy: Gesamttrefferquote
   correctOf: "{correct} richtig von {total} Antworten"
@@ -302,6 +322,7 @@ ja:
   retry: もう一度試す
   loading: クイズの振り返りを読み込んでいます...
   error: クイズの振り返りを読み込めませんでした。もう一度試してください。
+  refreshError: クイズの振り返りを更新できませんでした。最後に成功したデータを表示しています。
   empty: まだ回答がありません。
   overallAccuracy: 全体の正答率
   correctOf: "{total}回答中{correct}正解"
@@ -344,6 +365,10 @@ ja:
 
 .recap-page[data-color-mode='dark'] .recap-total {
   @apply border-slate-400;
+}
+
+.recap-page[data-color-mode='dark'] .recap-stale-message {
+  @apply border-slate-400 bg-slate-800 text-slate-50;
 }
 
 .recap-page[data-color-mode='dark'] .recap-card div {
