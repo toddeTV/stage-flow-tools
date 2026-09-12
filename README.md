@@ -25,9 +25,10 @@ Perfect for:
 - **`/`** - Main quiz interface for participants
 - **`/admin`** - Admin overview with links to sub-pages
 - **`/admin/questions`** - Question management dashboard
-- **`/admin/presenter`** - Presentation-ready quiz, emoji, and leaderboard flow with optional virtual-stage scaling; see its [iframe parameters and Slidev wrapper](docs/url-parameters.md#adminpresenter-page)
+- **`/admin/presenter`** - Presentation-ready quiz, emoji, leaderboard, and recap flow with optional virtual-stage scaling; see its [iframe parameters and Slidev wrapper](docs/url-parameters.md#adminpresenter-page)
 - **`/admin/results`** - Live results display
 - **`/admin/leaderboard`** - Player leaderboard
+- **`/admin/recap`** - Post-quiz statistics and highlights
 - **`/admin/emojis`** - Floating emoji overlay
 - **`/admin/database`** - Embedded Drizzle Studio for database inspection
 - **`/legal-notice`** - Legal notice (Impressum)
