@@ -142,20 +142,22 @@ describe('Markdown heading placement check', () => {
   it('rejects a renamed heading moved across unchanged content', () => {
     const baseSource = [
       'Existing intro.',
+      '',
       '## Old title',
     ].join('\n')
     const headSource = [
       '## New title',
+      '',
       'Existing intro.',
     ].join('\n')
 
     expect(findHeadingPlacementViolations(
       baseSource,
       headSource,
-      parseUnifiedDiff('@@ -1,2 +1,2 @@\n+## New title\n Existing intro.\n-## Old title\n'),
+      parseUnifiedDiff('@@ -1,3 +1,3 @@\n-Existing intro.\n-\n-## Old title\n+## New title\n+\n+Existing intro.\n'),
     )).toEqual([
       {
-        capturedLine: 2,
+        capturedLine: 3,
         capturedText: 'Existing intro.',
         headingLine: 1,
         headingText: 'New title',
@@ -280,6 +282,88 @@ describe('Markdown heading placement check', () => {
       '--',
       '--staged',
     ])).toEqual({ kind: 'staged' })
+  })
+
+  it('rejects a moved and renamed heading in revision mode', () => {
+    const root = mkdtempSync(join(tmpdir(), 'markdown-heading-placement-'))
+    const originalCwd = process.cwd()
+    const runGit = (args: string[]) => {
+      execFileSync('git', args, {
+        cwd: root,
+        stdio: 'ignore',
+      })
+    }
+
+    try {
+      runGit([
+        'init',
+      ])
+      runGit([
+        'config',
+        'user.email',
+        'test@localhost',
+      ])
+      runGit([
+        'config',
+        'user.name',
+        'Test User',
+      ])
+      writeFileSync(join(root, 'guide.md'), [
+        'Existing intro.',
+        '',
+        '## Old title',
+      ].join('\n'))
+      runGit([
+        'add',
+        'guide.md',
+      ])
+      runGit([
+        'commit',
+        '-m',
+        'initial',
+      ])
+      const base = execFileSync('git', [
+        'rev-parse',
+        'HEAD',
+      ], {
+        cwd: root,
+        encoding: 'utf8',
+      }).trim()
+
+      writeFileSync(join(root, 'guide.md'), [
+        '## New title',
+        '',
+        'Existing intro.',
+      ].join('\n'))
+      runGit([
+        'commit',
+        '-am',
+        'move heading',
+      ])
+      const head = execFileSync('git', [
+        'rev-parse',
+        'HEAD',
+      ], {
+        cwd: root,
+        encoding: 'utf8',
+      }).trim()
+
+      process.chdir(root)
+
+      expect(() => runMarkdownHeadingPlacementCheck([
+        '--base',
+        base,
+        '--head',
+        head,
+      ])).toThrow('guide.md:1: "New title" captures existing content at line 3: Existing intro.')
+    }
+    finally {
+      process.chdir(originalCwd)
+      rmSync(root, {
+        force: true,
+        recursive: true,
+      })
+    }
   })
 
   it('uses the merge base when the revision base branch has advanced', () => {

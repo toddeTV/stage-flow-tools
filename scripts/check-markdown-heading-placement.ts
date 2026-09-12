@@ -20,16 +20,19 @@ type Heading = {
   text: string
 }
 
-type UnchangedDiffLine = {
+type SourceLine = {
+  line: number
+  text: string
+}
+
+type UnchangedSourceLine = {
   baseLine: number
   headLine: number
-  text: string
 }
 
 export type DiffHunk = {
   addedLines: Set<number>
   removedLines: Set<number>
-  unchangedLines: UnchangedDiffLine[]
 }
 
 export type HeadingPlacementViolation = {
@@ -104,6 +107,79 @@ function getMarkdownHeadings(source: string): Heading[] {
   return headings
 }
 
+function getUnchangedSourceLines(baseSource: string, headSource: string) {
+  const getNonEmptyLines = (source: string) => source
+    .split(/\r?\n/u)
+    .flatMap((text, index): SourceLine[] => (text.trim() ? [
+      {
+        line: index + 1,
+        text,
+      },
+    ] : []))
+  const baseLines = getNonEmptyLines(baseSource)
+  const headLines = getNonEmptyLines(headSource)
+  const lengths = Array.from({
+    length: baseLines.length + 1,
+  }, () => new Uint32Array(headLines.length + 1))
+
+  for (let baseIndex = baseLines.length - 1; baseIndex >= 0; baseIndex -= 1) {
+    const row = lengths[baseIndex]
+    const nextRow = lengths[baseIndex + 1]
+
+    if (!row || !nextRow) {
+      continue
+    }
+
+    for (let headIndex = headLines.length - 1; headIndex >= 0; headIndex -= 1) {
+      const baseLine = baseLines[baseIndex]
+      const headLine = headLines[headIndex]
+
+      if (!baseLine || !headLine) {
+        continue
+      }
+
+      row[headIndex] = baseLine.text === headLine.text
+        ? (nextRow[headIndex + 1] ?? 0) + 1
+        : Math.max(nextRow[headIndex] ?? 0, row[headIndex + 1] ?? 0)
+    }
+  }
+
+  const unchangedLines: UnchangedSourceLine[] = []
+  let baseIndex = 0
+  let headIndex = 0
+
+  while (baseIndex < baseLines.length && headIndex < headLines.length) {
+    const baseLine = baseLines[baseIndex]
+    const headLine = headLines[headIndex]
+
+    if (!baseLine || !headLine) {
+      break
+    }
+
+    if (baseLine.text === headLine.text) {
+      unchangedLines.push({
+        baseLine: baseLine.line,
+        headLine: headLine.line,
+      })
+      baseIndex += 1
+      headIndex += 1
+      continue
+    }
+
+    const nextBaseLength = lengths[baseIndex + 1]?.[headIndex] ?? 0
+    const nextHeadLength = lengths[baseIndex]?.[headIndex + 1] ?? 0
+
+    if (nextBaseLength >= nextHeadLength) {
+      baseIndex += 1
+    }
+    else {
+      headIndex += 1
+    }
+  }
+
+  return unchangedLines
+}
+
 function headingTouchesLines(heading: Heading, lines: Set<number>) {
   for (let line = heading.line; line <= heading.endLine; line += 1) {
     if (lines.has(line)) {
@@ -123,6 +199,7 @@ function isHeadingRename(
   headHeadings: Heading[],
   baseHeadings: Heading[],
   diffHunks: DiffHunk[],
+  unchangedSourceLines: UnchangedSourceLine[],
 ) {
   const hunk = diffHunks.find(candidate => headingTouchesLines(heading, candidate.addedLines))
 
@@ -131,9 +208,7 @@ function isHeadingRename(
   }
 
   const countUnchangedLinesBeforeHeading = (candidate: Heading, line: 'baseLine' | 'headLine') => (
-    hunk.unchangedLines.filter(unchangedLine => (
-      unchangedLine.text.trim() && unchangedLine[line] < candidate.line
-    )).length
+    unchangedSourceLines.filter(unchangedLine => unchangedLine[line] < candidate.line).length
   )
   const headingBoundary = countUnchangedLinesBeforeHeading(heading, 'headLine')
   const addedHeadings = headHeadings.filter(candidate => (
@@ -164,7 +239,6 @@ export function parseUnifiedDiff(diff: string): DiffHunk[] {
       currentHunk = {
         addedLines: new Set(),
         removedLines: new Set(),
-        unchangedLines: [],
       }
       hunks.push(currentHunk)
       continue
@@ -187,11 +261,6 @@ export function parseUnifiedDiff(diff: string): DiffHunk[] {
     }
 
     if (line.startsWith(' ')) {
-      currentHunk.unchangedLines.push({
-        baseLine: currentOldLine,
-        headLine: currentNewLine,
-        text: line.slice(1),
-      })
       currentOldLine += 1
       currentNewLine += 1
     }
@@ -207,6 +276,8 @@ export function findHeadingPlacementViolations(
 ): HeadingPlacementViolation[] {
   const baseHeadings = getMarkdownHeadings(baseSource)
   const headHeadings = getMarkdownHeadings(headSource)
+  const unchangedSourceLines = getUnchangedSourceLines(baseSource, headSource)
+  const unchangedHeadLines = new Set(unchangedSourceLines.map(line => line.headLine))
   const addedLines = new Set(diffHunks.flatMap(hunk => [
     ...hunk.addedLines,
   ]))
@@ -220,7 +291,7 @@ export function findHeadingPlacementViolations(
       continue
     }
 
-    if (isHeadingRename(heading, headHeadings, baseHeadings, diffHunks)) {
+    if (isHeadingRename(heading, headHeadings, baseHeadings, diffHunks, unchangedSourceLines)) {
       continue
     }
 
@@ -232,7 +303,7 @@ export function findHeadingPlacementViolations(
     for (let line = heading.endLine + 1; line < sectionEndLine; line += 1) {
       const content = lines[line - 1]?.trim()
 
-      if (!content || addedLines.has(line)) {
+      if (!content || (addedLines.has(line) && !unchangedHeadLines.has(line))) {
         continue
       }
 
