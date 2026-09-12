@@ -25,6 +25,7 @@ Perfect for:
 - **`/`** - Main quiz interface for participants
 - **`/admin`** - Admin overview with links to sub-pages
 - **`/admin/questions`** - Question management dashboard
+- **`/admin/presenter`** - Presentation-ready quiz, emoji, and leaderboard flow
 - **`/admin/results`** - Live results display
 - **`/admin/leaderboard`** - Player leaderboard
 - **`/admin/emojis`** - Floating emoji overlay
@@ -40,6 +41,7 @@ For detailed information, see the [`/docs`](docs/) folder:
 - [Local Development Setup](docs/setup-local.md)
 - [Production Deployment](docs/setup-production.md)
 - [Deployment-Specific Legal Documents](docs/legal-texts.md)
+- [Display URL Parameters](docs/url-parameters.md)
 - etc.
 
 ## Contribution & Attribution
