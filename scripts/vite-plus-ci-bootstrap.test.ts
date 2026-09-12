@@ -60,7 +60,12 @@ describe('Vite+ CI bootstrap', () => {
     expect(workflow).not.toContain('voidzero-dev/setup-vp@')
     expect(workflow).not.toContain('vp run graphify:test')
     expect(workflow).not.toContain('warning_summary')
-    expect(workflow.match(/^\s+command: /gm)).toHaveLength(6)
+    expect(workflow).toContain('name: Markdown Section Structure')
+    expect(workflow).toContain('command: vp run test:markdown-structure')
+    expect(workflow).toContain("matrix.command == 'vp run test:markdown-structure'")
+    expect(workflow).toContain('CHECK_MARKDOWN_STRUCTURE_BASE_SHA:')
+    expect(workflow).toContain('CHECK_MARKDOWN_STRUCTURE_HEAD_SHA:')
+    expect(workflow.match(/^\s+command: /gm)).toHaveLength(7)
   })
 
   it('provides a manual warm-cache installer-failure validation workflow', () => {
