@@ -58,7 +58,14 @@ function localizedText(text: LocalizedString) {
   ]
 
   for (const candidate of candidates) {
-    if (candidate && text[candidate]) return text[candidate]
+    if (!candidate) continue
+    const translation = Object.entries(text).find(([
+      key,
+      value,
+    ]) => (
+      normalizeLocaleCode(key) === candidate && value
+    ))?.[1]
+    if (translation) return translation
   }
 
   return Object.values(text)[0] ?? ''

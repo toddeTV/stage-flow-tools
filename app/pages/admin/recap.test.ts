@@ -60,13 +60,16 @@ const recap = {
       answerCount: 8,
       correctAnswerCount: 8,
       kind: 'best-known' as const,
-      question: { id: 'best', text: { de: 'Beste deutsche Frage', en: 'Best English question' } },
+      question: {
+        id: 'best',
+        text: { de: 'Deutsche Basisfrage', 'DE-de': 'Beste deutsche Frage', en: 'Best English question' },
+      },
     },
     {
       answerCount: 8,
       correctAnswerCount: 2,
       kind: 'hardest' as const,
-      question: { id: 'hard', text: { en: 'Hard question' } },
+      question: { id: 'hard', text: { ' ': 'Whitespace translation', en: 'Hard question' } },
     },
     {
       answerCount: 12,
@@ -77,10 +80,10 @@ const recap = {
       answerCount: 10,
       kind: 'closest-call' as const,
       leadingOptions: [
-        { count: 5, text: { de: 'Rot', en: 'Red' } },
+        { count: 5, text: { de: 'Basisrot', 'DE-de': 'Rot', en: 'Red' } },
         { count: 4, text: { en: 'Blue' } },
       ] as [
-        { count: number, text: { de: string, en: string } },
+        { count: number, text: { de: string, 'DE-de': string, en: string } },
         { count: number, text: { en: string } },
       ],
       question: { id: 'close', text: { en: 'Close question' } },
@@ -149,6 +152,30 @@ describe('quiz recap display mode', () => {
     rendered.app.unmount()
   })
 
+  it('matches mixed-case regional translation keys for questions and options', async () => {
+    vi.stubGlobal('$fetch', vi.fn().mockResolvedValue(recap))
+    route.query = { language: 'de-DE', refresh: '0' }
+
+    const rendered = renderPage()
+    await flushAsyncState()
+
+    expect(rendered.container.textContent).toContain('Beste deutsche Frage')
+    expect(rendered.container.textContent).toContain('Rot')
+    rendered.app.unmount()
+  })
+
+  it('skips blank translation keys', async () => {
+    vi.stubGlobal('$fetch', vi.fn().mockResolvedValue(recap))
+    route.query = { refresh: '0' }
+
+    const rendered = renderPage()
+    await flushAsyncState()
+
+    expect(rendered.container.textContent).toContain('Hard question')
+    expect(rendered.container.textContent).not.toContain('Whitespace translation')
+    rendered.app.unmount()
+  })
+
   it('falls back to all highlights for invalid or repeated count values', async () => {
     vi.stubGlobal('$fetch', vi.fn().mockResolvedValue(recap))
     route.query = {
@@ -203,7 +230,7 @@ describe('quiz recap display mode', () => {
 
     retry?.click()
     await flushAsyncState()
-    expect(rendered.container.textContent).toContain('Beste deutsche Frage')
+    expect(rendered.container.textContent).toContain('Deutsche Basisfrage')
     rendered.app.unmount()
   })
 
@@ -223,11 +250,11 @@ describe('quiz recap display mode', () => {
     await vi.advanceTimersByTimeAsync(5000)
     await nextTick()
 
-    expect(rendered.container.textContent).toContain('Beste deutsche Frage')
+    expect(rendered.container.textContent).toContain('Deutsche Basisfrage')
     rejectRefresh!(new Error('Network error'))
     await flushAsyncState()
 
-    expect(rendered.container.textContent).toContain('Beste deutsche Frage')
+    expect(rendered.container.textContent).toContain('Deutsche Basisfrage')
     expect(rendered.container.textContent).not.toContain('error')
     rendered.app.unmount()
   })
