@@ -96,6 +96,11 @@ describe('release workflow configuration', () => {
     expect(workflow).toContain('release_sha: ${{ needs.release-please.outputs.release_sha }}')
     expect(smokeWorkflow).toContain('release_sha:')
     expect(smokeWorkflow).toContain('ref: ${{ inputs.release_sha || github.sha }}')
+    expect(smokeWorkflow).toContain('name: Create temporary Docker Compose environment')
+    expect(smokeWorkflow).toContain('run: cp .env.example .env')
+    expect(smokeWorkflow.indexOf('Create temporary Docker Compose environment')).toBeLessThan(
+      smokeWorkflow.indexOf('Validate Docker Compose configuration'),
+    )
   })
 
   it('documents the configured release PR title', () => {
