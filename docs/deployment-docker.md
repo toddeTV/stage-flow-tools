@@ -225,7 +225,7 @@ The `docker-compose.yml` file mounts `./.data:/app/.data`. All application data 
 
 - Always set a strong `NUXT_JWT_SECRET` (at least 48 bytes of randomness).
 - Change the default admin password before making the application publicly accessible.
-- The `NUXT_JWT_SECRET` is the only secret passed via environment variable in `docker-compose.yml`. Admin credentials can be set in `.env` and are read by the container at startup.
+- Docker Compose loads the deployment `.env` into the application container. It refuses to start when `NUXT_ADMIN_PASSWORD` or `NUXT_JWT_SECRET` is empty or still uses the repository default.
 - Keep `NUXT_DRIZZLE_STUDIO_INTERNAL_PORT` unset unless you need to avoid a local port clash inside the container runtime.
 - Traefik handles SSL termination. Internal traffic between Traefik and the container is unencrypted (port 3000) but stays within the Docker network.
 
