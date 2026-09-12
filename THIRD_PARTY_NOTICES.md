@@ -6,7 +6,7 @@ This is an inventory, not a complete redistribution license bundle.
 
 Project source code remains governed by `LICENSE`. Third-party packages remain governed by their own license terms.
 
-Package count: 46
+Package count: 47
 
 ## Packages
 
@@ -332,6 +332,15 @@ Package count: 46
 - License: MIT
 - Repository: git+https://github.com/jsdom/jsdom.git
 - Included license files: LICENSE.txt
+- Included notice files: none found
+
+### markdown-it
+
+- Declared as: devDependencies (~15.0.2)
+- Installed version: 15.0.2
+- License: MIT
+- Repository: markdown-it/markdown-it
+- Included license files: LICENSE
 - Included notice files: none found
 
 ### marked
