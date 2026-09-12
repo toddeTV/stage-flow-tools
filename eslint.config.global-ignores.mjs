@@ -5,6 +5,7 @@ export const globalIgnoresConfig = {
     '.output/',
     'dist/',
     '.data/',
+    'CHANGELOG.md',
     'server/database/migrations/**',
     'pnpm-lock.yaml',
   ],
