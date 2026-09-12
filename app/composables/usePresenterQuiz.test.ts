@@ -149,6 +149,7 @@ describe('createPresenterQuizController', () => {
     await controller.navigate('next')
     await controller.navigate('next')
     await controller.navigate('next')
+    await controller.navigate('next')
 
     expect(calls).toEqual([
       'state',
@@ -170,6 +171,26 @@ describe('createPresenterQuizController', () => {
       'state',
       'state',
       'unpublish',
+      'state',
+      'state',
+    ])
+    expect(controller.step.value).toEqual({ kind: 'recap' })
+  })
+
+  it('moves between terminal steps without republishing a question', async () => {
+    const { calls, controller } = setup(state('two', true))
+    await controller.initialize()
+    calls.length = 0
+
+    await controller.navigate('next')
+    await controller.navigate('next')
+    await controller.navigate('previous')
+
+    expect(calls).toEqual([
+      'state',
+      'unpublish',
+      'state',
+      'state',
       'state',
     ])
     expect(controller.step.value).toEqual({ kind: 'leaderboard' })
