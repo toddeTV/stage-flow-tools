@@ -215,6 +215,28 @@ jobs:
           fi
           REMOTE_DEPLOY
 
+      - name: Remove remote deployment archive
+        if: always()
+        shell: bash
+        run: |
+          ssh_directory="${SSH_DIRECTORY:-}"
+          remote_archive="${REMOTE_ARCHIVE:-}"
+
+          if [[ "$ssh_directory" != "$RUNNER_TEMP/stage-flow-deploy-ssh" || ! -f "$ssh_directory/id_ed25519" || ! -f "$ssh_directory/known_hosts" || "$remote_archive" != /tmp/stage-flow-tools-*.tar.gz ]]; then
+            exit 0
+          fi
+
+          ssh_options=(
+            -F /dev/null
+            -i "$ssh_directory/id_ed25519"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=$ssh_directory/known_hosts"
+          )
+          ssh_target="$MAINTAINER_DEPLOY_SSH_USER@$MAINTAINER_DEPLOY_SSH_HOST"
+          ssh "${ssh_options[@]}" "$ssh_target" rm -f -- "$remote_archive" || true
+
       - name: Remove deployment artifacts
         if: always()
         shell: bash

@@ -44,6 +44,8 @@ describe('maintainer deployment workflow', () => {
     expect(workflow).toContain('--detach --no-build --pull never --force-recreate app')
     expect(workflow).toContain('expected_image_id')
     expect(workflow).toContain('attempting rollback')
+    expect(workflow).toContain('- name: Remove remote deployment archive\n        if: always()')
+    expect(workflow).toContain('rm -f -- "$remote_archive"')
     expect(workflow).not.toContain('docker image prune')
     expect(workflow).not.toContain('docker logs')
   })
