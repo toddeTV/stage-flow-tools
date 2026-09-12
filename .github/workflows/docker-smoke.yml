@@ -26,6 +26,9 @@ jobs:
         with:
           ref: ${{ inputs.release_sha || github.sha }}
 
+      - name: Create temporary Docker Compose environment
+        run: cp .env.example .env
+
       - name: Validate Docker Compose configuration
         run: docker compose config --quiet
 

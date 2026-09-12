@@ -1,0 +1,252 @@
+name: Deploy main to maintainer server
+
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: maintainer-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      MAINTAINER_DEPLOY_COMPOSE_PATH: ${{ vars.MAINTAINER_DEPLOY_COMPOSE_PATH }}
+      MAINTAINER_DEPLOY_SSH_HOST: ${{ vars.MAINTAINER_DEPLOY_SSH_HOST }}
+      MAINTAINER_DEPLOY_SSH_KNOWN_HOSTS: ${{ vars.MAINTAINER_DEPLOY_SSH_KNOWN_HOSTS }}
+      MAINTAINER_DEPLOY_SSH_USER: ${{ vars.MAINTAINER_DEPLOY_SSH_USER }}
+    steps:
+      - name: Checkout main
+        # actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: main
+
+      - name: Record main revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          main_sha="$(git rev-parse HEAD)"
+          echo "MAIN_SHA=$main_sha" >> "$GITHUB_ENV"
+          echo "IMAGE_REF=stage-flow-tools:main-$main_sha" >> "$GITHUB_ENV"
+          echo "IMAGE_ARCHIVE=$RUNNER_TEMP/stage-flow-tools-$main_sha.tar.gz" >> "$GITHUB_ENV"
+          echo "REMOTE_ARCHIVE=/tmp/stage-flow-tools-$main_sha.tar.gz" >> "$GITHUB_ENV"
+          echo "Deploying main revision $main_sha"
+
+      - name: Build Docker image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build \
+            --label "org.opencontainers.image.revision=$MAIN_SHA" \
+            --tag "$IMAGE_REF" \
+            --tag stage-flow-tools:latest \
+            .
+
+      - name: Smoke-test Docker image
+        shell: bash
+        run: |
+          set -euo pipefail
+          container_name=stage-flow-tools-maintainer-smoke
+          docker run --detach --name "$container_name" --publish 127.0.0.1:3000:3000 "$IMAGE_REF"
+
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/api/questions/active >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          exit 1
+
+      - name: Remove smoke-test container
+        if: always()
+        shell: bash
+        run: docker rm --force stage-flow-tools-maintainer-smoke || true
+
+      - name: Create Docker image archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker image save "$IMAGE_REF" stage-flow-tools:latest | gzip --stdout > "$IMAGE_ARCHIVE"
+
+      - name: Configure SSH
+        env:
+          MAINTAINER_DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.MAINTAINER_DEPLOY_SSH_PRIVATE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for variable_name in \
+            MAINTAINER_DEPLOY_COMPOSE_PATH \
+            MAINTAINER_DEPLOY_SSH_HOST \
+            MAINTAINER_DEPLOY_SSH_KNOWN_HOSTS \
+            MAINTAINER_DEPLOY_SSH_PRIVATE_KEY \
+            MAINTAINER_DEPLOY_SSH_USER; do
+            if [[ -z "${!variable_name:-}" ]]; then
+              echo "Missing GitHub Actions configuration: $variable_name" >&2
+              exit 1
+            fi
+          done
+
+          ssh_directory="$RUNNER_TEMP/stage-flow-deploy-ssh"
+          install -d -m 700 "$ssh_directory"
+          printf '%s\n' "$MAINTAINER_DEPLOY_SSH_PRIVATE_KEY" > "$ssh_directory/id_ed25519"
+          printf '%s\n' "$MAINTAINER_DEPLOY_SSH_KNOWN_HOSTS" > "$ssh_directory/known_hosts"
+          chmod 600 "$ssh_directory/id_ed25519" "$ssh_directory/known_hosts"
+          echo "SSH_DIRECTORY=$ssh_directory" >> "$GITHUB_ENV"
+
+      - name: Transfer and deploy Docker image
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh_options=(
+            -F /dev/null
+            -i "$SSH_DIRECTORY/id_ed25519"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=$SSH_DIRECTORY/known_hosts"
+          )
+          ssh_target="$MAINTAINER_DEPLOY_SSH_USER@$MAINTAINER_DEPLOY_SSH_HOST"
+
+          ssh "${ssh_options[@]}" "$ssh_target" bash -s -- "$MAINTAINER_DEPLOY_COMPOSE_PATH" <<'REMOTE_PREFLIGHT'
+          set -euo pipefail
+
+          compose_path="$1"
+          test -d "$compose_path"
+          test -f "$compose_path/docker-compose.yml"
+          command -v docker >/dev/null
+          command -v gzip >/dev/null
+          docker info >/dev/null
+          docker compose version >/dev/null
+          docker compose --project-directory "$compose_path" --file "$compose_path/docker-compose.yml" config --quiet
+          REMOTE_PREFLIGHT
+
+          scp "${ssh_options[@]}" "$IMAGE_ARCHIVE" "$ssh_target:$REMOTE_ARCHIVE"
+
+          expected_image_id="$(docker image inspect --format '{{.Id}}' "$IMAGE_REF")"
+          ssh "${ssh_options[@]}" "$ssh_target" bash -s -- \
+            "$MAINTAINER_DEPLOY_COMPOSE_PATH" \
+            "$REMOTE_ARCHIVE" \
+            "$IMAGE_REF" \
+            "$MAIN_SHA" \
+            "$expected_image_id" <<'REMOTE_DEPLOY'
+          set -euo pipefail
+
+          compose_path="$1"
+          archive_path="$2"
+          image_ref="$3"
+          main_sha="$4"
+          expected_image_id="$5"
+          previous_image_id=""
+
+          compose() {
+            docker compose --project-directory "$compose_path" --file "$compose_path/docker-compose.yml" "$@"
+          }
+
+          healthcheck() {
+            for attempt in $(seq 1 30); do
+              if compose exec -T app node --input-type=module --eval "const response = await fetch('http://127.0.0.1:3000/api/questions/active'); process.exit(response.ok ? 0 : 1)"; then
+                return 0
+              fi
+              sleep 1
+            done
+
+            return 1
+          }
+
+          rollback() {
+            if [[ -z "$previous_image_id" ]]; then
+              return
+            fi
+
+            echo "Deployment failed; attempting rollback." >&2
+            docker image tag "$previous_image_id" stage-flow-tools:latest
+            compose up --detach --no-build --pull never --force-recreate app
+
+            if ! healthcheck; then
+              echo "Rollback health check failed." >&2
+            fi
+          }
+
+          previous_container_id="$(compose ps --quiet app || true)"
+          if [[ -n "$previous_container_id" ]]; then
+            previous_image_id="$(docker inspect --format '{{.Image}}' "$previous_container_id")"
+          fi
+
+          trap 'rm -f "$archive_path"' EXIT
+          gzip --decompress --stdout "$archive_path" | docker image load
+
+          loaded_image_id="$(docker image inspect --format '{{.Id}}' "$image_ref")"
+          loaded_latest_image_id="$(docker image inspect --format '{{.Id}}' stage-flow-tools:latest)"
+          loaded_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$image_ref")"
+          if [[ "$loaded_image_id" != "$expected_image_id" || "$loaded_latest_image_id" != "$expected_image_id" || "$loaded_revision" != "$main_sha" ]]; then
+            echo "Loaded image does not match the expected main revision." >&2
+            exit 1
+          fi
+
+          if ! compose up --detach --no-build --pull never --force-recreate app; then
+            rollback
+            exit 1
+          fi
+
+          current_container_id="$(compose ps --quiet app || true)"
+          if [[ -z "$current_container_id" ]]; then
+            echo "Compose did not create the app container." >&2
+            rollback
+            exit 1
+          fi
+
+          current_image_id="$(docker inspect --format '{{.Image}}' "$current_container_id")"
+          if [[ "$current_image_id" != "$expected_image_id" ]]; then
+            echo "App container does not use the deployed image." >&2
+            rollback
+            exit 1
+          fi
+
+          if ! healthcheck; then
+            echo "App container did not become healthy." >&2
+            rollback
+            exit 1
+          fi
+          REMOTE_DEPLOY
+
+      - name: Remove remote deployment archive
+        if: always()
+        shell: bash
+        run: |
+          ssh_directory="${SSH_DIRECTORY:-}"
+          remote_archive="${REMOTE_ARCHIVE:-}"
+
+          if [[ "$ssh_directory" != "$RUNNER_TEMP/stage-flow-deploy-ssh" || ! -f "$ssh_directory/id_ed25519" || ! -f "$ssh_directory/known_hosts" || "$remote_archive" != /tmp/stage-flow-tools-*.tar.gz ]]; then
+            exit 0
+          fi
+
+          ssh_options=(
+            -F /dev/null
+            -i "$ssh_directory/id_ed25519"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=$ssh_directory/known_hosts"
+          )
+          ssh_target="$MAINTAINER_DEPLOY_SSH_USER@$MAINTAINER_DEPLOY_SSH_HOST"
+          ssh "${ssh_options[@]}" "$ssh_target" rm -f -- "$remote_archive" || true
+
+      - name: Remove deployment artifacts
+        if: always()
+        shell: bash
+        run: |
+          archive_path="${IMAGE_ARCHIVE:-}"
+          ssh_directory="${SSH_DIRECTORY:-}"
+
+          case "$archive_path" in
+            "$RUNNER_TEMP"/stage-flow-tools-*.tar.gz) rm -f -- "$archive_path" ;;
+          esac
+          if [[ "$ssh_directory" == "$RUNNER_TEMP/stage-flow-deploy-ssh" ]]; then
+            rm -rf -- "$ssh_directory"
+          fi

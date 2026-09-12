@@ -28,7 +28,7 @@ RUN vp exec nuxt prepare
 # The install above deliberately skips lifecycle scripts. Rebuild this native
 # dependency before Nitro traces it into the standalone server output.
 RUN vp rebuild -- better-sqlite3
-RUN vp run build:ssr
+RUN vp run build
 
 # --- Production Stage ---
 # This is the final, minimal image. It copies the standalone Nuxt output and

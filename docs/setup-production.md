@@ -11,7 +11,7 @@ See [deployment-docker.md](deployment-docker.md) for the full server setup.
 ## Build Output
 
 ```bash
-vp run build:ssr
+vp run build
 ```
 
 This creates the production server bundle in `.output/`.
@@ -43,7 +43,7 @@ Requirements:
 Example:
 
 ```bash
-vp run build:ssr
+vp run build
 pm2 start .output/server/index.mjs --name stage-flow-tools
 ```
 

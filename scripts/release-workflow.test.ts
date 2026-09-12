@@ -61,10 +61,10 @@ describe('release workflow configuration', () => {
     expect(config.packages['.']['release-as']).toBe('1.0.0')
   })
 
-  it('declares the release bot secret in the environment contract', () => {
+  it('declares the release bot secret in the maintainer repository configuration', () => {
     const environmentExample = readFile(environmentExamplePath)
 
-    expect(environmentExample).toContain('GitHub Actions repository secret')
+    expect(environmentExample).toContain('GitHub Actions maintainer repository config')
     expect(environmentExample).toContain('RELEASE_BOT_PAT_TOKEN=')
   })
 
@@ -96,6 +96,11 @@ describe('release workflow configuration', () => {
     expect(workflow).toContain('release_sha: ${{ needs.release-please.outputs.release_sha }}')
     expect(smokeWorkflow).toContain('release_sha:')
     expect(smokeWorkflow).toContain('ref: ${{ inputs.release_sha || github.sha }}')
+    expect(smokeWorkflow).toContain('name: Create temporary Docker Compose environment')
+    expect(smokeWorkflow).toContain('run: cp .env.example .env')
+    expect(smokeWorkflow.indexOf('Create temporary Docker Compose environment')).toBeLessThan(
+      smokeWorkflow.indexOf('Validate Docker Compose configuration'),
+    )
   })
 
   it('documents the configured release PR title', () => {
