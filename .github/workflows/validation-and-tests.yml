@@ -37,6 +37,8 @@ jobs:
             command: vp run test:package-json
           - name: Third-Party Notices
             command: vp run test:notices
+          - name: Markdown Section Structure
+            command: vp run test:markdown-structure
           - name: Nuxt Type Check
             command: vp run test:type
           - name: Unit Tests
@@ -45,8 +47,17 @@ jobs:
             command: vp run test:integration
 
     steps:
+      - name: Checkout PR Head for Markdown Structure
+        if: ${{ matrix.command == 'vp run test:markdown-structure' }}
+        # actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
       # Check out the repository
       - name: Checkout the Codebase
+        if: ${{ matrix.command != 'vp run test:markdown-structure' }}
         # actions/checkout@v7.0.1
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -66,6 +77,9 @@ jobs:
       # Execute the specific check command from the matrix
       - name: Run Check
         # could also run `vp run test`, but matrix jobs keep per-check visibility and isolation
+        env:
+          CHECK_MARKDOWN_STRUCTURE_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          CHECK_MARKDOWN_STRUCTURE_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: ${{ matrix.command }}
 
   # This job acts as a single, final status check for branch protection.
