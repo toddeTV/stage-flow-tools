@@ -107,17 +107,28 @@ function getMarkdownHeadings(source: string): Heading[] {
   return headings
 }
 
-function getUnchangedSourceLines(baseSource: string, headSource: string) {
-  const getNonEmptyLines = (source: string) => source
+function getUnchangedSourceLines(
+  baseSource: string,
+  headSource: string,
+  baseHeadings: Heading[],
+  headHeadings: Heading[],
+) {
+  const getNonEmptyLines = (source: string, headings: Heading[]) => source
     .split(/\r?\n/u)
-    .flatMap((text, index): SourceLine[] => (text.trim() ? [
-      {
-        line: index + 1,
-        text,
-      },
-    ] : []))
-  const baseLines = getNonEmptyLines(baseSource)
-  const headLines = getNonEmptyLines(headSource)
+    .flatMap((text, index): SourceLine[] => {
+      const line = index + 1
+
+      return text.trim() && !headings.some(heading => heading.line <= line && line <= heading.endLine)
+        ? [
+          {
+            line,
+            text,
+          },
+        ]
+        : []
+    })
+  const baseLines = getNonEmptyLines(baseSource, baseHeadings)
+  const headLines = getNonEmptyLines(headSource, headHeadings)
   const lengths = Array.from({
     length: baseLines.length + 1,
   }, () => new Uint32Array(headLines.length + 1))
@@ -276,7 +287,12 @@ export function findHeadingPlacementViolations(
 ): HeadingPlacementViolation[] {
   const baseHeadings = getMarkdownHeadings(baseSource)
   const headHeadings = getMarkdownHeadings(headSource)
-  const unchangedSourceLines = getUnchangedSourceLines(baseSource, headSource)
+  const unchangedSourceLines = getUnchangedSourceLines(
+    baseSource,
+    headSource,
+    baseHeadings,
+    headHeadings,
+  )
   const unchangedHeadLines = new Set(unchangedSourceLines.map(line => line.headLine))
   const addedLines = new Set(diffHunks.flatMap(hunk => [
     ...hunk.addedLines,
@@ -453,6 +469,13 @@ function readSources(mode: MarkdownStructureCheckMode, change: ChangedPath) {
 }
 
 function getDiff(mode: MarkdownStructureCheckMode, change: ChangedPath) {
+  const paths = [
+    ...new Set([
+      change.basePath,
+      change.headPath,
+    ]),
+  ]
+
   if (mode.kind === 'revisions') {
     return runGit([
       'diff',
@@ -461,7 +484,7 @@ function getDiff(mode: MarkdownStructureCheckMode, change: ChangedPath) {
       '--find-renames',
       `${mode.base}...${mode.head}`,
       '--',
-      change.headPath,
+      ...paths,
     ])
   }
 
@@ -473,7 +496,7 @@ function getDiff(mode: MarkdownStructureCheckMode, change: ChangedPath) {
       '--unified=0',
       '--find-renames',
       '--',
-      change.headPath,
+      ...paths,
     ])
   }
 
@@ -484,7 +507,7 @@ function getDiff(mode: MarkdownStructureCheckMode, change: ChangedPath) {
     '--find-renames',
     'HEAD',
     '--',
-    change.headPath,
+    ...paths,
   ])
 }
 

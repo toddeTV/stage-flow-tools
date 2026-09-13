@@ -165,6 +165,32 @@ describe('Markdown heading placement check', () => {
     ])
   })
 
+  it('rejects a same-text heading moved across unchanged content', () => {
+    const baseSource = [
+      'Existing intro.',
+      '',
+      '## Same title',
+    ].join('\n')
+    const headSource = [
+      '## Same title',
+      '',
+      'Existing intro.',
+    ].join('\n')
+
+    expect(findHeadingPlacementViolations(
+      baseSource,
+      headSource,
+      parseUnifiedDiff('@@ -1,3 +1,3 @@\n-Existing intro.\n-\n-## Same title\n+## Same title\n+\n+Existing intro.\n'),
+    )).toEqual([
+      {
+        capturedLine: 3,
+        capturedText: 'Existing intro.',
+        headingLine: 1,
+        headingText: 'Same title',
+      },
+    ])
+  })
+
   it('accepts an in-place re-leveled existing heading', () => {
     const baseSource = [
       '# Guide',
@@ -284,7 +310,7 @@ describe('Markdown heading placement check', () => {
     ])).toEqual({ kind: 'staged' })
   })
 
-  it('rejects a moved and renamed heading in revision mode', () => {
+  it('rejects a moved same-text heading in revision mode', () => {
     const root = mkdtempSync(join(tmpdir(), 'markdown-heading-placement-'))
     const originalCwd = process.cwd()
     const runGit = (args: string[]) => {
@@ -311,7 +337,7 @@ describe('Markdown heading placement check', () => {
       writeFileSync(join(root, 'guide.md'), [
         'Existing intro.',
         '',
-        '## Old title',
+        '## Same title',
       ].join('\n'))
       runGit([
         'add',
@@ -331,7 +357,7 @@ describe('Markdown heading placement check', () => {
       }).trim()
 
       writeFileSync(join(root, 'guide.md'), [
-        '## New title',
+        '## Same title',
         '',
         'Existing intro.',
       ].join('\n'))
@@ -355,7 +381,91 @@ describe('Markdown heading placement check', () => {
         base,
         '--head',
         head,
-      ])).toThrow('guide.md:1: "New title" captures existing content at line 3: Existing intro.')
+      ])).toThrow('guide.md:1: "Same title" captures existing content at line 3: Existing intro.')
+    }
+    finally {
+      process.chdir(originalCwd)
+      rmSync(root, {
+        force: true,
+        recursive: true,
+      })
+    }
+  })
+
+  it('accepts a pure Markdown file rename in revision mode', () => {
+    const root = mkdtempSync(join(tmpdir(), 'markdown-heading-placement-'))
+    const originalCwd = process.cwd()
+    const runGit = (args: string[]) => {
+      execFileSync('git', args, {
+        cwd: root,
+        stdio: 'ignore',
+      })
+    }
+
+    try {
+      runGit([
+        'init',
+      ])
+      runGit([
+        'config',
+        'user.email',
+        'test@localhost',
+      ])
+      runGit([
+        'config',
+        'user.name',
+        'Test User',
+      ])
+      writeFileSync(join(root, 'guide.md'), [
+        '# Guide',
+        '',
+        '## Existing',
+        '',
+        'Existing content.',
+      ].join('\n'))
+      runGit([
+        'add',
+        'guide.md',
+      ])
+      runGit([
+        'commit',
+        '-m',
+        'initial',
+      ])
+      const base = execFileSync('git', [
+        'rev-parse',
+        'HEAD',
+      ], {
+        cwd: root,
+        encoding: 'utf8',
+      }).trim()
+
+      runGit([
+        'mv',
+        'guide.md',
+        'handbook.md',
+      ])
+      runGit([
+        'commit',
+        '-m',
+        'rename guide',
+      ])
+      const head = execFileSync('git', [
+        'rev-parse',
+        'HEAD',
+      ], {
+        cwd: root,
+        encoding: 'utf8',
+      }).trim()
+
+      process.chdir(root)
+
+      expect(() => runMarkdownHeadingPlacementCheck([
+        '--base',
+        base,
+        '--head',
+        head,
+      ])).not.toThrow()
     }
     finally {
       process.chdir(originalCwd)
