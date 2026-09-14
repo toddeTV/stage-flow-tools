@@ -119,13 +119,17 @@ jobs:
             -o "UserKnownHostsFile=$SSH_DIRECTORY/known_hosts"
           )
           ssh_target="$MAINTAINER_DEPLOY_SSH_USER@$MAINTAINER_DEPLOY_SSH_HOST"
+          restart_command_base64="$(printf '%s' "$MAINTAINER_DEPLOY_RESTART_COMMAND" | base64 --wrap=0)"
 
-          ssh "${ssh_options[@]}" "$ssh_target" bash -s -- "$MAINTAINER_DEPLOY_RESTART_COMMAND" <<'REMOTE_PREFLIGHT'
+          ssh "${ssh_options[@]}" "$ssh_target" bash -s -- "$restart_command_base64" <<'REMOTE_PREFLIGHT'
           set -euo pipefail
 
-          restart_command="$1"
-          test -n "$restart_command"
+          restart_command_base64="$1"
+          test -n "$restart_command_base64"
           command -v bash >/dev/null
+          command -v base64 >/dev/null
+          restart_command="$(printf '%s' "$restart_command_base64" | base64 --decode)"
+          test -n "$restart_command"
           command -v docker >/dev/null
           command -v gzip >/dev/null
           docker info >/dev/null
@@ -140,14 +144,18 @@ jobs:
             "$IMAGE_REF" \
             "$DEPLOY_SHA" \
             "$expected_image_id" \
-            "$MAINTAINER_DEPLOY_RESTART_COMMAND" <<'REMOTE_DEPLOY'
+            "$restart_command_base64" <<'REMOTE_DEPLOY'
           set -euo pipefail
 
           archive_path="$1"
           image_ref="$2"
           deploy_sha="$3"
           expected_image_id="$4"
-          restart_command="$5"
+          restart_command_base64="$5"
+          test -n "$restart_command_base64"
+          command -v base64 >/dev/null
+          restart_command="$(printf '%s' "$restart_command_base64" | base64 --decode)"
+          test -n "$restart_command"
 
           trap 'rm -f "$archive_path"' EXIT
           gzip --decompress --stdout "$archive_path" | docker image load

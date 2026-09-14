@@ -56,6 +56,20 @@ describe('maintainer deployment workflow', () => {
     expect(workflow).not.toContain('docker logs')
   })
 
+  it('transports restart commands containing shell operators as one SSH argument', () => {
+    const restartCommand = 'cd /srv/stage-flow-tools && ./bin.py stop && ./bin.py start'
+    const restartCommandBase64 = Buffer.from(restartCommand).toString('base64')
+    const workflow = readFile(workflowPath)
+
+    expect(restartCommandBase64).toMatch(/^[A-Za-z0-9+/]+={0,2}$/)
+    expect(restartCommandBase64).not.toContain('&&')
+    expect(Buffer.from(restartCommandBase64, 'base64').toString()).toBe(restartCommand)
+    expect(workflow).toContain('base64 --wrap=0')
+    expect(workflow).toContain('base64 --decode')
+    expect(workflow).toContain('bash -s -- "$restart_command_base64"')
+    expect(workflow).not.toContain('bash -s -- "$MAINTAINER_DEPLOY_RESTART_COMMAND"')
+  })
+
   it('documents the maintainer repository configuration at the end of the environment contract', () => {
     const environmentExample = readFile(environmentExamplePath)
     const maintainerConfigIndex = environmentExample.indexOf(maintainerConfigHeader)
