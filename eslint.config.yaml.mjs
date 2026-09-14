@@ -16,7 +16,6 @@ export const yamlConfigs = [
     files: [
       '.coderabbit.yml',
       '.github/workflows/*.yml',
-      'docker-compose.yml',
     ],
     rules: {
       'yml/sort-keys': 'off',
