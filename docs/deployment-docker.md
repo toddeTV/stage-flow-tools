@@ -138,8 +138,9 @@ and Markdown format.
 
 ## Maintainer Deployments from GitHub Actions
 
-The manually triggered `Deploy main to maintainer server` workflow checks out
-the current `main` revision, builds and smoke-tests it, then transfers only a
+The manually triggered `Deploy selected ref to maintainer server` workflow
+accepts a branch, tag, or commit SHA through its `source_ref` input. It defaults
+to `main`, builds and smoke-tests the selected revision, then transfers only a
 compressed Docker image archive over SSH. It does not copy repository files,
 the Compose file, `.env`, `.data`, or migration state to the server.
 

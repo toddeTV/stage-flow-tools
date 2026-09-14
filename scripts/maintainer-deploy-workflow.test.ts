@@ -13,19 +13,23 @@ function readFile(path: string) {
 }
 
 describe('maintainer deployment workflow', () => {
-  it('builds and deploys only the current main revision', () => {
+  it('builds and deploys the manually selected source ref', () => {
     const workflow = readFile(workflowPath)
 
     expect(workflow).toContain('workflow_dispatch:')
+    expect(workflow).toContain('source_ref:')
+    expect(workflow).toContain('default: main')
+    expect(workflow).toContain('DEPLOY_SOURCE_REF: ${{ inputs.source_ref }}')
     expect(workflow).not.toContain('push:')
     expect(workflow).toContain('timeout-minutes: 45')
     expect(workflow).toContain('cancel-in-progress: false')
     expect(workflow).toContain('contents: read')
-    expect(workflow).toContain('ref: main')
+    expect(workflow).toContain('ref: ${{ inputs.source_ref }}')
+    expect(workflow).not.toContain('ref: main')
     expect(workflow).toContain('persist-credentials: false')
-    expect(workflow).toContain('stage-flow-tools:main-$main_sha')
+    expect(workflow).toContain('stage-flow-tools:deploy-$deploy_sha')
     expect(workflow).toContain('stage-flow-tools:latest')
-    expect(workflow).toContain('org.opencontainers.image.revision=$MAIN_SHA')
+    expect(workflow).toContain('org.opencontainers.image.revision=$DEPLOY_SHA')
     expect(workflow).toContain('/api/questions/active')
   })
 

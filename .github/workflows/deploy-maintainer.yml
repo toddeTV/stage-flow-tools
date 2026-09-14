@@ -1,7 +1,13 @@
-name: Deploy main to maintainer server
+name: Deploy selected ref to maintainer server
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Branch, tag, or commit SHA to build and deploy
+        required: true
+        default: main
+        type: string
 
 concurrency:
   group: maintainer-deployment
@@ -14,35 +20,36 @@ jobs:
     permissions:
       contents: read
     env:
+      DEPLOY_SOURCE_REF: ${{ inputs.source_ref }}
       MAINTAINER_DEPLOY_RESTART_COMMAND: ${{ vars.MAINTAINER_DEPLOY_RESTART_COMMAND }}
       MAINTAINER_DEPLOY_SSH_HOST: ${{ vars.MAINTAINER_DEPLOY_SSH_HOST }}
       MAINTAINER_DEPLOY_SSH_KNOWN_HOSTS: ${{ vars.MAINTAINER_DEPLOY_SSH_KNOWN_HOSTS }}
       MAINTAINER_DEPLOY_SSH_USER: ${{ vars.MAINTAINER_DEPLOY_SSH_USER }}
     steps:
-      - name: Checkout main
+      - name: Checkout selected ref
         # actions/checkout@v7.0.1
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-          ref: main
+          ref: ${{ inputs.source_ref }}
 
-      - name: Record main revision
+      - name: Record selected revision
         shell: bash
         run: |
           set -euo pipefail
-          main_sha="$(git rev-parse HEAD)"
-          echo "MAIN_SHA=$main_sha" >> "$GITHUB_ENV"
-          echo "IMAGE_REF=stage-flow-tools:main-$main_sha" >> "$GITHUB_ENV"
-          echo "IMAGE_ARCHIVE=$RUNNER_TEMP/stage-flow-tools-$main_sha.tar.gz" >> "$GITHUB_ENV"
-          echo "REMOTE_ARCHIVE=/tmp/stage-flow-tools-$main_sha.tar.gz" >> "$GITHUB_ENV"
-          echo "Deploying main revision $main_sha"
+          deploy_sha="$(git rev-parse HEAD)"
+          echo "DEPLOY_SHA=$deploy_sha" >> "$GITHUB_ENV"
+          echo "IMAGE_REF=stage-flow-tools:deploy-$deploy_sha" >> "$GITHUB_ENV"
+          echo "IMAGE_ARCHIVE=$RUNNER_TEMP/stage-flow-tools-$deploy_sha.tar.gz" >> "$GITHUB_ENV"
+          echo "REMOTE_ARCHIVE=/tmp/stage-flow-tools-$deploy_sha.tar.gz" >> "$GITHUB_ENV"
+          echo "Deploying $DEPLOY_SOURCE_REF revision $deploy_sha"
 
       - name: Build Docker image
         shell: bash
         run: |
           set -euo pipefail
           docker build \
-            --label "org.opencontainers.image.revision=$MAIN_SHA" \
+            --label "org.opencontainers.image.revision=$DEPLOY_SHA" \
             --tag "$IMAGE_REF" \
             --tag stage-flow-tools:latest \
             .
@@ -131,14 +138,14 @@ jobs:
           ssh "${ssh_options[@]}" "$ssh_target" bash -s -- \
             "$REMOTE_ARCHIVE" \
             "$IMAGE_REF" \
-            "$MAIN_SHA" \
+            "$DEPLOY_SHA" \
             "$expected_image_id" \
             "$MAINTAINER_DEPLOY_RESTART_COMMAND" <<'REMOTE_DEPLOY'
           set -euo pipefail
 
           archive_path="$1"
           image_ref="$2"
-          main_sha="$3"
+          deploy_sha="$3"
           expected_image_id="$4"
           restart_command="$5"
 
@@ -148,8 +155,8 @@ jobs:
           loaded_image_id="$(docker image inspect --format '{{.Id}}' "$image_ref")"
           loaded_latest_image_id="$(docker image inspect --format '{{.Id}}' stage-flow-tools:latest)"
           loaded_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$image_ref")"
-          if [[ "$loaded_image_id" != "$expected_image_id" || "$loaded_latest_image_id" != "$expected_image_id" || "$loaded_revision" != "$main_sha" ]]; then
-            echo "Loaded image does not match the expected main revision." >&2
+          if [[ "$loaded_image_id" != "$expected_image_id" || "$loaded_latest_image_id" != "$expected_image_id" || "$loaded_revision" != "$deploy_sha" ]]; then
+            echo "Loaded image does not match the expected selected revision." >&2
             exit 1
           fi
 
