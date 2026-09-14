@@ -165,9 +165,12 @@ Configure these GitHub repository variables and secret as documented in
 
 The workflow verifies the loaded image ID and source revision before executing
 the restart command. A failed command fails the deployment. It does not run a
-remote health check or automatic rollback, and it never runs database
-migrations as part of an update. Perform migrations and any deployment-file
-changes manually through a reviewed maintenance procedure.
+remote health check, automatic rollback, or a separate migration command.
+However, application startup automatically applies pending Drizzle migrations
+to the persistent SQLite database. Before deploying a ref with migrations,
+back up `.data` and review forward and rollback compatibility. Do not apply the
+same migrations manually unless a separate supported procedure requires it.
+Deployment-file changes remain manual.
 
 ## Operations
 
