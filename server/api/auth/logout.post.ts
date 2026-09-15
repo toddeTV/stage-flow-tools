@@ -1,5 +1,3 @@
-import { EmptyRequestSchema } from '#shared/utils/validation'
-
 export default defineApiHandler(async (event) => {
   await readValidatedRequestBody(event, EmptyRequestSchema)
 

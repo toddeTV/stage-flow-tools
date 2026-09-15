@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { safeParse } from 'valibot'
 import type { Question } from '~/types'
-import {
-  EmojiSchema,
-  getValidationIssues,
-  NicknameSchema,
-} from '#shared/utils/validation'
 
 definePageMeta({
   layout: 'default',

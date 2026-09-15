@@ -1,5 +1,3 @@
-import { verifyAdmin } from '../utils/auth'
-
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 

@@ -1,5 +1,4 @@
 import { SignJWT } from 'jose'
-import { LoginRequestSchema } from '#shared/utils/validation'
 
 export default defineApiHandler(async (event) => {
   const config = useRuntimeConfig(event)

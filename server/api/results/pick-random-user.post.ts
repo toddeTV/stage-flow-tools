@@ -1,6 +1,5 @@
 import type { Answer } from '~/types'
 import { WebSocketChannel } from '~/types'
-import { PickRandomUserSchema } from '#shared/utils/validation'
 
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)

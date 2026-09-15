@@ -1,5 +1,3 @@
-import { MoveQuestionSchema } from '#shared/utils/validation'
-
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 
