@@ -9,6 +9,7 @@
 !pnpm-workspace.yaml
 !.npmrc
 !nuxt.config.ts
+!vite.config.ts
 !i18n/
 !i18n/**
 !tsconfig.json

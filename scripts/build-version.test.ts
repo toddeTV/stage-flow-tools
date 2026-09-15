@@ -39,6 +39,10 @@ describe('embedded build version contract', () => {
     expect(productionStage).not.toContain('ENV ')
   })
 
+  it('includes the Vite task configuration in the Docker build context', () => {
+    expect(readFile('.dockerignore')).toContain('!vite.config.ts')
+  })
+
   it('does not expose a runtime environment override', () => {
     expect(readFile('.env.example')).not.toContain('NUXT_PUBLIC_VERSION')
   })
