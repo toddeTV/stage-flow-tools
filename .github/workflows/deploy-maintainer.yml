@@ -30,10 +30,13 @@ jobs:
         # actions/checkout@v7.0.1
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
+          fetch-depth: 0
           persist-credentials: false
           ref: ${{ inputs.source_ref }}
 
       - name: Record selected revision
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -41,6 +44,30 @@ jobs:
           deploy_date="$(date --utc +%F)"
           deploy_short_sha="$(git rev-parse --short=7 HEAD)"
           deploy_version="$deploy_date-$deploy_short_sha"
+          selected_tag=""
+          if [[ "$DEPLOY_SOURCE_REF" == refs/tags/v* ]]; then
+            selected_tag="${DEPLOY_SOURCE_REF#refs/tags/}"
+          elif [[ "$DEPLOY_SOURCE_REF" == v* ]] && git show-ref --verify --quiet "refs/tags/$DEPLOY_SOURCE_REF"; then
+            selected_tag="$DEPLOY_SOURCE_REF"
+          fi
+          if [[ -n "$selected_tag" ]]; then
+            tag_sha="$(git rev-parse --verify "refs/tags/$selected_tag^{commit}")"
+            if [[ "$tag_sha" != "$deploy_sha" ]]; then
+              echo "Selected revision does not match release tag $selected_tag." >&2
+              exit 1
+            fi
+            package_version="$(jq --raw-output '.version' package.json)"
+            if [[ "$selected_tag" != "v$package_version" ]]; then
+              echo "Release tag does not match package.json version." >&2
+              exit 1
+            fi
+            published_tag="$(gh release view "$selected_tag" --repo "$GITHUB_REPOSITORY" --json isDraft,tagName --jq 'select(.isDraft == false) | .tagName')"
+            if [[ "$published_tag" != "$selected_tag" ]]; then
+              echo "Selected tag is not a published GitHub Release." >&2
+              exit 1
+            fi
+            deploy_version="$package_version"
+          fi
           echo "DEPLOY_SHA=$deploy_sha" >> "$GITHUB_ENV"
           echo "DEPLOY_VERSION=$deploy_version" >> "$GITHUB_ENV"
           echo "IMAGE_REF=stage-flow-tools:deploy-$deploy_sha" >> "$GITHUB_ENV"

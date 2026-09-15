@@ -25,6 +25,7 @@ describe('maintainer deployment workflow', () => {
     expect(workflow).toContain('cancel-in-progress: false')
     expect(workflow).toContain('contents: read')
     expect(workflow).toContain('ref: ${{ inputs.source_ref }}')
+    expect(workflow).toContain('fetch-depth: 0')
     expect(workflow).not.toContain('ref: main')
     expect(workflow).toContain('persist-credentials: false')
     expect(workflow).toContain('stage-flow-tools:deploy-$deploy_sha')
@@ -36,6 +37,26 @@ describe('maintainer deployment workflow', () => {
     expect(workflow).toContain('DEPLOY_VERSION=$deploy_version')
     expect(workflow).toContain('--build-arg "STAGE_FLOW_BUILD_VERSION=$DEPLOY_VERSION"')
     expect(workflow).toContain('/api/questions/active')
+  })
+
+  it('uses a published matching release tag and aborts on invalid release refs', () => {
+    const workflow = readFile(workflowPath)
+    const versionStep = workflow.slice(
+      workflow.indexOf('      - name: Record selected revision'),
+      workflow.indexOf('      - name: Build Docker image'),
+    )
+
+    expect(versionStep).toContain('GH_TOKEN: ${{ github.token }}')
+    expect(versionStep).toContain('refs/tags/v*')
+    expect(versionStep).toContain('git show-ref --verify --quiet "refs/tags/$DEPLOY_SOURCE_REF"')
+    expect(versionStep).toContain('tag_sha="$(git rev-parse --verify "refs/tags/$selected_tag^{commit}")"')
+    expect(versionStep).toContain('if [[ "$tag_sha" != "$deploy_sha" ]]')
+    expect(versionStep).toContain('if [[ "$selected_tag" != "v$package_version" ]]')
+    expect(versionStep).toContain('gh release view "$selected_tag"')
+    expect(versionStep).toContain('select(.isDraft == false)')
+    expect(versionStep).toContain('if [[ "$published_tag" != "$selected_tag" ]]')
+    expect(versionStep).toContain('deploy_version="$package_version"')
+    expect(versionStep).toContain('exit 1')
   })
 
   it('transfers the image with a pinned SSH identity and restarts the server wrapper', () => {

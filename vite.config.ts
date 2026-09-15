@@ -30,7 +30,7 @@ export default defineConfig({
     ],
   },
   run: {
-    cache: true,
+    cache: { scripts: true, tasks: false },
     tasks: {
       build: {
         command: 'cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt build',

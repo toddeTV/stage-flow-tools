@@ -102,12 +102,20 @@ describe('release workflow configuration', () => {
     expect(smokeWorkflow).toContain('release_sha:')
     expect(smokeWorkflow).toContain('release_tag:')
     expect(smokeWorkflow).toContain('ref: ${{ inputs.release_sha || github.sha }}')
+    expect(smokeWorkflow).toContain('fetch-depth: 0')
     expect(smokeWorkflow).toContain('build_version="$package_version"')
-    expect(smokeWorkflow).toContain('build_version="$(date --utc +%F)-smoke-$(git rev-parse --short=7 HEAD)"')
+    expect(smokeWorkflow).toContain('build_version="$(date --utc +%F)-$(git rev-parse --short=7 HEAD)"')
+    expect(smokeWorkflow).toContain('tag_sha="$(git rev-parse --verify "refs/tags/$RELEASE_TAG_NAME^{commit}")"')
+    expect(smokeWorkflow).toContain('test "$tag_sha" = "$(git rev-parse HEAD)"')
     expect(smokeWorkflow).toContain('STAGE_FLOW_BUILD_VERSION=${{ steps.embedded-version.outputs.version }}')
+    expect(smokeWorkflow).toContain('name: Verify embedded application version')
+    expect(smokeWorkflow).toContain('grep -Fq "$EXPECTED_VERSION" .output/public/_nuxt/*.js')
     expect(smokeWorkflow).toContain('name: Start image and wait for the public API')
     expect(smokeWorkflow).not.toContain('docker compose')
     expect(smokeWorkflow.indexOf('Build Docker image')).toBeLessThan(
+      smokeWorkflow.indexOf('Verify embedded application version'),
+    )
+    expect(smokeWorkflow.indexOf('Verify embedded application version')).toBeLessThan(
       smokeWorkflow.indexOf('Start image and wait for the public API'),
     )
   })

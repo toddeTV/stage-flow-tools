@@ -18,7 +18,7 @@ on:
         required: false
         type: string
       release_tag:
-        description: Optional release tag; a smoke identifier is embedded when omitted
+        description: Optional release tag; a date and short SHA are embedded when omitted
         required: false
         type: string
 
@@ -32,6 +32,7 @@ jobs:
         # actions/checkout@v7.0.1
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
+          fetch-depth: 0
           ref: ${{ inputs.release_sha || github.sha }}
 
       - name: Derive embedded application version
@@ -43,9 +44,11 @@ jobs:
           if [ -n "$RELEASE_TAG_NAME" ]; then
             package_version="$(jq --raw-output '.version' package.json)"
             test "$RELEASE_TAG_NAME" = "v$package_version"
+            tag_sha="$(git rev-parse --verify "refs/tags/$RELEASE_TAG_NAME^{commit}")"
+            test "$tag_sha" = "$(git rev-parse HEAD)"
             build_version="$package_version"
           else
-            build_version="$(date --utc +%F)-smoke-$(git rev-parse --short=7 HEAD)"
+            build_version="$(date --utc +%F)-$(git rev-parse --short=7 HEAD)"
           fi
           echo "version=$build_version" >> "$GITHUB_OUTPUT"
 
@@ -54,6 +57,13 @@ jobs:
           docker build
           --build-arg "STAGE_FLOW_BUILD_VERSION=${{ steps.embedded-version.outputs.version }}"
           --tag stage-flow-tools:smoke .
+
+      - name: Verify embedded application version
+        env:
+          EXPECTED_VERSION: ${{ steps.embedded-version.outputs.version }}
+        run: >-
+          docker run --rm --entrypoint sh --env EXPECTED_VERSION stage-flow-tools:smoke
+          -c 'grep -Fq "$EXPECTED_VERSION" .output/public/_nuxt/*.js'
 
       - name: Start image and wait for the public API
         run: |
