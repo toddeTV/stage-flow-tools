@@ -15,7 +15,7 @@ const props = computed(() => ({
     <div v-if="props.localeSwitcher" class="absolute top-2 right-2 z-10">
       <UiLocaleSwitcher />
     </div>
-    <main class="flex-1">
+    <main class="flex flex-1 flex-col">
       <slot />
     </main>
     <AppFooter v-if="props.footer" />
