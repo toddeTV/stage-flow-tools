@@ -105,7 +105,7 @@ async function celebrateWinner() {
 
     clearWinnerConfetti()
     winnerConfetti = confetti.create(canvas, {
-      disableForReducedMotion: true,
+      disableForReducedMotion: false,
       resize: true,
       useWorker: true,
     })
