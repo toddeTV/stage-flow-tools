@@ -52,7 +52,7 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="mx-auto mt-20 max-w-md border-[3px] border-black bg-white p-8">
+  <div class="mx-auto mt-20 w-full max-w-md border-[3px] border-black bg-white p-8">
     <h1 class="mb-5 border-b-[3px] border-black pb-2.5 text-3xl uppercase">
       Admin Login
     </h1>

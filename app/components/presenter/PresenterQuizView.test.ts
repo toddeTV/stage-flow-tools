@@ -14,7 +14,7 @@ const Icon = defineComponent({
 const question: Question = {
   alreadyPublished: true,
   answer_options: [
-    { emoji: '✅', text: { de: 'Ja', en: 'Yes' } },
+    { emoji: '⭐', text: { de: 'Ja', en: 'Yes' } },
     { text: { de: 'Nein', en: 'No' } },
   ],
   createdAt: '',
@@ -30,7 +30,7 @@ const question: Question = {
 const state: PresenterCurrentState = {
   currentQuestion: {
     answer_options: [
-      { count: 3, emoji: '✅', percent: 75, text: { de: 'Ja', en: 'Yes' } },
+      { count: 3, emoji: '⭐', percent: 75, text: { de: 'Ja', en: 'Yes' } },
       { count: 1, percent: 25, text: { de: 'Nein', en: 'No' } },
     ],
     createdAt: '',
@@ -100,13 +100,16 @@ afterEach(() => {
 })
 
 describe('PresenterQuizView', () => {
-  it('renders the reveal state and mouse navigation accessibly', async () => {
+  it('renders only configured answer emojis in the reveal state and keeps mouse navigation accessible', async () => {
     const wrapper = render()
     const buttons = wrapper.findAll('.navigation-button')
 
     expect(wrapper.text()).toContain('Frage')
     expect(wrapper.text()).toContain('75%')
-    expect(wrapper.text()).toContain('⭐')
+    expect(wrapper.findAll('.answer-emoji').map(emoji => emoji.text())).toEqual([
+      '⭐',
+      '',
+    ])
     expect(buttons[0]?.attributes('aria-label')).toBe('previous')
     expect(buttons[1]?.attributes('aria-label')).toBe('next')
 

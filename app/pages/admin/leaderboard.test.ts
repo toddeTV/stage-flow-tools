@@ -21,10 +21,12 @@ import {
 import LeaderboardPage from './leaderboard.vue'
 import AdminBackLink from '~/components/admin/AdminBackLink.vue'
 
+const confettiCreate = vi.hoisted(() => vi.fn())
+
 vi.mock('canvas-confetti', () => {
   const instance = Object.assign(vi.fn(), { reset: vi.fn() })
   const confetti = Object.assign(vi.fn(), {
-    create: vi.fn(() => instance),
+    create: confettiCreate.mockReturnValue(instance),
   })
 
   return { default: confetti }
@@ -152,6 +154,7 @@ beforeEach(() => {
 afterEach(() => {
   document.body.replaceChildren()
   route.query = {}
+  confettiCreate.mockClear()
   vi.unstubAllGlobals()
   vi.useRealTimers()
 })
@@ -299,6 +302,28 @@ describe('leaderboard display mode', () => {
     expect(dialog.textContent).toContain('Alice')
     expect(dialog.textContent).toContain('/ 3')
     expect(rendered.container.textContent).toContain('Bob')
+
+    rendered.app.unmount()
+  })
+
+  it('shows confetti even when reduced motion is preferred', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('$fetch', vi.fn().mockResolvedValue(initialResponse))
+    route.query = { refresh: '0' }
+
+    const rendered = renderPage()
+    await flushAsyncState()
+
+    findButton(rendered.container, 'drawWinner').click()
+    await nextTick()
+    findButton(rendered.container.querySelector('dialog')!, 'drawWinner').click()
+    await vi.advanceTimersByTimeAsync(750)
+    await flushAsyncState()
+
+    expect(confettiCreate).toHaveBeenCalledWith(
+      expect.any(HTMLCanvasElement),
+      expect.objectContaining({ disableForReducedMotion: false }),
+    )
 
     rendered.app.unmount()
   })

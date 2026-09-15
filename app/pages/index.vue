@@ -201,6 +201,7 @@ const quickEmojis = [
   '😂',
   '🤔',
   '👏',
+  '🥁',
   '❓',
 ]
 
@@ -212,7 +213,7 @@ async function sendQuickEmoji(emoji: string) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl flex-1 p-5">
+  <div class="mx-auto w-full max-w-3xl flex-1 p-5">
     <UiPageTitle>{{ t('pageTitle') }}</UiPageTitle>
 
     <!-- Nickname Prompt -->

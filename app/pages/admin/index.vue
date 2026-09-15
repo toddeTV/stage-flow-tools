@@ -35,7 +35,7 @@ async function handleLogout() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl p-5">
+  <div class="mx-auto w-full max-w-3xl p-5">
     <UiPageTitle>{{ t('title') }}</UiPageTitle>
 
     <div class="grid grid-cols-1 gap-5 md:grid-cols-2">

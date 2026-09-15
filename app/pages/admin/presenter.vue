@@ -288,7 +288,7 @@ ja:
 }
 
 .emoji-layer.is-foreground {
-  z-index: 20;
+  z-index: 60;
 }
 
 .state-panel {
