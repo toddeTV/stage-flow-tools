@@ -89,6 +89,10 @@ const configModules: InputConfig<NuxtConfig, ConfigLayerMeta> = {
 }
 
 export default defineNuxtConfig({
+  components: [
+    { path: '~/components', pathPrefix: false },
+  ],
+
   icon: {
     clientBundle: {
       icons: [
