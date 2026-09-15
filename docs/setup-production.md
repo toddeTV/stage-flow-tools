@@ -20,7 +20,7 @@ This creates the production server bundle in `.output/`.
 
 The repository includes a `Dockerfile`. Create and maintain a
 deployment-specific Compose file outside the repository; see the
-[Docker Deployment Guide](deployment-docker.md#compose-yaml-example).
+[Docker Deployment Guide](deployment-docker.md#3-configure-docker-compose).
 
 Production storage lives in `.data/db/stage-flow-tools.sqlite3`, so mount `/app/.data` to persistent host storage.
 
