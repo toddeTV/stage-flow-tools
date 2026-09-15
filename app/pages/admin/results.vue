@@ -399,6 +399,23 @@ de:
   votes: Stimmen
   noActiveQuestion: Keine aktive Frage
   waitingForQuestion: Warten auf die Veröffentlichung einer Frage...
+fr:
+  pageTitle: Résultats en direct
+  totalVotes: Total des votes
+  hideButton: Masquer
+  scrambleButton: Mélanger
+  emojiButton: Emoji
+  lockedButton: Verrouillée
+  openButton: Ouverte
+  resetAnswers: Réinitialiser les réponses
+  resettingAnswers: Réinitialisation des réponses...
+  unpublishButton: Annuler la publication
+  refreshButton: Actualiser
+  nextButton: Suivante
+  confirmResetAnswers: Supprimer toutes les réponses envoyées pour la question actuelle ?
+  votes: votes
+  noActiveQuestion: Aucune question active
+  waitingForQuestion: En attente de la publication d'une question...
 ja:
   pageTitle: ライブ結果
   totalVotes: 総投票数

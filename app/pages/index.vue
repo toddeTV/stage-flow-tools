@@ -392,6 +392,21 @@ de:
   yourAnswer: "Deine Antwort:"
   waitingForQuestion: Warten auf Frage
   presenterWillStart: Der Moderator wird bald eine Frage starten...
+fr:
+  pageTitle: Heure du quiz
+  welcome: Bienvenue !
+  enterNicknamePrompt: Veuillez saisir votre pseudonyme pour participer
+  nicknamePlaceholder: Saisissez votre pseudonyme
+  joinButton: Rejoindre le quiz
+  playingAs: "Vous jouez en tant que :"
+  changeButton: Modifier
+  sendButton: Envoyer
+  refreshButton: Actualiser
+  answersLocked: Réponses verrouillées
+  answerSubmitted: Votre réponse a été envoyée. Vous pouvez la modifier jusqu'au verrouillage de la question.
+  yourAnswer: "Votre réponse :"
+  waitingForQuestion: En attente d'une question
+  presenterWillStart: Le présentateur lancera bientôt une question...
 ja:
   pageTitle: クイズタイム
   welcome: ようこそ！
