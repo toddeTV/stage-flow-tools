@@ -24,6 +24,10 @@ versioned GitHub releases and Docker images.
   `v` plus the checked-out `package.json` version. It embeds the tagless
   version (for example, `1.2.3`) in the image at compile time. The footer
   renders this as `v1.2.3`; a deployment environment variable cannot change it.
+- The maintainer deployment embeds `YYYY-MM-DD-<short SHA>` for selected branches
+  and commit SHAs. For a selected `v<version>` tag, it embeds the package
+  version only when the checkout matches the tag and GitHub has published that
+  release. A missing or mismatched release stops the deployment before building.
 
 ## Release Bot Token
 

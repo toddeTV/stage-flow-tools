@@ -3,7 +3,7 @@ import type { ConfigLayerMeta, InputConfig } from 'c12'
 import type { NuxtConfig } from 'nuxt/schema'
 
 const defaultBuildVersion = `${new Date().toISOString().slice(0, 10)}-local`
-const buildVersion = process.env.STAGE_FLOW_BUILD_VERSION ?? defaultBuildVersion
+const buildVersion = process.env.STAGE_FLOW_BUILD_VERSION?.trim() || defaultBuildVersion
 
 const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
   compatibilityDate: '2025-07-15',
