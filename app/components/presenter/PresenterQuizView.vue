@@ -125,7 +125,7 @@ const liveAnswers = computed(() => currentQuestionMatches.value
 const displayAnswers = computed<DisplayAnswer[]>(() => props.question.answer_options.map((option, index) => ({
   color: chartColors[index % chartColors.length]!,
   count: liveAnswers.value[index]?.count ?? 0,
-  emoji: option.emoji || liveAnswers.value[index]?.emoji || '⭐',
+  emoji: option.emoji ?? liveAnswers.value[index]?.emoji ?? '',
   id: `${props.question.key}-${index}`,
   label: localizedText(option.text, selectedLanguage.value),
   percent: liveAnswers.value[index]?.percent ?? 0,
