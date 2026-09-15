@@ -1,5 +1,3 @@
-import { AnswerRetractSchema } from '#shared/utils/validation'
-
 export default defineApiHandler(async (event) => {
   const { user_id, question_id } = await readValidatedRequestBody<{
     question_id: string

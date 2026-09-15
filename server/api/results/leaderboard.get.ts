@@ -1,5 +1,3 @@
-import { buildLeaderboardResults } from '../../utils/leaderboard'
-
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
 

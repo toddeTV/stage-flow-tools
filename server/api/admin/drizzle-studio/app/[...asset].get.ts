@@ -1,6 +1,3 @@
-import { verifyAdmin } from '../../../../utils/auth'
-import { StudioAssetPathSchema } from '#shared/utils/validation'
-
 const DRIZZLE_STUDIO_APP_ORIGIN = 'https://local.drizzle.studio'
 const DRIZZLE_STUDIO_ASSET_FETCH_TIMEOUT_MS = 8000
 const FORWARDED_HEADERS = [

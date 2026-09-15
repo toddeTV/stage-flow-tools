@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { safeParse } from 'valibot'
-import {
-  getValidationIssues,
-  LoginRequestSchema,
-} from '#shared/utils/validation'
 
 const loginForm = ref({ username: '', password: '' })
 const loginError = ref('')

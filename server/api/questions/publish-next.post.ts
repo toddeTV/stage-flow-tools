@@ -1,6 +1,4 @@
 import { WebSocketChannel } from '~/types'
-import { EmptyRequestSchema } from '#shared/utils/validation'
-import { serializePublicQuestion } from '../../utils/public-question'
 
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)

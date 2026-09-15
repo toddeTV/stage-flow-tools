@@ -1,5 +1,3 @@
-import { verifyAdmin } from '../../../../utils/auth'
-
 const DRIZZLE_STUDIO_APP_ORIGIN = 'https://local.drizzle.studio'
 const DRIZZLE_STUDIO_SHELL_FETCH_TIMEOUT_MS = 8000
 

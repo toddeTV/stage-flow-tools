@@ -1,5 +1,4 @@
 import { WebSocketChannel } from '~/types'
-import { EmptyRequestSchema } from '#shared/utils/validation'
 
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)

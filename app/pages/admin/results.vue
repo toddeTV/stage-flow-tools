@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useDisplayParameters } from '~/composables/useDisplayParameters'
 import type { Results } from '~/types'
 
 definePageMeta({

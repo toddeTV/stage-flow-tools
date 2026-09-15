@@ -1,5 +1,4 @@
 import type { InputQuestion } from '~/types'
-import { QuestionInputSchema } from '#shared/utils/validation'
 
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
