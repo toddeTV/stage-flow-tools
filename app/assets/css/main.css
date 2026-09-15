@@ -2,7 +2,7 @@
 
 @layer base {
   body {
-    @apply relative min-h-screen text-black;
+    @apply relative min-h-dvh text-black;
   }
 
   ::selection {
