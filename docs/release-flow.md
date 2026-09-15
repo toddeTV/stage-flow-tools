@@ -12,14 +12,9 @@ versioned GitHub releases and Docker images.
   `.release-please-manifest.json`, and `CHANGELOG.md` together in its
   release PR. A merged stable release must have the same version in the package
   file and manifest.
-- The initial empty manifest intentionally has no invented released version.
-  The temporary `release-as: 1.0.0` configuration makes the first generated
-  release PR target `v1.0.0` and lets Release Please update all three version
-  files. Do not manually bump a feature branch or this configuration change to
-  a stable version; merge the generated release PR instead.
-- After `v1.0.0` is released, remove the temporary `release-as` setting in a
-  small follow-up pull request. The manifest then records the actual released
-  version and subsequent versions follow Conventional Commits normally.
+- The release manifest records the current stable version. After `v1.0.0`,
+  subsequent versions follow Conventional Commits normally. Do not manually
+  bump a feature branch; merge the generated release PR instead.
 - Before building, the Docker workflow checks that the release tag is exactly
   `v` plus the checked-out `package.json` version. It embeds the tagless
   version (for example, `1.2.3`) in the image at compile time. The footer
