@@ -48,17 +48,15 @@ describe('release workflow configuration', () => {
     expect(releaseJob).not.toContain('secrets.GITHUB_TOKEN')
   })
 
-  it('bootstraps the first stable release without a fabricated manifest version', () => {
+  it('records the released version without a release override', () => {
     const config = JSON.parse(readFile(releaseConfigPath)) as {
-      packages: { '.': { 'release-as': string } }
+      packages: { '.': Record<string, unknown> }
     }
     const manifest = JSON.parse(readFile('.release-please-manifest.json')) as Record<string, string>
+    const packageJson = JSON.parse(readFile('package.json')) as { version: string }
 
-    expect([
-      {},
-      { '.': '1.0.0' },
-    ]).toContainEqual(manifest)
-    expect(config.packages['.']['release-as']).toBe('1.0.0')
+    expect(manifest).toEqual({ '.': packageJson.version })
+    expect(config.packages['.']).not.toHaveProperty('release-as')
   })
 
   it('declares the release bot secret in the maintainer repository configuration', () => {
