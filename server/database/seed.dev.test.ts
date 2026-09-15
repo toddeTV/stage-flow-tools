@@ -34,6 +34,7 @@ function expectLocalized(value: Record<string, string>) {
   expect(Object.keys(value).sort()).toEqual([
     'de',
     'en',
+    'fr',
     'ja',
   ])
 

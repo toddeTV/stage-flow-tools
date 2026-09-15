@@ -1,7 +1,7 @@
 # Predefined Questions
 
 The repository includes two development-only example questions. They demonstrate
-complete English, German, and Japanese question, answer-option, and note content.
+complete English, German, French, and Japanese question, answer-option, and note content.
 
 Seed a fresh local database with:
 
