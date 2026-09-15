@@ -1,243 +1,187 @@
 # Docker Deployment Guide
 
-Deploy the application on your own Linux server using Docker Compose and a Traefik reverse proxy. This is the supported production path for the project.
+Deploy Stage Flow Tools on a Linux server with Docker Compose and a Traefik
+reverse proxy. Docker is the supported production runtime.
 
-## Why Docker?
-
-- **Full control** - your server, your data, your rules.
-- **Works everywhere** - any Linux server with Docker installed.
-- **Data persistence** - quiz data stored on disk through a persistent volume mount.
-- **Corporate-friendly** - runs behind firewalls and VPNs without external dependencies.
-- **Ready to use** - the current codebase runs natively on Node.js, no migration needed.
+Stage Flow Tools deliberately does not include a ready-to-run Compose file.
+The hostname, network name, certificate resolver, filesystem paths, and
+secrets belong to the operator's infrastructure. Create and maintain those
+files outside the repository.
 
 ## Prerequisites
 
-- A Linux server with [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
-- A [Traefik](https://doc.traefik.io/traefik/) reverse proxy instance running and configured on the same server. Traefik handles SSL certificate provisioning via Let's Encrypt and routes HTTPS traffic to the application container.
-- The `traefik-public` Docker network must exist. Create it if needed: `docker network create traefik-public`.
-- A domain or subdomain pointed to the server's IP address (A or AAAA DNS record).
-- At least 65,536 open files allowed for the host, Traefik process, and application container when serving large audiences.
+- Docker Engine and the Docker Compose plugin on the server.
+- A Traefik instance that can reach the application through a shared external
+  Docker network.
+- A domain or subdomain directed to the server.
+- A persistent host directory for the application `.data` directory.
+- A `nofile` limit of at least `65536` for the host, Traefik, and application
+  container when serving large audiences.
 
-Cloudflare can optionally sit in front of this setup without changing the application runtime. Complete the direct deployment first, then follow [Optional Cloudflare Proxy/CDN](deployment-cloudflare-proxy.md).
+If Cloudflare proxies the hostname, complete the proxy setup in
+[Optional Cloudflare Proxy/CDN](deployment-cloudflare-proxy.md) before opening
+the application to participants.
 
 ## Setup
 
-### 1. Clone the Repository
-
-Connect to your server and clone the repository:
-
-```bash
-git clone <repository-url>
-cd stage-flow-tools
-```
-
 ### 2. Configure Environment
 
-Copy the example environment file and customize it:
-
-```bash
-cp .env.example .env
-```
-
-Edit the `.env` file and set a strong, unique `NUXT_JWT_SECRET`. You can generate one with:
+Create a private `.env` file next to the deployment-specific Compose file.
+Use [`.env.example`](../.env.example) as the list of supported application
+settings. Set a unique production password and JWT secret before starting the
+container:
 
 ```bash
 openssl rand -base64 48
 ```
 
-Set a strong admin password as well:
-
-```bash
-# In .env:
+```dotenv
 NUXT_ADMIN_USERNAME=admin
-NUXT_ADMIN_PASSWORD=<your-strong-password>
+NUXT_ADMIN_PASSWORD=<strong-unique-password>
 NUXT_ADMIN_TOKEN=<optional-static-admin-token>
-NUXT_JWT_SECRET=<paste-output-from-openssl>
+NUXT_JWT_SECRET=<output-from-openssl>
 ```
 
-Set `NUXT_ADMIN_TOKEN` only if external software needs either direct admin API access with `Authorization: Bearer <token>` or protected admin page access with `?token=<token>`. Leave it empty to disable that path. Only one exact token is accepted.
+`NUXT_ADMIN_TOKEN` is optional. Leave it empty unless external software needs
+bearer-token API access or a tokenized `/admin` page URL.
 
-### CORS for Slidev and other browser clients
+For separately hosted browser clients such as a local Slidev presentation,
+enable CORS only for exact origins:
 
-Cross-origin REST API access is disabled by default. Enable it only for the exact origins that need it. For a local Slidev presentation running on port `3030`:
-
-```bash
-# In .env:
+```dotenv
 NUXT_API_CORS_ENABLED=true
 NUXT_API_CORS_ALLOWED_ORIGINS=http://localhost:3030
 ```
 
-Use a comma-separated list for multiple origins, for example `http://localhost:3030,https://slides.example`. Entries must be exact `http` or `https` origins without wildcards, paths, query parameters, fragments, or credentials.
-
-This policy applies only to `/api/*`, allows `GET`, `POST`, and `OPTIONS`, and accepts `Authorization` and `Content-Type` request headers. It deliberately does not enable cross-origin cookies. Browser clients calling protected presenter endpoints must send `Authorization: Bearer <token>` and must not embed that token in publicly distributed slide assets. The application now sends these headers itself; no Traefik CORS middleware is needed.
-
-Admin authentication variants:
-
-1. `/login` with `NUXT_ADMIN_USERNAME` and `NUXT_ADMIN_PASSWORD` for normal human admin access.
-2. `Authorization: Bearer <token>` for software calling admin APIs.
-3. `/admin/...?...&token=<token>` for embedded admin pages that must authenticate a browser or iframe session before follow-up requests use the normal cookie.
-
-Optional override for the embedded Drizzle Studio worker port:
-
-```bash
-# In .env:
-NUXT_DRIZZLE_STUDIO_INTERNAL_PORT=64983
-```
-
-Keep this value private. The app binds the Studio worker to `127.0.0.1` inside the container and proxies it through the authenticated admin UI.
+Do not use wildcard origins, paths, query parameters, fragments, or
+credentials in this value. CORS covers `/api/*` only and does not enable
+cross-origin cookies.
 
 ### 3. Configure Docker Compose
 
-Open the `docker-compose.yml` file and update the Traefik `Host` rule to match your domain:
+Create a Compose file in the server project directory. The following is an
+annotated example, not a file to copy unchanged. Replace every value in angle
+brackets with values from the target server and reverse proxy. Choose one
+image reference: a released GHCR image for an ordinary deployment, or
+`stage-flow-tools:latest` when the maintainer workflow loads images directly
+onto the server.
 
 ```yaml
 services:
   app:
-    # ...
+    image: <image-reference>
+    container_name: <container-name>
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NUXT_API_CORS_ALLOWED_ORIGINS: "${NUXT_API_CORS_ALLOWED_ORIGINS:-}"
+      NUXT_API_CORS_ENABLED: "${NUXT_API_CORS_ENABLED:-false}"
+    # Keep a production guard when using the repository default values in .env.example.
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        if [ -z "$$NUXT_ADMIN_PASSWORD" ] || [ "$$NUXT_ADMIN_PASSWORD" = "123" ]; then
+          echo "NUXT_ADMIN_PASSWORD must be set to a non-default production value." >&2
+          exit 1
+        fi
+        if [ -z "$$NUXT_JWT_SECRET" ] || [ "$$NUXT_JWT_SECRET" = "tryUJ0zQbstPbTOrezme+Fv+KndzDNRx5lmSeelr2ial2/2yV8HqLeQ2felJafqf" ]; then
+          echo "NUXT_JWT_SECRET must be set to a non-default production value." >&2
+          exit 1
+        fi
+        exec node .output/server/index.mjs
+    volumes:
+      - <persistent-data-path>:/app/.data
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    networks:
+      - proxy
     labels:
-      - "traefik.http.routers.quiz-app.rule=Host(`quiz.your-domain.com`)" # Change this
-      # ...
+      traefik.enable: "true"
+      traefik.docker.network: <traefik-network>
+      traefik.http.routers.stage-flow-tools.rule: "Host(`<public-hostname>`)"
+      traefik.http.routers.stage-flow-tools.entrypoints: <https-entrypoint>
+      traefik.http.routers.stage-flow-tools.tls: "true"
+      traefik.http.routers.stage-flow-tools.tls.certresolver: <certificate-resolver>
+      traefik.http.services.stage-flow-tools.loadbalancer.server.port: "3000"
+
+networks:
+  proxy:
+    external: true
+    name: <traefik-network>
 ```
 
-### 4. Build and Start the Container
+The `image` value selects the deployed application version. Use a specific
+release tag such as `ghcr.io/toddetv/stage-flow-tools:1.0.0` for reproducible
+ordinary deployments. The persistent mount stores SQLite data at
+`/app/.data`; removing it loses quiz data when a container is recreated.
 
-Build the Docker image and start the container in detached mode:
+The Traefik router forwards HTTPS and WebSocket traffic to port `3000` inside
+the container. Select the resolver configured by the server operator. For
+example, a direct Let’s Encrypt setup and a Cloudflare DNS challenge normally
+use different resolver names.
+
+Validate the final private file before starting it:
 
 ```bash
-docker compose up --build -d
+docker compose --file <compose-file> config --quiet
+docker compose --file <compose-file> up --detach
 ```
 
-The application will be accessible at your configured domain. Traefik will automatically handle SSL certificate provisioning via Let's Encrypt.
+After the first start, add the deployment's own `legal-notice` and
+`privacy-policy` rows through `/admin/database`. See
+[Deployment-Specific Legal Documents](legal-texts.md) for the required keys
+and Markdown format.
 
-After login, the admin menu includes `/admin/database`, which opens Drizzle Studio inside the app through the protected proxy.
+## Maintainer Deployments from GitHub Actions
 
-For large audiences, verify the container limit:
+The manually triggered `Deploy selected ref to maintainer server` workflow
+accepts a branch, tag, or commit SHA through its `source_ref` input. It defaults
+to `main`, builds and smoke-tests the selected revision, then transfers only a
+compressed Docker image archive over SSH. It does not copy repository files,
+the Compose file, `.env`, `.data`, or migration state to the server.
 
-```bash
-docker compose exec app sh -c 'ulimit -n'
-```
+Prepare the server once before the first workflow run:
 
-The result must be at least `65536`. Configure the service manager that starts Traefik with the same or a higher `LimitNOFILE` value and confirm its effective limit before the event. The Compose service already sets the application container's soft and hard `nofile` limits to `65536`.
+1. Place the private Compose file, `.env`, persistent `.data` directory, and
+   `bin.py` wrapper in the project directory.
+1. Configure the private Compose service to use `stage-flow-tools:latest`.
+1. Ensure `bin.py start` starts that image without building, pulling, or
+   rewriting project files.
+1. Validate the private Compose configuration with `docker compose config --quiet`.
 
-### 5. Prepare Legal Documents
+Configure these GitHub repository variables and secret as documented in
+[`.env.example`](../.env.example):
 
-After the first start has created and migrated the SQLite database, sign in
-and use `/admin/database` to add the operator's own `legal-notice` and
-`privacy-policy` rows to the `legal_documents` table before public operation.
-Direct database access is also valid when it fits the deployment
-infrastructure. Stage Flow Tools provides no default legal text.
+- `MAINTAINER_DEPLOY_SSH_HOST`
+- `MAINTAINER_DEPLOY_SSH_USER`
+- `MAINTAINER_DEPLOY_SSH_KNOWN_HOSTS`
+- `MAINTAINER_DEPLOY_RESTART_COMMAND`, for example
+  `cd <absolute-project-directory> && ./bin.py stop && ./bin.py start`
+- `MAINTAINER_DEPLOY_SSH_PRIVATE_KEY` as a repository secret
 
-See [Deployment-Specific Legal Documents](legal-texts.md) for the required
-keys and Markdown format.
+The workflow verifies the loaded image ID and source revision before executing
+the restart command. A failed command fails the deployment. It does not run a
+remote health check, automatic rollback, or a separate migration command.
+However, application startup automatically applies pending Drizzle migrations
+to the persistent SQLite database. Before deploying a ref with migrations,
+back up `.data` and review forward and rollback compatibility. Do not apply the
+same migrations manually unless a separate supported procedure requires it.
+Deployment-file changes remain manual.
 
-## Data Persistence
+## Operations
 
-The `docker-compose.yml` mounts one directory:
-
-- `./.data` -> `/app/.data` - SQLite database storage for quiz questions and answers.
-
-Without the `.data` mount, all runtime data is lost when the container is removed or recreated.
+View application logs with the Compose command for the private project. Back
+up its persistent `.data` directory before upgrades and before high-risk live
+events. Restarting the container disconnects active WebSocket clients, which
+then reconnect automatically.
 
 ## Image Layout
 
-The Docker image uses a multi-stage build:
-
-- The `build` stage installs the full toolchain and runs `vp run build`.
-- The `production` stage copies the generated `.output` directory and the Drizzle migration files required at startup.
-- The container starts `node .output/server/index.mjs` directly.
-- The embedded Drizzle Studio worker is started lazily by Nitro on first access to `/admin/database`.
-
-The final image does not run a second package install step. Nuxt's production build already emits the standalone server output used by the container.
-
-## Maintenance
-
-### Maintainer deployments from GitHub Actions
-
-After this Docker Compose deployment is working, repository maintainers can run
-the `Deploy main to maintainer server` workflow manually. It builds the current
-`main` revision, smoke-tests that exact image, and transfers it directly to the
-server over SSH. The workflow recreates only the Compose `app` service, so
-Traefik keeps its existing network and routing configuration.
-
-Prepare a dedicated SSH deploy user with Docker and Docker Compose access. Its
-deployment key must be accepted by the server, and the GitHub repository must
-store the server's verified `known_hosts` entry. Configure the repository
-variables and secret documented in [`.env.example`](../.env.example); the
-Compose path must contain the existing `docker-compose.yml` and runtime `.env`.
-
-The workflow verifies the loaded image revision, the recreated container image,
-and the active-question API. If a later deployment fails, it restores the prior
-container image automatically. A first deployment has no earlier image to roll
-back to.
-
-### Updating the Application
-
-To update the application to the latest version:
-
-```bash
-git pull
-docker compose up --build -d
-```
-
-### Viewing Logs
-
-To view the application logs:
-
-```bash
-docker compose logs -f
-```
-
-### Stopping the Application
-
-To stop the application:
-
-```bash
-docker compose down
-```
-
-## How It Works
-
-### Why Traefik?
-
-Traefik acts as a reverse proxy that sits in front of the application container. It provides:
-
-- **Automatic SSL** - provisions and renews Let's Encrypt certificates without manual setup.
-- **HTTP to HTTPS redirect** - forces all traffic through encrypted connections.
-- **WebSocket proxying** - transparently proxies WebSocket connections (`/_ws`) alongside regular HTTP traffic.
-- **Docker-native** - discovers containers via Docker labels, no manual config files for each service.
-
-The `docker-compose.yml` labels configure Traefik routing:
-
-- `traefik.http.routers.stage-flow-tools.rule=Host(...)` - routes traffic for your domain to this container.
-- `traefik.http.routers.stage-flow-tools.entrypoints=websecure` - listens on the HTTPS entrypoint.
-- `traefik.http.routers.stage-flow-tools.tls.certresolver=myresolver` - uses Let's Encrypt for SSL.
-- `traefik.http.services.stage-flow-tools.loadbalancer.server.port=3000` - forwards traffic to port 3000 inside the container.
-
-### Data persistence
-
-The `docker-compose.yml` file mounts `./.data:/app/.data`. All application data is stored under `/app/.data` inside the container. This means:
-
-- Data survives container restarts, rebuilds, and updates.
-- You can back up data by copying the `./.data` directory.
-- You can inspect the SQLite database file directly on the host.
-
-### Security considerations
-
-- Always set a strong `NUXT_JWT_SECRET` (at least 48 bytes of randomness).
-- Change the default admin password before making the application publicly accessible.
-- Docker Compose loads the deployment `.env` into the application container. It refuses to start when `NUXT_ADMIN_PASSWORD` or `NUXT_JWT_SECRET` is empty or still uses the repository default.
-- Keep `NUXT_DRIZZLE_STUDIO_INTERNAL_PORT` unset unless you need to avoid a local port clash inside the container runtime.
-- Traefik handles SSL termination. Internal traffic between Traefik and the container is unencrypted (port 3000) but stays within the Docker network.
-
-## Using a Pre-Built Image
-
-Instead of building locally, you can use the pre-built Docker image from the GitHub Container Registry:
-
-```yaml
-services:
-  app:
-    image: ghcr.io/toddetv/stage-flow-tools:latest
-    # ... rest of config same as above
-```
-
-Replace `:latest` with a specific version tag (e.g., `:1.0.0`) for reproducible deployments. Available tags are published automatically on each release.
+The Docker image uses a multi-stage build. The build stage runs `vp run build`;
+the production stage contains the standalone Nuxt server output and the Drizzle
+migration files needed at startup. The container starts
+`node .output/server/index.mjs` directly.

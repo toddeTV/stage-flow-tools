@@ -14,9 +14,10 @@ two rows from the `legal_documents` table:
 
 `content` is Markdown. The pages provide the fixed titles `Legal Notice
 (Impressum)` and `Privacy Policy (Datenschutzerklärung)` plus their
-English-only notice. Include the document's `Last updated: YYYY-MM-DD` line
-and all content required for the operator's actual deployment in the Markdown
-body. `updated_at` is maintained by the database whenever `content` changes.
+English-only notice. Include the document's `As of: YYYY-MM-DD` line, stating
+the text's effective version date, and all content required for the operator's
+actual deployment in the Markdown body. `updated_at` is maintained by the
+database whenever `content` changes.
 
 After the first application start has created and migrated the database, add
 or update these rows through the protected Drizzle Studio view at

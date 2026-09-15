@@ -18,7 +18,9 @@ This creates the production server bundle in `.output/`.
 
 ## Docker Deployment
 
-The repository already includes a `Dockerfile` and `docker-compose.yml`.
+The repository includes a `Dockerfile`. Create and maintain a
+deployment-specific Compose file outside the repository; see the
+[Docker Deployment Guide](deployment-docker.md#compose-yaml-example).
 
 Production storage lives in `.data/db/stage-flow-tools.sqlite3`, so mount `/app/.data` to persistent host storage.
 
@@ -27,7 +29,7 @@ policy to the migrated database. See [Deployment-Specific Legal
 Documents](legal-texts.md).
 
 ```bash
-docker compose up --build -d
+docker compose --file <compose-file> up --detach
 ```
 
 ## Secondary Self-Hosted Runtime
