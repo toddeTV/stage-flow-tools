@@ -1433,6 +1433,70 @@ de:
   moveQuestionDown: Frage nach unten verschieben
   optionPlaceholder: "Option {n} als JSON"
   emojiPlaceholder: Emoji
+fr:
+  pageTitle: Tableau de bord d'administration
+  currentActiveQuestion: Question active actuelle
+  refreshButton: Actualiser
+  statusLabel: "État :"
+  locked: Verrouillée
+  unlocked: Déverrouillée
+  viewLiveResults: Voir les résultats en direct
+  lockQuestion: Verrouiller la question
+  unlockQuestion: Déverrouiller la question
+  resetAnswers: Réinitialiser les réponses
+  resettingAnswers: Réinitialisation des réponses...
+  publishNext: Publier la suivante
+  unpublishButton: Annuler la publication
+  confirmResetAnswers: Supprimer toutes les réponses envoyées pour la question actuelle ?
+  resetQuestionAnswersTitle: Réinitialiser les réponses envoyées ?
+  confirmAnswerOptionsReset: "Modifier les options de '{key}' supprime les réponses envoyées. Continuer ?"
+  resetAnswersAndSave: Supprimer les réponses et enregistrer
+  noActiveQuestion: Aucune question active
+  addQuestion: Ajouter une question
+  addQuestionChoiceHint: Choisissez comment ajouter des questions.
+  createQuestionWithForm: Créer une question
+  importQuestionsTitle: Importer des questions
+  importQuestions: Importer
+  deleteAllQuestions: Tout supprimer
+  deletingAllQuestions: Suppression en cours...
+  confirmDeleteAllQuestions: Supprimer définitivement toutes les questions et les réponses envoyées ?
+  exportQuestions: Exporter
+  exportingQuestions: Exportation en cours...
+  noQuestionsToExport: Ajoutez au moins une question avant l'exportation.
+  confirmExportQuestions: Télécharger toutes les questions dans un paquet JSON sans les réponses envoyées ?
+  editQuestionTitle: Modifier la question
+  keyPlaceholder: "Saisissez une clé ou un slug unique (facultatif, p. ex. 'question-1')"
+  questionTextPlaceholder: "Saisissez la question en JSON, p. ex. {'{'} \"en\": \"Hello\", \"de\": \"Hallo\" {'}'}"
+  notePlaceholder: "Saisissez une note au format JSON (facultatif), p. ex. {'{'} \"en\": \"Note\" {'}'}"
+  answerOptions: Options de réponse
+  removeButton: Supprimer
+  addOptionButton: Ajouter une option
+  createQuestion: Créer la question
+  saveQuestion: Enregistrer la question
+  cancelEditing: Annuler
+  editQuestion: Modifier
+  allQuestions: Toutes les questions
+  questionLifecycle: Cycle de vie de la question
+  queuePosition: Position dans la file d'attente
+  disabledStatus: Désactivée
+  activeStatus: Active maintenant
+  alreadyAskedStatus: Déjà posée
+  answersLockedStatus: Réponses verrouillées
+  yes: Oui
+  no: Non
+  publishThisQuestion: Publier
+  publishQuestionTitle: Publier la question
+  confirmPublishQuestion: "Publier '{key}' comme question active ?"
+  disableQuestion: Désactiver
+  enableQuestion: Activer
+  confirmDisableQuestion: "Désactiver '{key}' ? Publier la suivante l'ignorera."
+  confirmEnableQuestion: "Activer '{key}' ? Publier la suivante pourra la sélectionner à nouveau."
+  deleteQuestion: Supprimer
+  confirmDeleteQuestion: "Supprimer définitivement '{key}' et toutes les réponses envoyées ?"
+  moveQuestionUp: Déplacer la question vers le haut
+  moveQuestionDown: Déplacer la question vers le bas
+  optionPlaceholder: "Option {n} au format JSON"
+  emojiPlaceholder: Emoji
 ja:
   pageTitle: 管理ダッシュボード
   currentActiveQuestion: 現在のアクティブな質問

@@ -409,6 +409,28 @@ de:
   questionState: Fragenstatus
   language: Sprache
   discussionNote: Diskussionsnotiz
+fr:
+  previous: Étape précédente de la présentation
+  next: Étape suivante de la présentation
+  questionProgress: "Question {current} / {total}"
+  revealed: Révélée + verrouillée
+  open: Ouverte aux votes
+  openShort: Ouverte
+  locked: Verrouillée
+  openNote: Ouvrir la note de discussion
+  closeNote: Fermer la note de discussion
+  votes: "{count} votes"
+  votesShort: Votes
+  waiting: En attente
+  liveDistribution: Répartition en direct
+  live: En direct
+  syncing: Synchronisation
+  votesReceived: Votes reçus
+  participation: Participation
+  audiencePresent: Public présent
+  questionState: État de la question
+  language: Langue
+  discussionNote: Note de discussion
 ja:
   previous: 前のプレゼンターステップ
   next: 次のプレゼンターステップ

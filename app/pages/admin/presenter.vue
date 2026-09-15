@@ -213,6 +213,19 @@ de:
   loadError: Das Presenter-Quiz konnte nicht geladen werden. Lade die Seite erneut.
   refreshError: Live-Ergebnisse konnten nicht aktualisiert werden. Der letzte erfolgreiche Stand bleibt sichtbar.
   syncError: Der nächste Präsentationsschritt konnte nicht synchronisiert werden. Versuche es erneut.
+fr:
+  preparing: Préparation du quiz en direct
+  loading: Chargement des questions et de l'état du présentateur...
+  noQuestionsTitle: Aucune question de quiz active
+  noQuestions: Activez au moins une question dans l'administration, puis rechargez cette page.
+  leaderboard: Classement
+  recap: Récapitulatif du quiz
+  quizNavigation: Navigation du quiz
+  previous: Étape précédente de la présentation
+  next: Étape suivante de la présentation
+  loadError: Impossible de charger le quiz de présentation. Rechargez la page pour réessayer.
+  refreshError: Impossible d'actualiser les résultats en direct. Le dernier état chargé reste visible.
+  syncError: Impossible de synchroniser l'étape suivante de la présentation. Réessayez.
 ja:
   preparing: ライブクイズを準備中
   loading: 質問とプレゼンター状態を読み込んでいます...

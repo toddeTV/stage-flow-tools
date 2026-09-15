@@ -75,6 +75,12 @@ de:
   openNewTab: In neuem Tab öffnen
   iframeTitle: Drizzle Studio
   loading: Studio wird geladen
+fr:
+  title: Base de données
+  description: Consultez et modifiez la base de données SQLite via un proxy Drizzle Studio côté serveur.
+  openNewTab: Ouvrir dans un nouvel onglet
+  iframeTitle: Drizzle Studio
+  loading: Chargement de Studio
 ja:
   title: データベース
   description: サーバー側の Drizzle Studio プロキシ経由で SQLite データベースを参照、編集します。

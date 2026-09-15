@@ -157,6 +157,17 @@ de:
   importQuestions: Fragen importieren
   importingQuestions: Fragen werden importiert...
   backToQuestionChoices: Zurück
+fr:
+  questionPackageFile: Fichier JSON du paquet de questions
+  questionPackageFileHint: Sélectionnez un paquet de questions JSON Version 1.
+  questionPackageImportSummary: Récapitulatif de l'importation
+  questionsToCreate: "{count} questions seront ajoutées."
+  questionsToUpdate: "{count} questions existantes seront mises à jour."
+  questionPackageAnswerWarning: >-
+    Les réponses existantes sont conservées. Des options modifiées peuvent rendre les résultats incohérents.
+  importQuestions: Importer les questions
+  importingQuestions: Importation des questions...
+  backToQuestionChoices: Retour
 ja:
   questionPackageFile: 質問パッケージ JSON ファイル
   questionPackageFileHint: バージョン 1 の JSON 質問パッケージを選択してください。

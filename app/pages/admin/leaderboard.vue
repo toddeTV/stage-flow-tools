@@ -537,6 +537,26 @@ de:
   empty: Noch keine Antworten eingereicht.
   error: Bestenliste konnte nicht geladen werden. Bitte erneut versuchen.
   scoredQuestions: "Fragen mit richtigen Antworten: {count}"
+fr:
+  title: Classement
+  rank: Rang
+  player: Joueur
+  correctAnswers: Bonnes réponses
+  drawWinner: Tirer un gagnant
+  over9000: 🐉 Plus de 9000 !
+  showScores: 🐉 Afficher les scores
+  showUserIds: Afficher les identifiants
+  hideUserIds: Masquer les identifiants
+  winner: Gagnant
+  winnerDrawHint: >-
+    La personne ayant le plus de bonnes réponses sera tirée au sort. Les égalités seront départagées au hasard.
+  drawingWinner: Tirage au sort...
+  close: Fermer
+  refresh: Actualiser
+  loading: Chargement...
+  empty: Aucune réponse soumise pour l'instant.
+  error: Impossible de charger le classement. Réessayez.
+  scoredQuestions: "Questions avec des bonnes réponses : {count}"
 ja:
   title: リーダーボード
   rank: 順位

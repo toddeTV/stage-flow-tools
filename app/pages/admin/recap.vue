@@ -315,6 +315,27 @@ de:
     hardest: Endgegner
     most-answered: Publikumsmagnet
     closest-call: Foto-Finish
+fr:
+  title: Récapitulatif du quiz
+  complete: Quiz terminé
+  refresh: Actualiser
+  retry: Réessayer
+  loading: Chargement du récapitulatif du quiz...
+  error: Impossible de charger le récapitulatif du quiz. Réessayez.
+  refreshError: Impossible d'actualiser le récapitulatif du quiz. Les dernières données chargées restent visibles.
+  empty: Aucune réponse soumise pour l'instant.
+  overallAccuracy: Taux de bonnes réponses
+  correctOf: "{correct} bonnes réponses sur {total}"
+  publishedQuestions: Questions publiées
+  answers: Réponses
+  participants: Participants
+  highlights: Temps forts
+  answersCount: "{count} réponses"
+  highlight:
+    best-known: Sagesse du public
+    hardest: Boss final
+    most-answered: Favori du public
+    closest-call: Photo-finish
 ja:
   title: クイズの振り返り
   complete: クイズ終了

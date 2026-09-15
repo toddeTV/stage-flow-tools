@@ -5,6 +5,7 @@ const { t } = useI18n()
 const languageMap: Record<string, string> = {
   en: '🇺🇸',
   de: '🇩🇪',
+  fr: '🇫🇷',
   ja: '🇯🇵',
 }
 </script>
@@ -22,6 +23,8 @@ en:
   selectLanguage: Select language
 de:
   selectLanguage: Sprache auswählen
+fr:
+  selectLanguage: Sélectionner la langue
 ja:
   selectLanguage: 言語を選択
 </i18n>

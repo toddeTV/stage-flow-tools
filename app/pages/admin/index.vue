@@ -103,6 +103,24 @@ de:
   databaseDesc: Drizzle Studio in einem geschützten Admin-Frame öffnen.
   logout: Abmelden
   logoutError: Abmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.
+fr:
+  title: Administration
+  questions: Questions
+  questionsDesc: Créez, publiez et gérez les questions du quiz.
+  presenter: Quiz de présentation
+  presenterDesc: Lancez le quiz complet dans un cadre prêt pour la présentation.
+  results: Résultats en direct
+  resultsDesc: Consultez les résultats des votes en temps réel avec des barres animées.
+  leaderboard: Classement
+  leaderboardDesc: Scores cumulés des joueurs pour toutes les questions publiées.
+  recap: Récapitulatif du quiz
+  recapDesc: Affichez les statistiques marquantes du quiz après la partie.
+  emojis: Superposition d'emojis
+  emojisDesc: Superposition de réactions emoji flottantes pour les présentations.
+  database: Base de données
+  databaseDesc: Ouvrez Drizzle Studio dans un cadre d'administration protégé.
+  logout: Déconnexion
+  logoutError: Échec de la déconnexion. Réessayez.
 ja:
   title: 管理
   questions: 質問

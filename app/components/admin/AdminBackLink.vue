@@ -18,6 +18,8 @@ en:
   backToAdmin: Back to Admin
 de:
   backToAdmin: Zurück zur Admin-Übersicht
+fr:
+  backToAdmin: Retour à l'administration
 ja:
   backToAdmin: 管理画面に戻る
 </i18n>
