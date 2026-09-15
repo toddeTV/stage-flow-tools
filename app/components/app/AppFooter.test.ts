@@ -23,4 +23,9 @@ describe('app footer', () => {
     expect(footerSource).toContain('to="/privacy-policy"')
     expect(footerSource.indexOf('Legal Notice')).toBeLessThan(footerSource.indexOf('Privacy Policy'))
   })
+
+  it('renders the build-time version without runtime configuration', () => {
+    expect(footerSource).toContain('const appVersion = __STAGE_FLOW_BUILD_VERSION__')
+    expect(footerSource).not.toContain('useRuntimeConfig')
+  })
 })

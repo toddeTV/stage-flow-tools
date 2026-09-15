@@ -119,6 +119,11 @@ release tag such as `ghcr.io/toddetv/stage-flow-tools:1.0.0` for reproducible
 ordinary deployments. The persistent mount stores SQLite data at
 `/app/.data`; removing it loses quiz data when a container is recreated.
 
+The footer version is embedded while the image is built and cannot be
+overridden by the deployment environment. `NUXT_PUBLIC_VERSION` is not
+supported. Release images embed the release version; see
+[Release Flow](release-flow.md) for validation and tagging details.
+
 The Traefik router forwards HTTPS and WebSocket traffic to port `3000` inside
 the container. Select the resolver configured by the server operator. For
 example, a direct Let’s Encrypt setup and a Cloudflare DNS challenge normally

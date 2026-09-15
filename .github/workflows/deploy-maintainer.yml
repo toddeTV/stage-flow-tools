@@ -38,7 +38,11 @@ jobs:
         run: |
           set -euo pipefail
           deploy_sha="$(git rev-parse HEAD)"
+          deploy_date="$(date --utc +%F)"
+          deploy_short_sha="$(git rev-parse --short=7 HEAD)"
+          deploy_version="$deploy_date-$deploy_short_sha"
           echo "DEPLOY_SHA=$deploy_sha" >> "$GITHUB_ENV"
+          echo "DEPLOY_VERSION=$deploy_version" >> "$GITHUB_ENV"
           echo "IMAGE_REF=stage-flow-tools:deploy-$deploy_sha" >> "$GITHUB_ENV"
           echo "IMAGE_ARCHIVE=$RUNNER_TEMP/stage-flow-tools-$deploy_sha.tar.gz" >> "$GITHUB_ENV"
           echo "REMOTE_ARCHIVE=/tmp/stage-flow-tools-$deploy_sha.tar.gz" >> "$GITHUB_ENV"
@@ -49,6 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           docker build \
+            --build-arg "STAGE_FLOW_BUILD_VERSION=$DEPLOY_VERSION" \
             --label "org.opencontainers.image.revision=$DEPLOY_SHA" \
             --tag "$IMAGE_REF" \
             .
