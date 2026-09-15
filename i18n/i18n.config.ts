@@ -139,6 +139,74 @@ export default defineI18nConfig(() => ({
         },
       },
     },
+    fr: {
+      errors: {
+        validation: {
+          invalid_request: 'Vérifiez les données envoyées.',
+          invalid_json: 'Saisissez un JSON valide.',
+          required: 'Ce champ est obligatoire.',
+          invalid_type: 'Saisissez une valeur valide.',
+          invalid_emoji: 'Saisissez un emoji.',
+          minimum_answer_options: 'Ajoutez au moins deux options de réponse.',
+          duplicate_answer_option: 'Les options de réponse doivent avoir des textes anglais uniques.',
+          invalid_question_package: 'Sélectionnez un paquet de questions valide.',
+          unsupported_question_package_version: "Cette version du paquet de questions n'est pas prise en charge.",
+          empty_question_package: 'Le paquet de questions doit contenir au moins une question.',
+          duplicate_question_key: 'Les clés du paquet de questions doivent être uniques.',
+          invalid_websocket_query: 'Paramètres de connexion WebSocket non valides.',
+          invalid_websocket_message: 'Message WebSocket non valide.',
+        },
+        auth: {
+          credentials_required: "Saisissez un nom d'utilisateur et un mot de passe.",
+          credentials_invalid: "Nom d'utilisateur ou mot de passe non valide.",
+          token_required: 'Authentification requise.',
+          token_invalid: "Votre authentification a expiré ou n'est pas valide.",
+          origin_invalid: 'Cette requête doit provenir de cette application.',
+        },
+        quiz: {
+          no_active_question: "Aucune question active n'est disponible.",
+          question_locked: 'Cette question est verrouillée.',
+          invalid_answer: "Cette réponse n'est pas disponible pour cette question.",
+          question_not_found: 'Question introuvable.',
+          question_key_conflict: 'Une question utilise déjà cette clé.',
+          question_answers_reset_required: 'Modifier les options exige de supprimer les réponses envoyées.',
+          question_active: 'Les questions actives ne peuvent pas être modifiées.',
+          question_published: 'Les questions publiées ne peuvent pas être modifiées.',
+          no_enabled_question: "Aucune question activée ne reste dans la file d'attente.",
+          publish_next_failed: 'La publication de la question suivante a échoué.',
+        },
+        emoji: {
+          cooldown: 'Vous envoyez des emojis trop rapidement. Patientez un instant.',
+        },
+        answer: {
+          no_answers_for_question: "Aucune réponse n'existe pour cette question.",
+          no_users_for_option: "Aucun participant n'a choisi cette option.",
+        },
+        websocket: {
+          winner_not_connected: "Le participant sélectionné n'est plus connecté.",
+        },
+        studio: {
+          asset_not_found: 'Ressource Drizzle Studio introuvable.',
+          asset_path_invalid: 'Chemin de ressource Drizzle Studio non valide.',
+          proxy_timeout: "Délai d'attente dépassé pour Drizzle Studio.",
+          proxy_unavailable: "Drizzle Studio n'est pas disponible.",
+          shell_timeout: 'Le chargement de Drizzle Studio a expiré.',
+          shell_unavailable: "Drizzle Studio n'est pas disponible.",
+          shell_load_failed: 'Impossible de charger Drizzle Studio.',
+          asset_timeout: "Délai d'attente dépassé lors du chargement d'une ressource Drizzle Studio.",
+          asset_unavailable: "Une ressource Drizzle Studio n'est pas disponible.",
+          asset_load_failed: 'Impossible de charger une ressource Drizzle Studio.',
+          invalid_internal_port: "La configuration du port interne de Drizzle Studio n'est pas valide.",
+          start_failed: 'Impossible de démarrer Drizzle Studio.',
+        },
+        route: {
+          not_found: 'Route introuvable.',
+        },
+        server: {
+          internal_error: "Une erreur s'est produite. Réessayez.",
+        },
+      },
+    },
     ja: {
       errors: {
         validation: {

@@ -78,6 +78,7 @@ const configModules: InputConfig<NuxtConfig, ConfigLayerMeta> = {
     locales: [
       { code: 'en', language: 'en-US', name: 'English' },
       { code: 'de', language: 'de-DE', name: 'Deutsch' },
+      { code: 'fr', language: 'fr-FR', name: 'Français' },
       { code: 'ja', language: 'ja-JP', name: '日本語' },
     ],
   },
