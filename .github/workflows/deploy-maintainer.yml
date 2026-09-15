@@ -51,7 +51,6 @@ jobs:
           docker build \
             --label "org.opencontainers.image.revision=$DEPLOY_SHA" \
             --tag "$IMAGE_REF" \
-            --tag stage-flow-tools:latest \
             .
 
       - name: Smoke-test Docker image
@@ -79,7 +78,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker image save "$IMAGE_REF" stage-flow-tools:latest | gzip --stdout > "$IMAGE_ARCHIVE"
+          docker image save "$IMAGE_REF" | gzip --stdout > "$IMAGE_ARCHIVE"
+          image_archive_sha256="$(sha256sum "$IMAGE_ARCHIVE" | awk '{print $1}')"
+          test -n "$image_archive_sha256"
+          echo "IMAGE_ARCHIVE_SHA256=$image_archive_sha256" >> "$GITHUB_ENV"
 
       - name: Configure SSH
         env:
@@ -132,39 +134,58 @@ jobs:
           test -n "$restart_command"
           command -v docker >/dev/null
           command -v gzip >/dev/null
+          command -v sha256sum >/dev/null
           docker info >/dev/null
           bash -n -c "$restart_command"
           REMOTE_PREFLIGHT
 
           scp "${ssh_options[@]}" "$IMAGE_ARCHIVE" "$ssh_target:$REMOTE_ARCHIVE"
 
-          expected_image_id="$(docker image inspect --format '{{.Id}}' "$IMAGE_REF")"
           ssh "${ssh_options[@]}" "$ssh_target" bash -s -- \
             "$REMOTE_ARCHIVE" \
             "$IMAGE_REF" \
             "$DEPLOY_SHA" \
-            "$expected_image_id" \
+            "$IMAGE_ARCHIVE_SHA256" \
             "$restart_command_base64" <<'REMOTE_DEPLOY'
           set -euo pipefail
 
           archive_path="$1"
           image_ref="$2"
           deploy_sha="$3"
-          expected_image_id="$4"
+          expected_archive_sha256="$4"
           restart_command_base64="$5"
+          test -n "$expected_archive_sha256"
           test -n "$restart_command_base64"
           command -v base64 >/dev/null
+          command -v sha256sum >/dev/null
           restart_command="$(printf '%s' "$restart_command_base64" | base64 --decode)"
           test -n "$restart_command"
 
           trap 'rm -f "$archive_path"' EXIT
+          loaded_archive_sha256="$(sha256sum "$archive_path" | awk '{print $1}')"
+          if [[ "$loaded_archive_sha256" != "$expected_archive_sha256" ]]; then
+            echo "Deployment archive checksum mismatch." >&2
+            echo "Expected archive checksum: $expected_archive_sha256" >&2
+            echo "Loaded archive checksum: $loaded_archive_sha256" >&2
+            exit 1
+          fi
           gzip --decompress --stdout "$archive_path" | docker image load
 
           loaded_image_id="$(docker image inspect --format '{{.Id}}' "$image_ref")"
-          loaded_latest_image_id="$(docker image inspect --format '{{.Id}}' stage-flow-tools:latest)"
           loaded_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$image_ref")"
-          if [[ "$loaded_image_id" != "$expected_image_id" || "$loaded_latest_image_id" != "$expected_image_id" || "$loaded_revision" != "$deploy_sha" ]]; then
-            echo "Loaded image does not match the expected selected revision." >&2
+          if [[ "$loaded_revision" != "$deploy_sha" ]]; then
+            echo "Loaded image revision does not match the selected revision." >&2
+            echo "Expected revision: $deploy_sha" >&2
+            echo "Loaded revision: $loaded_revision" >&2
+            exit 1
+          fi
+
+          docker image tag "$image_ref" stage-flow-tools:latest
+          loaded_latest_image_id="$(docker image inspect --format '{{.Id}}' stage-flow-tools:latest)"
+          if [[ "$loaded_latest_image_id" != "$loaded_image_id" ]]; then
+            echo "Latest tag does not reference the verified deployment image." >&2
+            echo "Deployment image ID: $loaded_image_id" >&2
+            echo "Latest image ID: $loaded_latest_image_id" >&2
             exit 1
           fi
 
