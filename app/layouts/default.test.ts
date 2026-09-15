@@ -20,10 +20,10 @@ const footerPageSources = [
 ]
 
 describe('default layout', () => {
-  it('fills the dynamic viewport and lets main consume free space before the footer', () => {
+  it('keeps page containers at their intended widths while main consumes free space before the footer', () => {
     expect(globalStylesSource).toContain('min-h-dvh')
     expect(defaultLayoutSource).toContain('<div class="flex min-h-dvh flex-col"')
-    expect(defaultLayoutSource).toContain('<main class="flex flex-1 flex-col">')
+    expect(defaultLayoutSource).toContain('<main class="flex-1">')
     expect(defaultLayoutSource.indexOf('<main')).toBeLessThan(defaultLayoutSource.indexOf('<AppFooter'))
   })
 
