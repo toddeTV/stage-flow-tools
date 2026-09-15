@@ -272,7 +272,7 @@ watch(refreshIntervalMs, restartPolling)
 </script>
 
 <template>
-  <div class="leaderboard-page flex-1" :data-color-mode="colorMode" :style="backgroundStyles">
+  <div class="leaderboard-page min-h-full" :data-color-mode="colorMode" :style="backgroundStyles">
     <div
       class="leaderboard-content"
       :class="{ 'mx-auto max-w-3xl p-5': !isCoreView }"

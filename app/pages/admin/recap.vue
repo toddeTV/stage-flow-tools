@@ -151,7 +151,7 @@ watch(refreshIntervalMs, restartPolling)
 </script>
 
 <template>
-  <div class="recap-page flex-1" :data-color-mode="colorMode" :style="backgroundStyles">
+  <div class="recap-page min-h-full" :data-color-mode="colorMode" :style="backgroundStyles">
     <div
       class="recap-content"
       :class="{ 'mx-auto max-w-5xl p-5': !isCoreView }"

@@ -18,6 +18,7 @@ const footerPageSources = [
   readSource('../pages/admin/leaderboard.vue'),
   readSource('../pages/admin/recap.vue'),
 ]
+const displayPageSources = footerPageSources.slice(1)
 
 describe('default layout', () => {
   it('keeps page containers at their intended widths while main consumes free space before the footer', () => {
@@ -30,7 +31,10 @@ describe('default layout', () => {
   it('keeps footer-enabled pages from reserving a second viewport height', () => {
     for (const source of footerPageSources) {
       expect(source).not.toContain('min-h-screen')
-      expect(source).toContain('flex-1')
+    }
+
+    for (const source of displayPageSources) {
+      expect(source).toContain('min-h-full')
     }
   })
 })
