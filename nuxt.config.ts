@@ -1,7 +1,9 @@
 import tailwindcss from '@tailwindcss/vite'
-import { version } from './package.json'
 import type { ConfigLayerMeta, InputConfig } from 'c12'
 import type { NuxtConfig } from 'nuxt/schema'
+
+const defaultBuildVersion = `${new Date().toISOString().slice(0, 10)}-local`
+const buildVersion = process.env.STAGE_FLOW_BUILD_VERSION ?? defaultBuildVersion
 
 const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
   compatibilityDate: '2025-07-15',
@@ -43,7 +45,6 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
       emojiCooldownMs: 1500,
       host: '0.0.0.0',
       port: '3000',
-      version,
       wsUrl: '',
     },
   },
@@ -55,6 +56,9 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
   },
 
   vite: {
+    define: {
+      __STAGE_FLOW_BUILD_VERSION__: JSON.stringify(buildVersion),
+    },
     optimizeDeps: {
       include: [
         '@paralleldrive/cuid2',

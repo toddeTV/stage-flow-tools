@@ -41,4 +41,10 @@ The application will be available at `http://localhost:3000`. The container will
 
 ### A Note on Versioning
 
-The local build script tags the image with `:latest`. The automated GitHub Actions workflow handles versioning for releases by automatically tagging the image with the correct semantic version (e.g., `1.2.3`, `1.2`, `1`) based on the release created by the `release-please` bot.
+The local build script tags the image with `:latest`. Without a build argument,
+the footer version embedded in a local Nuxt or Docker build is
+`vYYYY-MM-DD-local` (UTC date). To identify a non-release Docker image
+explicitly, pass `--build-arg STAGE_FLOW_BUILD_VERSION=<identifier>` to
+`docker build`; its value is baked into the image and cannot be changed at
+runtime. The automated GitHub Actions workflow handles published release image
+tags from the release created by the `release-please` bot.

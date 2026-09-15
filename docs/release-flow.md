@@ -20,6 +20,10 @@ versioned GitHub releases and Docker images.
 - After `v1.0.0` is released, remove the temporary `release-as` setting in a
   small follow-up pull request. The manifest then records the actual released
   version and subsequent versions follow Conventional Commits normally.
+- Before building, the Docker workflow checks that the release tag is exactly
+  `v` plus the checked-out `package.json` version. It embeds the tagless
+  version (for example, `1.2.3`) in the image at compile time. The footer
+  renders this as `v1.2.3`; a deployment environment variable cannot change it.
 
 ## Release Bot Token
 
@@ -51,8 +55,9 @@ rights to the release bot token.
    and merges it after checks pass.
 4. Release Please creates the `v<version>` GitHub Release from that merge.
 5. The Docker smoke test and publish job both check out the Release Please
-   output SHA, so they build the exact source that GitHub tags. On success, the
-   publish job pushes that release version to GHCR.
+   output SHA, verify its release tag and package version, and build the exact
+   source that GitHub tags. On success, the publish job pushes that release
+   version to GHCR.
 
 ## Docker Image Tags
 

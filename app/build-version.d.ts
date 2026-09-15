@@ -1,0 +1,1 @@
+declare const __STAGE_FLOW_BUILD_VERSION__: string

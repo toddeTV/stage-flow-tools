@@ -151,10 +151,10 @@ watch(refreshIntervalMs, restartPolling)
 </script>
 
 <template>
-  <div class="recap-page min-h-screen" :data-color-mode="colorMode" :style="backgroundStyles">
+  <div class="recap-page flex-1" :data-color-mode="colorMode" :style="backgroundStyles">
     <div
       class="recap-content"
-      :class="isCoreView ? 'min-h-screen' : 'mx-auto max-w-5xl p-5'"
+      :class="{ 'mx-auto max-w-5xl p-5': !isCoreView }"
       :style="coreViewStyles"
     >
       <AdminBackLink v-if="!isCoreView" />

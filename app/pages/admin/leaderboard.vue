@@ -272,10 +272,10 @@ watch(refreshIntervalMs, restartPolling)
 </script>
 
 <template>
-  <div class="leaderboard-page min-h-screen" :data-color-mode="colorMode" :style="backgroundStyles">
+  <div class="leaderboard-page flex-1" :data-color-mode="colorMode" :style="backgroundStyles">
     <div
       class="leaderboard-content"
-      :class="isCoreView ? 'min-h-screen' : 'mx-auto max-w-3xl p-5'"
+      :class="{ 'mx-auto max-w-3xl p-5': !isCoreView }"
       :style="coreViewStyles"
     >
       <AdminBackLink v-if="!isCoreView" />

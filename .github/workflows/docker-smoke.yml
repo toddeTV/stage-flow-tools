@@ -7,10 +7,18 @@ on:
         description: SHA created by Release Please
         required: true
         type: string
+      release_tag:
+        description: Release tag whose package version is embedded in the image
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       release_sha:
         description: Optional release SHA to smoke-test; defaults to this workflow run's SHA
+        required: false
+        type: string
+      release_tag:
+        description: Optional release tag; a smoke identifier is embedded when omitted
         required: false
         type: string
 
@@ -26,8 +34,26 @@ jobs:
         with:
           ref: ${{ inputs.release_sha || github.sha }}
 
+      - name: Derive embedded application version
+        id: embedded-version
+        env:
+          RELEASE_TAG_NAME: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          if [ -n "$RELEASE_TAG_NAME" ]; then
+            package_version="$(jq --raw-output '.version' package.json)"
+            test "$RELEASE_TAG_NAME" = "v$package_version"
+            build_version="$package_version"
+          else
+            build_version="$(date --utc +%F)-smoke-$(git rev-parse --short=7 HEAD)"
+          fi
+          echo "version=$build_version" >> "$GITHUB_OUTPUT"
+
       - name: Build Docker image
-        run: docker build --tag stage-flow-tools:smoke .
+        run: >-
+          docker build
+          --build-arg "STAGE_FLOW_BUILD_VERSION=${{ steps.embedded-version.outputs.version }}"
+          --tag stage-flow-tools:smoke .
 
       - name: Start image and wait for the public API
         run: |

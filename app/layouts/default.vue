@@ -11,11 +11,11 @@ const props = computed(() => ({
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col" :class="{ 'has-background': props.background }">
+  <div class="flex min-h-dvh flex-col" :class="{ 'has-background': props.background }">
     <div v-if="props.localeSwitcher" class="absolute top-2 right-2 z-10">
       <UiLocaleSwitcher />
     </div>
-    <main class="grow">
+    <main class="flex flex-1 flex-col">
       <slot />
     </main>
     <AppFooter v-if="props.footer" />

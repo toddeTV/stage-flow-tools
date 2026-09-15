@@ -30,6 +30,11 @@ describe('maintainer deployment workflow', () => {
     expect(workflow).toContain('stage-flow-tools:deploy-$deploy_sha')
     expect(workflow).toContain('stage-flow-tools:latest')
     expect(workflow).toContain('org.opencontainers.image.revision=$DEPLOY_SHA')
+    expect(workflow).toContain('deploy_date="$(date --utc +%F)"')
+    expect(workflow).toContain('deploy_short_sha="$(git rev-parse --short=7 HEAD)"')
+    expect(workflow).toContain('deploy_version="$deploy_date-$deploy_short_sha"')
+    expect(workflow).toContain('DEPLOY_VERSION=$deploy_version')
+    expect(workflow).toContain('--build-arg "STAGE_FLOW_BUILD_VERSION=$DEPLOY_VERSION"')
     expect(workflow).toContain('/api/questions/active')
   })
 

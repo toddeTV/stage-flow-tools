@@ -1,6 +1,5 @@
 <script setup lang="ts">
-const config = useRuntimeConfig()
-const appVersion = config.public.version
+const appVersion = __STAGE_FLOW_BUILD_VERSION__
 </script>
 
 <template>
