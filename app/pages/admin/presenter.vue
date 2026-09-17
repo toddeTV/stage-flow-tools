@@ -23,6 +23,7 @@ const presenterStyles = computed<CSSProperties>(() => ({
   '--presenter-inset-y': `${parameters.value.foregroundInsetY}px`,
   '--presenter-stage-scale': parameters.value.stageScale,
   '--presenter-text-scale': parameters.value.textScale,
+  backgroundColor: parameters.value.backgroundColor,
 }))
 const stageStyles = computed<CSSProperties>(() => {
   const inverseSize = `${100 / parameters.value.stageScale}%`

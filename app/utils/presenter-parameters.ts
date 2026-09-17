@@ -27,6 +27,7 @@ export type PresenterColorMode = 'dark' | 'light'
 export type PresenterEmojiLayer = 'background' | 'foreground'
 
 export interface PresenterParameters {
+  backgroundColor?: string
   colorMode: PresenterColorMode
   emojiBackground?: string
   emojiLayer: PresenterEmojiLayer
@@ -124,6 +125,7 @@ export function parsePresenterParameters(query: PresenterQuery): PresenterParame
   const parsedColorMode = colorMode(singleValue(query, 'colorMode'), PRESENTER_PARAMETER_DEFAULTS.colorMode)
 
   return {
+    backgroundColor: color(singleValue(query, 'background')),
     colorMode: parsedColorMode,
     emojiBackground: color(singleValue(query, 'emojiBackground')),
     emojiLayer: singleValue(query, 'emojiLayer') === 'foreground' ? 'foreground' : 'background',

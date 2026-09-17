@@ -9,6 +9,7 @@ describe('parsePresenterParameters', () => {
   it('uses the documented defaults', () => {
     expect(parsePresenterParameters({})).toMatchObject(PRESENTER_PARAMETER_DEFAULTS)
     expect(parsePresenterParameters({})).toMatchObject({
+      backgroundColor: undefined,
       emojiBackground: undefined,
       language: undefined,
       leaderboardBackground: undefined,
@@ -21,6 +22,7 @@ describe('parsePresenterParameters', () => {
 
   it('parses themes, layers, colors, booleans, and prefixed values', () => {
     expect(parsePresenterParameters({
+      background: '#abcdef',
       colorMode: 'dark',
       emojiBackground: '#12aBcD',
       emojiLayer: 'foreground',
@@ -48,6 +50,7 @@ describe('parsePresenterParameters', () => {
       stageScale: '0.75',
       textScale: '1.1',
     })).toEqual({
+      backgroundColor: '#abcdef',
       colorMode: 'dark',
       emojiBackground: '#12aBcD',
       emojiLayer: 'foreground',
@@ -92,6 +95,7 @@ describe('parsePresenterParameters', () => {
   it('clamps opacity and falls back for invalid or repeated values', () => {
     expect(parsePresenterParameters({
       colorMode: 'sepia',
+      background: '#12345',
       emojiBackground: '#12345',
       emojiLayer: [
         'foreground',
@@ -114,6 +118,7 @@ describe('parsePresenterParameters', () => {
       stageScale: '0',
       textScale: 'NaN',
     })).toMatchObject({
+      backgroundColor: undefined,
       colorMode: 'light',
       emojiBackground: undefined,
       emojiLayer: 'background',
@@ -165,6 +170,7 @@ describe('parsePresenterParameters', () => {
 describe('buildPresenterIframeUrls', () => {
   it('maps prefixes and never forwards unknown values or a token', () => {
     const parameters = parsePresenterParameters({
+      background: '#010203',
       emojiBackground: '#abcdef',
       leaderboardBackground: '#fedcba',
       leaderboardCore: 'true',
@@ -189,6 +195,7 @@ describe('buildPresenterIframeUrls', () => {
     )
     expect(JSON.stringify(urls)).not.toContain('presenterRefresh')
     expect(JSON.stringify(urls)).not.toContain('stageScale')
+    expect(JSON.stringify(urls)).not.toContain('%23010203')
     expect(JSON.stringify(urls)).not.toContain('unknown')
     expect(JSON.stringify(urls)).not.toContain('secret')
   })
