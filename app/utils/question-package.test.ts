@@ -66,6 +66,25 @@ describe('question packages', () => {
     expect(stringifyQuestionPackage(packageValue)).toContain('\n  "format"')
   })
 
+  it('round-trips Markdown source and code-block line breaks', () => {
+    const questionText = '**Question**\n\n```ts\nconst value = 1\n```'
+    const answerText = '*Answer* with `code`'
+    const packageValue = createQuestionPackage([
+      createQuestionFixture({
+        answer_options: [
+          { text: { en: answerText } },
+          { text: { en: 'Other' } },
+        ],
+        question_text: { en: questionText },
+      }),
+    ])
+    const reparsed = JSON.parse(stringifyQuestionPackage(packageValue))
+
+    expect(reparsed.version).toBe(1)
+    expect(reparsed.questions[0].question_text.en).toBe(questionText)
+    expect(reparsed.questions[0].answer_options[0].text.en).toBe(answerText)
+  })
+
   it('counts package keys that will update existing questions', () => {
     const questions = [
       createQuestionFixture({ key: 'existing-question' }),

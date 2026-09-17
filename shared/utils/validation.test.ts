@@ -303,6 +303,36 @@ describe('endpoint schemas', () => {
     })
   })
 
+  it('preserves Markdown and internal line breaks in Version 1 question packages', () => {
+    const questionText = [
+      '**What does this return?**',
+      '',
+      '```ts',
+      'const value = 1',
+      'return value',
+      '```',
+    ].join('\n')
+    const answerText = '*One* with `number`'
+    const questionPackage = normalizeQuestionPackage({
+      format: 'stage-flow-tools.question-package',
+      version: 1,
+      questions: [
+        {
+          answer_options: [
+            { text: { en: answerText } },
+            { text: { en: 'Two' } },
+          ],
+          is_disabled: false,
+          question_text: { en: questionText },
+        },
+      ],
+    })
+
+    expect(questionPackage.version).toBe(1)
+    expect(questionPackage.questions[0]?.question_text.en).toBe(questionText)
+    expect(questionPackage.questions[0]?.answer_options[0]?.text.en).toBe(answerText)
+  })
+
   it('rejects unsupported packages and duplicate populated keys', () => {
     const basePackage = {
       format: 'stage-flow-tools.question-package',
