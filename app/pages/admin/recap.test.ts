@@ -46,6 +46,14 @@ const Icon = defineComponent({
   },
 })
 
+const QuizMarkdownText = defineComponent({
+  props: {
+    mode: { default: 'block', type: String },
+    text: { required: true, type: String },
+  },
+  setup: props => () => h('span', { 'data-markdown-mode': props.mode }, props.text),
+})
+
 const recap = {
   totals: {
     answeredQuestions: 3,
@@ -103,6 +111,7 @@ function renderPage() {
   app.component('AdminBackLink', AdminBackLink)
   app.component('Icon', Icon)
   app.component('NuxtLink', Passthrough)
+  app.component('QuizMarkdownText', QuizMarkdownText)
   app.component('UiButton', UiButton)
   app.component('UiPageTitle', Passthrough)
   document.body.append(container)
@@ -161,6 +170,31 @@ describe('quiz recap display mode', () => {
 
     expect(rendered.container.textContent).toContain('Beste deutsche Frage')
     expect(rendered.container.textContent).toContain('Rot')
+    rendered.app.unmount()
+  })
+
+  it('passes formatted questions and answer code blocks to the block renderer', async () => {
+    vi.stubGlobal('$fetch', vi.fn().mockResolvedValue({
+      ...recap,
+      highlights: recap.highlights.map(highlight => highlight.kind === 'closest-call'
+        ? {
+          ...highlight,
+          leadingOptions: [
+            { count: 5, text: { en: '```ts\nconst answer = 1\n```' } },
+            highlight.leadingOptions[1],
+          ],
+          question: { id: 'close', text: { en: '**Close question**' } },
+        }
+        : highlight),
+    }))
+    route.query = { language: 'en', refresh: '0' }
+
+    const rendered = renderPage()
+    await flushAsyncState()
+
+    const markdownTexts = Array.from(rendered.container.querySelectorAll('[data-markdown-mode="block"]'))
+    expect(markdownTexts.some(element => element.textContent === '**Close question**')).toBe(true)
+    expect(markdownTexts.some(element => element.textContent?.includes('const answer = 1'))).toBe(true)
     rendered.app.unmount()
   })
 
