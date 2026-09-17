@@ -11,6 +11,14 @@ const Icon = defineComponent({
   setup: props => () => h('svg', { 'data-icon': props.name }),
 })
 
+const QuizMarkdownText = defineComponent({
+  props: {
+    mode: { default: 'block', type: String },
+    text: { required: true, type: String },
+  },
+  setup: props => () => h('span', { 'data-markdown-mode': props.mode }, props.text),
+})
+
 const question: Question = {
   alreadyPublished: true,
   answer_options: [
@@ -54,7 +62,7 @@ function render(
   query: Record<string, unknown> = {},
 ) {
   return mount(PresenterQuizView, {
-    global: { components: { Icon } },
+    global: { components: { Icon, QuizMarkdownText } },
     props: {
       busy: false,
       currentState: state,
@@ -160,6 +168,36 @@ describe('PresenterQuizView', () => {
     expect(wrapper.find('.answer-emoji').classes()).toContain('is-hidden')
     expect(wrapper.find('[data-icon="ph:check-fat"]').exists()).toBe(false)
     expect(wrapper.find('.note-trigger').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('uses inline Markdown and removes Markdown punctuation from chart labels', async () => {
+    const markdownQuestion: Question = {
+      ...question,
+      answer_options: [
+        { emoji: '⭐', text: { de: '*Ja* mit `inline`', en: 'Yes' } },
+        { emoji: '💡', text: { de: '```ts\nerste Zeile\nzweite Zeile\n```', en: 'No' } },
+      ],
+      question_text: {
+        de: '**Frage**\n\n```ts\nconst value = 1\nreturn value\n```',
+        en: 'Question',
+      },
+    }
+    const wrapper = render()
+    await wrapper.setProps({
+      question: markdownQuestion,
+      questions: [
+        markdownQuestion,
+      ],
+    })
+
+    const markdownTexts = wrapper.findAllComponents(QuizMarkdownText)
+    expect(markdownTexts.every(markdownText => markdownText.props('mode') === 'inline')).toBe(true)
+    expect(markdownTexts[0]?.props('text')).toContain('const value = 1\nreturn value')
+    expect(markdownTexts[2]?.props('text')).toContain('erste Zeile\nzweite Zeile')
+    expect(wrapper.get('.chart-donut').attributes('aria-label')).toBe(
+      'Ja mit inline: 3 (75%), erste Zeile zweite Zeile: 1 (25%)',
+    )
     wrapper.unmount()
   })
 })

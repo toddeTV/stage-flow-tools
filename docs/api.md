@@ -247,6 +247,12 @@ Create new question (admin only). Localized question and answer text may use any
 
 English `answer_options[].text.en` values must be unique. Matching is case-insensitive.
 
+Question and answer strings support a restricted Markdown subset: `**bold**`,
+`*italic*`, inline code with backticks, and fenced code blocks. Raw HTML and
+other Markdown features are displayed as text. Presenter mode collapses fenced
+code into inline code; participant, live-results, and recap views keep code
+blocks scrollable.
+
 **Request:**
 
 ```json
@@ -278,10 +284,12 @@ key. An updated active question is broadcast with recalculated results.
   "questions": [
     {
       "key": "round-1-question-1",
-      "question_text": { "en": "Question" },
+      "question_text": {
+        "en": "**What does this return?**\n\n```ts\nconst value = 1\nreturn value\n```"
+      },
       "answer_options": [
-        { "text": { "en": "Yes" } },
-        { "text": { "en": "No" } }
+        { "text": { "en": "*One* with `number`" } },
+        { "text": { "en": "`undefined`" } }
       ],
       "note": { "en": "Optional" },
       "is_disabled": false
@@ -289,6 +297,9 @@ key. An updated active question is broadcast with recalculated results.
   ]
 }
 ```
+
+JSON strings encode code-block line breaks as `\n`. Exported Version 1
+packages preserve Markdown source and internal line breaks unchanged.
 
 **Response:**
 

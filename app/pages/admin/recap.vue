@@ -247,11 +247,11 @@ watch(refreshIntervalMs, restartPolling)
             <article
               v-for="highlight in visibleHighlights"
               :key="highlight.kind"
-              class="recap-card border-[3px] border-black p-5"
+              class="recap-card min-w-0 border-[3px] border-black p-5"
             >
               <p class="text-sm font-bold tracking-wide uppercase">{{ highlightTitle(highlight.kind) }}</p>
               <h3 class="mt-3 text-2xl leading-tight font-bold sm:text-3xl">
-                {{ localizedText(highlight.question.text) }}
+                <QuizMarkdownText :text="localizedText(highlight.question.text)" />
               </h3>
               <p class="mt-5 text-4xl leading-none font-bold tabular-nums">{{ highlightMetric(highlight) }}</p>
               <p class="mt-2 text-sm text-gray-600">{{ highlightDescription(highlight) }}</p>
@@ -259,8 +259,14 @@ watch(refreshIntervalMs, restartPolling)
                 v-if="highlight.kind === 'closest-call'"
                 class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2"
               >
-                <div v-for="option in highlight.leadingOptions" :key="option.text.en" class="border-2 border-black p-3">
-                  <dt class="text-sm leading-snug">{{ localizedText(option.text) }}</dt>
+                <div
+                  v-for="option in highlight.leadingOptions"
+                  :key="option.text.en"
+                  class="min-w-0 border-2 border-black p-3"
+                >
+                  <dt class="text-sm leading-snug">
+                    <QuizMarkdownText :text="localizedText(option.text)" />
+                  </dt>
                   <dd class="mt-1 text-2xl font-bold tabular-nums">{{ option.count }}</dd>
                 </div>
               </dl>
