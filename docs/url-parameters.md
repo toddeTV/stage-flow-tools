@@ -253,6 +253,7 @@ sends a boundary message to the parent presentation.
 
 | Parameter | Type | Default | Effect |
 | --- | --- | --- | --- |
+| `background` | Hex color (`#RRGGBB`) | Theme default | Overrides the presenter viewport background in both color modes. It is not forwarded to embedded pages. |
 | `colorMode` | `light` \| `dark` | `light` | Sets the local quiz theme and the inherited leaderboard and recap themes. |
 | `foregroundOpacity` | Number, clamped to `0`–`1` | `1` | Multiplies panel opacity without changing text or control opacity. |
 | `foregroundInsetX` | Non-negative number in pixels | `56` | Sets horizontal quiz content insets. |
@@ -302,6 +303,9 @@ Light quiz layout with background emojis and a leaderboard without technical par
 
 /admin/presenter?colorMode=dark&emojiLayer=foreground&foregroundOpacity=0.85
 Dark quiz layout with click-through emoji reactions above the content.
+
+/admin/presenter?colorMode=dark&background=%23020417
+Dark quiz layout with a custom presenter background.
 
 /admin/presenter?foregroundInsetX=32&foregroundInsetY=24&textScale=1.15&language=de
 German question content with smaller insets and larger quiz text.

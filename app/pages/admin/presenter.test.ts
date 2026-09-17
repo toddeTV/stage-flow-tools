@@ -117,6 +117,23 @@ describe('presenter page', () => {
     wrapper.unmount()
   })
 
+  it('uses one background parameter in light and dark mode without forwarding it', async () => {
+    route.query = { background: '#123456' }
+    const wrapper = render()
+    const viewport = wrapper.get('.presenter-viewport')
+
+    expect(viewport.attributes('data-color-mode')).toBe('light')
+    expect((viewport.element as HTMLElement).style.backgroundColor).toBe('#123456')
+    expect(wrapper.get('.emoji-layer iframe').attributes('src')).not.toContain('%23123456')
+
+    route.query = { background: '#abcdef', colorMode: 'dark' }
+    await nextTick()
+    expect(viewport.attributes('data-color-mode')).toBe('dark')
+    expect((viewport.element as HTMLElement).style.backgroundColor).toBe('#abcdef')
+    expect(wrapper.get('.emoji-layer iframe').attributes('src')).not.toContain('%23abcdef')
+    wrapper.unmount()
+  })
+
   it('passes reactive presenter polling seconds to the controller', async () => {
     route.query = { presenterRefresh: '0.5' }
     const wrapper = render()

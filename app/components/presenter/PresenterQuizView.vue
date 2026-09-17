@@ -9,6 +9,7 @@ interface DisplayAnswer {
   count: number
   emoji: string
   id: string
+  isCorrect: boolean
   label: string
   percent: number
 }
@@ -33,16 +34,16 @@ const emit = defineEmits<{
 }>()
 
 const chartColors = [
-  '#0F766E',
-  '#2563EB',
-  '#EA580C',
-  '#7C3AED',
-  '#DC2626',
-  '#0891B2',
-  '#16A34A',
-  '#BE123C',
-  '#4F46E5',
-  '#A16207',
+  '#0077BB',
+  '#EE7733',
+  '#009988',
+  '#EE3377',
+  '#33BBEE',
+  '#44AA99',
+  '#CCBB44',
+  '#AA4499',
+  '#332288',
+  '#999933',
 ]
 const languageStorageKey = 'stage-flow-tools-quiz-language'
 const { t } = useI18n()
@@ -127,6 +128,7 @@ const displayAnswers = computed<DisplayAnswer[]>(() => props.question.answer_opt
   count: liveAnswers.value[index]?.count ?? 0,
   emoji: option.emoji ?? liveAnswers.value[index]?.emoji ?? '',
   id: `${props.question.key}-${index}`,
+  isCorrect: option.emoji === '⭐',
   label: localizedText(option.text, selectedLanguage.value),
   percent: liveAnswers.value[index]?.percent ?? 0,
 })))
@@ -153,7 +155,7 @@ const chartSummary = computed(() => displayAnswers.value
   .join(', '))
 
 function answerStyle(answer: DisplayAnswer) {
-  return isReveal.value ? { borderColor: answer.color, borderWidth: '3px' } : undefined
+  return isReveal.value ? { '--presenter-answer-accent': answer.color } : undefined
 }
 
 async function openNoteModal() {
@@ -282,14 +284,26 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
             :class="isReveal ? 'reveal' : 'open'"
             :style="answerStyle(answer)"
           >
+            <span
+              v-if="isReveal && answer.isCorrect"
+              class="absolute top-1/2 -left-5.5 z-10 flex size-7 -translate-y-1/2 items-center justify-center
+                rounded-md border border-[var(--presenter-correct-marker-border)]
+                bg-[var(--presenter-correct-marker-background)] text-[var(--presenter-correct-marker-color)] shadow-sm"
+            >
+              <Icon aria-hidden="true" class="size-5 stroke-current stroke-[1px]" name="ph:check-fat" />
+            </span>
             <div class="answer-main-row">
               <span class="answer-label">{{ answer.label }}</span>
-              <span class="answer-emoji" :class="{ 'is-hidden': !isReveal }">{{ answer.emoji }}</span>
+              <span
+                v-if="answer.emoji && !answer.isCorrect"
+                class="answer-emoji"
+                :class="{ 'is-hidden': !isReveal }"
+              >{{ answer.emoji }}</span>
             </div>
             <div class="answer-stats" :class="{ 'is-hidden': !isReveal }">
-              <span>{{ t('votes', { count: answer.count }) }}</span>
-              <span>{{ answer.percent }}%</span>
+              <span>{{ t('answerStats', { count: answer.count, percent: answer.percent }) }}</span>
             </div>
+            <span v-if="isReveal && answer.isCorrect" class="sr-only">{{ t('correctAnswer') }}</span>
           </li>
         </ol>
       </section>
@@ -375,7 +389,8 @@ en:
   locked: Locked
   openNote: Open discussion note
   closeNote: Close discussion note
-  votes: "{count} votes"
+  answerStats: "{percent}% ({count} votes)"
+  correctAnswer: Correct answer
   votesShort: Votes
   waiting: Waiting
   liveDistribution: Live distribution
@@ -397,7 +412,8 @@ de:
   locked: Gesperrt
   openNote: Diskussionsnotiz öffnen
   closeNote: Diskussionsnotiz schließen
-  votes: "{count} Stimmen"
+  answerStats: "{percent}% ({count} Stimmen)"
+  correctAnswer: Richtige Antwort
   votesShort: Stimmen
   waiting: Wartet
   liveDistribution: Live-Verteilung
@@ -419,7 +435,8 @@ fr:
   locked: Verrouillée
   openNote: Ouvrir la note de discussion
   closeNote: Fermer la note de discussion
-  votes: "{count} votes"
+  answerStats: "{percent}% ({count} votes)"
+  correctAnswer: Bonne réponse
   votesShort: Votes
   waiting: En attente
   liveDistribution: Répartition en direct
@@ -441,7 +458,8 @@ ja:
   locked: ロック済み
   openNote: ディスカッションノートを開く
   closeNote: ディスカッションノートを閉じる
-  votes: "{count} 票"
+  answerStats: "{percent}%（{count}票）"
+  correctAnswer: 正解
   votesShort: 票
   waiting: 待機中
   liveDistribution: ライブ分布
@@ -487,7 +505,6 @@ ja:
 .eyebrow-row,
 .chart-card-header,
 .answer-main-row,
-.answer-stats,
 .note-modal-header {
   @apply flex items-center justify-between gap-3;
 }
@@ -567,13 +584,22 @@ ja:
 }
 
 .answer-list {
-  @apply m-0 flex flex-1 list-none flex-col gap-1.5 overflow-x-hidden overflow-y-auto p-0 pr-1;
+  @apply -ml-6 m-0 flex flex-1 list-none flex-col gap-1.5 overflow-x-hidden overflow-y-auto p-0 pr-1 pl-6;
 }
 
 .answer-card {
-  @apply rounded-[1rem] border px-3 py-2 transition-colors duration-200;
+  @apply relative rounded-[1rem] border px-3 py-2 transition-colors duration-200;
   background: rgb(var(--presenter-answer-rgb) / calc(.8 * var(--presenter-foreground-opacity)));
   border-color: var(--presenter-border);
+}
+
+.answer-card.reveal {
+  background: linear-gradient(
+    to right,
+    rgb(var(--presenter-answer-rgb) / calc(.8 * var(--presenter-foreground-opacity))) 0 90%,
+    var(--presenter-answer-accent) 90% 100%
+  );
+  padding-right: calc(10% + .75rem);
 }
 
 .answer-label {
@@ -592,7 +618,7 @@ ja:
 }
 
 .answer-stats {
-  @apply mt-1 min-h-[0.8rem] font-semibold uppercase tracking-[0.14em];
+  @apply mt-1 flex min-h-[0.8rem] items-center font-semibold uppercase tracking-[0.14em];
   color: var(--presenter-muted);
   font-size: .58em;
 }

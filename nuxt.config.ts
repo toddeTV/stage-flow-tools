@@ -101,6 +101,7 @@ export default defineNuxtConfig({
         'ph:arrow-up',
         'ph:caret-left',
         'ph:caret-right',
+        'ph:check-fat',
         'ph:eye',
         'ph:eye-slash',
         'ph:export',

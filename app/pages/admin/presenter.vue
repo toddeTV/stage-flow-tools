@@ -23,6 +23,7 @@ const presenterStyles = computed<CSSProperties>(() => ({
   '--presenter-inset-y': `${parameters.value.foregroundInsetY}px`,
   '--presenter-stage-scale': parameters.value.stageScale,
   '--presenter-text-scale': parameters.value.textScale,
+  backgroundColor: parameters.value.backgroundColor,
 }))
 const stageStyles = computed<CSSProperties>(() => {
   const inverseSize = `${100 / parameters.value.stageScale}%`
@@ -247,6 +248,9 @@ ja:
 .presenter-viewport {
   --presenter-answer-rgb: 241 245 249;
   --presenter-border: #e2e8f0;
+  --presenter-correct-marker-background: #fff;
+  --presenter-correct-marker-border: #94a3b8;
+  --presenter-correct-marker-color: #15803d;
   --presenter-control: #fff;
   --presenter-copy: #334155;
   --presenter-muted: #64748b;
@@ -259,6 +263,9 @@ ja:
 .presenter-viewport[data-color-mode='dark'] {
   --presenter-answer-rgb: 30 41 59;
   --presenter-border: #475569;
+  --presenter-correct-marker-background: #020617;
+  --presenter-correct-marker-border: #64748b;
+  --presenter-correct-marker-color: #86efac;
   --presenter-control: #1e293b;
   --presenter-copy: #cbd5e1;
   --presenter-muted: #cbd5e1;

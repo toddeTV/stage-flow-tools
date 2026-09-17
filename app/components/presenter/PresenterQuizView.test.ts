@@ -15,7 +15,7 @@ const question: Question = {
   alreadyPublished: true,
   answer_options: [
     { emoji: '⭐', text: { de: 'Ja', en: 'Yes' } },
-    { text: { de: 'Nein', en: 'No' } },
+    { emoji: '💡', text: { de: 'Nein', en: 'No' } },
   ],
   createdAt: '',
   id: 'one',
@@ -31,7 +31,7 @@ const state: PresenterCurrentState = {
   currentQuestion: {
     answer_options: [
       { count: 3, emoji: '⭐', percent: 75, text: { de: 'Ja', en: 'Yes' } },
-      { count: 1, percent: 25, text: { de: 'Nein', en: 'No' } },
+      { count: 1, emoji: '💡', percent: 25, text: { de: 'Nein', en: 'No' } },
     ],
     createdAt: '',
     id: 'one',
@@ -78,7 +78,11 @@ beforeEach(() => {
       setItem: (key: string, value: string) => storage.set(key, value),
     },
   })
-  vi.stubGlobal('useI18n', () => ({ t: (key: string) => key }))
+  vi.stubGlobal('useI18n', () => ({
+    t: (key: string, values?: { count: number, percent: number }) => key === 'answerStats'
+      ? `${values?.percent}% (${values?.count} votes)`
+      : key,
+  }))
   Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
     configurable: true,
     value() {
@@ -100,16 +104,20 @@ afterEach(() => {
 })
 
 describe('PresenterQuizView', () => {
-  it('renders only configured answer emojis in the reveal state and keeps mouse navigation accessible', async () => {
+  it('replaces correct stars with checks, keeps other reveal emojis, and preserves mouse navigation', async () => {
     const wrapper = render()
     const buttons = wrapper.findAll('.navigation-button')
+    const correctAnswer = wrapper.findAll('.answer-card')[0]
 
     expect(wrapper.text()).toContain('Frage')
-    expect(wrapper.text()).toContain('75%')
+    expect(wrapper.text()).toContain('75% (3 votes)')
     expect(wrapper.findAll('.answer-emoji').map(emoji => emoji.text())).toEqual([
-      '⭐',
-      '',
+      '💡',
     ])
+    expect(wrapper.find('[data-icon="ph:check-fat"]').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('⭐')
+    expect(correctAnswer?.attributes('style')).toContain('--presenter-answer-accent: #0077BB')
+    expect(correctAnswer?.attributes('style')).not.toContain('border')
     expect(buttons[0]?.attributes('aria-label')).toBe('previous')
     expect(buttons[1]?.attributes('aria-label')).toBe('next')
 
@@ -150,6 +158,7 @@ describe('PresenterQuizView', () => {
     const wrapper = render('open')
     expect(wrapper.find('.answer-stats').classes()).toContain('is-hidden')
     expect(wrapper.find('.answer-emoji').classes()).toContain('is-hidden')
+    expect(wrapper.find('[data-icon="ph:check-fat"]').exists()).toBe(false)
     expect(wrapper.find('.note-trigger').exists()).toBe(false)
     wrapper.unmount()
   })
