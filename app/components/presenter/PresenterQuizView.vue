@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { PresenterCurrentState, Question } from '~/types'
 import type { PresenterParameters } from '~/utils/presenter-parameters'
 import type { PresenterQuizPhase } from '~/utils/presenter-quiz-state'
+import { quizMarkdownToPlainText } from '~/utils/render-quiz-markdown.client'
 
 interface DisplayAnswer {
   color: string
@@ -151,7 +152,7 @@ const receivedAnswers = computed(() => currentQuestionMatches.value ? props.curr
 const participation = computed(() => currentQuestionMatches.value ? props.currentState?.receivedAnswersPercent ?? 0 : 0)
 const totalUsers = computed(() => props.currentState?.totalUsers ?? 0)
 const chartSummary = computed(() => displayAnswers.value
-  .map(answer => `${answer.label}: ${answer.count} (${answer.percent}%)`)
+  .map(answer => `${quizMarkdownToPlainText(answer.label)}: ${answer.count} (${answer.percent}%)`)
   .join(', '))
 
 function answerStyle(answer: DisplayAnswer) {
@@ -262,7 +263,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
         </div>
 
         <div class="question-heading-row">
-          <h1>{{ questionTitle }}</h1>
+          <h1><QuizMarkdownText mode="inline" :text="questionTitle" /></h1>
           <div class="note-trigger-slot">
             <button
               v-if="hasRevealNote"
@@ -293,7 +294,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
               <Icon aria-hidden="true" class="size-5 stroke-current stroke-[1px]" name="ph:check-fat" />
             </span>
             <div class="answer-main-row">
-              <span class="answer-label">{{ answer.label }}</span>
+              <QuizMarkdownText class="answer-label" mode="inline" :text="answer.label" />
               <span
                 v-if="answer.emoji && !answer.isCorrect"
                 class="answer-emoji"
@@ -363,7 +364,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
       <div class="note-modal-header">
         <div>
           <span class="note-title">{{ t('discussionNote') }}</span>
-          <h2 id="presenter-note-title">{{ questionTitle }}</h2>
+          <h2 id="presenter-note-title"><QuizMarkdownText mode="inline" :text="questionTitle" /></h2>
         </div>
         <button
           :aria-label="t('closeNote')"
@@ -603,7 +604,7 @@ ja:
 }
 
 .answer-label {
-  @apply leading-tight font-semibold;
+  @apply min-w-0 flex-1 leading-tight font-semibold;
   font-size: .95em;
 }
 
