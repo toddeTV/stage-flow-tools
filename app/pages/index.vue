@@ -291,7 +291,7 @@ async function sendQuickEmoji(emoji: string) {
       </div>
 
       <!-- Active Question -->
-      <div v-if="activeQuestion" class="border-4 border-black bg-white p-8">
+      <div v-if="activeQuestion" class="min-w-0 border-4 border-black bg-white p-8">
         <div class="mb-4 flex items-center justify-between">
           <UiButton size="small" variant="secondary" @click="refreshQuestion">
             🔄 {{ t('refreshButton') }}
@@ -305,8 +305,8 @@ async function sendQuickEmoji(emoji: string) {
           </div>
         </div>
         <div class="flex items-start justify-between">
-          <h2 class="flex-1 text-2xl leading-tight">
-            {{ getLocalizedText(activeQuestion.question_text) }}
+          <h2 class="min-w-0 flex-1 text-2xl leading-tight">
+            <QuizMarkdownText :text="getLocalizedText(activeQuestion.question_text)" />
           </h2>
         </div>
 
@@ -319,7 +319,7 @@ async function sendQuickEmoji(emoji: string) {
             :value="index"
             @update:model-value="submitAnswer"
           >
-            {{ getLocalizedText(option.text) }}
+            <QuizMarkdownText :text="getLocalizedText(option.text)" />
           </UiRadioOption>
         </div>
 
@@ -333,8 +333,8 @@ async function sendQuickEmoji(emoji: string) {
 
         <div v-if="selectedAnswer !== null && activeQuestion.is_locked" class="answer-banner">
           {{ t('yourAnswer') }}
-          <strong class="font-bold">
-            {{ getLocalizedText(activeQuestion.answer_options[selectedAnswer]?.text) }}
+          <strong class="mt-1 block min-w-0 font-bold">
+            <QuizMarkdownText :text="getLocalizedText(activeQuestion.answer_options[selectedAnswer]?.text)" />
           </strong>
         </div>
       </div>

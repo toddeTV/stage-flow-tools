@@ -284,8 +284,8 @@ async function resetAnswers() {
               </UiButton>
             </div>
           </div>
-          <h2 v-if="results" class="mt-5 text-3xl leading-tight">
-            {{ getLocalizedText(results.question.question_text) }}
+          <h2 v-if="results" class="mt-5 min-w-0 text-3xl leading-tight">
+            <QuizMarkdownText :text="getLocalizedText(results.question.question_text)" />
           </h2>
         </div>
 
@@ -297,15 +297,15 @@ async function resetAnswers() {
               :key="option"
               class="flex flex-col gap-2.5"
             >
-              <div class="flex items-center justify-between text-lg">
-                <span class="font-bold">
+              <div class="flex min-w-0 items-start justify-between gap-3 text-lg">
+                <span class="min-w-0 flex-1 font-bold">
                   <template v-if="scrambleResults">?</template>
-                  <template v-else>{{ getLocalizedOption(String(option)) }}</template>
+                  <QuizMarkdownText v-else :text="getLocalizedOption(String(option))" />
                   <span v-if="result.emoji && showEmoji" class="ml-2">
                     {{ result.emoji }}
                   </span>
                 </span>
-                <div class="flex items-center gap-2">
+                <div class="flex shrink-0 items-center gap-2">
                   <span class="border-2 border-black bg-gray-100 px-2.5 py-1 text-sm">
                     <template v-if="hideResults">?</template>
                     <template v-else>{{ result.count }}</template>
