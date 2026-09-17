@@ -276,7 +276,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
           </div>
         </div>
 
-        <ol class="answer-list" :class="{ reveal: isReveal }">
+        <ol class="answer-list">
           <li
             v-for="answer in displayAnswers"
             :key="answer.id"
@@ -284,12 +284,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
             :class="isReveal ? 'reveal' : 'open'"
             :style="answerStyle(answer)"
           >
-            <Icon
+            <span
               v-if="isReveal && answer.isCorrect"
-              aria-hidden="true"
-              class="absolute top-1/2 -left-2 z-10 size-8 -translate-y-1/2 text-[var(--presenter-text)] drop-shadow-sm"
-              name="ph:check-bold"
-            />
+              class="absolute top-1/2 -left-6 z-10 flex size-7 -translate-y-1/2 items-center justify-center
+                rounded-md border border-[var(--presenter-correct-marker-border)]
+                bg-[var(--presenter-correct-marker-background)] text-[var(--presenter-correct-marker-color)] shadow-sm"
+            >
+              <Icon aria-hidden="true" class="size-5 stroke-current stroke-[1px]" name="ph:check-fat" />
+            </span>
             <div class="answer-main-row">
               <span class="answer-label">{{ answer.label }}</span>
               <span
@@ -582,11 +584,7 @@ ja:
 }
 
 .answer-list {
-  @apply m-0 flex flex-1 list-none flex-col gap-1.5 overflow-x-hidden overflow-y-auto p-0 pr-1;
-}
-
-.answer-list.reveal {
-  @apply pl-3;
+  @apply m-0 flex flex-1 list-none flex-col gap-1.5 overflow-x-hidden overflow-y-auto p-0 pr-1 pl-6;
 }
 
 .answer-card {

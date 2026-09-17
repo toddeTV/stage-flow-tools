@@ -114,7 +114,7 @@ describe('PresenterQuizView', () => {
     expect(wrapper.findAll('.answer-emoji').map(emoji => emoji.text())).toEqual([
       '💡',
     ])
-    expect(wrapper.find('[data-icon="ph:check-bold"]').exists()).toBe(true)
+    expect(wrapper.find('[data-icon="ph:check-fat"]').exists()).toBe(true)
     expect(wrapper.text()).not.toContain('⭐')
     expect(correctAnswer?.attributes('style')).toContain('--presenter-answer-accent: #0077BB')
     expect(correctAnswer?.attributes('style')).not.toContain('border')
@@ -158,7 +158,7 @@ describe('PresenterQuizView', () => {
     const wrapper = render('open')
     expect(wrapper.find('.answer-stats').classes()).toContain('is-hidden')
     expect(wrapper.find('.answer-emoji').classes()).toContain('is-hidden')
-    expect(wrapper.find('[data-icon="ph:check-bold"]').exists()).toBe(false)
+    expect(wrapper.find('[data-icon="ph:check-fat"]').exists()).toBe(false)
     expect(wrapper.find('.note-trigger').exists()).toBe(false)
     wrapper.unmount()
   })
