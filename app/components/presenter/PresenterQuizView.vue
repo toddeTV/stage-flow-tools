@@ -286,7 +286,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
           >
             <span
               v-if="isReveal && answer.isCorrect"
-              class="absolute top-1/2 -left-6 z-10 flex size-7 -translate-y-1/2 items-center justify-center
+              class="absolute top-1/2 -left-5.5 z-10 flex size-7 -translate-y-1/2 items-center justify-center
                 rounded-md border border-[var(--presenter-correct-marker-border)]
                 bg-[var(--presenter-correct-marker-background)] text-[var(--presenter-correct-marker-color)] shadow-sm"
             >
@@ -584,7 +584,7 @@ ja:
 }
 
 .answer-list {
-  @apply m-0 flex flex-1 list-none flex-col gap-1.5 overflow-x-hidden overflow-y-auto p-0 pr-1 pl-6;
+  @apply -ml-6 m-0 flex flex-1 list-none flex-col gap-1.5 overflow-x-hidden overflow-y-auto p-0 pr-1 pl-6;
 }
 
 .answer-card {
