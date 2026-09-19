@@ -240,7 +240,7 @@ For `background`, encode the `#` character as `%23` in URLs.
 
 ## `/admin/presenter` Page
 
-`/admin/presenter` runs the complete quiz sequence in one iframe. It displays the emoji stream, each enabled
+`/admin/presenter` runs the complete quiz sequence in one iframe. It can display the emoji stream, each enabled
 question in queue order, the open and revealed states, the existing leaderboard, and the quiz recap. The left and
 right arrow keys and the visible navigation buttons follow this sequence:
 
@@ -262,7 +262,7 @@ sends a boundary message to the parent presentation.
 | `language` | Locale string | Automatic | Selects question content language before stored and browser preferences. |
 | `presenterRefresh` | Non-negative number in seconds | `2` | Refreshes presenter state at a decimal interval. Use `0` to disable periodic polling. Values between `0` and `0.1` use `0.1`. |
 | `stageScale` | Positive number | `1` | Scales the complete virtual presenter stage. Values below `1` create more logical space; values above `1` enlarge the interface. |
-| `emojiLayer` | `background` \| `foreground` | `background` | Places emoji below or above presentation content. Emoji layers never accept pointer input. |
+| `emojiLayer` | `background` \| `foreground` \| `none` | `background` | Places emoji below or above presentation content, or omits the emoji iframe entirely. `none` prevents the emoji WebSocket connection and animation from starting. Emoji layers never accept pointer input. |
 | `emojiScale` | Positive number | `0.3` | Passes `scale` to the embedded `/admin/emojis` page. |
 | `emojiOpacity` | Number, clamped to `0`–`1` | `0.8` | Passes `transparency` to the embedded emoji page. |
 | `emojiBackground` | Hex color (`#RRGGBB`) | Transparent | Passes `background` to the embedded emoji page. |
@@ -300,6 +300,9 @@ non-invertible values fall back to `1`.
 ```text
 /admin/presenter
 Light quiz layout with background emojis and a leaderboard without technical participant IDs.
+
+/admin/presenter?emojiLayer=none
+Quiz layout without an emoji iframe, connection, or animation.
 
 /admin/presenter?colorMode=dark&emojiLayer=foreground&foregroundOpacity=0.85
 Dark quiz layout with click-through emoji reactions above the content.

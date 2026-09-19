@@ -134,6 +134,18 @@ describe('presenter page', () => {
     wrapper.unmount()
   })
 
+  it('removes the emoji iframe when the layer is disabled', async () => {
+    const wrapper = render()
+    expect(wrapper.find('.emoji-layer').exists()).toBe(true)
+
+    route.query = { emojiLayer: 'none' }
+    await nextTick()
+
+    expect(wrapper.find('.emoji-layer').exists()).toBe(false)
+    expect(wrapper.findAll('iframe')).toHaveLength(0)
+    wrapper.unmount()
+  })
+
   it('passes reactive presenter polling seconds to the controller', async () => {
     route.query = { presenterRefresh: '0.5' }
     const wrapper = render()

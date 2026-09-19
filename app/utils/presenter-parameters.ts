@@ -24,7 +24,7 @@ export const PRESENTER_PARAMETER_DEFAULTS = {
 type PresenterQuery = Record<string, unknown>
 
 export type PresenterColorMode = 'dark' | 'light'
-export type PresenterEmojiLayer = 'background' | 'foreground'
+export type PresenterEmojiLayer = 'background' | 'foreground' | 'none'
 
 export interface PresenterParameters {
   backgroundColor?: string
@@ -89,6 +89,10 @@ function colorMode(value: string | undefined, fallback: PresenterColorMode): Pre
   return value === 'dark' || value === 'light' ? value : fallback
 }
 
+function emojiLayer(value: string | undefined): PresenterEmojiLayer {
+  return value === 'foreground' || value === 'none' ? value : PRESENTER_PARAMETER_DEFAULTS.emojiLayer
+}
+
 function booleanValue(value: string | undefined, fallback: boolean): boolean {
   if (value === 'true') return true
   if (value === 'false') return false
@@ -128,7 +132,7 @@ export function parsePresenterParameters(query: PresenterQuery): PresenterParame
     backgroundColor: color(singleValue(query, 'background')),
     colorMode: parsedColorMode,
     emojiBackground: color(singleValue(query, 'emojiBackground')),
-    emojiLayer: singleValue(query, 'emojiLayer') === 'foreground' ? 'foreground' : 'background',
+    emojiLayer: emojiLayer(singleValue(query, 'emojiLayer')),
     emojiOpacity: opacity(singleValue(query, 'emojiOpacity'), PRESENTER_PARAMETER_DEFAULTS.emojiOpacity),
     emojiScale: positiveNumber(singleValue(query, 'emojiScale'), PRESENTER_PARAMETER_DEFAULTS.emojiScale),
     foregroundInsetX: nonNegativeNumber(

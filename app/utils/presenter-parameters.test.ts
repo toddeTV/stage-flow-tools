@@ -86,6 +86,16 @@ describe('parsePresenterParameters', () => {
     expect(parsePresenterParameters({ presenterRefresh: '2.25' }).presenterRefresh).toBe(2.25)
   })
 
+  it('accepts only one supported emoji layer', () => {
+    expect(parsePresenterParameters({ emojiLayer: 'foreground' }).emojiLayer).toBe('foreground')
+    expect(parsePresenterParameters({ emojiLayer: 'none' }).emojiLayer).toBe('none')
+    expect(parsePresenterParameters({ emojiLayer: 'overlay' }).emojiLayer).toBe('background')
+    expect(parsePresenterParameters({ emojiLayer: [
+      'none',
+      'foreground',
+    ] }).emojiLayer).toBe('background')
+  })
+
   it('accepts every positive stage scale with a representable inverse', () => {
     expect(parsePresenterParameters({ stageScale: '0.000001' }).stageScale).toBe(0.000001)
     expect(parsePresenterParameters({ stageScale: '10' }).stageScale).toBe(10)

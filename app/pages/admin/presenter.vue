@@ -111,6 +111,7 @@ onBeforeUnmount(() => {
   >
     <div class="presenter-stage" :style="stageStyles">
       <div
+        v-if="parameters.emojiLayer !== 'none'"
         aria-hidden="true"
         class="emoji-layer"
         :class="parameters.emojiLayer === 'foreground' ? 'is-foreground' : 'is-background'"
