@@ -20,6 +20,7 @@ import {
 } from 'vite-plus/test'
 import LeaderboardPage from './leaderboard.vue'
 import AdminBackLink from '~/components/admin/AdminBackLink.vue'
+import AdminLeaderboardWinnerDialog from '~/components/admin/AdminLeaderboardWinnerDialog.vue'
 
 const confettiCreate = vi.hoisted(() => vi.fn())
 
@@ -113,6 +114,7 @@ function renderPage() {
   const container = document.createElement('div')
   const app = createApp(LeaderboardPage)
   app.component('AdminBackLink', AdminBackLink)
+  app.component('AdminLeaderboardWinnerDialog', AdminLeaderboardWinnerDialog)
   app.component('UiButton', UiButton)
   app.component('Icon', Icon)
   app.component('NuxtLink', Passthrough)
