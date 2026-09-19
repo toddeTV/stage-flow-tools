@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0](https://github.com/toddeTV/stage-flow-tools/compare/v1.0.0...v1.1.0) (2026-09-19)
+
+
+### Features (feat)
+
+* allow disabling presenter emoji layers ([#102](https://github.com/toddeTV/stage-flow-tools/issues/102)) ([183a1ef](https://github.com/toddeTV/stage-flow-tools/commit/183a1ef6db2ba618ce5da879f85466b9f2ae9586))
+* refine presenter reveal and background ([#100](https://github.com/toddeTV/stage-flow-tools/issues/100)) ([2dad1c7](https://github.com/toddeTV/stage-flow-tools/commit/2dad1c73d2d301e37476b5f6cf90bd93be525c96))
+* render sanitized quiz markdown ([#101](https://github.com/toddeTV/stage-flow-tools/issues/101)) ([5e379eb](https://github.com/toddeTV/stage-flow-tools/commit/5e379eb14fcd2b4dd02f9a80d89cef2a14ecfb62))
+
+
+### Maintenance (chore)
+
+* remove release override after v1.0.0 ([#98](https://github.com/toddeTV/stage-flow-tools/issues/98)) ([00f6538](https://github.com/toddeTV/stage-flow-tools/commit/00f6538cb801950d00fbe2b3da7915d521aef2da))
+
 ## 1.0.0 (2026-09-15)
 
 
