@@ -13,6 +13,7 @@ definePageMeta({
 })
 
 const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 const parameters = computed(() => parsePresenterParameters(route.query))
 const presenterRefresh = computed(() => parameters.value.presenterRefresh)
@@ -61,6 +62,10 @@ const errorMessage = computed(() => errorKind.value ? t(errorMessageKey(errorKin
 
 function errorMessageKey(kind: PresenterErrorKind) {
   return kind === 'load' ? 'loadError' : kind === 'refresh' ? 'refreshError' : 'syncError'
+}
+
+function setLanguage(language: string) {
+  void router.replace({ query: { ...route.query, language } })
 }
 
 function isEditableTarget(target: EventTarget | null) {
@@ -144,6 +149,7 @@ onBeforeUnmount(() => {
           :question="currentQuestion"
           :question-index="step.questionIndex"
           :questions="questions"
+          @language-change="setLanguage"
           @navigate="navigate"
         />
 

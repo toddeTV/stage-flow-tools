@@ -59,6 +59,8 @@ const state: PresenterCurrentState = {
   receivedAnswersPercent: 80,
   totalUsers: 5,
 }
+const localStorageGetItem = vi.fn()
+const localStorageSetItem = vi.fn()
 
 function render(
   phase: 'open' | 'reveal' = 'reveal',
@@ -89,12 +91,13 @@ function render(
 }
 
 beforeEach(() => {
-  const storage = new Map<string, string>()
+  localStorageGetItem.mockReset()
+  localStorageSetItem.mockReset()
   Object.defineProperty(window, 'localStorage', {
     configurable: true,
     value: {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => storage.set(key, value),
+      getItem: localStorageGetItem,
+      setItem: localStorageSetItem,
     },
   })
   vi.stubGlobal('useI18n', () => ({
@@ -102,6 +105,7 @@ beforeEach(() => {
       ? `${values?.percent}% (${values?.count} votes)`
       : key,
   }))
+  vi.stubGlobal('navigator', { language: 'en-US' })
   Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
     configurable: true,
     value() {
@@ -123,6 +127,42 @@ afterEach(() => {
 })
 
 describe('PresenterQuizView', () => {
+  it('prefers the URL language and keeps a manual choice out of local storage', async () => {
+    const wrapper = render('reveal', { language: 'de' })
+    const languagePicker = wrapper.get<HTMLSelectElement>('#presenter-quiz-language')
+
+    expect(languagePicker.element.value).toBe('de')
+    await languagePicker.setValue('en')
+
+    expect(wrapper.emitted('language-change')).toEqual([
+      [
+        'en',
+      ],
+    ])
+    expect(localStorageGetItem).not.toHaveBeenCalled()
+    expect(localStorageSetItem).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('follows later URL language changes and the browser fallback', async () => {
+    const wrapper = render('reveal', { language: 'de' })
+    const languagePicker = wrapper.get<HTMLSelectElement>('#presenter-quiz-language')
+
+    expect(languagePicker.element.value).toBe('de')
+    expect(wrapper.text()).toContain('Frage')
+
+    await wrapper.setProps({ parameters: parsePresenterParameters({ language: 'en' }) })
+
+    expect(languagePicker.element.value).toBe('en')
+    expect(wrapper.text()).toContain('Question')
+
+    await wrapper.setProps({ parameters: parsePresenterParameters({}) })
+
+    expect(languagePicker.element.value).toBe('en')
+    expect(wrapper.text()).toContain('Question')
+    wrapper.unmount()
+  })
+
   it('replaces correct stars with checks, keeps other reveal emojis, and preserves mouse navigation', async () => {
     const wrapper = render()
     const buttons = wrapper.findAll('.navigation-button')

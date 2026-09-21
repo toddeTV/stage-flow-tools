@@ -10,6 +10,7 @@ import PresenterPage from './presenter.vue'
 
 const route = reactive({ query: {} as Record<string, unknown> })
 const navigate = vi.fn()
+const routerReplace = vi.fn()
 const pollingIntervalInputs: Array<Readonly<Ref<number>>> = []
 const question: Question = {
   alreadyPublished: true,
@@ -56,12 +57,19 @@ const Icon = defineComponent({
 })
 const PresenterQuizView = defineComponent({
   emits: [
+    'language-change',
     'navigate',
   ],
-  setup: (_props, { emit }) => () => h('button', {
-    class: 'quiz-stub',
-    onClick: () => emit('navigate', 'next'),
-  }, 'quiz'),
+  setup: (_props, { emit }) => () => h('div', [
+    h('button', {
+      class: 'quiz-stub',
+      onClick: () => emit('navigate', 'next'),
+    }, 'quiz'),
+    h('button', {
+      class: 'language-stub',
+      onClick: () => emit('language-change', 'fr'),
+    }, 'language'),
+  ]),
 })
 
 function render() {
@@ -79,6 +87,7 @@ beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
   route.query = {}
   navigate.mockReset()
+  routerReplace.mockReset()
   pollingIntervalInputs.length = 0
   controller.step.value = { kind: 'question', phase: 'open', questionIndex: 0 }
   controller.isTransitioning.value = false
@@ -86,6 +95,7 @@ beforeEach(() => {
   vi.stubGlobal('definePageMeta', vi.fn())
   vi.stubGlobal('useI18n', () => ({ t: (key: string) => key }))
   vi.stubGlobal('useRoute', () => route)
+  vi.stubGlobal('useRouter', () => ({ replace: routerReplace }))
 })
 
 afterEach(() => {
@@ -95,6 +105,25 @@ afterEach(() => {
 })
 
 describe('presenter page', () => {
+  it('writes a manual quiz-language choice into the existing URL query', async () => {
+    route.query = {
+      colorMode: 'dark',
+      recapCount: '2',
+    }
+    const wrapper = render()
+
+    await wrapper.get('.language-stub').trigger('click')
+
+    expect(routerReplace).toHaveBeenCalledWith({
+      query: {
+        colorMode: 'dark',
+        language: 'fr',
+        recapCount: '2',
+      },
+    })
+    wrapper.unmount()
+  })
+
   it('scales a reactive virtual stage without changing the iframe URLs', async () => {
     route.query = { stageScale: '0.75' }
     const wrapper = render()
