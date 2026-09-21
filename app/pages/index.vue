@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { safeParse } from 'valibot'
 import type { Question } from '~/types'
+import { useQuizParticipant } from '~/composables/useQuizParticipant'
 
 definePageMeta({
   layout: 'default',
@@ -10,77 +10,13 @@ definePageMeta({
   localeSwitcher: true,
 })
 
-const userNickname = ref('')
-const nicknameInput = ref('')
-const emojiInput = ref('')
-const answerError = ref('')
-const emojiError = ref('')
-const nicknameError = ref('')
 const { activeQuestion, selectedAnswer } = useQuizSocket()
-const { t } = useI18n()
-const { getLocalizedText } = useLocalization()
-const {
-  getErrorCode,
-  getErrorMessage,
-  getIssueMessage,
-} = useApiError()
-
-// Load nickname from localStorage
-onMounted(() => {
-  const savedNickname = localStorage.getItem('quiz-nickname')
-  if (savedNickname) {
-    userNickname.value = savedNickname
-  }
-})
-
-// Set nickname
-function setNickname() {
-  nicknameError.value = ''
-
-  const result = safeParse(NicknameSchema, nicknameInput.value)
-
-  if (!result.success) {
-    nicknameError.value = getIssueMessage(getValidationIssues(result.issues)[0]!)
-    return
-  }
-
-  userNickname.value = result.output
-  localStorage.setItem('quiz-nickname', userNickname.value)
-}
-
-// Change nickname
-async function changeNickname() {
-  if (activeQuestion.value) {
-    const userId = localStorage.getItem('quiz-user-id')
-    if (userId) {
-      try {
-        await $fetch('/api/answers/retract', {
-          method: 'POST',
-          body: {
-            user_id: userId,
-            question_id: activeQuestion.value.id,
-          },
-        })
-      }
-      catch (error) {
-        logger_error('Failed to retract answer:', error)
-      }
-    }
-  }
-  userNickname.value = ''
-  nicknameInput.value = ''
-  selectedAnswer.value = null
-  localStorage.removeItem('quiz-nickname')
-}
-
-// Fetch active question
 const { data: _question, refresh: refreshQuestion } = await useFetch<Question>('/api/questions/active', {
   onResponse({ response }) {
     const questionData = response._data
     if (questionData && !('message' in questionData)) {
       activeQuestion.value = questionData
 
-      // Check if user has already answered
       const savedAnswer = sessionStorage.getItem(`answer-${questionData.id}`)
       if (savedAnswer) {
         selectedAnswer.value = parseInt(savedAnswer, 10)
@@ -96,120 +32,28 @@ const { data: _question, refresh: refreshQuestion } = await useFetch<Question>('
     selectedAnswer.value = null
   },
 })
-
-// Submit answer
-async function submitAnswer() {
-  if (selectedAnswer.value === null || !activeQuestion.value || activeQuestion.value.is_locked) {
-    return
-  }
-
-  answerError.value = ''
-
-  try {
-    const userId = localStorage.getItem('quiz-user-id')
-    if (!userId) {
-      // This should not happen, but as a fallback
-      logger_error('User ID not found')
-      return
-    }
-    await $fetch('/api/answers/submit', {
-      method: 'POST',
-      body: {
-        user_id: userId,
-        user_nickname: userNickname.value,
-        selected_answer: activeQuestion.value.answer_options[selectedAnswer.value]?.text,
-      },
-    })
-
-    // Save answer in sessionStorage
-    sessionStorage.setItem(`answer-${activeQuestion.value.id}`, selectedAnswer.value.toString())
-  }
-  catch (error: unknown) {
-    logger_error('Failed to submit answer:', error)
-    answerError.value = getErrorMessage(error)
-    // If locked, reload question
-    if (getErrorCode(error) === 'quiz.question_locked') {
-      await refreshQuestion()
-    }
-  }
-}
-
-// Submit emoji
-const isEmojiCooldown = ref(false)
-const cooldownTimerInSec = ref(0)
-let cooldownEndTime = 0
-
-const { pause, resume } = useIntervalFn(() => {
-  const remaining = cooldownEndTime - Date.now()
-  if (remaining <= 0) {
-    isEmojiCooldown.value = false
-    cooldownTimerInSec.value = 0
-    pause()
-  }
-  else {
-    cooldownTimerInSec.value = remaining / 1000
-  }
-}, 10, { immediate: false })
-
-async function submitEmoji() {
-  if (isEmojiCooldown.value) {
-    return
-  }
-
-  emojiError.value = ''
-
-  const result = safeParse(EmojiSchema, emojiInput.value)
-
-  if (!result.success) {
-    emojiError.value = getIssueMessage(getValidationIssues(result.issues)[0]!)
-    return
-  }
-
-  try {
-    const userId = localStorage.getItem('quiz-user-id')
-    if (!userId) {
-      logger_error('User ID not found')
-      return
-    }
-
-    await $fetch('/api/emojis/submit', {
-      method: 'POST',
-      body: {
-        emoji: result.output,
-        user_id: userId,
-      },
-    })
-
-    // Start cooldown
-    const config = useRuntimeConfig()
-    const cooldownMs = config.public.emojiCooldownMs
-
-    isEmojiCooldown.value = true
-    cooldownEndTime = Date.now() + cooldownMs
-    cooldownTimerInSec.value = cooldownMs / 1000
-    resume()
-  }
-  catch (error) {
-    logger_error('Failed to submit emoji:', error)
-    alert(getErrorMessage(error))
-  }
-}
-
-const quickEmojis = [
-  '👍',
-  '❤️',
-  '😂',
-  '🤔',
-  '👏',
-  '🥁',
-  '❓',
-]
-
-async function sendQuickEmoji(emoji: string) {
-  if (isEmojiCooldown.value) return
-  emojiInput.value = emoji
-  await submitEmoji()
-}
+const {
+  answerError,
+  changeNickname,
+  cooldownTimerInSec,
+  emojiError,
+  emojiInput,
+  getLocalizedText,
+  isEmojiCooldown,
+  nicknameError,
+  nicknameInput,
+  quickEmojis,
+  sendQuickEmoji,
+  setNickname,
+  submitAnswer,
+  submitEmoji,
+  t,
+  userNickname,
+} = useQuizParticipant({
+  activeQuestion,
+  refreshQuestion,
+  selectedAnswer,
+})
 </script>
 
 <template>

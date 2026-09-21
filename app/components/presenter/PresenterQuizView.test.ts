@@ -4,6 +4,9 @@ import { defineComponent, h, nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import type { PresenterCurrentState, Question } from '~/types'
 import { parsePresenterParameters } from '~/utils/presenter-parameters'
+import PresenterQuizNoteDialog from './PresenterQuizNoteDialog.vue'
+import PresenterQuizQuestionPanel from './PresenterQuizQuestionPanel.vue'
+import PresenterQuizResultsPanel from './PresenterQuizResultsPanel.vue'
 import PresenterQuizView from './PresenterQuizView.vue'
 
 const Icon = defineComponent({
@@ -62,7 +65,15 @@ function render(
   query: Record<string, unknown> = {},
 ) {
   return mount(PresenterQuizView, {
-    global: { components: { Icon, QuizMarkdownText } },
+    global: {
+      components: {
+        Icon,
+        PresenterQuizNoteDialog,
+        PresenterQuizQuestionPanel,
+        PresenterQuizResultsPanel,
+        QuizMarkdownText,
+      },
+    },
     props: {
       busy: false,
       currentState: state,

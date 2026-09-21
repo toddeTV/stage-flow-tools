@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Results } from '~/types'
+import { useAdminResults } from '~/composables/useAdminResults'
 
 definePageMeta({
   layout: 'default',
@@ -10,215 +11,34 @@ definePageMeta({
 })
 
 const { results } = useQuizSocket('results')
-const { t } = useI18n()
-const { getLocalizedText } = useLocalization()
-const { getErrorMessage } = useApiError()
-
-// Look up the localized display text for a result key (English answer text)
-function getLocalizedOption(enKey: string): string {
-  const option = results.value?.question.answer_options.find(o => o.text.en === enKey)
-  return option ? getLocalizedText(option.text) : enKey
-}
-
-const route = useRoute()
 const {
   coreViewStyles,
   isCoreView,
 } = useDisplayParameters()
-
-const visibility = ref(
-  (route.query.visibility as string) || 'hide',
-)
-const hideResults = ref(visibility.value.startsWith('hide'))
-
-const scramble = ref(
-  (route.query.scramble as string) || 'show',
-)
-const scrambleResults = ref(scramble.value.startsWith('hide'))
-
-const showEmoji = ref(false)
-const isTogglingLock = ref(false)
-const isPickingUser = ref(false)
-const isResettingAnswers = ref(false)
-const hasHydratedOnce = ref(false)
-
-// Fetch initial results
 const { data: fetchedResults, refresh: refreshResults } = await useFetch<Results>('/api/results/current')
-
-watch(fetchedResults, (newResults) => {
-  if (newResults && newResults.question) {
-    results.value = newResults
-  }
-  else {
-    results.value = null
-  }
-}, { immediate: true })
-
-// Watch for new questions and update visibility based on the mode
-watch(() => results.value?.question.id, (newId, oldId) => {
-  if (!newId || newId === oldId) return
-
-  // Skip the very first hydration (undefined -> newId)
-  if (oldId === undefined && !hasHydratedOnce.value) {
-    hasHydratedOnce.value = true
-    return
-  }
-  hasHydratedOnce.value = true
-
-  if (visibility.value === 'hide') {
-    hideResults.value = true
-  }
-  else if (visibility.value === 'show') {
-    hideResults.value = false
-  }
-
-  if (scramble.value === 'hide') {
-    scrambleResults.value = true
-  }
-  else if (scramble.value === 'show') {
-    scrambleResults.value = false
-  }
-
-  showEmoji.value = false
+const {
+  displayResults,
+  getBarWidth,
+  getLocalizedOption,
+  getLocalizedText,
+  getPercentage,
+  hideResults,
+  isPickingUser,
+  isResettingAnswers,
+  isTogglingLock,
+  pickRandomUser,
+  publishNextQuestion,
+  resetAnswers,
+  scrambleResults,
+  showEmoji,
+  t,
+  toggleLock,
+  unpublishActiveQuestion,
+} = useAdminResults({
+  fetchedResults,
+  refreshResults,
+  results,
 })
-
-// Shuffle order when scramble is active, or persist shuffled order when
-// scramble=hide was set via URL (so unchecking the checkbox reveals texts
-// without jumping answers back to their original positions).
-const useShuffledOrder = computed(() =>
-  scramble.value === 'hide' || scrambleResults.value,
-)
-
-const displayResults = computed(() => {
-  if (!results.value) return []
-  const entries = Object.entries(results.value.results)
-  if (useShuffledOrder.value) {
-    return seededShuffle(entries, results.value.question.id)
-  }
-  return entries
-})
-
-// Calculate bar width
-function getBarWidth(count: number) {
-  if (!results.value || results.value.totalVotes === 0) {
-    return 0
-  }
-
-  const maxVotes = Math.max(...Object.values(results.value.results).map(r => r.count))
-  if (maxVotes === 0) {
-    return 0
-  }
-
-  // Scale to max 90% width for best visual
-  return (count / maxVotes) * 90
-}
-
-// Calculate percentage
-function getPercentage(count: number) {
-  if (!results.value || results.value.totalVotes === 0) {
-    return 0
-  }
-  return Math.round((count / results.value.totalVotes) * 100)
-}
-
-function pickRandomUser(option: string) {
-  if (isPickingUser.value) return
-  isPickingUser.value = true
-
-  // Optimistic UI: Assume success and let the websocket handle the notification.
-  $fetch('/api/results/pick-random-user', {
-    method: 'POST',
-    body: {
-      questionId: results.value?.question.id,
-      option,
-    },
-  }).catch((error: unknown) => {
-    logger_error('Failed to pick random user:', error)
-    alert(getErrorMessage(error))
-  }).finally(() => {
-    isPickingUser.value = false
-  })
-}
-
-async function toggleLock() {
-  if (!results.value?.question || isTogglingLock.value) return
-
-  isTogglingLock.value = true
-  const originalState = results.value.question.is_locked
-
-  // Optimistically update the UI
-  results.value.question.is_locked = !results.value.question.is_locked
-
-  try {
-    await $fetch('/api/questions/toggle-lock', {
-      method: 'POST',
-      body: { questionId: results.value.question.id },
-    })
-    // The websocket will eventually confirm the state, but the UI is already updated.
-  }
-  catch (error: unknown) {
-    results.value.question.is_locked = originalState // Revert on error
-    logger_error('Failed to toggle lock status from results page', error)
-    alert(getErrorMessage(error))
-  }
-  finally {
-    isTogglingLock.value = false
-  }
-}
-
-async function publishNextQuestion() {
-  try {
-    await $fetch('/api/questions/publish-next', {
-      method: 'POST',
-    })
-    // The websocket will update the state, no need to manually refresh here.
-  }
-  catch (error: unknown) {
-    logger_error('Failed to publish next question', error)
-    alert(getErrorMessage(error))
-  }
-}
-
-async function unpublishActiveQuestion() {
-  try {
-    await $fetch('/api/questions/unpublish-active', {
-      method: 'POST',
-    })
-    // The websocket will update the state.
-  }
-  catch (error: unknown) {
-    logger_error('Failed to unpublish active question', error)
-    alert(getErrorMessage(error))
-  }
-}
-
-/**
- * Reset all answers for the active results question after confirmation and refresh the view.
- * @returns Promise<void>
- */
-async function resetAnswers() {
-  if (!results.value?.question || isResettingAnswers.value) return
-
-  if (!window.confirm(t('confirmResetAnswers'))) {
-    return
-  }
-
-  isResettingAnswers.value = true
-
-  try {
-    await $fetch('/api/answers/reset', {
-      method: 'POST',
-    })
-    await refreshResults()
-  }
-  catch (error: unknown) {
-    logger_error('Failed to reset answers from results page', error)
-    alert(getErrorMessage(error))
-  }
-  finally {
-    isResettingAnswers.value = false
-  }
-}
 </script>
 
 <template>

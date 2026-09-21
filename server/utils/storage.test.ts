@@ -29,6 +29,7 @@ import {
   deleteAllQuestions,
   deleteQuestion,
   getAnswersForQuestion,
+  getCurrentResults,
   getNextPublishableQuestion,
   getQuestions,
   getResultsForQuestion,
@@ -401,6 +402,25 @@ describe('question queue storage', () => {
       await removePeer(resultsPeer)
       await removePeer(emojiPeer)
     }
+  })
+
+  it('combines published questions and submitted answers in current results through the storage facade', async () => {
+    const question = await createQuestion(createInputQuestion('current-results'))
+    await publishQuestion(question.id)
+    await submitAnswer({
+      question_id: question.id,
+      selected_answer: { en: 'One' },
+      user_id: 'participant-id',
+      user_nickname: 'Participant',
+    })
+
+    await expect(getCurrentResults()).resolves.toMatchObject({
+      question: { id: question.id },
+      results: {
+        One: { count: 1 },
+      },
+      totalVotes: 1,
+    })
   })
 
   it('requires a confirmed reset before replacing answer options with submitted answers', async () => {
