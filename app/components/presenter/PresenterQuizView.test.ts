@@ -105,6 +105,7 @@ beforeEach(() => {
       ? `${values?.percent}% (${values?.count} votes)`
       : key,
   }))
+  vi.stubGlobal('navigator', { language: 'en-US' })
   Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
     configurable: true,
     value() {
@@ -140,6 +141,25 @@ describe('PresenterQuizView', () => {
     ])
     expect(localStorageGetItem).not.toHaveBeenCalled()
     expect(localStorageSetItem).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('follows later URL language changes and the browser fallback', async () => {
+    const wrapper = render('reveal', { language: 'de' })
+    const languagePicker = wrapper.get<HTMLSelectElement>('#presenter-quiz-language')
+
+    expect(languagePicker.element.value).toBe('de')
+    expect(wrapper.text()).toContain('Frage')
+
+    await wrapper.setProps({ parameters: parsePresenterParameters({ language: 'en' }) })
+
+    expect(languagePicker.element.value).toBe('en')
+    expect(wrapper.text()).toContain('Question')
+
+    await wrapper.setProps({ parameters: parsePresenterParameters({}) })
+
+    expect(languagePicker.element.value).toBe('en')
+    expect(wrapper.text()).toContain('Question')
     wrapper.unmount()
   })
 

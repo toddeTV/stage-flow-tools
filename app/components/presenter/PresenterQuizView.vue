@@ -133,16 +133,25 @@ function selectLanguage(event: Event) {
   emit('language-change', language)
 }
 
-watch(availableLanguages, (options) => {
-  const languages = options.map(option => option.code)
-  if (availableCandidate(selectedLanguage.value, languages)) return
-  const preferred = [
-    normalizeLocaleCode(props.parameters.language),
-    normalizeLocaleCode(navigator.language),
-    'en',
-  ].map(candidate => availableCandidate(candidate, languages)).find(Boolean)
-  selectedLanguage.value = preferred ?? languages[0] ?? 'en'
-}, { immediate: true })
+watch(
+  [
+    availableLanguages,
+    () => props.parameters.language,
+  ],
+  ([
+    options,
+    urlLanguage,
+  ]) => {
+    const languages = options.map(option => option.code)
+    const preferred = [
+      normalizeLocaleCode(urlLanguage),
+      normalizeLocaleCode(navigator.language),
+      'en',
+    ].map(candidate => availableCandidate(candidate, languages)).find(Boolean)
+    selectedLanguage.value = preferred ?? languages[0] ?? 'en'
+  },
+  { immediate: true },
+)
 
 watch([
   isReveal,
