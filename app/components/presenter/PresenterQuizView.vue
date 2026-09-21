@@ -21,6 +21,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  'language-change': [language: string]
   navigate: [direction: 'next' | 'previous']
 }>()
 
@@ -36,7 +37,6 @@ const chartColors = [
   '#332288',
   '#999933',
 ]
-const languageStorageKey = 'stage-flow-tools-quiz-language'
 const { t } = useI18n()
 const isNoteModalOpen = ref(false)
 const selectedLanguage = ref('')
@@ -77,15 +77,6 @@ function localeLabel(locale: string) {
   }
   catch {
     return locale.toUpperCase()
-  }
-}
-
-function storedLanguage() {
-  try {
-    return normalizeLocaleCode(window.localStorage.getItem(languageStorageKey))
-  }
-  catch {
-    return undefined
   }
 }
 
@@ -134,26 +125,24 @@ function openNoteModal() {
   if (hasRevealNote.value) isNoteModalOpen.value = true
 }
 
+function selectLanguage(event: Event) {
+  const language = (event.target as HTMLSelectElement).value
+  if (!language) return
+
+  selectedLanguage.value = language
+  emit('language-change', language)
+}
+
 watch(availableLanguages, (options) => {
   const languages = options.map(option => option.code)
   if (availableCandidate(selectedLanguage.value, languages)) return
   const preferred = [
     normalizeLocaleCode(props.parameters.language),
-    storedLanguage(),
     normalizeLocaleCode(navigator.language),
     'en',
   ].map(candidate => availableCandidate(candidate, languages)).find(Boolean)
   selectedLanguage.value = preferred ?? languages[0] ?? 'en'
 }, { immediate: true })
-
-watch(selectedLanguage, (language) => {
-  try {
-    window.localStorage.setItem(languageStorageKey, language)
-  }
-  catch {
-    // Restricted iframe storage must not block the presenter.
-  }
-})
 
 watch([
   isReveal,
@@ -193,7 +182,7 @@ watch([
 
     <div v-if="availableLanguages.length" class="language-picker">
       <label for="presenter-quiz-language">{{ t('language') }}</label>
-      <select id="presenter-quiz-language" v-model="selectedLanguage">
+      <select id="presenter-quiz-language" :value="selectedLanguage" @change="selectLanguage">
         <option v-for="language in availableLanguages" :key="language.code" :value="language.code">
           {{ language.label }}
         </option>
