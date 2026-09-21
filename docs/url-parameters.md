@@ -259,7 +259,7 @@ sends a boundary message to the parent presentation.
 | `foregroundInsetX` | Non-negative number in pixels | `56` | Sets horizontal quiz content insets. |
 | `foregroundInsetY` | Non-negative number in pixels | `40` | Sets vertical quiz content insets. The fixed 18-pixel lower reserve remains. |
 | `textScale` | Positive number | `1` | Scales quiz typography and presenter controls. |
-| `language` | Locale string | Automatic | Selects question content language before stored and browser preferences. |
+| `language` | Locale string | Automatic | Selects question content language before the browser preference. A manual picker choice updates `language` in the current URL while preserving its other parameters. |
 | `presenterRefresh` | Non-negative number in seconds | `2` | Refreshes presenter state at a decimal interval. Use `0` to disable periodic polling. Values between `0` and `0.1` use `0.1`. |
 | `stageScale` | Positive number | `1` | Scales the complete virtual presenter stage. Values below `1` create more logical space; values above `1` enlarge the interface. |
 | `emojiLayer` | `background` \| `foreground` \| `none` | `background` | Places emoji below or above presentation content, or omits the emoji iframe entirely. `none` prevents the emoji WebSocket connection and animation from starting. Emoji layers never accept pointer input. |
@@ -284,7 +284,7 @@ sends a boundary message to the parent presentation.
 Invalid numeric values use the documented defaults. Opacity values are clamped. Repeated query values and invalid
 enums or colors are rejected. `presenterRefresh` accepts decimal seconds such as `0.5`; `0` disables only periodic
 polling, while initial loading, focus refreshes, and navigation still synchronize state. The `language` fallback
-order is URL value, local storage, browser locale, English, then the first available question language.
+order is URL value, browser locale, English, then the first available question language.
 The selected `language` is also forwarded to the recap for its question and answer-option text.
 
 `stageScale` uses the iframe dimensions automatically; no aspect-ratio parameter is required. Its logical dimensions
