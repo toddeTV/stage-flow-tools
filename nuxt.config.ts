@@ -79,6 +79,12 @@ const configModules: InputConfig<NuxtConfig, ConfigLayerMeta> = {
 
   i18n: {
     defaultLocale: 'en',
+    detectBrowserLanguage: {
+      cookieKey: 'i18n_redirected_disabled',
+      fallbackLocale: 'en',
+      redirectOn: 'root',
+      useCookie: false,
+    },
     locales: [
       { code: 'en', language: 'en-US', name: 'English' },
       { code: 'de', language: 'de-DE', name: 'Deutsch' },
