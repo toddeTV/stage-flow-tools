@@ -27,11 +27,16 @@ export function createPresenterEmbedController(options: {
   let sessionId: string | undefined;
   let parentOrigin: string | undefined;
   let lastRequestId = 0;
+  let lastContextId = 0;
   let selection: Selection = null;
   let ownedKey: string | undefined;
-  let pending: Request | undefined;
+  let pending: Request[] = [];
   let running = false;
   let stopped = false;
+
+  function isCurrent(request: Request) {
+    return !stopped && request.requestId >= lastContextId;
+  }
 
   function reply(request: Request, status: 'ready' | 'closed' | 'error') {
     if (stopped || !parentOrigin) return;
@@ -52,13 +57,13 @@ export function createPresenterEmbedController(options: {
 
   async function activate(request: Request, key: string, reopen: boolean) {
     const state = await options.api.getState(key);
-    if (stopped || request.requestId !== lastRequestId) return;
+    if (!isCurrent(request)) return;
     if (state.question.key !== key || state.question.is_disabled)
       throw new Error('Invalid selection');
     if (reopen || !state.question.alreadyPublished) {
       await options.api.publish(key);
       ownedKey = key;
-      if (!stopped && request.requestId === lastRequestId)
+      if (isCurrent(request))
         await options.api.setLocked(state.question.id, false);
     } else if (state.question.is_active) ownedKey = key;
   }
@@ -70,7 +75,7 @@ export function createPresenterEmbedController(options: {
         await options.api.close(ownedKey);
         ownedKey = undefined;
       }
-      if (stopped || request.requestId !== lastRequestId) return;
+      if (!isCurrent(request)) return;
       if (key) await activate(request, key, false);
       reply(request, key ? 'ready' : 'closed');
       return;
@@ -80,7 +85,7 @@ export function createPresenterEmbedController(options: {
       await activate(request, request.questionKey, true);
     else {
       const state = await options.api.getState(request.questionKey);
-      if (stopped || request.requestId !== lastRequestId) return;
+      if (!isCurrent(request)) return;
       if (
         !state.question.is_active ||
         state.question.key !== request.questionKey
@@ -95,9 +100,8 @@ export function createPresenterEmbedController(options: {
     if (running) return;
     running = true;
     try {
-      while (pending && !stopped) {
-        const request = pending;
-        pending = undefined;
+      while (pending.length && !stopped) {
+        const request = pending.shift()!;
         try {
           await process(request);
         } catch {
@@ -143,9 +147,12 @@ export function createPresenterEmbedController(options: {
     )
       return;
     lastRequestId = command.requestId;
-    if (command.type === 'stage-flow-tools:context')
+    if (command.type === 'stage-flow-tools:context') {
       selection = command.selection;
-    pending = command;
+      lastContextId = command.requestId;
+      pending = [];
+    }
+    pending.push(command);
     void drain();
   }
 
@@ -153,7 +160,7 @@ export function createPresenterEmbedController(options: {
     handleMessage,
     stop: () => {
       stopped = true;
-      pending = undefined;
+      pending = [];
     },
   };
 }

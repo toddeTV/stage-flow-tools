@@ -179,6 +179,112 @@ describe('scoped presenter bridge', () => {
     expect(s.api.setLocked).not.toHaveBeenCalledWith('one-id', false);
   });
 
+  it.each([
+    'close',
+    'read',
+    'publish',
+  ] as const)(
+    'runs reveal after context activation with a delayed %s',
+    async (phase) => {
+      const s = setup();
+      s.connect();
+      s.context(1, 'one');
+      await vi.waitFor(() =>
+        expect(s.reply).toHaveBeenCalledWith(
+          expect.objectContaining({ requestId: 1, status: 'ready' }),
+          expect.any(String),
+        ),
+      );
+      let release!: () => void;
+      const delay = new Promise<void>((resolve) => { release = resolve; });
+      const method = phase === 'read' ? s.api.getState : s.api[phase];
+      if (phase === 'read') {
+        const original = s.api.getState.getMockImplementation()!;
+        s.api.getState.mockImplementationOnce(async (key: string) => {
+          await delay;
+          return original(key);
+        });
+      } else {
+        const original = s.api[phase].getMockImplementation()!;
+        s.api[phase].mockImplementationOnce(async (key: string) => {
+          await delay;
+          return original(key);
+        });
+      }
+      s.context(2, 'two');
+      await vi.waitFor(() => expect(method).toHaveBeenCalledWith(
+        phase === 'close' ? 'one' : 'two',
+      ));
+      s.send({
+        type: 'stage-flow-tools:action', sessionId: 'session',
+        requestId: 3, questionKey: 'two', action: 'reveal',
+      });
+      release();
+      await vi.waitFor(() => expect(s.reply).toHaveBeenCalledWith(
+        expect.objectContaining({ requestId: 3, status: 'ready' }),
+        expect.any(String),
+      ));
+      expect(s.states.get('one')!.question.is_active).toBe(false);
+      expect(s.states.get('two')!.question.is_active).toBe(true);
+      expect(s.states.get('two')!.question.is_locked).toBe(true);
+      expect(s.api.setLocked.mock.calls.slice(-2)).toEqual([
+        [
+          'two-id',
+          false,
+        ],
+        [
+          'two-id',
+          true,
+        ],
+      ]);
+    },
+  );
+
+  it('preserves a pending context when its reveal action arrives', async () => {
+    const s = setup();
+    let release!: (state: Results) => void;
+    s.api.getState.mockImplementationOnce(() => new Promise((resolve) => {
+      release = resolve;
+    }));
+    s.connect();
+    s.context(1, 'one');
+    s.context(2, 'two');
+    s.send({
+      type: 'stage-flow-tools:action', sessionId: 'session',
+      requestId: 3, questionKey: 'two', action: 'reveal',
+    });
+    release(s.states.get('one')!);
+    await vi.waitFor(() => expect(s.reply).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId: 3, status: 'ready' }),
+      expect.any(String),
+    ));
+    expect(s.api.publish).toHaveBeenCalledExactlyOnceWith('two');
+    expect(s.states.get('two')!.question.is_locked).toBe(true);
+  });
+
+  it('discards queued contexts and their actions when a newer context leaves', async () => {
+    const s = setup();
+    let release!: (state: Results) => void;
+    s.api.getState.mockImplementationOnce(() => new Promise((resolve) => {
+      release = resolve;
+    }));
+    s.connect();
+    s.context(1, 'one');
+    s.context(2, 'two');
+    s.send({
+      type: 'stage-flow-tools:action', sessionId: 'session',
+      requestId: 3, questionKey: 'two', action: 'reveal',
+    });
+    s.context(4, null);
+    release(s.states.get('one')!);
+    await vi.waitFor(() => expect(s.reply).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId: 4, status: 'closed' }),
+      expect.any(String),
+    ));
+    expect(s.api.publish).not.toHaveBeenCalled();
+    expect(s.api.setLocked).not.toHaveBeenCalled();
+  });
+
   it('rejects disabled selections and stops processing when destroyed', async () => {
     const s = setup();
     s.states.get('one')!.question.is_disabled = true;
