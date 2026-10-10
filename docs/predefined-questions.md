@@ -21,12 +21,6 @@ database before retrying.
 
 ## Question Packages
 
-The admin questions page exports Version 1 JSON packages. A package contains a
-format marker, version, and ordered questions with their optional `key` and
-`is_disabled` queue setting. It does not contain answers, technical IDs, or
-lifecycle state.
-
-Importing a package adds questions with new or missing keys at the end of the
-queue. A matching key updates that question's text, options, note, and disabled
-setting while retaining its answers and lifecycle state. The complete import is
-atomic.
+See [Questions: Question packages](features/questions.md#question-packages) for
+export, import preview, key matching, and answer retention. The
+[import API](api.md#post-apiquestionsimport) defines the package contract.
