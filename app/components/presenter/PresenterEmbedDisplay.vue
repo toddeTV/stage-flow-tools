@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { LocalizedString, Results } from '~/types';
 import { parsePresenterParameters } from '~/utils/presenter-parameters';
 
@@ -67,19 +67,26 @@ async function refresh() {
       failed.value = false;
     }
   } catch {
-    if (!stopped) failed.value = true;
+    if (!stopped && requestedKey === key.value) failed.value = true;
   } finally {
     refreshing = false;
+    if (!stopped && requestedKey !== key.value) void refresh();
   }
 }
 
 onMounted(() => {
   void refresh();
-  if (parameters.value.presenterRefresh > 0)
-    timer = setInterval(
-      () => void refresh(),
-      parameters.value.presenterRefresh * 1000,
-    );
+  watch(key, () => void refresh());
+  watch(
+    () => parameters.value.presenterRefresh,
+    (seconds) => {
+      if (timer) clearInterval(timer);
+      timer = seconds > 0
+        ? setInterval(() => void refresh(), seconds * 1000)
+        : undefined;
+    },
+    { immediate: true },
+  );
 });
 onBeforeUnmount(() => {
   stopped = true;
