@@ -39,6 +39,8 @@ import {
   QuestionAnswerOptionsResetRequiredError,
   submitAnswer,
   toggleQuestionDisabled,
+  toggleQuestionLock,
+  unpublishActiveQuestion,
   updateQuestion,
 } from './storage'
 import {
@@ -97,6 +99,30 @@ afterEach(() => {
 })
 
 describe('question queue storage', () => {
+  it('closes only the expected active key and preserves votes across close/reopen', async () => {
+    const one = await createQuestion(createInputQuestion('one'));
+    const two = await createQuestion(createInputQuestion('two'));
+    await publishQuestion('one');
+    await submitAnswer({
+      question_id: one.id,
+      user_id: 'synthetic',
+      user_nickname: 'Synthetic',
+      selected_answer: { en: 'One' },
+    });
+    await toggleQuestionLock(one.id, true);
+    await toggleQuestionLock(one.id, true);
+    expect(
+      (await getQuestions()).find((item) => item.id === one.id)?.is_locked,
+    ).toBe(true);
+    await publishQuestion('two');
+    expect(await unpublishActiveQuestion('one')).toBeUndefined();
+    expect((await getCurrentResults())?.question.id).toBe(two.id);
+    await unpublishActiveQuestion('two');
+    expect((await getResultsForQuestion(one.id))?.totalVotes).toBe(1);
+    await publishQuestion('one');
+    await toggleQuestionLock(one.id, false);
+    expect((await getCurrentResults())?.totalVotes).toBe(1);
+  });
   it('appends questions, swaps adjacent positions, and skips disabled questions', async () => {
     const first = await createQuestion(createInputQuestion('first'))
     const second = await createQuestion(createInputQuestion('second'))

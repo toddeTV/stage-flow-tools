@@ -1,10 +1,11 @@
 import { WebSocketChannel } from '~/types'
+import { UnpublishQuestionSchema } from '#shared/utils/validation'
 
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
-  await readValidatedRequestBody(event, EmptyRequestSchema)
+  const input = await readValidatedRequestBody<{ expectedKey?: string } | undefined>(event, UnpublishQuestionSchema)
 
-  const deactivated = await unpublishActiveQuestion()
+  const deactivated = await unpublishActiveQuestion(input?.expectedKey)
 
   if (deactivated) {
     // Broadcast that there is no active question
