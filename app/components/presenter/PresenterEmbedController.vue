@@ -1,14 +1,26 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { safeParse } from 'valibot';
 import type { Results } from '~/types';
 import { createPresenterEmbedController } from '~/utils/presenter-embed-controller';
+import { PresenterEmbedCommandSchema } from '#shared/utils/validation';
 
 const error = ref(false);
 let controller: ReturnType<typeof createPresenterEmbedController> | undefined;
+let pendingConnect: Pick<MessageEvent, 'data' | 'source' | 'origin'> | undefined;
 let stopped = false;
 
 function handleMessage(event: MessageEvent) {
-  controller?.handleMessage(event);
+  if (controller) controller.handleMessage(event);
+  else if (event.source === window.parent && !error.value) {
+    const parsed = safeParse(PresenterEmbedCommandSchema, event.data);
+    if (parsed.success && parsed.output.type === 'stage-flow-tools:connect')
+      pendingConnect = {
+        data: parsed.output,
+        source: event.source,
+        origin: event.origin,
+      };
+  }
 }
 
 onMounted(async () => {
@@ -41,13 +53,17 @@ onMounted(async () => {
       },
       reply: (data, origin) => window.parent.postMessage(data, origin),
     });
+    if (pendingConnect) controller.handleMessage(pendingConnect);
+    pendingConnect = undefined;
   } catch {
+    pendingConnect = undefined;
     error.value = true;
   }
 });
 
 onBeforeUnmount(() => {
   stopped = true;
+  pendingConnect = undefined;
   window.removeEventListener('message', handleMessage);
   controller?.stop();
 });
