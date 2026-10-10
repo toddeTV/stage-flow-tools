@@ -392,3 +392,41 @@ onSlideEnter(focusPresenter)
 
 `nextSlide()` and `prevSlide(true)` come from Slidev's
 [`useNav()` navigation API](https://github.com/slidevjs/slidev/blob/main/packages/client/composables/useNav.ts).
+
+## Scoped controller and display modes
+
+`/admin/presenter?embed=controller` is an authenticated, persistent control bridge.
+It does not start the legacy queue. Keep it mounted across slideshow navigation.
+It accepts messages only from its parent window and exact origins configured in
+`NUXT_PRESENTER_PARENT_ORIGINS`. No token belongs in the slideshow URL or bundle.
+
+`/admin/presenter?embed=display&questionKey=<package-key>&mode=quiz|status` is
+read-only. `questionKey` is the stable imported package key, not the generated
+technical ID. It polls selected aggregates, including closed questions, without
+publishing, reopening or changing quiz state. It accepts `language`, `colorMode`
+and `presenterRefresh`. Zero refresh disables periodic polling. Status mode
+shows the `Finished` option count separately from all responses; status options
+should not have the scoring marker `⭐`.
+
+The controller handshake is `stage-flow-tools:connect` with `sessionId`, followed
+by `stage-flow-tools:ready` with the same session. After ready, send
+`stage-flow-tools:context` with `sessionId`, increasing numeric `requestId`, and
+`selection: { questionKey, mode }` or `null` to leave. Requests are serialized;
+newer context replaces pending work. Replies are `stage-flow-tools:ack` with
+`sessionId`, `requestId`, `questionKey` (or `null`) and `status` (`ready`, `closed`,
+or `error`). Parents must validate iframe source, Stage Flow origin, session and
+request before using a reply.
+
+A first visit publishes an unpublished question and opens voting. An already
+active question retains its lock state. A previously published inactive question
+stays closed and shows retained results. Send `stage-flow-tools:action` with
+`sessionId`, `requestId`, `questionKey`, and `action: reveal|reopen` for explicit
+control. Revealing locks voting; reopening preserves answers. No bridge operation
+resets answers. A context change closes only the question owned by that controller,
+using the expected-key close operation. Keep one controlling slideshow tab;
+notes and preview windows must use read-only displays.
+
+An expired login, rejected origin or disconnected iframe leaves slideshow
+navigation usable. Close voting before quitting the presentation: browser unload
+cannot guarantee completion of asynchronous cleanup. Existing no-embed presenter
+behavior is unchanged.

@@ -342,7 +342,7 @@ delete the answers and update the question in one transaction.
 
 ### POST `/api/questions/publish`
 
-Publish question as active by key (admin only). Clears existing answers and broadcasts to all WebSocket clients.
+Publish question as active by key (admin only). Preserves submitted answers and lock state, and broadcasts to all WebSocket clients.
 
 **Request:**
 
@@ -672,3 +672,24 @@ Errors use stable machine-readable codes. This is a breaking change from prose `
 `issues` is present only for schema failures. Each issue contains a stable code and a field path; array indexes are serialized as strings. Unexpected failures are logged server-side and return only `server.internal_error`.
 
 The supported code namespaces are `validation.*`, `auth.*`, `quiz.*`, `emoji.cooldown`, `answer.*`, `websocket.*`, `studio.*`, `route.not_found`, and `server.internal_error`. HTTP status codes retain their existing meanings.
+
+## Scoped presentation embeds
+
+`GET /api/admin/presenter/embed-config` returns `{ "allowedOrigins": [] }` for an
+admin-authenticated controller iframe. Set `NUXT_PRESENTER_PARENT_ORIGINS` to exact,
+comma-separated slideshow origins; empty disables parent control. This permission
+is independent of REST API CORS and grants no public API access.
+
+`GET /api/admin/presenter/question-state?key=<package-key>` returns the aggregate
+`Results` shape for that enabled question, including inactive questions and retained
+answers. Authentication is required. Unknown or disabled keys return
+`quiz.question_not_found`. Responses contain no participant answer rows or nicknames.
+
+`POST /api/questions/toggle-lock` additionally accepts optional `locked: boolean`
+with `questionId` to set a deterministic state. Omitting it retains toggle behavior.
+
+`POST /api/questions/unpublish-active` additionally accepts optional
+`{ "expectedKey": "package-key" }`. The active question is changed only when its
+key matches, using an atomic conditional update. A mismatch is a successful no-op
+and broadcasts nothing. Empty requests retain existing behavior. Answers are
+preserved in both cases.
