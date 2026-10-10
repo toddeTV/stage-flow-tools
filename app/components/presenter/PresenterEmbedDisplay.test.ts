@@ -1,6 +1,9 @@
 // @vitest-environment happy-dom
 import { mount, flushPromises } from '@vue/test-utils';
+import { parse } from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
+import QuizMarkdownText from '~/components/questions/QuizMarkdownText.vue';
+import { QuestionInputSchema } from '#shared/utils/validation';
 import PresenterEmbedDisplay from './PresenterEmbedDisplay.vue';
 
 afterEach(() => {
@@ -52,6 +55,34 @@ describe('read-only selected question display', () => {
     wrapper.unmount();
     await vi.advanceTimersByTimeAsync(10000);
     expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it('reveals a valid note without the selected locale or English', async () => {
+    const question = parse(QuestionInputSchema, {
+      key: 'one',
+      question_text: { en: 'Question' },
+      answer_options: [
+        { text: { en: 'A' } },
+        { text: { en: 'B' } },
+      ],
+      note: { fr: 'Note en français' },
+    });
+    vi.stubGlobal('useRoute', () => ({
+      query: { questionKey: 'one', mode: 'quiz', language: 'de', presenterRefresh: '0' },
+    }));
+    vi.stubGlobal('$fetch', vi.fn().mockResolvedValue({
+      question: { ...question, is_active: true, is_locked: true },
+      results: {},
+      totalVotes: 0,
+    }));
+    const renderError = vi.fn();
+    const wrapper = mount(PresenterEmbedDisplay, {
+      global: { components: { QuizMarkdownText }, config: { errorHandler: renderError } },
+    });
+    await flushPromises();
+    expect(renderError).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain('Note en français');
+    wrapper.unmount();
   });
 
   it('does not render another selected question when the response key differs', async () => {

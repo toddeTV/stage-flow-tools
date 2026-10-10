@@ -34,7 +34,11 @@ const finished = computed(() => results.value?.results.Finished?.count ?? 0);
 
 function text(value: LocalizedString) {
   const language = parameters.value.language ?? navigator.language;
-  return value[language] ?? value[language.split('-')[0]!] ?? value.en;
+  return value[language]
+    || value[language.split('-')[0]!]
+    || value.en
+    || Object.values(value).find(Boolean)
+    || '';
 }
 
 async function refresh() {
