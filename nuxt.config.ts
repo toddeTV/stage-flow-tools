@@ -34,6 +34,7 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
     emojiBatchTickMs: 150,
     emojiQueueMaxSize: 25000,
     jwtSecret: 'tryUJ0zQbstPbTOrezme+Fv+KndzDNRx5lmSeelr2ial2/2yV8HqLeQ2felJafqf',
+    presenterParentOrigins: '',
 
     // Public keys (available on both client and server)
     public: {

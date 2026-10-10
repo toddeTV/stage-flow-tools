@@ -1,4 +1,5 @@
 import {
+  and,
   eq,
   or,
 } from 'drizzle-orm'
@@ -144,17 +145,22 @@ export async function deleteAllQuestions(): Promise<number> {
 }
 
 /** Deactivate the active question (answers are preserved for potential re-publishing). */
-export async function unpublishActiveQuestion(): Promise<Question | undefined> {
+export async function unpublishActiveQuestion(expectedKey?: string): Promise<Question | undefined> {
   await initStorage()
 
   const activeQuestion = await getActiveQuestion()
 
-  if (activeQuestion) {
-    getDatabase()
+  if (activeQuestion && (!expectedKey || activeQuestion.key === expectedKey)) {
+    const updated = getDatabase()
       .update(questions)
       .set({ isActive: false })
-      .where(eq(questions.id, activeQuestion.id))
+      .where(and(eq(questions.id, activeQuestion.id), eq(questions.isActive, true),
+        ...(expectedKey ? [
+          eq(questions.key, expectedKey),
+        ] : [])))
       .run()
+
+    if (updated.changes === 0) return undefined
 
     return {
       ...activeQuestion,
@@ -165,7 +171,7 @@ export async function unpublishActiveQuestion(): Promise<Question | undefined> {
   return undefined
 }
 
-export async function toggleQuestionLock(questionId: string): Promise<Question | undefined> {
+export async function toggleQuestionLock(questionId: string, locked?: boolean): Promise<Question | undefined> {
   await initStorage()
 
   const question = getQuestionById(questionId)
@@ -173,13 +179,13 @@ export async function toggleQuestionLock(questionId: string): Promise<Question |
   if (question) {
     getDatabase()
       .update(questions)
-      .set({ isLocked: !question.is_locked })
+      .set({ isLocked: locked ?? !question.is_locked })
       .where(eq(questions.id, questionId))
       .run()
 
     return {
       ...question,
-      is_locked: !question.is_locked,
+      is_locked: locked ?? !question.is_locked,
     }
   }
 

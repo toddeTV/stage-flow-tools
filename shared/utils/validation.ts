@@ -209,7 +209,57 @@ export const PublishQuestionSchema = v.object({
 
 export const ToggleQuestionLockSchema = v.object({
   questionId: requiredTrimmedStringSchema,
+  locked: v.optional(v.boolean()),
 }, 'validation.invalid_type')
+
+export const UnpublishQuestionSchema = v.optional(v.strictObject({
+  expectedKey: v.optional(requiredTrimmedStringSchema),
+}), undefined)
+
+export const PresenterQuestionQuerySchema = v.strictObject({
+  key: requiredTrimmedStringSchema,
+})
+
+const EmbedSelectionSchema = v.strictObject({
+  questionKey: requiredTrimmedStringSchema,
+  mode: v.picklist([
+    'quiz',
+    'status',
+  ]),
+})
+const embedSession = v.pipe(v.string(), v.minLength(1), v.maxLength(100))
+const embedRequest = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(Number.MAX_SAFE_INTEGER))
+
+export const PresenterEmbedCommandSchema = v.variant('type', [
+  v.strictObject({ type: v.literal('stage-flow-tools:connect'), sessionId: embedSession }),
+  v.strictObject({
+    type: v.literal('stage-flow-tools:context'), sessionId: embedSession,
+    requestId: embedRequest, selection: v.nullable(EmbedSelectionSchema),
+  }),
+  v.strictObject({
+    type: v.literal('stage-flow-tools:action'), sessionId: embedSession,
+    requestId: embedRequest, questionKey: requiredTrimmedStringSchema,
+    action: v.picklist([
+      'reveal',
+      'reopen',
+    ]),
+  }),
+])
+
+/** Exact origins only; this opt-in permission is independent of REST CORS. */
+export const PresenterParentOriginsSchema = v.pipe(
+  v.string(),
+  v.transform(value => value.trim() ? [
+    ...new Set(value.split(',').map(origin => origin.trim())),
+  ] : []),
+  v.check(origins => origins.every((origin) => {
+    try {
+      const url = new URL(origin)
+      return (url.protocol === 'http:' || url.protocol === 'https:') && origin === url.origin && !origin.includes('*')
+    }
+    catch { return false }
+  })),
+)
 
 export const ToggleQuestionDisabledSchema = v.object({
   questionId: requiredTrimmedStringSchema,
