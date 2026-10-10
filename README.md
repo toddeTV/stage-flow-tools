@@ -22,22 +22,24 @@ Perfect for:
 
 ## Application Routes
 
-- **`/`** - Main quiz interface for participants
-- **`/admin`** - Admin overview with links to sub-pages
-- **`/admin/questions`** - Question management dashboard
-- **`/admin/presenter`** - Presentation-ready quiz, emoji, leaderboard, and recap flow with optional virtual-stage scaling; see its [iframe parameters and Slidev wrapper](docs/url-parameters.md#adminpresenter-page)
-- **`/admin/results`** - Live results display
-- **`/admin/leaderboard`** - Player leaderboard
-- **`/admin/recap`** - Post-quiz statistics and highlights
-- **`/admin/emojis`** - Floating emoji overlay
-- **`/admin/database`** - Embedded Drizzle Studio for database inspection
-- **`/legal-notice`** - Legal notice (Impressum)
-- **`/privacy-policy`** - Privacy policy (Datenschutzerklärung)
+- **`/`** - [Participant quiz interface](docs/features/participation.md)
+- **`/login`** - [Admin login](docs/features/admin-access.md)
+- **`/admin`** - [Admin overview with links to sub-pages](docs/features/admin-access.md)
+- **`/admin/questions`** - [Question management and packages](docs/features/questions.md)
+- **`/admin/presenter`** - [Quiz sequence, controller, and display embeds](docs/features/presenter.md)
+- **`/admin/results`** - [Live results and quiz controls](docs/features/results.md)
+- **`/admin/leaderboard`** - [Player leaderboard and winner draw](docs/features/leaderboard.md)
+- **`/admin/recap`** - [Post-quiz statistics and highlights](docs/features/recap.md)
+- **`/admin/emojis`** - [Floating emoji overlay](docs/features/emojis.md)
+- **`/admin/database`** - [Embedded Drizzle Studio for database inspection](docs/features/database-admin.md)
+- **`/legal-notice`** - [Legal notice (Impressum)](docs/features/legal-documents.md)
+- **`/privacy-policy`** - [Privacy policy (Datenschutzerklärung)](docs/features/legal-documents.md)
 
 ## Documentation
 
 For detailed information, see the [`/docs`](docs/) folder:
 
+- [Feature Guide](docs/features/README.md) - Capabilities, controls, parameters, and examples for every product area
 - [Quick Start Guide](docs/quick-start.md)
 - [Local Development Setup](docs/setup-local.md)
 - [Production Deployment](docs/setup-production.md)
