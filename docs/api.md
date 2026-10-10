@@ -429,9 +429,11 @@ question and results state.
 
 ### POST `/api/questions/unpublish-active`
 
-Deactivate the currently active question (admin only). Clears answers and broadcasts `null` as the new question.
+Deactivate the currently active question (admin only). Preserves answers and broadcasts `null` as the new question only when a question is deactivated.
 
-**Request:** No body required.
+**Request:** No body required, or an optional `{ "expectedKey": "package-key" }`.
+With `expectedKey`, the atomic update deactivates only the matching active question.
+A mismatch is a successful no-op and broadcasts nothing.
 
 **Response:**
 
@@ -444,7 +446,8 @@ Deactivate the currently active question (admin only). Clears answers and broadc
 
 ### POST `/api/questions/toggle-lock`
 
-Toggle answer lock on active question (admin only). Broadcasts lock status via WebSocket.
+Toggle a question's answer lock (admin only), or set it deterministically with
+optional `locked: boolean`. Broadcasts lock status via WebSocket.
 
 **Request:**
 
@@ -453,6 +456,9 @@ Toggle answer lock on active question (admin only). Broadcasts lock status via W
   "questionId": "string"
 }
 ```
+
+Omitting `locked` toggles the current state. Supplying `true` or `false` sets that
+state even when it already matches.
 
 ## Answers
 
@@ -685,11 +691,7 @@ is independent of REST API CORS and grants no public API access.
 answers. Authentication is required. Unknown or disabled keys return
 `quiz.question_not_found`. Responses contain no participant answer rows or nicknames.
 
-`POST /api/questions/toggle-lock` additionally accepts optional `locked: boolean`
-with `questionId` to set a deterministic state. Omitting it retains toggle behavior.
-
-`POST /api/questions/unpublish-active` additionally accepts optional
-`{ "expectedKey": "package-key" }`. The active question is changed only when its
-key matches, using an atomic conditional update. A mismatch is a successful no-op
-and broadcasts nothing. Empty requests retain existing behavior. Answers are
-preserved in both cases.
+See [toggle-lock](#post-apiquestionstoggle-lock) and
+[unpublish-active](#post-apiquestionsunpublish-active) for deterministic lock and
+expected-key close requests. The [Presenter guide](features/presenter.md) owns
+embed modes, parameters, lifecycle, and controller messaging.
