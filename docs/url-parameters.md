@@ -142,6 +142,6 @@ See [Presenter](features/presenter.md#access-and-prerequisites) for the current 
 
 See [Presenter](features/presenter.md#slidev-boundary-wrapper) for the current description.
 
-## Scoped controller and display modes
+## Presenter question selection
 
-See [Presenter](features/presenter.md#scoped-controller-and-display-modes) for the current description.
+See [Presenter selection](features/presenter.md#question-selection) and [parent-managed integration](features/presenter.md#parent-managed-slideshow-integration). The existing Presenter accepts independent entry, question-count, leaderboard, and recap settings.

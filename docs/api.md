@@ -123,7 +123,7 @@ This endpoint is meant for low-frequency use, such as a one-time fetch from pres
 
 ### GET `/api/admin/presenter/current-state`
 
-Get detailed presenter state for the active question (admin only).
+Get detailed presenter state for the active question (admin only). Optional `key=<stable-key>` selects an enabled question including its retained inactive aggregates. Unknown or disabled keys return `quiz.question_not_found`. The response keeps the same shape: `currentQuestion` contains the selection, and `hasActiveQuestion` indicates whether that question is active. `currentQuestion.alreadyPublished` records whether it has been published before.
 
 This endpoint is meant for polling, such as once per second from presenter slides.
 
@@ -679,19 +679,12 @@ Errors use stable machine-readable codes. This is a breaking change from prose `
 
 The supported code namespaces are `validation.*`, `auth.*`, `quiz.*`, `emoji.cooldown`, `answer.*`, `websocket.*`, `studio.*`, `route.not_found`, and `server.internal_error`. HTTP status codes retain their existing meanings.
 
-## Scoped presentation embeds
+## Parent-managed Presenter
 
-`GET /api/admin/presenter/embed-config` returns `{ "allowedOrigins": [] }` for an
-admin-authenticated controller iframe. Set `NUXT_PRESENTER_PARENT_ORIGINS` to exact,
-comma-separated slideshow origins; empty disables parent control. This permission
-is independent of REST API CORS and grants no public API access.
+`GET /api/admin/presenter/embed-config` returns `{ "allowedOrigins": [] }` after admin authentication. `NUXT_PRESENTER_PARENT_ORIGINS` contains exact slideshow origins; empty disables parent control. This permission is independent of REST API CORS.
 
-`GET /api/admin/presenter/question-state?key=<package-key>` returns the aggregate
-`Results` shape for that enabled question, including inactive questions and retained
-answers. Authentication is required. Unknown or disabled keys return
-`quiz.question_not_found`. Responses contain no participant answer rows or nicknames.
+`POST /api/questions/toggle-lock` accepts optional `locked: boolean` with `questionId` to set an explicit state. Omitting it preserves toggle behavior.
 
-See [toggle-lock](#post-apiquestionstoggle-lock) and
-[unpublish-active](#post-apiquestionsunpublish-active) for deterministic lock and
-expected-key close requests. The [Presenter guide](features/presenter.md) owns
-embed modes, parameters, lifecycle, and controller messaging.
+`POST /api/questions/unpublish-active` accepts optional `{ "expectedKey": "package-key" }`. An atomic conditional update closes only the matching active question. A mismatch is a successful no-op and emits no broadcast; empty requests retain existing behavior. Answers remain saved.
+
+The [Presenter guide](features/presenter.md#parent-managed-slideshow-integration) owns selection, parent messages, and lifecycle. The former `/api/admin/presenter/question-state` endpoint and split embed modes are removed; use `/api/admin/presenter/current-state?key=<stable-key>` and the existing Presenter view.
