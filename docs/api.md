@@ -427,6 +427,29 @@ question and results state.
 }
 ```
 
+### POST `/api/questions/reset`
+
+Reset the entire quiz (admin only). The questions page requires confirmation before
+calling this endpoint. One transaction permanently deletes all submitted answers and
+sets `alreadyPublished`, `is_active`, `is_locked`, and `is_disabled` to `false` for every
+question. Questions, IDs, content, and persisted queue order are preserved.
+
+**Request:** No body required, or `{}`. Other fields are rejected.
+
+**Response:**
+
+```json
+{
+  "resetQuestionCount": 3,
+  "success": true
+}
+```
+
+An empty or already-reset quiz succeeds. After storage completes, the endpoint cancels
+pending result updates, sends [`answers-reset`](websocket.md#answers-reset) for every
+question on the default channel, and broadcasts empty question and results state.
+The next automatic publication starts at the first question in the existing queue.
+
 ### POST `/api/questions/unpublish-active`
 
 Deactivate the currently active question (admin only). Preserves answers and broadcasts `null` as the new question only when a question is deactivated.

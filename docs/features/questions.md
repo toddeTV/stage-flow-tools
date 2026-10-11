@@ -14,8 +14,25 @@ Use `/admin/questions` with [admin access](admin-access.md). Question and answer
 - Publish a selected question, publish the next enabled queue item, or unpublish the active question.
 - Move questions up or down and enable or disable them for automatic publication.
 - Lock or unlock voting and reset the active question's answers after confirmation.
+- Reset the entire quiz after confirmation, preserving all questions and their queue order.
 - Delete an individual question or clear all questions after confirmation.
 - Export questions to JSON or preview and confirm a package import.
+
+### Reset Quiz
+
+Choose **Reset Quiz** in the question-list actions, then confirm the dialog. This
+permanently deletes all submitted answers and resets every question to not asked,
+inactive, unlocked, and enabled. Questions and their current order remain intact;
+**Publish Next** starts again at the first question. Canceling leaves the quiz unchanged.
+
+During the request, reset controls and competing page actions are disabled. Escape
+and backdrop clicks cannot close the pending dialog. A failed request keeps the dialog
+open with an error. Participant nicknames and browser identities remain unchanged.
+Connected participant browsers clear cached answers for every question; browsers
+disconnected during the reset do not receive this cache cleanup.
+
+See the [reset API](../api.md#post-apiquestionsreset) and
+[answer-reset events](../websocket.md#answers-reset) for the technical contracts.
 
 ### Question packages
 
@@ -52,6 +69,7 @@ Export a prepared queue, then import that file on another installation. Retain s
 - [Questions page](../../app/pages/admin/questions.vue) and [admin composable](../../app/composables/useAdminQuestions.ts) own editing and lifecycle controls.
 - [Import wizard](../../app/components/questions/QuestionPackageImportWizard.vue) and [package utilities](../../app/utils/question-package.ts) own preview and export.
 - [Questions page tests](../../app/pages/admin/questions.test.ts), [wizard tests](../../app/components/questions/QuestionPackageImportWizard.test.ts), and [package tests](../../app/utils/question-package.test.ts) verify these workflows.
+- [Quiz reset route tests](../../test/reset-quiz.integration.test.ts) verify authorization, validation, and confirmed live updates.
 - [Storage tests](../../server/utils/storage.test.ts) verify queue ordering, answer retention, and imports; [validation tests](../../shared/utils/validation.test.ts) verify accepted input.
 - [Quiz Markdown tests](../../app/components/questions/QuizMarkdownText.test.ts) and [renderer tests](../../app/utils/render-quiz-markdown.test.ts) verify formatting and sanitization.
 
