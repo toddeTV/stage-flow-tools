@@ -73,6 +73,7 @@ beforeEach(() => {
   fetchedQuestions.value = []
   fetchError.value = undefined
   refresh.mockImplementation(async () => {
+    fetchError.value = undefined
     fetchedQuestions.value = [
       { ...question, alreadyPublished: false, is_active: false, is_disabled: false, is_locked: false },
     ]
@@ -182,15 +183,68 @@ describe('admin quiz reset confirmation', () => {
     expect(fetch).toHaveBeenCalledTimes(2)
   })
 
-  it('reports a failed refresh after the server confirms the reset', async () => {
-    refresh.mockImplementationOnce(async () => { fetchError.value = new Error('test refresh failure') })
+  it.each([
+    'error state',
+    'rejection',
+  ])('recovers a failed refresh through %s without repeating the confirmed reset', async (failure) => {
+    refresh.mockImplementationOnce(async () => {
+      const error = new Error('test refresh failure')
+      if (failure === 'rejection') throw error
+      fetchError.value = error
+    })
     await renderQuestions()
     await findButton(wrapper, 'resetQuiz').trigger('click')
     await findButton(dialog(), 'resetQuiz').trigger('click')
 
-    await vi.waitFor(() => expect(dialog().get('[role="alert"]').text()).toBe('Request failed'))
-    expect(dialog().element.open).toBe(true)
+    await vi.waitFor(() => expect(wrapper.get('[role="alert"]').text()).toContain('quizResetCompletedRefreshFailed'))
+    expect(wrapper.get('[role="alert"]').text()).toContain('Request failed')
+    expect(dialog().element.open).toBe(false)
     expect(dialog().attributes('aria-busy')).toBe('false')
+    expect(wrapper.text()).toContain('noActiveQuestion')
+    expect(fetch).toHaveBeenCalledOnce()
+
+    // A closed confirmation cannot repeat the mutation.
+    await findButton(dialog(), 'resetQuiz').trigger('click')
+    expect(fetch).toHaveBeenCalledOnce()
+
+    const recovery = wrapper.get('div[aria-busy]')
+    await findButton(recovery, 'refreshButton').trigger('click')
+
+    await vi.waitFor(() => expect(wrapper.find('[role="alert"]').exists()).toBe(false))
+    expect(refresh).toHaveBeenCalledTimes(2)
+    expect(fetch).toHaveBeenCalledExactlyOnceWith('/api/questions/reset', { method: 'POST' })
+  })
+
+  it('closes the confirmed reset before refreshing questions and prevents duplicate recovery reads', async () => {
+    let finishRefresh!: () => void
+    refresh.mockReturnValueOnce(new Promise<void>((resolve) => { finishRefresh = resolve }))
+    await renderQuestions()
+    await findButton(wrapper, 'resetQuiz').trigger('click')
+    await findButton(dialog(), 'resetQuiz').trigger('click')
+
+    await vi.waitFor(() => expect(refresh).toHaveBeenCalledOnce())
+    expect(dialog().element.open).toBe(false)
+    expect(findButton(wrapper, 'resetQuiz').element).toHaveProperty('disabled', true)
+
+    fetchError.value = new Error('test refresh failure')
+    finishRefresh()
+    await vi.waitFor(() => expect(wrapper.find('[role="alert"]').exists()).toBe(true))
+
+    let finishRecovery!: () => void
+    refresh.mockReturnValueOnce(new Promise<void>((resolve) => { finishRecovery = resolve }))
+    const recovery = wrapper.get('div[aria-busy]')
+    const retry = findButton(recovery, 'refreshButton')
+    await retry.trigger('click')
+    await retry.trigger('click')
+
+    expect(refresh).toHaveBeenCalledTimes(2)
+    expect(retry.element).toHaveProperty('disabled', true)
+    expect(recovery.attributes('aria-busy')).toBe('true')
+    expect(fetch).toHaveBeenCalledOnce()
+
+    fetchError.value = undefined
+    finishRecovery()
+    await vi.waitFor(() => expect(wrapper.find('[role="alert"]').exists()).toBe(false))
   })
 
   it('disables reset while a publication is pending', async () => {

@@ -47,6 +47,7 @@ const {
   isImportPreviewReady,
   isResettingAnswers,
   isResettingQuiz,
+  isRefreshingAfterQuizReset,
   isQuestionOperationPending,
   isUpdatingActiveQuestion,
   isSavingQuestion,
@@ -62,12 +63,14 @@ const {
   questionDialogMode,
   quizResetConfirmationDialog,
   quizResetError,
+  quizResetRefreshError,
   questionForm,
   questionFormErrors,
   questionToDelete,
   questionToPublish,
   questionToToggleDisabled,
   removeOption,
+  refreshQuestionsAfterQuizReset,
   requestClearAllQuestions,
   requestQuestionDeletion,
   requestQuestionDisabledToggle,
@@ -101,6 +104,23 @@ const {
   <div class="mx-auto w-full max-w-6xl p-5">
     <AdminBackLink />
     <UiPageTitle>{{ t('pageTitle') }}</UiPageTitle>
+
+    <div
+      v-if="quizResetRefreshError"
+      :aria-busy="isRefreshingAfterQuizReset"
+      class="mb-5 border-2 border-black bg-amber-100 p-4"
+    >
+      <p class="mb-3" role="alert">
+        {{ t('quizResetCompletedRefreshFailed') }} {{ quizResetRefreshError }}
+      </p>
+      <UiButton
+        :disabled="isQuestionOperationPending"
+        variant="secondary"
+        @click="refreshQuestionsAfterQuizReset"
+      >
+        {{ t('refreshButton') }}
+      </UiButton>
+    </div>
 
     <div class="grid gap-8">
       <UiSection>
@@ -756,6 +776,7 @@ en:
   importQuestions: Import
   resetQuiz: Reset Quiz
   resettingQuiz: Resetting Quiz...
+  quizResetCompletedRefreshFailed: Quiz reset completed, but questions could not be reloaded.
   confirmResetQuiz: >-
     Permanently delete all submitted answers and reset every question to not asked, inactive, unlocked, and
     enabled? Questions and their current order are preserved.
@@ -825,6 +846,7 @@ de:
   importQuestions: Importieren
   resetQuiz: Quiz zurücksetzen
   resettingQuiz: Quiz wird zurückgesetzt...
+  quizResetCompletedRefreshFailed: Quiz wurde zurückgesetzt, aber die Fragen konnten nicht neu geladen werden.
   confirmResetQuiz: >-
     Alle abgegebenen Antworten dauerhaft löschen und jede Frage auf ungefragt, inaktiv, entsperrt und
     freigegeben zurücksetzen? Fragen und ihre aktuelle Reihenfolge bleiben erhalten.
@@ -894,6 +916,7 @@ fr:
   importQuestions: Importer
   resetQuiz: Réinitialiser le quiz
   resettingQuiz: Réinitialisation du quiz...
+  quizResetCompletedRefreshFailed: Le quiz a été réinitialisé, mais les questions n’ont pas pu être rechargées.
   confirmResetQuiz: >-
     Supprimer définitivement toutes les réponses et remettre chaque question à non posée, inactive,
     déverrouillée et activée ? Les questions et leur ordre actuel sont conservés.
@@ -963,6 +986,7 @@ ja:
   importQuestions: インポート
   resetQuiz: クイズをリセット
   resettingQuiz: クイズをリセット中...
+  quizResetCompletedRefreshFailed: クイズはリセットされましたが、質問を再読み込みできませんでした。
   confirmResetQuiz: 送信されたすべての回答を完全に削除し、すべての質問を未出題、非アクティブ、ロック解除、有効の状態に戻しますか？質問と現在の順序は保持されます。
   deleteAllQuestions: すべて削除
   deletingAllQuestions: すべて削除中...

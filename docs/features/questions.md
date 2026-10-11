@@ -27,7 +27,10 @@ inactive, unlocked, and enabled. Questions and their current order remain intact
 
 During the request, reset controls and competing page actions are disabled. Escape
 and backdrop clicks cannot close the pending dialog. A failed request keeps the dialog
-open with an error. Participant nicknames and browser identities remain unchanged.
+open with an error. Once the reset succeeds, the dialog closes before questions are
+reloaded. If that refresh fails, a separate message confirms the completed reset and
+offers a refresh-only retry. Another reset requires a new confirmation.
+Participant nicknames and browser identities remain unchanged.
 Connected participant browsers clear cached answers for every question; browsers
 disconnected during the reset do not receive this cache cleanup.
 

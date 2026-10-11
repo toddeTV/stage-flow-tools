@@ -90,6 +90,7 @@ export function useAdminQuestions() {
   const isSavingQuestion = ref(false);
   const isResettingAnswers = ref(false);
   const isResettingQuiz = ref(false);
+  const isRefreshingAfterQuizReset = ref(false);
   const isUpdatingActiveQuestion = ref(false);
   const isUpdatingQuestionId = ref<string | null>(null);
   const isClearingAllQuestions = ref(false);
@@ -107,6 +108,7 @@ export function useAdminQuestions() {
   const questionDialogMode = ref<QuestionDialogMode>('choice');
   const clearAllError = ref<string>();
   const quizResetError = ref<string>();
+  const quizResetRefreshError = ref<string>();
   const exportError = ref<string>();
   const importError = ref<string>();
   const isEditMode = computed(() => editingQuestionId.value !== null);
@@ -120,6 +122,7 @@ export function useAdminQuestions() {
   const isQuestionOperationPending = computed(
     () =>
       isBatchOperationPending.value ||
+      isRefreshingAfterQuizReset.value ||
       isSavingQuestion.value ||
       isResettingAnswers.value ||
       isUpdatingActiveQuestion.value ||
@@ -260,6 +263,7 @@ export function useAdminQuestions() {
 
   watch(fetchedQuestions, (newQuestions) => {
     if (newQuestions && Array.isArray(newQuestions)) {
+      quizResetRefreshError.value = undefined;
       allQuestions.value = newQuestions;
       activeQuestion.value =
         newQuestions.find((question) => question.is_active) || null;
@@ -599,6 +603,23 @@ export function useAdminQuestions() {
     }
   }
 
+  async function refreshQuestionsAfterQuizReset() {
+    if (isRefreshingAfterQuizReset.value) return;
+
+    isRefreshingAfterQuizReset.value = true;
+
+    try {
+      await loadQuestions();
+      quizResetRefreshError.value = fetchError.value
+        ? getErrorMessage(fetchError.value)
+        : undefined;
+    } catch (error: unknown) {
+      quizResetRefreshError.value = getErrorMessage(error);
+    } finally {
+      isRefreshingAfterQuizReset.value = false;
+    }
+  }
+
   async function resetQuiz() {
     if (!quizResetConfirmationDialog.value?.open || isQuestionOperationPending.value) {
       return;
@@ -609,12 +630,9 @@ export function useAdminQuestions() {
 
     try {
       await $fetch('/api/questions/reset', { method: 'POST' });
-      await loadQuestions();
-      if (fetchError.value) {
-        quizResetError.value = getErrorMessage(fetchError.value);
-        return;
-      }
+      activeQuestion.value = null;
       quizResetConfirmationDialog.value?.close();
+      await refreshQuestionsAfterQuizReset();
     } catch (error: unknown) {
       quizResetError.value = getErrorMessage(error);
     } finally {
@@ -857,6 +875,7 @@ export function useAdminQuestions() {
     isImportPreviewReady,
     isResettingAnswers,
     isResettingQuiz,
+    isRefreshingAfterQuizReset,
     isQuestionOperationPending,
     isUpdatingActiveQuestion,
     isSavingQuestion,
@@ -872,12 +891,14 @@ export function useAdminQuestions() {
     questionDialogMode,
     quizResetConfirmationDialog,
     quizResetError,
+    quizResetRefreshError,
     questionForm,
     questionFormErrors,
     questionToDelete,
     questionToPublish,
     questionToToggleDisabled,
     removeOption,
+    refreshQuestionsAfterQuizReset,
     requestClearAllQuestions,
     requestQuestionDeletion,
     requestQuestionDisabledToggle,
