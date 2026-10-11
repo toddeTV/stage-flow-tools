@@ -84,10 +84,14 @@ export function useAdminQuestions() {
   const toggleDisabledConfirmationDialog = ref<HTMLDialogElement>();
   const deleteConfirmationDialog = ref<HTMLDialogElement>();
   const clearAllConfirmationDialog = ref<HTMLDialogElement>();
+  const quizResetConfirmationDialog = ref<HTMLDialogElement>();
   const exportConfirmationDialog = ref<HTMLDialogElement>();
   const editingQuestionId = ref<string | null>(null);
   const isSavingQuestion = ref(false);
   const isResettingAnswers = ref(false);
+  const isResettingQuiz = ref(false);
+  const isRefreshingAfterQuizReset = ref(false);
+  const isUpdatingActiveQuestion = ref(false);
   const isUpdatingQuestionId = ref<string | null>(null);
   const isClearingAllQuestions = ref(false);
   const isExportingQuestions = ref(false);
@@ -103,14 +107,27 @@ export function useAdminQuestions() {
   const pendingQuestionUpdate = ref<PendingQuestionUpdate | null>(null);
   const questionDialogMode = ref<QuestionDialogMode>('choice');
   const clearAllError = ref<string>();
+  const quizResetError = ref<string>();
+  const quizResetRefreshError = ref<string>();
   const exportError = ref<string>();
   const importError = ref<string>();
   const isEditMode = computed(() => editingQuestionId.value !== null);
   const isBatchOperationPending = computed(
     () =>
+      isResettingQuiz.value ||
       isClearingAllQuestions.value ||
       isExportingQuestions.value ||
       isImportingQuestions.value,
+  );
+  const isQuestionOperationPending = computed(
+    () =>
+      isBatchOperationPending.value ||
+      isRefreshingAfterQuizReset.value ||
+      isSavingQuestion.value ||
+      isResettingAnswers.value ||
+      isUpdatingActiveQuestion.value ||
+      isUpdatingQuestionId.value !== null ||
+      isPreparingImportPreview.value,
   );
   const formTitle = computed(() => {
     if (isEditMode.value) {
@@ -246,6 +263,7 @@ export function useAdminQuestions() {
 
   watch(fetchedQuestions, (newQuestions) => {
     if (newQuestions && Array.isArray(newQuestions)) {
+      quizResetRefreshError.value = undefined;
       allQuestions.value = newQuestions;
       activeQuestion.value =
         newQuestions.find((question) => question.is_active) || null;
@@ -273,6 +291,8 @@ export function useAdminQuestions() {
   });
 
   async function handleSaveQuestion() {
+    if (isResettingQuiz.value) return;
+
     const payload = parseQuestionFormPayload();
 
     if (!payload) {
@@ -329,7 +349,7 @@ export function useAdminQuestions() {
   async function resetAnswersAndSaveQuestion() {
     const pendingUpdate = pendingQuestionUpdate.value;
 
-    if (!pendingUpdate || isSavingQuestion.value) {
+    if (!pendingUpdate || isSavingQuestion.value || isResettingQuiz.value) {
       return;
     }
 
@@ -355,7 +375,7 @@ export function useAdminQuestions() {
   }
 
   function requestQuestionPublication(question: Question) {
-    if (isUpdatingQuestionId.value) {
+    if (isUpdatingQuestionId.value || isResettingQuiz.value) {
       return;
     }
 
@@ -374,7 +394,7 @@ export function useAdminQuestions() {
   async function publishQuestion() {
     const questionToPublishValue = questionToPublish.value;
 
-    if (!questionToPublishValue || isUpdatingQuestionId.value) {
+    if (!questionToPublishValue || isUpdatingQuestionId.value || isResettingQuiz.value) {
       return;
     }
 
@@ -397,7 +417,7 @@ export function useAdminQuestions() {
   }
 
   async function moveQuestion(question: Question, direction: 'up' | 'down') {
-    if (isUpdatingQuestionId.value) {
+    if (isUpdatingQuestionId.value || isResettingQuiz.value) {
       return;
     }
 
@@ -420,7 +440,7 @@ export function useAdminQuestions() {
   }
 
   function requestQuestionDisabledToggle(question: Question) {
-    if (isUpdatingQuestionId.value) {
+    if (isUpdatingQuestionId.value || isResettingQuiz.value) {
       return;
     }
 
@@ -439,7 +459,7 @@ export function useAdminQuestions() {
   async function toggleQuestionDisabled() {
     const questionToToggleDisabledValue = questionToToggleDisabled.value;
 
-    if (!questionToToggleDisabledValue || isUpdatingQuestionId.value) {
+    if (!questionToToggleDisabledValue || isUpdatingQuestionId.value || isResettingQuiz.value) {
       return;
     }
 
@@ -460,7 +480,7 @@ export function useAdminQuestions() {
   }
 
   function requestQuestionDeletion(question: Question) {
-    if (isUpdatingQuestionId.value) {
+    if (isUpdatingQuestionId.value || isResettingQuiz.value) {
       return;
     }
 
@@ -479,7 +499,7 @@ export function useAdminQuestions() {
   async function deleteQuestion() {
     const questionToDeleteValue = questionToDelete.value;
 
-    if (!questionToDeleteValue || isUpdatingQuestionId.value) {
+    if (!questionToDeleteValue || isUpdatingQuestionId.value || isResettingQuiz.value) {
       return;
     }
 
@@ -533,6 +553,7 @@ export function useAdminQuestions() {
 
   async function importQuestionPackage(questionPackage: QuestionPackage) {
     if (
+      isResettingQuiz.value ||
       !isImportPreviewReady.value ||
       isImportingQuestions.value ||
       isPreparingImportPreview.value
@@ -557,6 +578,68 @@ export function useAdminQuestions() {
     }
   }
 
+  function requestQuizReset() {
+    if (allQuestions.value.length === 0 || isQuestionOperationPending.value) {
+      return;
+    }
+
+    quizResetError.value = undefined;
+    quizResetConfirmationDialog.value?.showModal();
+  }
+
+  function closeQuizResetConfirmationDialog() {
+    if (!isResettingQuiz.value) {
+      quizResetConfirmationDialog.value?.close();
+    }
+  }
+
+  function resetQuizResetConfirmationDialog() {
+    quizResetError.value = undefined;
+  }
+
+  function handleQuizResetDialogCancel(event: Event) {
+    if (isResettingQuiz.value) {
+      event.preventDefault();
+    }
+  }
+
+  async function refreshQuestionsAfterQuizReset() {
+    if (isRefreshingAfterQuizReset.value) return;
+
+    isRefreshingAfterQuizReset.value = true;
+
+    try {
+      await loadQuestions();
+      quizResetRefreshError.value = fetchError.value
+        ? getErrorMessage(fetchError.value)
+        : undefined;
+    } catch (error: unknown) {
+      quizResetRefreshError.value = getErrorMessage(error);
+    } finally {
+      isRefreshingAfterQuizReset.value = false;
+    }
+  }
+
+  async function resetQuiz() {
+    if (!quizResetConfirmationDialog.value?.open || isQuestionOperationPending.value) {
+      return;
+    }
+
+    quizResetError.value = undefined;
+    isResettingQuiz.value = true;
+
+    try {
+      await $fetch('/api/questions/reset', { method: 'POST' });
+      activeQuestion.value = null;
+      quizResetConfirmationDialog.value?.close();
+      await refreshQuestionsAfterQuizReset();
+    } catch (error: unknown) {
+      quizResetError.value = getErrorMessage(error);
+    } finally {
+      isResettingQuiz.value = false;
+    }
+  }
+
   function requestClearAllQuestions() {
     if (allQuestions.value.length === 0 || isBatchOperationPending.value) {
       return;
@@ -577,7 +660,7 @@ export function useAdminQuestions() {
   }
 
   async function clearAllQuestions() {
-    if (isClearingAllQuestions.value) {
+    if (isClearingAllQuestions.value || isResettingQuiz.value) {
       return;
     }
 
@@ -617,7 +700,7 @@ export function useAdminQuestions() {
   }
 
   async function exportQuestions() {
-    if (isExportingQuestions.value) {
+    if (isExportingQuestions.value || isResettingQuiz.value) {
       return;
     }
 
@@ -661,7 +744,9 @@ export function useAdminQuestions() {
   }
 
   async function toggleLock() {
-    if (!activeQuestion.value) return;
+    if (!activeQuestion.value || isResettingQuiz.value || isUpdatingActiveQuestion.value) return;
+
+    isUpdatingActiveQuestion.value = true;
 
     try {
       const question = await $fetch<Question>('/api/questions/toggle-lock', {
@@ -673,10 +758,16 @@ export function useAdminQuestions() {
     } catch (error: unknown) {
       logger_error('Failed to toggle lock status from results page', error);
       alert(getErrorMessage(error));
+    } finally {
+      isUpdatingActiveQuestion.value = false;
     }
   }
 
   async function unpublishActiveQuestion() {
+    if (isResettingQuiz.value || isUpdatingActiveQuestion.value) return;
+
+    isUpdatingActiveQuestion.value = true;
+
     try {
       await $fetch('/api/questions/unpublish-active', {
         method: 'POST',
@@ -685,10 +776,16 @@ export function useAdminQuestions() {
       await loadQuestions();
     } catch (error) {
       alert(getErrorMessage(error));
+    } finally {
+      isUpdatingActiveQuestion.value = false;
     }
   }
 
   async function publishNextQuestion() {
+    if (isResettingQuiz.value || isUpdatingActiveQuestion.value) return;
+
+    isUpdatingActiveQuestion.value = true;
+
     try {
       const question = await $fetch<Question>('/api/questions/publish-next', {
         method: 'POST',
@@ -697,11 +794,13 @@ export function useAdminQuestions() {
       await loadQuestions();
     } catch (error) {
       alert(getErrorMessage(error));
+    } finally {
+      isUpdatingActiveQuestion.value = false;
     }
   }
 
   async function resetAnswers() {
-    if (!activeQuestion.value || isResettingAnswers.value) {
+    if (!activeQuestion.value || isResettingAnswers.value || isResettingQuiz.value) {
       return;
     }
 
@@ -750,6 +849,7 @@ export function useAdminQuestions() {
     closeExportConfirmationDialog,
     closePublishConfirmationDialog,
     closeQuestionDialog,
+    closeQuizResetConfirmationDialog,
     closeToggleDisabledConfirmationDialog,
     createQuestionFormFromQuestion,
     deleteConfirmationDialog,
@@ -763,6 +863,7 @@ export function useAdminQuestions() {
     getQueuePosition,
     handleQuestionPackageSelected,
     handleSaveQuestion,
+    handleQuizResetDialogCancel,
     importError,
     importQuestionPackage,
     isBatchOperationPending,
@@ -773,6 +874,10 @@ export function useAdminQuestions() {
     isPreparingImportPreview,
     isImportPreviewReady,
     isResettingAnswers,
+    isResettingQuiz,
+    isRefreshingAfterQuizReset,
+    isQuestionOperationPending,
+    isUpdatingActiveQuestion,
     isSavingQuestion,
     isUpdatingQuestionId,
     loadQuestions,
@@ -784,17 +889,22 @@ export function useAdminQuestions() {
     publishQuestion,
     questionDialog,
     questionDialogMode,
+    quizResetConfirmationDialog,
+    quizResetError,
+    quizResetRefreshError,
     questionForm,
     questionFormErrors,
     questionToDelete,
     questionToPublish,
     questionToToggleDisabled,
     removeOption,
+    refreshQuestionsAfterQuizReset,
     requestClearAllQuestions,
     requestQuestionDeletion,
     requestQuestionDisabledToggle,
     requestQuestionPublication,
     requestQuestionsExport,
+    requestQuizReset,
     resetAnswerResetConfirmationDialog,
     resetAnswers,
     resetAnswersAndSaveQuestion,
@@ -803,6 +913,8 @@ export function useAdminQuestions() {
     resetExportConfirmationDialog,
     resetPublishConfirmationDialog,
     resetQuestionEditor,
+    resetQuiz,
+    resetQuizResetConfirmationDialog,
     resetToggleDisabledConfirmationDialog,
     returnToQuestionChoices,
     selectManualQuestionCreation,

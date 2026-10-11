@@ -18,6 +18,7 @@ export {
   getNextPublishableQuestion,
   moveQuestion,
   publishQuestion,
+  resetQuiz,
   toggleQuestionDisabled,
   toggleQuestionLock,
   unpublishActiveQuestion,

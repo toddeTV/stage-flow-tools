@@ -144,6 +144,25 @@ export async function deleteAllQuestions(): Promise<number> {
   })
 }
 
+/** Clears every answer and resets question lifecycle state without changing the queue. */
+export async function resetQuiz(): Promise<string[]> {
+  await initStorage()
+
+  return getDatabase().transaction((transaction) => {
+    const questionIds = transaction.select({ id: questions.id }).from(questions).all().map(question => question.id)
+
+    transaction.delete(answers).run()
+    transaction.update(questions).set({
+      alreadyPublished: false,
+      isActive: false,
+      isDisabled: false,
+      isLocked: false,
+    }).run()
+
+    return questionIds
+  })
+}
+
 /** Deactivate the active question (answers are preserved for potential re-publishing). */
 export async function unpublishActiveQuestion(expectedKey?: string): Promise<Question | undefined> {
   await initStorage()

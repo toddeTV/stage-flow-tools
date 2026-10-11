@@ -84,10 +84,14 @@ or editing the active question.
 #### `answers-reset`
 
 Sent on the default channel when an admin clears answers, including a confirmed
-answer-option change that resets a question's submitted answers.
+answer-option change that resets a question's submitted answers. A full quiz reset
+sends this event for every retained question before broadcasting `new-question` with
+`null` and `results-update` with `null` on their existing channels.
 
 Clients should clear the local stored answer for the matching `questionId`. They should
-clear the visible selection only when that question is active.
+clear the visible selection only when that question is active. This also clears cached
+answers for inactive questions before the quiz restarts. Browsers disconnected during
+the reset do not receive these events; offline cache synchronization is not provided.
 
 ```json
 {

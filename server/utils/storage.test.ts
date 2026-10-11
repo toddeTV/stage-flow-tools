@@ -36,6 +36,7 @@ import {
   importQuestionPackage,
   moveQuestion,
   publishQuestion,
+  resetQuiz,
   QuestionAnswerOptionsResetRequiredError,
   submitAnswer,
   toggleQuestionDisabled,
@@ -316,6 +317,82 @@ describe('question queue storage', () => {
     await expect(deleteAllQuestions()).resolves.toBe(1)
     await expect(getQuestions()).resolves.toEqual([])
     expect(testClient.db.select().from(answers).all()).toEqual([])
+  })
+
+  it('resets every question and answer while preserving content and queue order', async () => {
+    const first = await createQuestion(createInputQuestion('first'))
+    const second = await createQuestion(createInputQuestion('second'))
+    const third = await createQuestion(createInputQuestion('third'))
+    await moveQuestion(third.id, 'up')
+    await publishQuestion(first.key)
+    await toggleQuestionLock(first.id, true)
+    await toggleQuestionDisabled(second.id)
+    testClient.db.update(questions)
+      .set({ alreadyPublished: true, isLocked: true })
+      .where(eq(questions.id, second.id)).run()
+    for (const question of [
+      first,
+      second,
+    ]) {
+      testClient.db.insert(answers).values({
+        questionId: question.id,
+        selectedAnswer: JSON.stringify({ en: 'One' }),
+        userId: 'test-participant',
+        userNickname: 'Test participant',
+      }).run()
+    }
+    const before = await getQuestions()
+
+    const resetIds = await resetQuiz()
+
+    expect(new Set(resetIds)).toEqual(new Set([
+      first.id,
+      second.id,
+      third.id,
+    ]))
+    await expect(getQuestions()).resolves.toEqual(before.map(question => ({
+      ...question,
+      alreadyPublished: false,
+      is_active: false,
+      is_disabled: false,
+      is_locked: false,
+    })))
+    expect(testClient.db.select().from(answers).all()).toEqual([])
+    await expect(getNextPublishableQuestion()).resolves.toMatchObject({ id: first.id })
+    await expect(resetQuiz()).resolves.toHaveLength(3)
+    await expect(getQuestions()).resolves.toEqual(before.map(question => ({
+      ...question,
+      alreadyPublished: false,
+      is_active: false,
+      is_disabled: false,
+      is_locked: false,
+    })))
+  })
+
+  it('resets an empty quiz successfully', async () => {
+    await expect(resetQuiz()).resolves.toEqual([])
+  })
+
+  it('rolls back answer deletion when resetting question state fails', async () => {
+    const question = await createQuestion(createInputQuestion('rollback'))
+    await publishQuestion(question.key)
+    await submitAnswer({
+      question_id: question.id,
+      selected_answer: { en: 'One' },
+      user_id: 'test-participant',
+      user_nickname: 'Test participant',
+    })
+    const beforeQuestions = await getQuestions()
+    const beforeAnswers = await getAnswersForQuestion(question.id)
+    testClient.sqlite.exec(`
+      CREATE TRIGGER reject_quiz_reset BEFORE UPDATE ON questions
+      WHEN NEW.already_published = 0
+      BEGIN SELECT RAISE(ABORT, 'test reset failure'); END;
+    `)
+
+    await expect(resetQuiz()).rejects.toThrow('test reset failure')
+    await expect(getQuestions()).resolves.toEqual(beforeQuestions)
+    await expect(getAnswersForQuestion(question.id)).resolves.toEqual(beforeAnswers)
   })
 
   it('updates active and previously published questions', async () => {
