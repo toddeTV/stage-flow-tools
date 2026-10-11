@@ -26,7 +26,7 @@ Perfect for:
 - **`/login`** - [Admin login](docs/features/admin-access.md)
 - **`/admin`** - [Admin overview with links to sub-pages](docs/features/admin-access.md)
 - **`/admin/questions`** - [Question management and packages](docs/features/questions.md)
-- **`/admin/presenter`** - [Quiz sequence, controller, and display embeds](docs/features/presenter.md)
+- **`/admin/presenter`** - [Quiz sequence, question selection, and live status](docs/features/presenter.md)
 - **`/admin/results`** - [Live results and quiz controls](docs/features/results.md)
 - **`/admin/leaderboard`** - [Player leaderboard and winner draw](docs/features/leaderboard.md)
 - **`/admin/recap`** - [Post-quiz statistics and highlights](docs/features/recap.md)
