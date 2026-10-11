@@ -155,9 +155,7 @@ export async function unpublishActiveQuestion(expectedKey?: string): Promise<Que
       .update(questions)
       .set({ isActive: false })
       .where(and(eq(questions.id, activeQuestion.id), eq(questions.isActive, true),
-        ...(expectedKey ? [
-          eq(questions.key, expectedKey),
-        ] : [])))
+        expectedKey ? eq(questions.key, expectedKey) : undefined))
       .run()
 
     if (updated.changes === 0) return undefined
