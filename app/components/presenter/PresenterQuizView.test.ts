@@ -252,3 +252,40 @@ describe('PresenterQuizView', () => {
     wrapper.unmount()
   })
 })
+
+
+describe('existing Presenter status and read-only controls', () => {
+  it('shows live option counts while status voting is open', async () => {
+    const wrapper = render('open', { mode: 'status' })
+    await wrapper.setProps({ currentState: {
+      ...state, currentQuestion: { ...state.currentQuestion!, is_locked: false },
+    } })
+    expect(wrapper.findAll('.answer-stats.is-hidden')).toHaveLength(0)
+    expect(wrapper.get('.answer-stats').text()).toContain('3 votes')
+    expect(wrapper.find('[data-icon="ph:check-fat"]').exists()).toBe(false)
+    expect(wrapper.find('.note-trigger').exists()).toBe(false)
+    expect(wrapper.get('.phase-pill').text()).toBe('open')
+    expect(wrapper.findAll('.stats-grid dd').at(-1)?.text()).toBe('open')
+    wrapper.unmount()
+  })
+  it('shows the server lock independently of status results in a read-only view', () => {
+    const wrapper = render('open', { mode: 'status', readOnly: 'true' })
+    expect(wrapper.get('.phase-pill').text()).toBe('locked')
+    expect(wrapper.findAll('.answer-stats.is-hidden')).toHaveLength(0)
+    expect(wrapper.findAll('.stats-grid dd').at(-1)?.text()).toBe('locked')
+    wrapper.unmount()
+  })
+  it('keeps saved aggregates visible while marking an inactive question closed', async () => {
+    const wrapper = render('reveal', { readOnly: 'true' })
+    await wrapper.setProps({
+      currentState: {
+        ...state, hasActiveQuestion: false, currentQuestion: { ...state.currentQuestion!, is_active: false },
+      },
+    })
+    expect(wrapper.get('.phase-pill').text()).toBe('closed')
+    expect(wrapper.findAll('.stats-grid dd').at(-1)?.text()).toBe('closed')
+    expect(wrapper.get('.answer-stats').text()).toContain('3 votes')
+    expect(wrapper.findAll('.navigation-button')).toHaveLength(0)
+    wrapper.unmount()
+  })
+})

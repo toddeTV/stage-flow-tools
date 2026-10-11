@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { PresenterQuizAnswer } from '~/components/presenter/presenter-quiz'
 
 const props = defineProps<{
@@ -6,6 +7,10 @@ const props = defineProps<{
   busy: boolean
   hasRevealNote: boolean
   isReveal: boolean
+  isActive?: boolean
+  isLocked?: boolean
+  readOnly?: boolean
+  showResults?: boolean
   questionCount: number
   questionIndex: number
   questionTitle: string
@@ -17,9 +22,11 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const showsResults = computed(() => props.showResults ?? props.isReveal)
+const locked = computed(() => props.isLocked ?? props.isReveal)
 
 function answerStyle(answer: PresenterQuizAnswer) {
-  return props.isReveal ? { '--presenter-answer-accent': answer.color } : undefined
+  return showsResults.value ? { '--presenter-answer-accent': answer.color } : undefined
 }
 </script>
 
@@ -28,6 +35,7 @@ function answerStyle(answer: PresenterQuizAnswer) {
     <div class="eyebrow-row">
       <div aria-label="Quiz navigation" class="question-navigation">
         <button
+          v-if="!props.readOnly"
           :aria-label="t('previous')"
           class="navigation-button"
           :disabled="props.busy"
@@ -40,6 +48,7 @@ function answerStyle(answer: PresenterQuizAnswer) {
           {{ t('questionProgress', { current: props.questionIndex + 1, total: props.questionCount }) }}
         </span>
         <button
+          v-if="!props.readOnly"
           :aria-label="t('next')"
           class="navigation-button"
           :disabled="props.busy"
@@ -49,8 +58,8 @@ function answerStyle(answer: PresenterQuizAnswer) {
           <Icon aria-hidden="true" name="ph:caret-right" />
         </button>
       </div>
-      <span class="phase-pill" :class="props.isReveal ? 'is-reveal' : 'is-open'">
-        {{ props.isReveal ? t('revealed') : t('open') }}
+      <span class="phase-pill" :class="locked ? 'is-reveal' : 'is-open'">
+        {{ props.isActive === false ? t('closed') : locked ? t(props.isReveal ? 'revealed' : 'locked') : t('open') }}
       </span>
     </div>
 
@@ -74,11 +83,11 @@ function answerStyle(answer: PresenterQuizAnswer) {
         v-for="answer in props.answers"
         :key="answer.id"
         class="answer-card"
-        :class="props.isReveal ? 'reveal' : 'open'"
+        :class="showsResults ? 'reveal' : 'open'"
         :style="answerStyle(answer)"
       >
         <span
-          v-if="props.isReveal && answer.isCorrect"
+          v-if="showsResults && answer.isCorrect"
           class="absolute top-1/2 -left-5.5 z-10 flex size-7 -translate-y-1/2 items-center justify-center
             rounded-md border border-[var(--presenter-correct-marker-border)]
             bg-[var(--presenter-correct-marker-background)] text-[var(--presenter-correct-marker-color)] shadow-sm"
@@ -90,13 +99,13 @@ function answerStyle(answer: PresenterQuizAnswer) {
           <span
             v-if="answer.emoji && !answer.isCorrect"
             class="answer-emoji"
-            :class="{ 'is-hidden': !props.isReveal }"
+            :class="{ 'is-hidden': !showsResults }"
           >{{ answer.emoji }}</span>
         </div>
-        <div class="answer-stats" :class="{ 'is-hidden': !props.isReveal }">
+        <div class="answer-stats" :class="{ 'is-hidden': !showsResults }">
           <span>{{ t('answerStats', { count: answer.count, percent: answer.percent }) }}</span>
         </div>
-        <span v-if="props.isReveal && answer.isCorrect" class="sr-only">{{ t('correctAnswer') }}</span>
+        <span v-if="showsResults && answer.isCorrect" class="sr-only">{{ t('correctAnswer') }}</span>
       </li>
     </ol>
   </section>
@@ -104,6 +113,8 @@ function answerStyle(answer: PresenterQuizAnswer) {
 
 <i18n lang="yaml">
 en:
+  locked: Locked for votes
+  closed: Closed · retained results
   previous: Previous presenter step
   next: Next presenter step
   questionProgress: "Question {current} / {total}"
@@ -113,6 +124,8 @@ en:
   answerStats: "{percent}% ({count} votes)"
   correctAnswer: Correct answer
 de:
+  locked: Für Antworten gesperrt
+  closed: Geschlossen · gespeicherter Stand
   previous: Vorheriger Präsentationsschritt
   next: Nächster Präsentationsschritt
   questionProgress: "Frage {current} / {total}"
@@ -122,6 +135,8 @@ de:
   answerStats: "{percent}% ({count} Stimmen)"
   correctAnswer: Richtige Antwort
 fr:
+  locked: Votes verrouillés
+  closed: Fermée · résultats conservés
   previous: Étape précédente de la présentation
   next: Étape suivante de la présentation
   questionProgress: "Question {current} / {total}"
@@ -131,6 +146,8 @@ fr:
   answerStats: "{percent}% ({count} votes)"
   correctAnswer: Bonne réponse
 ja:
+  locked: 回答ロック済み
+  closed: 受付終了・保存された結果
   previous: 前のプレゼンターステップ
   next: 次のプレゼンターステップ
   questionProgress: "質問 {current} / {total}"
@@ -269,5 +286,14 @@ ja:
   .answer-label {
     font-size: .875em;
   }
+}
+@container presenter-stage (max-height: 420px) {
+  .question-panel { @apply rounded-2xl px-3 py-2; }
+  .eyebrow-row, .question-heading-row { @apply mb-1; }
+  .question-heading-row h1 { font-size: 1.3em; }
+  .answer-card { @apply py-1; }
+  .eyebrow { font-size: .6em; }
+  .note-trigger-slot:empty { @apply min-h-0; }
+  .navigation-button { min-height: 32px; min-width: 32px; }
 }
 </style>
