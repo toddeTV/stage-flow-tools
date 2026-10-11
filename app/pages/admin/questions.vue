@@ -23,6 +23,7 @@ const {
   closeExportConfirmationDialog,
   closePublishConfirmationDialog,
   closeQuestionDialog,
+  closeQuizResetConfirmationDialog,
   closeToggleDisabledConfirmationDialog,
   deleteConfirmationDialog,
   deleteQuestion,
@@ -34,6 +35,7 @@ const {
   getQueuePosition,
   handleQuestionPackageSelected,
   handleSaveQuestion,
+  handleQuizResetDialogCancel,
   importError,
   importQuestionPackage,
   isBatchOperationPending,
@@ -44,6 +46,9 @@ const {
   isPreparingImportPreview,
   isImportPreviewReady,
   isResettingAnswers,
+  isResettingQuiz,
+  isQuestionOperationPending,
+  isUpdatingActiveQuestion,
   isSavingQuestion,
   isUpdatingQuestionId,
   loadQuestions,
@@ -55,6 +60,8 @@ const {
   publishQuestion,
   questionDialog,
   questionDialogMode,
+  quizResetConfirmationDialog,
+  quizResetError,
   questionForm,
   questionFormErrors,
   questionToDelete,
@@ -66,6 +73,7 @@ const {
   requestQuestionDisabledToggle,
   requestQuestionPublication,
   requestQuestionsExport,
+  requestQuizReset,
   resetAnswerResetConfirmationDialog,
   resetAnswers,
   resetAnswersAndSaveQuestion,
@@ -74,6 +82,8 @@ const {
   resetExportConfirmationDialog,
   resetPublishConfirmationDialog,
   resetQuestionEditor,
+  resetQuiz,
+  resetQuizResetConfirmationDialog,
   resetToggleDisabledConfirmationDialog,
   returnToQuestionChoices,
   selectManualQuestionCreation,
@@ -98,7 +108,7 @@ const {
           <h2 class="section-heading">
             {{ t('currentActiveQuestion') }}
           </h2>
-          <UiButton variant="secondary" @click="loadQuestions">
+          <UiButton :disabled="isResettingQuiz" variant="secondary" @click="loadQuestions">
             {{ t('refreshButton') }}
           </UiButton>
         </div>
@@ -123,16 +133,28 @@ const {
                   {{ t('viewLiveResults') }} →
                 </UiButton>
               </NuxtLink>
-              <UiButton @click="toggleLock">
+              <UiButton :disabled="isResettingQuiz || isUpdatingActiveQuestion" @click="toggleLock">
                 {{ activeQuestion.is_locked ? t('unlockQuestion') : t('lockQuestion') }}
               </UiButton>
-              <UiButton :disabled="isResettingAnswers" variant="danger" @click="resetAnswers">
+              <UiButton
+                :disabled="isResettingAnswers || isResettingQuiz || isUpdatingActiveQuestion"
+                variant="danger"
+                @click="resetAnswers"
+              >
                 {{ isResettingAnswers ? t('resettingAnswers') : t('resetAnswers') }}
               </UiButton>
-              <UiButton variant="secondary" @click="publishNextQuestion">
+              <UiButton
+                :disabled="isResettingQuiz || isUpdatingActiveQuestion"
+                variant="secondary"
+                @click="publishNextQuestion"
+              >
                 {{ t('publishNext') }} →
               </UiButton>
-              <UiButton variant="secondary" @click="unpublishActiveQuestion">
+              <UiButton
+                :disabled="isResettingQuiz || isUpdatingActiveQuestion"
+                variant="secondary"
+                @click="unpublishActiveQuestion"
+              >
                 {{ t('unpublishButton') }}
               </UiButton>
             </div>
@@ -151,6 +173,15 @@ const {
           <div class="flex flex-wrap gap-2.5">
             <UiButton :disabled="isBatchOperationPending" @click="openQuestionDialog">
               {{ t('addQuestion') }}
+            </UiButton>
+            <UiButton
+              class="inline-flex items-center gap-2"
+              :disabled="allQuestions.length === 0 || isQuestionOperationPending"
+              variant="danger"
+              @click="requestQuizReset"
+            >
+              <Icon aria-hidden="true" class="size-5" name="ph:arrow-counter-clockwise" />
+              {{ t('resetQuiz') }}
             </UiButton>
             <UiButton
               class="inline-flex items-center gap-2"
@@ -209,12 +240,15 @@ const {
                 </ul>
 
                 <div class="flex flex-wrap gap-2.5">
-                  <UiButton :disabled="isUpdatingQuestionId !== null" @click="requestQuestionPublication(question)">
+                  <UiButton
+                    :disabled="isUpdatingQuestionId !== null || isResettingQuiz"
+                    @click="requestQuestionPublication(question)"
+                  >
                     {{ t('publishThisQuestion') }}
                   </UiButton>
                   <UiButton
                     class="inline-flex items-center gap-2"
-                    :disabled="isUpdatingQuestionId !== null"
+                    :disabled="isUpdatingQuestionId !== null || isResettingQuiz"
                     variant="secondary"
                     @click="requestQuestionDisabledToggle(question)"
                   >
@@ -228,7 +262,7 @@ const {
                   <UiButton
                     :aria-label="t('editQuestion')"
                     class="inline-flex items-center gap-2"
-                    :disabled="isUpdatingQuestionId !== null"
+                    :disabled="isUpdatingQuestionId !== null || isResettingQuiz"
                     variant="secondary"
                     @click="startEditingQuestion(question)"
                   >
@@ -238,7 +272,7 @@ const {
                   <UiButton
                     :aria-label="t('deleteQuestion')"
                     class="inline-flex items-center gap-2"
-                    :disabled="isUpdatingQuestionId !== null"
+                    :disabled="isUpdatingQuestionId !== null || isResettingQuiz"
                     variant="danger"
                     @click="requestQuestionDeletion(question)"
                   >
@@ -248,7 +282,7 @@ const {
                   <div class="ml-auto flex gap-2.5">
                     <UiButton
                       :aria-label="t('moveQuestionUp')"
-                      :disabled="index === 0 || isUpdatingQuestionId !== null"
+                      :disabled="index === 0 || isUpdatingQuestionId !== null || isResettingQuiz"
                       size="small"
                       variant="secondary"
                       @click="moveQuestion(question, 'up')"
@@ -257,7 +291,7 @@ const {
                     </UiButton>
                     <UiButton
                       :aria-label="t('moveQuestionDown')"
-                      :disabled="index === allQuestions.length - 1 || isUpdatingQuestionId !== null"
+                      :disabled="index === allQuestions.length - 1 || isUpdatingQuestionId !== null || isResettingQuiz"
                       size="small"
                       variant="secondary"
                       @click="moveQuestion(question, 'down')"
@@ -504,13 +538,13 @@ const {
       </p>
       <div class="mt-6 flex flex-wrap justify-end gap-2.5">
         <UiButton
-          :disabled="isUpdatingQuestionId !== null"
+          :disabled="isUpdatingQuestionId !== null || isResettingQuiz"
           @click="publishQuestion"
         >
           {{ t('publishThisQuestion') }}
         </UiButton>
         <UiButton
-          :disabled="isUpdatingQuestionId !== null"
+          :disabled="isUpdatingQuestionId !== null || isResettingQuiz"
           variant="secondary"
           @click="closePublishConfirmationDialog"
         >
@@ -539,13 +573,13 @@ const {
       </p>
       <div class="mt-6 flex flex-wrap justify-end gap-2.5">
         <UiButton
-          :disabled="isUpdatingQuestionId !== null"
+          :disabled="isUpdatingQuestionId !== null || isResettingQuiz"
           @click="toggleQuestionDisabled"
         >
           {{ questionToToggleDisabled?.is_disabled ? t('enableQuestion') : t('disableQuestion') }}
         </UiButton>
         <UiButton
-          :disabled="isUpdatingQuestionId !== null"
+          :disabled="isUpdatingQuestionId !== null || isResettingQuiz"
           variant="secondary"
           @click="closeToggleDisabledConfirmationDialog"
         >
@@ -572,16 +606,51 @@ const {
       </p>
       <div class="mt-6 flex flex-wrap justify-end gap-2.5">
         <UiButton
-          :disabled="isUpdatingQuestionId !== null"
+          :disabled="isUpdatingQuestionId !== null || isResettingQuiz"
           variant="danger"
           @click="deleteQuestion"
         >
           {{ t('deleteQuestion') }}
         </UiButton>
         <UiButton
-          :disabled="isUpdatingQuestionId !== null"
+          :disabled="isUpdatingQuestionId !== null || isResettingQuiz"
           variant="secondary"
           @click="closeDeleteConfirmationDialog"
+        >
+          {{ t('cancelEditing') }}
+        </UiButton>
+      </div>
+    </dialog>
+
+    <dialog
+      ref="quizResetConfirmationDialog"
+      :aria-busy="isResettingQuiz"
+      aria-describedby="quiz-reset-confirmation-description"
+      aria-labelledby="quiz-reset-confirmation-title"
+      class="m-auto w-[calc(100%-2.5rem)] max-w-lg border-[3px] border-black bg-white p-6 text-black
+        backdrop:bg-black/50"
+      @cancel="handleQuizResetDialogCancel"
+      @click.self="closeQuizResetConfirmationDialog"
+      @close="resetQuizResetConfirmationDialog"
+    >
+      <h2 id="quiz-reset-confirmation-title" class="text-3xl font-bold uppercase">
+        {{ t('resetQuiz') }}
+      </h2>
+      <p id="quiz-reset-confirmation-description" class="mt-4">
+        {{ t('confirmResetQuiz') }}
+      </p>
+      <p v-if="quizResetError" class="mt-4" role="alert">
+        {{ quizResetError }}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+        <UiButton :disabled="isResettingQuiz" variant="danger" @click="resetQuiz">
+          {{ isResettingQuiz ? t('resettingQuiz') : t('resetQuiz') }}
+        </UiButton>
+        <UiButton
+          autofocus
+          :disabled="isResettingQuiz"
+          variant="secondary"
+          @click="closeQuizResetConfirmationDialog"
         >
           {{ t('cancelEditing') }}
         </UiButton>
@@ -685,6 +754,11 @@ en:
   createQuestionWithForm: Create one question
   importQuestionsTitle: Import Questions
   importQuestions: Import
+  resetQuiz: Reset Quiz
+  resettingQuiz: Resetting Quiz...
+  confirmResetQuiz: >-
+    Permanently delete all submitted answers and reset every question to not asked, inactive, unlocked, and
+    enabled? Questions and their current order are preserved.
   deleteAllQuestions: Delete All
   deletingAllQuestions: Deleting All...
   confirmDeleteAllQuestions: Permanently delete every question and all submitted answers?
@@ -749,6 +823,11 @@ de:
   createQuestionWithForm: Einzelne Frage erstellen
   importQuestionsTitle: Fragen importieren
   importQuestions: Importieren
+  resetQuiz: Quiz zurücksetzen
+  resettingQuiz: Quiz wird zurückgesetzt...
+  confirmResetQuiz: >-
+    Alle abgegebenen Antworten dauerhaft löschen und jede Frage auf ungefragt, inaktiv, entsperrt und
+    freigegeben zurücksetzen? Fragen und ihre aktuelle Reihenfolge bleiben erhalten.
   deleteAllQuestions: Alle löschen
   deletingAllQuestions: Alles wird gelöscht...
   confirmDeleteAllQuestions: Alle Fragen und abgegebenen Antworten dauerhaft löschen?
@@ -813,6 +892,11 @@ fr:
   createQuestionWithForm: Créer une question
   importQuestionsTitle: Importer des questions
   importQuestions: Importer
+  resetQuiz: Réinitialiser le quiz
+  resettingQuiz: Réinitialisation du quiz...
+  confirmResetQuiz: >-
+    Supprimer définitivement toutes les réponses et remettre chaque question à non posée, inactive,
+    déverrouillée et activée ? Les questions et leur ordre actuel sont conservés.
   deleteAllQuestions: Tout supprimer
   deletingAllQuestions: Suppression en cours...
   confirmDeleteAllQuestions: Supprimer définitivement toutes les questions et les réponses envoyées ?
@@ -877,6 +961,9 @@ ja:
   createQuestionWithForm: 1 件の質問を作成
   importQuestionsTitle: 質問をインポート
   importQuestions: インポート
+  resetQuiz: クイズをリセット
+  resettingQuiz: クイズをリセット中...
+  confirmResetQuiz: 送信されたすべての回答を完全に削除し、すべての質問を未出題、非アクティブ、ロック解除、有効の状態に戻しますか？質問と現在の順序は保持されます。
   deleteAllQuestions: すべて削除
   deletingAllQuestions: すべて削除中...
   confirmDeleteAllQuestions: すべての質問と送信済みの回答を完全に削除しますか？
