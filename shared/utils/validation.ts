@@ -217,36 +217,32 @@ export const UnpublishQuestionSchema = v.optional(v.strictObject({
 }), undefined)
 
 export const PresenterQuestionQuerySchema = v.strictObject({
-  key: requiredTrimmedStringSchema,
+  key: v.optional(requiredTrimmedStringSchema),
 })
 
-const EmbedSelectionSchema = v.strictObject({
+export const PresenterSelectionSchema = v.strictObject({
   questionKey: requiredTrimmedStringSchema,
-  mode: v.picklist([
+  questionCount: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(Number.MAX_SAFE_INTEGER))),
+  mode: v.optional(v.picklist([
     'quiz',
     'status',
-  ]),
+  ]), 'quiz'),
 })
-const embedSession = v.pipe(v.string(), v.minLength(1), v.maxLength(100))
-const embedRequest = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(Number.MAX_SAFE_INTEGER))
 
-export const PresenterEmbedCommandSchema = v.variant('type', [
-  v.strictObject({ type: v.literal('stage-flow-tools:connect'), sessionId: embedSession }),
+export const PresenterParentCommandSchema = v.variant('type', [
   v.strictObject({
-    type: v.literal('stage-flow-tools:context'), sessionId: embedSession,
-    requestId: embedRequest, selection: v.nullable(EmbedSelectionSchema),
+    type: v.literal('stage-flow-tools:connect'),
+    sessionId: v.pipe(v.string(), v.minLength(1), v.maxLength(100)),
   }),
   v.strictObject({
-    type: v.literal('stage-flow-tools:action'), sessionId: embedSession,
-    requestId: embedRequest, questionKey: requiredTrimmedStringSchema,
-    action: v.picklist([
-      'reveal',
-      'reopen',
-    ]),
+    type: v.literal('stage-flow-tools:context'),
+    sessionId: v.pipe(v.string(), v.minLength(1), v.maxLength(100)),
+    requestId: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(Number.MAX_SAFE_INTEGER)),
+    selection: v.nullable(PresenterSelectionSchema),
   }),
 ])
 
-/** Exact origins only; this opt-in permission is independent of REST CORS. */
+/** Exact parent origins grant iframe control independently of REST CORS. */
 export const PresenterParentOriginsSchema = v.pipe(
   v.string(),
   v.transform(value => value.trim() ? [

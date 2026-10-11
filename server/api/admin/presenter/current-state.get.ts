@@ -1,7 +1,9 @@
 import type { PresenterCurrentState } from '~/types'
+import { PresenterQuestionQuerySchema } from '#shared/utils/validation'
 
 export default defineApiHandler(async (event): Promise<PresenterCurrentState> => {
   await verifyAdmin(event)
 
-  return await getPresenterCurrentState()
+  const { key } = parseValidatedValue<{ key?: string }>(getQuery(event), PresenterQuestionQuerySchema)
+  return await getPresenterCurrentState(key)
 })
