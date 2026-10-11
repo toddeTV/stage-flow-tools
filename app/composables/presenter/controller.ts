@@ -36,6 +36,7 @@ export function createPresenterQuizController({ api, emitBoundary, options = {} 
   const step = ref<PresenterQuizStep | null>(null)
   const flow = shallowRef(options)
   let ownedKey: string | undefined
+  let explicitlyClosedKey: string | undefined
   let revision = 0
   let stopped = false
   let pending = Promise.resolve(true)
@@ -44,7 +45,7 @@ export function createPresenterQuizController({ api, emitBoundary, options = {} 
   const currentQuestion = computed(() => step.value?.kind === 'question'
     ? questions.value[step.value.questionIndex] ?? null : null)
   const scoped = () => Boolean(flow.value.questionKey || flow.value.questionCount
-    || flow.value.parentManaged || flow.value.readOnly)
+    || flow.value.parentManaged || flow.value.readOnly || explicitlyClosedKey)
   const current = (expected: number) => !stopped && revision === expected
 
   function enqueue(
@@ -196,6 +197,7 @@ export function createPresenterQuizController({ api, emitBoundary, options = {} 
   }
 
   function initialize(nextOptions = options) {
+    explicitlyClosedKey = undefined
     flow.value = nextOptions
     const expected = ++revision
     isLoading.value = true
@@ -207,12 +209,14 @@ export function createPresenterQuizController({ api, emitBoundary, options = {} 
     isLoading.value = true
     return enqueue(async () => {
       if (selection) {
+        explicitlyClosedKey = undefined
         flow.value = { ...options, ...selection, parentManaged: true }
         await load(expected)
       }
       else {
         await closeOwned(expected)
         if (!current(expected)) return
+        explicitlyClosedKey = undefined
         step.value = null
         questions.value = []
         currentState.value = null
@@ -255,11 +259,17 @@ export function createPresenterQuizController({ api, emitBoundary, options = {} 
         : getPreviousPresenterQuizStep(step.value, questions.value.length, flow.value)
       if (target.kind === 'boundary') {
         await closeOwned(expected)
-        if (current(expected)) emitBoundary(target.direction)
+        if (current(expected)) {
+          explicitlyClosedKey = undefined
+          emitBoundary(target.direction)
+        }
       }
       else {
         await syncStep(target, expected)
-        if (current(expected)) step.value = target
+        if (current(expected)) {
+          explicitlyClosedKey = undefined
+          step.value = target
+        }
       }
     }, 'sync', expected)
   }
@@ -272,7 +282,10 @@ export function createPresenterQuizController({ api, emitBoundary, options = {} 
       if (step.value?.kind !== 'question') return
       const target = { ...step.value, phase: 'open' as const }
       await syncStep(target, expected)
-      if (current(expected)) step.value = target
+      if (current(expected)) {
+        explicitlyClosedKey = undefined
+        step.value = target
+      }
     }, 'sync', expected)
   }
 
@@ -282,11 +295,13 @@ export function createPresenterQuizController({ api, emitBoundary, options = {} 
     const expected = ++revision
     return enqueue(async () => {
       await closeOwned(expected)
-      if (current(expected)) {
-        currentState.value = await api.getCurrentState(currentQuestion.value?.key)
-        if (step.value?.kind === 'question') {
-          step.value.phase = phase(currentState.value, currentQuestion.value ?? undefined)
-        }
+      if (!current(expected)) return
+      explicitlyClosedKey = currentQuestion.value?.key
+      const state = await api.getCurrentState(explicitlyClosedKey)
+      if (!current(expected)) return
+      currentState.value = state
+      if (step.value?.kind === 'question') {
+        step.value.phase = phase(state, currentQuestion.value ?? undefined)
       }
     }, 'sync', expected)
   }

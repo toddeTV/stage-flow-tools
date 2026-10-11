@@ -78,6 +78,8 @@ Legacy numeric and enum inputs fall back rather than rejecting the entire page. 
 
 Publishing, closing, locking, and reopening retain submitted answers. Resetting answers remains a separate admin action. A scoped selection of an already-published inactive question shows its stored results and stays closed until an explicit reopen/navigation action. Focus and polling do not silently reopen it.
 
+Explicitly closing a question also keeps its saved results visible in the regular Presenter. Polling and window focus preserve the close until an explicit reopen, navigation, or new selection.
+
 `presenterRefresh=0` disables periodic polling; initial loads and navigation remain available. A failed refresh keeps the last successful state for the same question. Obsolete requests never replace another selection's results. Writes are serialized, and newer parent contexts discard obsolete pending work.
 
 `stageScale` creates logical dimensions of iframe width/scale by iframe height/scale. The regular two-column layout activates above 860 logical pixels. Compact frames reuse both panels side by side with scrollable answer content. Child iframe scale settings remain independent.

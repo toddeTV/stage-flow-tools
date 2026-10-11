@@ -173,6 +173,99 @@ describe('selected Presenter flow', () => {
     expect(controller.currentState.value?.receivedAnswers).toBe(3)
     expect(controller.step.value).toMatchObject({ phase: 'open' })
   })
+  it.each([
+    'quiz',
+    'status',
+  ] as const)('keeps explicitly closed %s voting closed through polling and focus', async (mode) => {
+    const { controller, api, counts, rows } = setup({ mode })
+    await controller.initialize()
+    counts.set('one', 3)
+    await controller.close()
+    expect(controller.currentState.value?.receivedAnswers).toBe(3)
+
+    await controller.refresh()
+    await controller.activate()
+    expect(controller.currentState.value).toMatchObject({
+      receivedAnswers: 3, currentQuestion: { key: 'one', is_active: false },
+    })
+    expect(api.publishQuestion).toHaveBeenCalledTimes(1)
+    expect(api.toggleQuestionLock).not.toHaveBeenCalled()
+
+    // Another admin's selection must survive focus on this closed Presenter.
+    rows[2]!.is_active = true
+    await controller.refresh()
+    await controller.activate()
+    expect(rows[2]!.is_active).toBe(true)
+    expect(controller.currentState.value?.receivedAnswers).toBe(3)
+    expect(api.publishQuestion).toHaveBeenCalledTimes(1)
+
+    await controller.reopen()
+    expect(controller.currentState.value).toMatchObject({
+      receivedAnswers: 3, currentQuestion: { key: 'one', is_active: true, is_locked: false },
+    })
+    expect(api.publishQuestion).toHaveBeenCalledTimes(2)
+    expect(controller.step.value).toMatchObject({ phase: 'open' })
+  })
+  it.each([
+    'quiz',
+    'status',
+  ] as const)('resumes the usual %s flow after explicit navigation from a closed question', async (mode) => {
+    const { controller, api, rows } = setup({ mode })
+    await controller.initialize()
+    await controller.close()
+    await controller.navigate('next')
+    expect(controller.currentQuestion.value?.key).toBe('two')
+    rows[2]!.is_active = false
+    await controller.activate()
+    expect(rows[2]!.is_active).toBe(true)
+    expect(api.publishQuestion.mock.calls).toEqual([
+      [
+        'one',
+      ],
+      [
+        'two',
+      ],
+      [
+        'two',
+      ],
+    ])
+  })
+  it('allows a new ordinary selection to start voting after an explicit close', async () => {
+    const { controller, api } = setup()
+    await controller.initialize()
+    await controller.close()
+    await controller.initialize({ mode: 'status' })
+    expect(api.publishQuestion).toHaveBeenCalledTimes(2)
+    expect(controller.currentState.value?.currentQuestion?.is_active).toBe(true)
+  })
+  it('keeps closure after a failed reopen instead of retrying it on focus', async () => {
+    const { controller, api, counts } = setup()
+    await controller.initialize()
+    counts.set('one', 3)
+    await controller.close()
+    api.publishQuestion.mockRejectedValueOnce(new Error('offline'))
+    expect(await controller.reopen()).toBe(false)
+    await controller.refresh()
+    await controller.activate()
+    expect(api.publishQuestion).toHaveBeenCalledTimes(2)
+    expect(controller.currentState.value).toMatchObject({
+      receivedAnswers: 3, currentQuestion: { is_active: false },
+    })
+  })
+  it('keeps confirmed closure when the following state read fails', async () => {
+    const { controller, api, counts } = setup()
+    await controller.initialize()
+    counts.set('one', 3)
+    api.getCurrentState.mockRejectedValueOnce(new Error('offline'))
+    expect(await controller.close()).toBe(false)
+    expect(api.unpublishActiveQuestion).toHaveBeenCalledWith('one')
+    await controller.refresh()
+    await controller.activate()
+    expect(api.publishQuestion).toHaveBeenCalledTimes(1)
+    expect(controller.currentState.value).toMatchObject({
+      receivedAnswers: 3, currentQuestion: { is_active: false },
+    })
+  })
   it('keeps status voting open and goes straight to the boundary', async () => {
     const { controller, api, emitBoundary } = setup({
       questionCount: 1, mode: 'status', showLeaderboard: false, showRecap: false,
