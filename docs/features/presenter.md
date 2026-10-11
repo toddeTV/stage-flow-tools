@@ -2,253 +2,124 @@
 
 ## Overview
 
-The Presenter runs the complete quiz sequence in one frame or separates slideshow control from selected-question displays. Choose the mode that matches the presentation workflow.
+The Presenter runs the quiz in its existing question-and-results layout. Select a starting question, limit the number of questions, and enable the leaderboard and recap independently. The same view supports live exercise status and read-only previews.
 
 ## Access and prerequisites
 
-Use `/admin/presenter` with [admin access](admin-access.md). Sign in at the Stage Flow origin before entering an embedded presentation; browser privacy settings must allow the session cookie inside the iframe. Shared token-bootstrap rules are described in the admin guide. The Presenter never forwards a token to its child frames.
+Use `/admin/presenter` with [admin access](admin-access.md). Sign in at the Stage Flow origin before opening an embedded presentation. Its session cookie must be available inside the iframe. Credentials are never sent to the slideshow or child frames.
 
-A scoped controller also requires an exact slideshow origin in `NUXT_PRESENTER_PARENT_ORIGINS`. Keep its iframe mounted across slide changes and use one controlling slideshow tab. Notes and previews must use read-only displays.
+Parent-managed selection requires exact slideshow origins in `NUXT_PRESENTER_PARENT_ORIGINS`. This permission is independent of REST API CORS. Keep one controlling slideshow tab; other views use `readOnly=true`.
 
 ## Capabilities and controls
 
-### Legacy quiz sequence
+The default sequence remains question open → question revealed → next question → leaderboard → recap. Left/right arrow keys and the existing navigation buttons follow this sequence. The right arrow reveals and locks a quiz question; the left arrow from reveal opens it again. **Reopen voting** explicitly activates the displayed question with its retained answers. **Close voting** closes only the question owned by this Presenter.
 
-With no `embed` parameter, the Presenter runs enabled questions in persisted queue order, then the leaderboard and recap. Navigation buttons and left/right arrow keys follow this sequence:
+`mode=status` shows option counts continuously in the existing panels without locking votes or showing correct-answer markers and discussion notes. Advancing goes straight to the next question or enabled endscreen. The compact workshop slot uses the same panels with smaller spacing. Avoid the scoring marker `⭐` on status options. “Finished” means that option's count, not connections or all responses.
 
-```text
-Question 1 open → Question 1 revealed → Question 2 open → … → Last question revealed → Leaderboard → Recap
-```
+Read-only views show the selected question and aggregates, including saved results for closed questions. They expose no voting or navigation controls. Language selection and discussion notes remain available.
 
-Backward navigation reverses it. Crossing the first or last internal step sends a boundary message to the parent slideshow. This mode publishes questions and synchronizes voting locks; it is an administrative workflow.
+## Question selection
 
-### Scoped controller and display modes
+`questionKey` is a stable question-package key, not a generated database ID. It starts the flow at that enabled question and excludes preceding questions. `questionCount` independently limits the number of enabled questions. An absent count includes all remaining questions. A count-only selection starts at the active question, or the first enabled question when none is active. Without either parameter the original active-question resume behavior remains.
 
-`embed=controller` is a persistent authenticated bridge. It does not start the legacy queue. It accepts messages only from its parent window and exact configured origins. A first visit publishes an unpublished enabled question and opens voting. An already-active question retains its lock state; a previously published inactive question stays closed. Explicit actions reveal or reopen voting without resetting answers.
+Questions stay in persisted queue order. Disabled questions are skipped. A count beyond the available questions stops at the list end; it never wraps. Invalid counts and unknown or disabled keys show an error without publishing anything.
 
-`embed=display` is read-only and selects a question by its stable package key rather than its generated ID. It displays aggregates for enabled active or inactive questions without publishing, reopening, or changing shared quiz state.
-
-- `mode=quiz` shows option counts, the correct-answer marker, and the note when voting is locked or a previously published question is inactive.
-- `mode=status` shows counts continuously, including the exact English `Finished` option count separately from all responses. Use `Finished` as the option's `text.en`; avoid `⭐` on status options so they do not contribute quiz scores.
-- `compact=true` reduces spacing and typography for a status display.
+At the block end, show the enabled leaderboard and recap in that order. Backward navigation skips disabled endscreens too. Their aggregates still cover the entire published quiz session. Crossing the first or last available step sends a slideshow boundary message.
 
 ## Parameters and configuration
 
-### Legacy parameters
+| Name | Allowed values | Default | Effect |
+| --- | --- | --- | --- |
+| `questionKey` | Non-empty stable key | Absent | Selects the entry question |
+| `questionCount` | Positive safe integer | Absent | Limits enabled questions from the entry |
+| `showLeaderboard` | `true` / `false` | `true` | Enables the leaderboard step |
+| `showRecap` | `true` / `false` | `true` | Enables the recap step |
+| `mode` | `quiz` / `status` | `quiz` | Quiz phases or live status counts |
+| `readOnly` | `true` / `false` | `false` | Prevents every Presenter write |
+| `parentManaged` | `true` / `false` | `false` | Waits for trusted parent selection instead of starting automatically |
+
+Malformed or repeated selection and boolean parameters fail without writes. Removed `embed=controller` and `embed=display` URLs also fail without writes. All existing visual parameters continue to configure this single Presenter view:
 
 | Scope / mode | Name | Type and allowed values | Default | Effect | Invalid input |
 | --- | --- | --- | --- | --- | --- |
-| Legacy URL | `background` | Hex color (`#RRGGBB`) | Theme default | Overrides the presenter viewport background in both color modes. It is not forwarded to embedded pages. | Invalid or repeated values leave the override unset |
-| Legacy URL | `colorMode` | `light` \| `dark` | `light` | Sets the local quiz theme and the inherited leaderboard and recap themes. | Invalid or repeated values use the default or inherited theme |
-| Legacy URL | `foregroundOpacity` | Number, clamped to `0`–`1` | `1` | Multiplies panel opacity without changing text or control opacity. | Finite values clamp; empty, non-finite, or repeated values use the default |
-| Legacy URL | `foregroundInsetX` | Non-negative number in pixels | `56` | Sets horizontal quiz content insets. | Empty, negative, non-finite, or repeated values use the default |
-| Legacy URL | `foregroundInsetY` | Non-negative number in pixels | `40` | Sets vertical quiz content insets. The fixed 18-pixel lower reserve remains. | Empty, negative, non-finite, or repeated values use the default |
-| Legacy URL | `textScale` | Positive number | `1` | Scales quiz typography and presenter controls. | Empty, non-positive, non-finite, or repeated values use the default |
-| Legacy URL | `language` | Locale string | Automatic | Selects question content language before the browser preference. A manual picker choice updates `language` in the current URL while preserving its other parameters. | Empty or repeated values use browser preference; unavailable translations fall through |
-| Legacy URL | `presenterRefresh` | Non-negative number in seconds | `2` | Refreshes presenter state at a decimal interval. Use `0` to disable periodic polling. Values between `0` and `0.1` use `0.1`. | Positive values below `0.1` clamp; empty, negative, non-finite, or repeated values use `2` |
-| Legacy URL | `stageScale` | Positive number | `1` | Scales the complete virtual presenter stage. Values below `1` create more logical space; values above `1` enlarge the interface. | Empty, non-positive, non-finite, non-invertible, or repeated values use `1` |
-| Legacy URL | `emojiLayer` | `background` \| `foreground` \| `none` | `background` | Places emoji below or above presentation content, or omits the emoji iframe entirely. `none` prevents the emoji WebSocket connection and animation from starting. Emoji layers never accept pointer input. | Invalid or repeated values use the default or inherited theme |
-| Legacy URL | `emojiScale` | Positive number | `0.3` | Passes `scale` to the embedded `/admin/emojis` page. | Empty, non-positive, non-finite, or repeated values use the default |
-| Legacy URL | `emojiOpacity` | Number, clamped to `0`–`1` | `0.8` | Passes `transparency` to the embedded emoji page. | Finite values clamp; empty, non-finite, or repeated values use the default |
-| Legacy URL | `emojiBackground` | Hex color (`#RRGGBB`) | Transparent | Passes `background` to the embedded emoji page. | Invalid or repeated values leave the override unset |
-| Legacy URL | `leaderboardCore` | `true` / `false` | `false` | Passes the existing `core` flag to the leaderboard when `true`. | Invalid or repeated values use the default |
-| Legacy URL | `leaderboardPadding` | Non-negative number in pixels | `0` | Passes `padding` to the leaderboard. | Empty, negative, non-finite, or repeated values use the default |
-| Legacy URL | `leaderboardScale` | Positive number | `1` | Passes `scale` to the leaderboard. | Empty, non-positive, non-finite, or repeated values use the default |
-| Legacy URL | `leaderboardBackground` | Hex color (`#RRGGBB`) | Not set | Passes `background` to the leaderboard. | Invalid or repeated values leave the override unset |
-| Legacy URL | `leaderboardShowUserId` | `true` / `false` | `false` | Passes `showUserId` to the leaderboard. Set it to `true` to show technical participant IDs. | Invalid or repeated values use the default |
-| Legacy URL | `leaderboardRefresh` | Non-negative integer in seconds | `5` | Passes `refresh` to the leaderboard. Use `0` to disable polling. | Empty, negative, fractional, non-finite, or repeated values use `5` |
-| Legacy URL | `leaderboardColorMode` | `light` \| `dark` | Inherits `colorMode` | Overrides only the embedded leaderboard theme. | Invalid or repeated values use the default or inherited theme |
-| Legacy URL | `recapCore` | `true` / `false` | `false` | Passes the existing `core` flag to the recap when `true`. | Invalid or repeated values use the default |
-| Legacy URL | `recapPadding` | Non-negative number in pixels | `0` | Passes `padding` to the recap. | Empty, negative, non-finite, or repeated values use the default |
-| Legacy URL | `recapScale` | Positive number | `1` | Passes `scale` to the recap. | Empty, non-positive, non-finite, or repeated values use the default |
-| Legacy URL | `recapBackground` | Hex color (`#RRGGBB`) | Not set | Passes `background` to the recap. | Invalid or repeated values leave the override unset |
-| Legacy URL | `recapRefresh` | Non-negative integer in seconds | `5` | Passes `refresh` to the recap. Use `0` to disable polling. | Empty, negative, fractional, non-finite, or repeated values use `5` |
-| Legacy URL | `recapCount` | Integer from `1` to `4` | `4` | Limits the number of embedded recap highlights. | Empty, repeated, or values outside integers 1–4 use `4` |
-| Legacy URL | `recapColorMode` | `light` \| `dark` | Inherits `colorMode` | Overrides only the embedded recap theme. | Invalid or repeated values use the default or inherited theme |
+| Presenter URL | `background` | Hex color (`#RRGGBB`) | Theme default | Overrides the presenter viewport background in both color modes. It is not forwarded to embedded pages. | Invalid or repeated values leave the override unset |
+| Presenter URL | `colorMode` | `light` \| `dark` | `light` | Sets the local quiz theme and the inherited leaderboard and recap themes. | Invalid or repeated values use the default or inherited theme |
+| Presenter URL | `foregroundOpacity` | Number, clamped to `0`–`1` | `1` | Multiplies panel opacity without changing text or control opacity. | Finite values clamp; empty, non-finite, or repeated values use the default |
+| Presenter URL | `foregroundInsetX` | Non-negative number in pixels | `56` | Sets horizontal quiz content insets. | Empty, negative, non-finite, or repeated values use the default |
+| Presenter URL | `foregroundInsetY` | Non-negative number in pixels | `40` | Sets vertical quiz content insets, plus space reserved for the controls. | Empty, negative, non-finite, or repeated values use the default |
+| Presenter URL | `textScale` | Positive number | `1` | Scales quiz typography and presenter controls. | Empty, non-positive, non-finite, or repeated values use the default |
+| Presenter URL | `language` | Locale string | Automatic | Selects question content language before the browser preference. A manual picker choice updates `language` in the current URL while preserving its other parameters. | Empty or repeated values use browser preference; unavailable translations fall through |
+| Presenter URL | `presenterRefresh` | Non-negative number in seconds | `2` | Refreshes presenter state at a decimal interval. Use `0` to disable periodic polling. Values between `0` and `0.1` use `0.1`. | Positive values below `0.1` clamp; empty, negative, non-finite, or repeated values use `2` |
+| Presenter URL | `stageScale` | Positive number | `1` | Scales the complete virtual presenter stage. Values below `1` create more logical space; values above `1` enlarge the interface. | Empty, non-positive, non-finite, non-invertible, or repeated values use `1` |
+| Presenter URL | `emojiLayer` | `background` \| `foreground` \| `none` | `background` | Places emoji below or above presentation content, or omits the emoji iframe entirely. `none` prevents the emoji WebSocket connection and animation from starting. Emoji layers never accept pointer input. | Invalid or repeated values use the default or inherited theme |
+| Presenter URL | `emojiScale` | Positive number | `0.3` | Passes `scale` to the embedded `/admin/emojis` page. | Empty, non-positive, non-finite, or repeated values use the default |
+| Presenter URL | `emojiOpacity` | Number, clamped to `0`–`1` | `0.8` | Passes `transparency` to the embedded emoji page. | Finite values clamp; empty, non-finite, or repeated values use the default |
+| Presenter URL | `emojiBackground` | Hex color (`#RRGGBB`) | Transparent | Passes `background` to the embedded emoji page. | Invalid or repeated values leave the override unset |
+| Presenter URL | `leaderboardCore` | `true` / `false` | `false` | Passes the existing `core` flag to the leaderboard when `true`. | Invalid or repeated values use the default |
+| Presenter URL | `leaderboardPadding` | Non-negative number in pixels | `0` | Passes `padding` to the leaderboard. | Empty, negative, non-finite, or repeated values use the default |
+| Presenter URL | `leaderboardScale` | Positive number | `1` | Passes `scale` to the leaderboard. | Empty, non-positive, non-finite, or repeated values use the default |
+| Presenter URL | `leaderboardBackground` | Hex color (`#RRGGBB`) | Not set | Passes `background` to the leaderboard. | Invalid or repeated values leave the override unset |
+| Presenter URL | `leaderboardShowUserId` | `true` / `false` | `false` | Passes `showUserId` to the leaderboard. Set it to `true` to show technical participant IDs. | Invalid or repeated values use the default |
+| Presenter URL | `leaderboardRefresh` | Non-negative integer in seconds | `5` | Passes `refresh` to the leaderboard. Use `0` to disable polling. | Empty, negative, fractional, non-finite, or repeated values use `5` |
+| Presenter URL | `leaderboardColorMode` | `light` \| `dark` | Inherits `colorMode` | Overrides only the embedded leaderboard theme. | Invalid or repeated values use the default or inherited theme |
+| Presenter URL | `recapCore` | `true` / `false` | `false` | Passes the existing `core` flag to the recap when `true`. | Invalid or repeated values use the default |
+| Presenter URL | `recapPadding` | Non-negative number in pixels | `0` | Passes `padding` to the recap. | Empty, negative, non-finite, or repeated values use the default |
+| Presenter URL | `recapScale` | Positive number | `1` | Passes `scale` to the recap. | Empty, non-positive, non-finite, or repeated values use the default |
+| Presenter URL | `recapBackground` | Hex color (`#RRGGBB`) | Not set | Passes `background` to the recap. | Invalid or repeated values leave the override unset |
+| Presenter URL | `recapRefresh` | Non-negative integer in seconds | `5` | Passes `refresh` to the recap. Use `0` to disable polling. | Empty, negative, fractional, non-finite, or repeated values use `5` |
+| Presenter URL | `recapCount` | Integer from `1` to `4` | `4` | Limits the number of embedded recap highlights. | Empty, repeated, or values outside integers 1–4 use `4` |
+| Presenter URL | `recapColorMode` | `light` \| `dark` | Inherits `colorMode` | Overrides only the embedded recap theme. | Invalid or repeated values use the default or inherited theme |
 
 Legacy numeric and enum inputs fall back rather than rejecting the entire page. Unknown query keys are not forwarded to child frames. The content language resolves through URL preference, browser locale, English, then the first available translation. The chosen language also reaches the recap. A manual language-picker choice updates the URL while preserving other parameters.
 
-### Embed parameters
-
-| Scope / mode | Name | Type and allowed values | Default | Effect | Invalid input |
-| --- | --- | --- | --- | --- | --- |
-| Presenter URL | `embed` | Absent / `controller` / `display` | Absent; legacy sequence | Selects the presenter implementation | Other values show an invalid-mode message |
-| Display URL | `questionKey` | Non-empty stable package key | Required | Selects an enabled question's aggregates | Empty or repeated values fail loading; unknown or disabled keys return an API error |
-| Display URL | `mode` | `quiz` / `status` | `quiz` | Selects quiz or exercise-progress presentation | Unsupported values fail loading; use one value |
-| Display URL; status only | `compact` | `true` / `false` | `false` | Uses compact status layout | Anything except a single `true` value leaves it off |
-| Display URL | `language` | Locale string | Browser language | Selects localized question, option, and note text | Empty or repeated values use browser preference; unavailable translations fall through |
-| Display URL | `colorMode` | `light` / `dark` | `light` | Sets the display theme | Invalid or repeated values use `light` |
-| Display URL | `presenterRefresh` | Non-negative number, seconds | `2` | Polls selected aggregates; `0` disables periodic polling | Positive values below `0.1` clamp; empty, negative, non-finite, or repeated values use `2` |
-| Controller runtime | `NUXT_PRESENTER_PARENT_ORIGINS` | Comma-separated exact HTTP(S) origins | Empty; parent control disabled | Allows trusted slideshow parents | Origin configuration rejects wildcards, paths, credentials, and non-origin values |
-
-The display consumes only its selection, mode, compact setting, language, theme, and refresh interval. Legacy background, stage scaling, emoji, leaderboard, and recap parameters do not configure it. The controller has no legacy display settings. See [`.env.example`](../../.env.example) for the server configuration contract.
+`NUXT_PRESENTER_PARENT_ORIGINS` is a comma-separated list of exact HTTP(S) origins, for example `http://localhost:3030`. Empty disables parent messages. Wildcards, paths, credentials, query strings, and fragments are rejected. See [`.env.example`](../../.env.example).
 
 ## Behavior and limitations
 
-### Legacy synchronization and scaling
+Publishing, closing, locking, and reopening retain submitted answers. Resetting answers remains a separate admin action. A scoped selection of an already-published inactive question shows its stored results and stays closed until an explicit reopen/navigation action. Focus and polling do not silently reopen it.
 
-`presenterRefresh=0` disables periodic polling; initial loading, focus refreshes, and navigation still synchronize state. The legacy mode can open voting when navigating backward to an open question. Publishing, closing, and reopening retain answers; answer reset is a separate admin action.
+Explicitly closing a question also keeps its saved results visible in the regular Presenter. Polling and window focus preserve the close until an explicit reopen, navigation, or new selection.
 
-`stageScale` uses iframe dimensions automatically. Logical dimensions are `iframe width / stageScale` by `iframe height / stageScale`. The two-column quiz layout activates above 860 logical pixels: a 640-pixel-wide iframe with `stageScale=0.7` has about 914 logical pixels. Stage scaling is not forwarded to child pages; their individual scale settings apply in addition to it. Extremely small or large values can make content hard to read or increase rendering cost.
+`presenterRefresh=0` disables periodic polling; initial loads and navigation remain available. A failed refresh keeps the last successful state for the same question. Obsolete requests never replace another selection's results. Writes are serialized, and newer parent contexts discard obsolete pending work.
 
-### Scoped lifecycle
+`stageScale` creates logical dimensions of iframe width/scale by iframe height/scale. The regular two-column layout activates above 860 logical pixels. Compact frames reuse both panels side by side with scrollable answer content. Child iframe scale settings remain independent.
 
-The controller closes only its owned question when context changes, using the expected-key close operation. Operations are serialized; newer context supersedes pending work for an older selection. No bridge operation resets answers. A previously published inactive question remains closed until an explicit `reopen` action.
-
-A display loads once, refreshes on selected-key changes, and optionally polls. Quiz counts are hidden during open voting; status counts are always visible. A failed refresh retains the last valid state for the same question with a connection warning. A response for another key is never shown as the selected question's results.
-
-Close voting before quitting the presentation. Browser unload cannot guarantee asynchronous cleanup; destroying the controller stops processing but does not reliably close voting. Expired authentication, rejected origins, and disconnected frames must leave the parent slideshow navigable.
-
-### Controller messaging
-
-Connect with `stage-flow-tools:connect` and a `sessionId` of 1–100 characters; wait for `stage-flow-tools:ready` with the same session. The controller initializes asynchronously after loading its configuration and buffers an early connect message. An iframe load event does not establish a session; wait for ready and retry the handshake if no reply arrives. A controller accepts one session; recreate its frame to start a different session.
-
-After ready, send `stage-flow-tools:context` with the session, a strictly increasing positive safe integer `requestId`, and `selection: { questionKey, mode }`, or `null` to leave. Send `stage-flow-tools:action` for the selected key with `action: reveal|reopen`. Invalid or extra payload fields, untrusted sources, stale request IDs, and mismatched sessions are ignored. Acknowledgements contain the session, request ID, selected key (or `null`), and `status: ready|closed|error`. Parents must validate iframe source, Stage Flow origin, session, and request before using a reply. `ready` acknowledges processed selection; it does not mean that an inactive question was reopened.
+Close voting before quitting a presentation. Browser unload cannot guarantee completion of asynchronous requests. The parent slideshow stays navigable when authentication, configuration, or networking fails.
 
 ## Examples
 
-### Legacy URLs
-
 ```text
 /admin/presenter
-Light quiz layout with background emojis and a leaderboard without technical participant IDs.
-
-/admin/presenter?emojiLayer=none
-Quiz layout without an emoji iframe, connection, or animation.
-
-/admin/presenter?colorMode=dark&emojiLayer=foreground&foregroundOpacity=0.85
-Dark quiz layout with click-through emoji reactions above the content.
-
-/admin/presenter?colorMode=dark&background=%23020417
-Dark quiz layout with a custom presenter background.
-
-/admin/presenter?foregroundInsetX=32&foregroundInsetY=24&textScale=1.15&language=de
-German question content with smaller insets and larger quiz text.
-
-/admin/presenter?presenterRefresh=0.5
-Standard quiz flow with presenter results refreshed every half-second.
-
-/admin/presenter?stageScale=0.7
-More logical space for retaining the two-column quiz layout in a small iframe.
-
-/admin/presenter?leaderboardCore=true&leaderboardPadding=24&leaderboardScale=0.9&leaderboardShowUserId=true
-Standard quiz flow with a projector-oriented leaderboard and explicitly enabled technical IDs.
-
-/admin/presenter?recapCore=true&recapPadding=24&recapScale=0.9&recapCount=2&recapRefresh=0
-Standard quiz flow with a static, projector-oriented recap limited to two highlights.
+/admin/presenter?questionKey=example&questionCount=1&showLeaderboard=false&showRecap=false
+/admin/presenter?questionKey=example&questionCount=3&showLeaderboard=false
+/admin/presenter?questionKey=exercise&questionCount=1&mode=status&readOnly=true&language=de
+/admin/presenter?colorMode=dark&emojiLayer=none&stageScale=0.7
+/admin/presenter?parentManaged=true&readOnly=false&showLeaderboard=false&showRecap=false
 ```
 
-Encode `#` as `%23` when using any background parameter.
+## Parent-managed slideshow integration
 
-### Slidev boundary wrapper
+Use one persistent iframe, showing the existing Presenter at the active quiz/status slide's placeholder. Hide it on ordinary slides while keeping it mounted so closing can finish. Notes and secondary tabs use their own read-only persistent frame. The workshop uses one question per context and disables both endscreens.
 
-The presenter sends this message after it crosses its first or last internal step:
+Load `/admin/presenter?parentManaged=true` with the appropriate immutable `readOnly` role. The Presenter waits for selection and does not automatically publish on load or focus. The authenticated `/api/admin/presenter/embed-config` provides the permitted parent origins.
 
-```ts
-type PresenterBoundaryMessage = {
-  type: 'stage-flow-tools:presenter-boundary'
-  direction: 'previous' | 'next'
-}
-```
+Connect with `{ type: 'stage-flow-tools:connect', sessionId }` and wait for `{ type: 'stage-flow-tools:ready', sessionId }`. Session IDs contain 1–100 characters. An early connect is buffered until authenticated configuration is available.
 
-Use a wrapper component like the following in Slidev. Replace the URL with the deployed Stage Flow Tools origin.
-The wrapper focuses the iframe when its slide becomes active and accepts messages only from that iframe and origin.
+Send `{ type: 'stage-flow-tools:context', sessionId, requestId, selection }`, where `selection` is `{ questionKey, questionCount?, mode }` or `null`. Mode defaults to `quiz`; request IDs are strictly increasing positive safe integers. Context never changes `readOnly`, endscreen flags, or authentication. Dedicated external action commands have been removed; use the visible Presenter controls.
 
-```vue
-<script setup lang="ts">
-import { onSlideEnter, useNav } from '@slidev/client'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+The acknowledgement is `{ type: 'stage-flow-tools:ack', sessionId, requestId, questionKey, status }`. The key is `null` for closing; status is `ready`, `closed`, or `error`. Only the newest request is acknowledged, after synchronization. Parents validate the iframe source, Stage Flow origin, session, and request before accepting replies. The Presenter validates its parent window, exact configured origin, and strict message schema.
 
-const presenterUrl = 'https://quiz.example.com/admin/presenter'
-const presenterOrigin = new URL(presenterUrl).origin
-const presenterFrame = ref<HTMLIFrameElement>()
-const nav = useNav()
+A first selection of an unpublished question activates it and opens voting. Already-active quiz questions keep their lock state; status mode opens voting. Published inactive questions stay closed in both modes. Changing context closes only the previously owned question using the atomically checked expected-key operation. `null` closes it and clears the selected view.
 
-function focusPresenter() {
-  presenterFrame.value?.contentWindow?.focus()
-}
+## Slidev boundary wrapper
 
-function handlePresenterBoundary(event: MessageEvent) {
-  if (event.origin !== presenterOrigin || event.source !== presenterFrame.value?.contentWindow) return
-  if (!event.data || event.data.type !== 'stage-flow-tools:presenter-boundary') return
-
-  if (event.data.direction === 'next') void nav.nextSlide()
-  if (event.data.direction === 'previous') void nav.prevSlide(true)
-}
-
-onMounted(() => window.addEventListener('message', handlePresenterBoundary))
-onBeforeUnmount(() => window.removeEventListener('message', handlePresenterBoundary))
-onSlideEnter(focusPresenter)
-</script>
-
-<template>
-  <iframe
-    ref="presenterFrame"
-    class="absolute inset-0 h-full w-full border-0"
-    :src="presenterUrl"
-    title="Live quiz"
-    @load="focusPresenter"
-  />
-</template>
-```
-
-`nextSlide()` and `prevSlide(true)` come from Slidev's
-[`useNav()` navigation API](https://github.com/slidevjs/slidev/blob/main/packages/client/composables/useNav.ts).
-
-### Scoped URLs
-
-```text
-/admin/presenter?embed=controller
-Persistent control bridge; keep this iframe outside individual slide lifecycles.
-
-/admin/presenter?embed=display&questionKey=example-quiz&mode=quiz&colorMode=dark
-Read-only selected quiz display.
-
-/admin/presenter?embed=display&questionKey=example-exercise&mode=status&compact=true&language=de&presenterRefresh=0.5
-Compact exercise progress with half-second updates; text.en must include Finished.
-
-/admin/presenter?embed=display&questionKey=example-quiz&mode=quiz&presenterRefresh=0
-Selected quiz display with initial and key-change loading, without periodic polling.
-```
-
-Configure the controller's trusted parent origin, for example `NUXT_PRESENTER_PARENT_ORIGINS=http://localhost:3030`. This setting is independent of REST CORS. A read-only display does not require parent control permission.
-
-### Scoped message sequence
-
-In the parent, send each payload with `controllerFrame.contentWindow.postMessage(payload, stageFlowOrigin)`. Receive and validate replies from that frame and origin. Retry the first message until its matching ready reply, then send subsequent requests with increasing IDs. These synthetic payloads demonstrate opening a selected question, revealing it, and leaving:
-
-```json
-{ "type": "stage-flow-tools:connect", "sessionId": "example-session" }
-```
-
-After the matching ready reply:
-
-```json
-{ "type": "stage-flow-tools:context", "sessionId": "example-session", "requestId": 1, "selection": { "questionKey": "example-quiz", "mode": "quiz" } }
-```
-
-After the matching acknowledgement, reveal or explicitly reopen the selected question:
-
-```json
-{ "type": "stage-flow-tools:action", "sessionId": "example-session", "requestId": 2, "questionKey": "example-quiz", "action": "reveal" }
-```
-
-Leave the selection before ending the presentation and wait for the close acknowledgement:
-
-```json
-{ "type": "stage-flow-tools:context", "sessionId": "example-session", "requestId": 3, "selection": null }
-```
+At a forward or backward boundary the Presenter sends `{ type: 'stage-flow-tools:presenter-boundary', direction: 'next' | 'previous' }`. Validate both `event.origin` and `event.source === iframe.contentWindow` before calling Slidev `nextSlide()` or `prevSlide(true)`. Read-only frames emit no navigation requests. Keep focus on the active frame for its internal arrow-key navigation.
 
 ## Implementation and verification
 
-- [Presenter route](../../app/pages/admin/presenter.vue), [legacy view](../../app/components/presenter/PresenterLegacy.vue), and [legacy controller](../../app/composables/usePresenterQuiz.ts) own mode dispatch and queue synchronization.
-- [Parameter parser](../../app/utils/presenter-parameters.ts) and [parameter tests](../../app/utils/presenter-parameters.test.ts) verify legacy defaults and child URLs; [legacy tests](../../app/composables/usePresenterQuiz.test.ts) verify navigation.
-- [Embed controller component](../../app/components/presenter/PresenterEmbedController.vue), [bridge](../../app/utils/presenter-embed-controller.ts), and [bridge tests](../../app/utils/presenter-embed-controller.test.ts) verify trusted sessions and scoped state changes.
-- [Embed display](../../app/components/presenter/PresenterEmbedDisplay.vue) and [display tests](../../app/components/presenter/PresenterEmbedDisplay.test.ts) verify selected-key rendering and retained status counts.
-- [Boundary tests](../../shared/utils/presenter-embed.test.ts) and [selected-state API tests](../../server/api/admin/presenter/question-state.get.test.ts) cover input validation and authenticated aggregates.
+The [Presenter route](../../app/pages/admin/presenter.vue), existing Presenter components, [controller](../../app/composables/presenter/controller.ts), and [parameter parser](../../app/utils/presenter-parameters.ts) own layout, flow, and polling. Their colocated tests cover selection, phases, read-only behavior, terminal flags, and confirmed mutations. The parent bridge and lifecycle tests cover trusted messages and asynchronous startup.
 
 ## Related references
 
-- [Feature Guide](README.md)
-- [Questions](questions.md), [Results](results.md), [Leaderboard](leaderboard.md), [Recap](recap.md), and [Emojis](emojis.md)
-- [Scoped presentation API](../api.md#scoped-presentation-embeds), [WebSockets](../websocket.md), and [admin access](admin-access.md)
+- [Questions](questions.md), [Results](results.md), [Leaderboard](leaderboard.md), and [Recap](recap.md)
+- [API](../api.md) and [URL parameters](../url-parameters.md)

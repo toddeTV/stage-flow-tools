@@ -6,7 +6,7 @@ The results page shows votes for the active question and provides admin controls
 
 ## Access and prerequisites
 
-Use `/admin/results` with [admin access](admin-access.md). For a display that cannot change quiz state, use [Presenter display mode](presenter.md#scoped-controller-and-display-modes).
+Use `/admin/results` with [admin access](admin-access.md). For a display that cannot change quiz state, use the [read-only Presenter](presenter.md#question-selection).
 
 ## Capabilities and controls
 

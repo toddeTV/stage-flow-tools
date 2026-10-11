@@ -109,14 +109,17 @@ const displayAnswers = computed<PresenterQuizAnswer[]>(() => props.question.answ
   count: liveAnswers.value[index]?.count ?? 0,
   emoji: option.emoji ?? liveAnswers.value[index]?.emoji ?? '',
   id: `${props.question.key}-${index}`,
-  isCorrect: option.emoji === '⭐',
+  isCorrect: props.parameters.mode !== 'status' && option.emoji === '⭐',
   label: localizedText(option.text, selectedLanguage.value),
   percent: liveAnswers.value[index]?.percent ?? 0,
 })))
 const questionTitle = computed(() => localizedText(props.question.question_text, selectedLanguage.value))
 const noteText = computed(() => localizedText(props.question.note, selectedLanguage.value))
 const isReveal = computed(() => props.phase === 'reveal')
-const hasRevealNote = computed(() => isReveal.value && Boolean(noteText.value))
+const showResults = computed(() => props.parameters.mode === 'status' || isReveal.value)
+const isActive = computed(() => currentQuestionMatches.value && props.currentState?.currentQuestion?.is_active === true)
+const isLocked = computed(() => currentQuestionMatches.value && props.currentState?.currentQuestion?.is_locked === true)
+const hasRevealNote = computed(() => props.parameters.mode !== 'status' && isReveal.value && Boolean(noteText.value))
 const receivedAnswers = computed(() => currentQuestionMatches.value ? props.currentState?.receivedAnswers ?? 0 : 0)
 const participation = computed(() => currentQuestionMatches.value ? props.currentState?.receivedAnswersPercent ?? 0 : 0)
 const totalUsers = computed(() => props.currentState?.totalUsers ?? 0)
@@ -165,24 +168,30 @@ watch([
 </script>
 
 <template>
-  <div class="presenter-quiz-view">
+  <div class="presenter-quiz-view" :class="{ 'is-status': props.parameters.mode === 'status' }">
     <div class="quiz-layout">
       <PresenterQuizQuestionPanel
         :answers="displayAnswers"
         :busy="props.busy"
         :has-reveal-note="hasRevealNote"
+        :is-active="isActive"
+        :is-locked="isLocked"
         :is-reveal="isReveal"
         :question-count="props.questions.length"
         :question-index="props.questionIndex"
         :question-title="questionTitle"
+        :read-only="props.parameters.readOnly"
+        :show-results="showResults"
         @navigate="emit('navigate', $event)"
         @open-note="openNoteModal"
       />
 
       <PresenterQuizResultsPanel
         :answers="displayAnswers"
-        :is-live="currentQuestionMatches"
-        :is-reveal="isReveal"
+        :is-active="isActive"
+        :is-live="isActive"
+        :is-locked="isLocked"
+        :is-reveal="showResults"
         :participation="participation"
         :received-answers="receivedAnswers"
         :total-users="totalUsers"
@@ -261,5 +270,16 @@ ja:
   .quiz-layout {
     @apply grid-cols-1 overflow-y-auto;
   }
+}
+@container presenter-stage (max-height: 420px) {
+  .quiz-layout {
+    @apply grid-cols-[minmax(0,1.4fr)_minmax(12rem,0.8fr)] gap-3 overflow-hidden;
+  }
+  .is-status :deep(.answer-card) { @apply flex items-center justify-between gap-2 py-0.5; }
+  .is-status :deep(.answer-main-row) { @apply min-w-0 flex-1; }
+  .is-status :deep(.answer-stats) { @apply mt-0 shrink-0; }
+}
+@container presenter-stage (max-width: 860px) {
+  .language-picker { @apply left-2 translate-x-0; }
 }
 </style>

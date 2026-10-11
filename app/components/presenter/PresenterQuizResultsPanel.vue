@@ -6,6 +6,8 @@ import { quizMarkdownToPlainText } from '~/utils/render-quiz-markdown.client'
 const props = defineProps<{
   answers: PresenterQuizAnswer[]
   isLive: boolean
+  isActive?: boolean
+  isLocked?: boolean
   isReveal: boolean
   participation: number
   receivedAnswers: number
@@ -13,6 +15,10 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const stateLabel = computed(() => props.isActive === false ? t('closed')
+  : (props.isLocked ?? props.isReveal) ? t('locked') : t('open'))
+const statusLabel = computed(() => props.isLive ? t('live')
+  : props.isActive === false ? t('closed') : t('syncing'))
 const totalVotes = computed(() => props.answers.reduce((sum, answer) => sum + answer.count, 0))
 const chartGradient = computed(() => {
   if (totalVotes.value <= 0) return 'conic-gradient(#D9E0E8 0deg 360deg)'
@@ -34,7 +40,7 @@ const chartSummary = computed(() => props.answers
     <div class="result-card">
       <div class="chart-card-header">
         <span class="eyebrow">{{ t('liveDistribution') }}</span>
-        <span class="chart-status">{{ props.isLive ? t('live') : t('syncing') }}</span>
+        <span class="chart-status">{{ statusLabel }}</span>
       </div>
 
       <div class="chart-shell">
@@ -55,7 +61,10 @@ const chartSummary = computed(() => props.answers
         <div><dt>{{ t('votesReceived') }}</dt><dd>{{ props.receivedAnswers }}</dd></div>
         <div><dt>{{ t('participation') }}</dt><dd>{{ props.participation }}%</dd></div>
         <div><dt>{{ t('audiencePresent') }}</dt><dd>{{ props.totalUsers }}</dd></div>
-        <div><dt>{{ t('questionState') }}</dt><dd>{{ props.isReveal ? t('locked') : t('open') }}</dd></div>
+        <div>
+          <dt>{{ t('questionState') }}</dt>
+          <dd>{{ stateLabel }}</dd>
+        </div>
       </dl>
     </div>
   </aside>
@@ -63,6 +72,7 @@ const chartSummary = computed(() => props.answers
 
 <i18n lang="yaml">
 en:
+  closed: Closed
   open: Open
   locked: Locked
   votesShort: Votes
@@ -75,6 +85,7 @@ en:
   audiencePresent: Audience present
   questionState: Question state
 de:
+  closed: Geschlossen
   open: Offen
   locked: Gesperrt
   votesShort: Stimmen
@@ -87,6 +98,7 @@ de:
   audiencePresent: Publikum
   questionState: Fragenstatus
 fr:
+  closed: Fermée
   open: Ouverte
   locked: Verrouillée
   votesShort: Votes
@@ -99,6 +111,7 @@ fr:
   audiencePresent: Public présent
   questionState: État de la question
 ja:
+  closed: 受付終了
   open: 受付中
   locked: ロック済み
   votesShort: 票
@@ -192,5 +205,19 @@ ja:
   .results-panel {
     @apply min-h-96;
   }
+}
+@container presenter-stage (max-height: 420px) {
+  .results-panel { @apply min-h-0; }
+  .result-card { @apply rounded-2xl p-2; }
+  .chart-card-header { @apply mb-1; }
+  .chart-status { @apply px-2 py-1; font-size: .5em; }
+  .chart-shell { @apply min-h-0 py-0; }
+  .chart-donut { @apply h-16 w-16; }
+  .chart-donut::after { @apply h-12 w-12; }
+  .chart-center strong { font-size: 1.2em; }
+  .stats-grid { @apply gap-1; }
+  .stats-grid div { @apply px-2 py-1; }
+  .stats-grid dd { @apply mt-0; font-size: .8em; }
+  .eyebrow, .stats-grid dt { font-size: .5em; }
 }
 </style>

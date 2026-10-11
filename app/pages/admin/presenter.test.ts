@@ -31,6 +31,8 @@ const emptyState: PresenterCurrentState = {
   totalUsers: 0,
 }
 const controller = {
+  close: vi.fn(),
+  reopen: vi.fn(),
   currentQuestion: ref<Question | null>(question),
   currentState: ref<PresenterCurrentState | null>(emptyState),
   errorKind: ref<PresenterErrorKind | null>(null),
@@ -302,6 +304,26 @@ describe('presenter page', () => {
         'previous',
       ],
     ])
+    wrapper.unmount()
+  })
+})
+
+
+describe('Presenter selection and reader behavior', () => {
+  it('rejects removed embed modes in the existing error panel', () => {
+    route.query = { embed: 'display', questionKey: 'one' }
+    controller.errorKind.value = 'selection'
+    const wrapper = render()
+    expect(wrapper.find('.quiz-stub').exists()).toBe(false)
+    expect(wrapper.get('.state-panel').text()).toContain('selectionError')
+    wrapper.unmount()
+  })
+  it('does not expose write controls or respond to navigation keys in reader mode', () => {
+    route.query = { readOnly: 'true' }
+    const wrapper = render()
+    expect(wrapper.find('.presenter-controls').exists()).toBe(false)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }))
+    expect(navigate).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 })

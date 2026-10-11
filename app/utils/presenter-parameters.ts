@@ -12,6 +12,11 @@ export const PRESENTER_PARAMETER_DEFAULTS = {
   leaderboardScale: 1,
   leaderboardShowUserId: false,
   presenterRefresh: 2,
+  mode: 'quiz',
+  parentManaged: false,
+  readOnly: false,
+  showLeaderboard: true,
+  showRecap: true,
   recapCore: false,
   recapCount: 4,
   recapPadding: 0,
@@ -45,6 +50,14 @@ export interface PresenterParameters {
   leaderboardScale: number
   leaderboardShowUserId: boolean
   presenterRefresh: number
+  questionKey?: string
+  questionCount?: number
+  mode: 'quiz' | 'status'
+  parentManaged: boolean
+  readOnly: boolean
+  showLeaderboard: boolean
+  showRecap: boolean
+  invalidSelection: boolean
   recapBackground?: string
   recapColorMode: PresenterColorMode
   recapCore: boolean
@@ -128,7 +141,31 @@ function stageScale(value: string | undefined): number {
 export function parsePresenterParameters(query: PresenterQuery): PresenterParameters {
   const parsedColorMode = colorMode(singleValue(query, 'colorMode'), PRESENTER_PARAMETER_DEFAULTS.colorMode)
 
+  const questionKey = singleValue(query, 'questionKey')?.trim()
+  const count = singleValue(query, 'questionCount')
+  const questionCount = count === undefined ? undefined : Number(count)
+  const invalidSelection = query.embed !== undefined
+    || (query.questionKey !== undefined && !questionKey)
+    || (query.questionCount !== undefined
+      && (!count?.trim() || !Number.isSafeInteger(questionCount) || questionCount! < 1))
+    || (query.mode !== undefined && query.mode !== 'quiz' && query.mode !== 'status')
+    || [
+      'readOnly',
+      'parentManaged',
+      'showLeaderboard',
+      'showRecap',
+    ].some(key => query[key] !== undefined
+      && query[key] !== 'true' && query[key] !== 'false')
+
   return {
+    invalidSelection,
+    questionKey,
+    questionCount,
+    mode: query.mode === 'status' ? 'status' : 'quiz',
+    parentManaged: booleanValue(singleValue(query, 'parentManaged'), false),
+    readOnly: booleanValue(singleValue(query, 'readOnly'), false),
+    showLeaderboard: booleanValue(singleValue(query, 'showLeaderboard'), true),
+    showRecap: booleanValue(singleValue(query, 'showRecap'), true),
     backgroundColor: color(singleValue(query, 'background')),
     colorMode: parsedColorMode,
     emojiBackground: color(singleValue(query, 'emojiBackground')),

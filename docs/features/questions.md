@@ -29,9 +29,9 @@ New or missing keys append questions to the queue. A matching key updates text, 
 
 The questions page has no feature-specific URL parameters or server settings. Form and package validation use the [question API contracts](../api.md#questions).
 
-Mark an answer option with `⭐` to count it as correct for scoring. Stable question keys support imports and [scoped presenter selection](presenter.md#scoped-controller-and-display-modes); generated IDs identify stored rows.
+Mark an answer option with `⭐` to count it as correct for scoring. Stable question keys support imports and [presenter question selection](presenter.md#question-selection); generated IDs identify stored rows.
 
-Question and option displays support the restricted Markdown described in the [create-question API](../api.md#post-apiquestionscreate). Use bold, italic, inline code, or fenced code; raw HTML does not become executable markup. The legacy Presenter renders fenced code inline for projection.
+Question and option displays support the restricted Markdown described in the [create-question API](../api.md#post-apiquestionscreate). Use bold, italic, inline code, or fenced code; raw HTML does not become executable markup. The Presenter renders fenced code inline for projection.
 
 ## Behavior and limitations
 

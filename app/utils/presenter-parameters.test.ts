@@ -50,6 +50,14 @@ describe('parsePresenterParameters', () => {
       stageScale: '0.75',
       textScale: '1.1',
     })).toEqual({
+      invalidSelection: false,
+      questionKey: undefined,
+      questionCount: undefined,
+      mode: 'quiz',
+      parentManaged: false,
+      readOnly: false,
+      showLeaderboard: true,
+      showRecap: true,
       backgroundColor: '#abcdef',
       colorMode: 'dark',
       emojiBackground: '#12aBcD',
@@ -208,5 +216,51 @@ describe('buildPresenterIframeUrls', () => {
     expect(JSON.stringify(urls)).not.toContain('%23010203')
     expect(JSON.stringify(urls)).not.toContain('unknown')
     expect(JSON.stringify(urls)).not.toContain('secret')
+  })
+})
+
+
+describe('presenter selection parameters', () => {
+  it('keeps entry, count, and terminal flags independent', () => {
+    expect(parsePresenterParameters({
+      questionKey: ' two ', questionCount: '1', showLeaderboard: 'false',
+      mode: 'status', readOnly: 'true', parentManaged: 'true',
+    })).toMatchObject({
+      questionKey: 'two', questionCount: 1, showLeaderboard: false, showRecap: true,
+      mode: 'status', readOnly: true, parentManaged: true, invalidSelection: false,
+    })
+    expect(parsePresenterParameters({})).toMatchObject({
+      showLeaderboard: true, showRecap: true, questionCount: undefined,
+    })
+  })
+  it.each([
+    '',
+    '0',
+    '-1',
+    '1.5',
+    'NaN',
+    'Infinity',
+    '9007199254740992',
+    [
+      '1',
+      '2',
+    ],
+  ])('rejects invalid counts without defaulting to the whole quiz: %s', (questionCount) => {
+    expect(parsePresenterParameters({ questionCount }).invalidSelection).toBe(true)
+  })
+  it.each([
+    { questionKey: '' },
+    { questionKey: [
+      'one',
+      'two',
+    ] },
+    { mode: 'invalid' },
+    { readOnly: [
+      'true',
+    ] },
+    { embed: 'display' },
+    { embed: 'controller' },
+  ])('rejects unsupported selection input %s', (query) => {
+    expect(parsePresenterParameters(query).invalidSelection).toBe(true)
   })
 })

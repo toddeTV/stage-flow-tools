@@ -112,6 +112,7 @@ export interface PresenterCurrentStateAnswerOption {
 }
 
 export interface PresenterCurrentQuestion {
+  alreadyPublished?: boolean
   id: string
   key: string
   index: number

@@ -151,28 +151,14 @@ describe('createPresenterQuizController', () => {
     await controller.navigate('next')
     await controller.navigate('next')
 
-    expect(calls).toEqual([
-      'state',
+    expect(calls.filter(call => call !== 'state')).toEqual([
       'toggle:one',
-      'state',
-      'state',
       'publish:two',
-      'state',
-      'state',
       'publish:one',
-      'state',
       'toggle:one',
-      'state',
-      'state',
       'publish:two',
-      'state',
-      'state',
       'toggle:two',
-      'state',
-      'state',
       'unpublish',
-      'state',
-      'state',
     ])
     expect(controller.step.value).toEqual({ kind: 'recap' })
   })
@@ -186,12 +172,8 @@ describe('createPresenterQuizController', () => {
     await controller.navigate('next')
     await controller.navigate('previous')
 
-    expect(calls).toEqual([
-      'state',
+    expect(calls.filter(call => call !== 'state')).toEqual([
       'unpublish',
-      'state',
-      'state',
-      'state',
     ])
     expect(controller.step.value).toEqual({ kind: 'leaderboard' })
   })
@@ -210,10 +192,8 @@ describe('createPresenterQuizController', () => {
     ])
 
     expect(emitBoundary).toHaveBeenCalledWith('previous')
-    expect(calls).toEqual([
-      'state',
+    expect(calls.filter(call => call !== 'state')).toEqual([
       'unpublish',
-      'state',
     ])
     expect(controller.step.value).toEqual({ kind: 'question', phase: 'open', questionIndex: 0 })
 

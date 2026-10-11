@@ -35,11 +35,15 @@ export async function getPresenterQuestionsOverview(): Promise<PresenterQuestion
   }
 }
 
-/** Returns polling-friendly presenter state for the active question. */
-export async function getPresenterCurrentState(): Promise<PresenterCurrentState> {
+/** Returns active or selected-question aggregates in the existing Presenter format. */
+export async function getPresenterCurrentState(key?: string): Promise<PresenterCurrentState> {
   const questionList = await getQuestions()
   const totalUsers = getPeerCount(WebSocketChannel.DEFAULT)
-  const currentQuestion = findActiveQuestion(questionList)
+  const currentQuestion = key
+    ? questionList.find(question => question.key === key && !question.is_disabled)
+    : findActiveQuestion(questionList)
+
+  if (key && !currentQuestion) throwApiError(404, 'quiz.question_not_found')
 
   if (!currentQuestion) {
     return {
@@ -57,11 +61,12 @@ export async function getPresenterCurrentState(): Promise<PresenterCurrentState>
   const currentQuestionIndex = questionList.findIndex(question => question.id === currentQuestion.id) + 1
 
   return {
-    hasActiveQuestion: true,
+    hasActiveQuestion: currentQuestion.is_active ?? false,
     totalUsers,
     receivedAnswers,
     receivedAnswersPercent: getPercent(receivedAnswers, totalUsers),
     currentQuestion: {
+      alreadyPublished: currentQuestion.alreadyPublished,
       id: currentQuestion.id,
       key: currentQuestion.key,
       index: currentQuestionIndex,
