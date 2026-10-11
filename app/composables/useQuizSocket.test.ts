@@ -54,6 +54,42 @@ beforeEach(() => {
 })
 
 describe('useQuizSocket', () => {
+  it('clears active and inactive cached answers before restarting the same quiz', async () => {
+    const { activeQuestion, selectedAnswer, results } = useQuizSocket()
+    activeQuestion.value = { id: 'first-question' } as Question
+    selectedAnswer.value = 1
+    storedAnswers.set('answer-first-question', '1')
+    storedAnswers.set('answer-second-question', '0')
+    storedAnswers.set('unrelated-session-key', 'preserved')
+
+    for (const questionId of [
+      'first-question',
+      'second-question',
+    ]) {
+      socketState.data!.value = JSON.stringify({ data: { questionId }, event: 'answers-reset' })
+      await nextTick()
+    }
+    socketState.data!.value = JSON.stringify({ data: null, event: 'new-question' })
+    await nextTick()
+    socketState.data!.value = JSON.stringify({ data: null, event: 'results-update' })
+    await nextTick()
+
+    expect(activeQuestion.value).toBeNull()
+    expect(selectedAnswer.value).toBeNull()
+    expect(results.value).toBeNull()
+    expect(storedAnswers).toEqual(new Map([
+      [
+        'unrelated-session-key',
+        'preserved',
+      ],
+    ]))
+
+    socketState.data!.value = JSON.stringify({ data: { id: 'first-question' }, event: 'new-question' })
+    await nextTick()
+    expect(activeQuestion.value?.id).toBe('first-question')
+    expect(selectedAnswer.value).toBeNull()
+  })
+
   it('removes inactive reset answers without clearing the visible active selection', async () => {
     const { activeQuestion, selectedAnswer } = useQuizSocket()
     activeQuestion.value = { id: 'active-question' } as Question
