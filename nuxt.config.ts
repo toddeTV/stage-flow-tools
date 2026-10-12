@@ -105,6 +105,7 @@ export default defineNuxtConfig({
       icons: [
         'ph:arrow-down',
         'ph:arrow-clockwise',
+        'ph:arrow-counter-clockwise',
         'ph:arrow-up',
         'ph:caret-left',
         'ph:caret-right',
