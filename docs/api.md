@@ -271,7 +271,10 @@ blocks scrollable.
 
 ### POST `/api/questions/import`
 
-Import a Version 1 question package (admin only). The full package is validated
+Import a current-format question package (admin only). Only the exact numeric
+`version: 1` is supported. Missing versions, other types, and earlier or future
+versions are rejected; there are no compatibility ranges or automatic conversions.
+The full package is validated
 before one SQLite transaction adds new questions and updates questions with a
 matching non-empty `key`. Updated questions keep their answers, technical ID,
 queue position, and lifecycle state. Questions without a key receive a generated
@@ -281,6 +284,7 @@ key. An updated active question is broadcast with recalculated results.
 {
   "format": "stage-flow-tools.question-package",
   "version": 1,
+  "commitSha": "0123456789abcdef0123456789abcdef01234567",
   "questions": [
     {
       "key": "round-1-question-1",
@@ -301,12 +305,39 @@ key. An updated active question is broadcast with recalculated results.
 JSON strings encode code-block line breaks as `\n`. Exported Version 1
 packages preserve Markdown source and internal line breaks unchanged.
 
+`commitSha` is optional metadata identifying the intended software commit. When
+present it must contain 40 hexadecimal characters; surrounding whitespace is
+trimmed and letters are normalized to lowercase. Missing metadata allows normal
+imports when the installed commit is known. It is not stored on question records.
+
+After validation, the server compares the package SHA with its embedded build
+SHA. A mismatch requires `?confirmedCommitSha=<installed SHA>` after explicit
+operator confirmation. If installed metadata is unavailable, every import
+requires `?confirmedCommitSha=unknown`. Without matching confirmation the API
+returns `409 quiz.question_package_commit_confirmation_required` before any
+database writes or broadcasts. Confirmation cannot bypass an invalid version.
+If the installed commit changes between preview and import, refresh the preview
+and obtain new confirmation; do not silently retry.
+
 **Response:**
 
 ```json
 {
   "createdCount": 1,
   "updatedCount": 0
+}
+```
+
+### GET `/api/admin/build-info`
+
+Returns the immutable build commit SHA (admin only), normalized to lowercase.
+Missing or corrupt runtime metadata returns `null`. The import preview and
+export read this endpoint from the currently installed server, rather than
+relying on browser bundle metadata.
+
+```json
+{
+  "commitSha": "0123456789abcdef0123456789abcdef01234567"
 }
 ```
 
