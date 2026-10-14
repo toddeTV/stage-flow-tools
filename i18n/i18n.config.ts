@@ -6,6 +6,7 @@ export default defineI18nConfig(() => ({
     en: {
       errors: {
         validation: {
+          invalid_commit_sha: 'Enter a full 40-character hexadecimal commit SHA.',
           invalid_request: 'Please check the submitted data.',
           invalid_json: 'Enter valid JSON.',
           required: 'This field is required.',
@@ -28,6 +29,9 @@ export default defineI18nConfig(() => ({
           origin_invalid: 'This request must come from this application.',
         },
         quiz: {
+          question_package_commit_confirmation_required:
+            'The installed commit changed or cannot be verified. Review the refreshed preview and ' +
+            'confirm the import again.',
           no_active_question: 'No active question is available.',
           question_locked: 'This question is locked.',
           invalid_answer: 'That answer is not available for this question.',
@@ -74,6 +78,7 @@ export default defineI18nConfig(() => ({
     de: {
       errors: {
         validation: {
+          invalid_commit_sha: 'Bitte gib eine vollständige Commit-SHA mit 40 Hexadezimalzeichen ein.',
           invalid_request: 'Bitte prüfe die gesendeten Daten.',
           invalid_json: 'Bitte gib gültiges JSON ein.',
           required: 'Dieses Feld ist erforderlich.',
@@ -96,6 +101,9 @@ export default defineI18nConfig(() => ({
           origin_invalid: 'Diese Anfrage muss von dieser Anwendung stammen.',
         },
         quiz: {
+          question_package_commit_confirmation_required:
+            'Der installierte Commit hat sich geändert oder kann nicht geprüft werden. Prüfe die ' +
+            'aktualisierte Vorschau und bestätige den Import erneut.',
           no_active_question: 'Keine aktive Frage verfügbar.',
           question_locked: 'Diese Frage ist gesperrt.',
           invalid_answer: 'Diese Antwort gehört nicht zu dieser Frage.',
@@ -142,6 +150,7 @@ export default defineI18nConfig(() => ({
     fr: {
       errors: {
         validation: {
+          invalid_commit_sha: 'Saisissez un SHA de commit complet de 40 caractères hexadécimaux.',
           invalid_request: 'Vérifiez les données envoyées.',
           invalid_json: 'Saisissez un JSON valide.',
           required: 'Ce champ est obligatoire.',
@@ -164,6 +173,9 @@ export default defineI18nConfig(() => ({
           origin_invalid: 'Cette requête doit provenir de cette application.',
         },
         quiz: {
+          question_package_commit_confirmation_required:
+            'Le commit installé a changé ou ne peut pas être vérifié. Vérifiez le nouvel aperçu et ' +
+            'confirmez à nouveau l’importation.',
           no_active_question: "Aucune question active n'est disponible.",
           question_locked: 'Cette question est verrouillée.',
           invalid_answer: "Cette réponse n'est pas disponible pour cette question.",
@@ -210,6 +222,7 @@ export default defineI18nConfig(() => ({
     ja: {
       errors: {
         validation: {
+          invalid_commit_sha: '40 桁の 16 進数で完全なコミット SHA を入力してください。',
           invalid_request: '送信したデータを確認してください。',
           invalid_json: '有効な JSON を入力してください。',
           required: 'この項目は必須です。',
@@ -232,6 +245,7 @@ export default defineI18nConfig(() => ({
           origin_invalid: 'このリクエストは、このアプリケーションから送信する必要があります。',
         },
         quiz: {
+          question_package_commit_confirmation_required: 'インストール済みコミットが変更されたか、確認できません。更新されたプレビューを確認し、インポートを再度承認してください。',
           no_active_question: 'アクティブな質問はありません。',
           question_locked: 'この質問はロックされています。',
           invalid_answer: 'この回答は質問の選択肢にありません。',

@@ -17,6 +17,7 @@ import {
   vi,
 } from 'vite-plus/test'
 import QuestionsPage from './questions.vue'
+import { flushPromises } from '@vue/test-utils'
 import QuestionPackageImportWizard from '~/components/questions/QuestionPackageImportWizard.vue'
 import AdminBackLink from '~/components/admin/AdminBackLink.vue'
 import type {
@@ -39,6 +40,9 @@ const questionPackage = {
     },
   ],
 } satisfies QuestionPackage
+
+const commitSha = 'ab'.repeat(20)
+const otherSha = 'cd'.repeat(20)
 
 const UiButton = defineComponent({
   inheritAttrs: false,
@@ -92,11 +96,11 @@ function findButton(container: HTMLElement, label: string): HTMLButtonElement {
 }
 
 async function flushAsyncState() {
-  await Promise.resolve()
+  await flushPromises()
   await nextTick()
 }
 
-async function selectQuestionPackage(container: HTMLElement) {
+async function selectQuestionPackage(container: HTMLElement, value: unknown = questionPackage) {
   const input = container.querySelector<HTMLInputElement>('#question-package-file')
 
   if (!input) {
@@ -107,7 +111,7 @@ async function selectQuestionPackage(container: HTMLElement) {
     configurable: true,
     value: [
       {
-        text: async () => JSON.stringify(questionPackage),
+        text: async () => JSON.stringify(value),
       },
     ],
   })
@@ -139,7 +143,7 @@ beforeEach(() => {
   vi.stubGlobal('logger_error', vi.fn())
   vi.stubGlobal('ref', ref)
   vi.stubGlobal('useApiError', () => ({
-    getErrorCode: () => undefined,
+    getErrorCode: (error: { code?: string }) => error.code,
     getErrorMessage: () => 'Request failed',
     getIssueMessage: () => 'Invalid value',
   }))
@@ -149,7 +153,9 @@ beforeEach(() => {
     refresh: vi.fn(),
   }))
   vi.stubGlobal('useI18n', () => ({
-    t: (key: string, values?: { count?: number }) => values?.count === undefined ? key : `${key}:${values.count}`,
+    t: (key: string, values?: { count?: number }) => values?.count === undefined
+      ? values ? `${key}:${JSON.stringify(values)}` : key
+      : `${key}:${values.count}`,
   }))
   vi.stubGlobal('useLocalization', () => ({ getLocalizedText: (value: { en: string }) => value.en }))
   vi.stubGlobal('watch', watch)
@@ -158,16 +164,49 @@ beforeEach(() => {
 afterEach(() => {
   document.body.replaceChildren()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('admin question package import preview', () => {
+  it('keeps import disabled until the installed build metadata is available', async () => {
+    const buildInfo = createDeferred<{ commitSha: string }>()
+    vi.stubGlobal('$fetch', (path: string) => path === '/api/admin/build-info'
+      ? buildInfo.promise
+      : Promise.resolve([]))
+    const rendered = renderPage()
+    findButton(rendered.container, 'importQuestions').click()
+    await nextTick()
+    await selectQuestionPackage(rendered.container)
+    expect(importButton(rendered.container).disabled).toBe(true)
+    buildInfo.resolve({ commitSha })
+    await flushAsyncState()
+    expect(importButton(rendered.container).disabled).toBe(false)
+    rendered.app.unmount()
+  })
+
+  it('keeps import disabled when build metadata cannot be loaded', async () => {
+    vi.stubGlobal('$fetch', async (path: string) => {
+      if (path === '/api/admin/build-info') throw new Error('Connection failed')
+      return []
+    })
+    const rendered = renderPage()
+    findButton(rendered.container, 'importQuestions').click()
+    await nextTick()
+    await selectQuestionPackage(rendered.container)
+    expect(importButton(rendered.container).disabled).toBe(true)
+    expect(rendered.container.textContent).toContain('Request failed')
+    rendered.app.unmount()
+  })
+
   it('keeps the newest question snapshot when an older refresh resolves last', async () => {
     const firstRefresh = createDeferred<Question[]>()
     const secondRefresh = createDeferred<Question[]>()
     const fetchQuestions = vi.fn()
       .mockReturnValueOnce(firstRefresh.promise)
       .mockReturnValueOnce(secondRefresh.promise)
-    vi.stubGlobal('$fetch', fetchQuestions)
+    vi.stubGlobal('$fetch', (path: string) => path === '/api/admin/build-info'
+      ? Promise.resolve({ commitSha })
+      : fetchQuestions())
 
     const rendered = renderPage()
 
@@ -191,6 +230,123 @@ describe('admin question package import preview', () => {
     await flushAsyncState()
     expect(rendered.container.textContent).toContain('questionsToUpdate:1')
 
+    rendered.app.unmount()
+  })
+})
+
+function importButton(container: HTMLElement) {
+  const buttons = Array.from(container.querySelectorAll<HTMLButtonElement>('button'))
+    .filter(button => button.textContent === 'importQuestions')
+  const button = buttons.at(-1)
+  if (!button) throw new Error('Import button missing')
+  return button
+}
+
+async function prepareImport(value: unknown, instanceSha: string | null = commitSha) {
+  const fetchRequest = vi.fn(async (path: string) => path === '/api/admin/build-info'
+    ? { commitSha: instanceSha }
+    : path === '/api/questions' ? [] : { createdCount: 1, updatedCount: 0 })
+  vi.stubGlobal('$fetch', fetchRequest)
+  const rendered = renderPage()
+  findButton(rendered.container, 'importQuestions').click()
+  await nextTick()
+  await selectQuestionPackage(rendered.container, value)
+  return { ...rendered, fetchRequest }
+}
+
+describe('admin import commit confirmation', () => {
+  it.each([
+    undefined,
+    commitSha,
+  ])('imports an absent or matching SHA without a warning: %s', async (sha) => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const rendered = await prepareImport({ ...questionPackage, commitSha: sha })
+    importButton(rendered.container).click()
+    await flushAsyncState()
+    expect(confirm).not.toHaveBeenCalled()
+    expect(rendered.fetchRequest).toHaveBeenCalledWith('/api/questions/import', expect.objectContaining({
+      query: undefined,
+    }))
+    rendered.app.unmount()
+  })
+
+  it('cancels without sending an import, then sends confirmation only after acceptance', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
+    const rendered = await prepareImport({ ...questionPackage, commitSha: otherSha })
+    importButton(rendered.container).click()
+    await flushAsyncState()
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining(`"packageSha":"${otherSha}"`))
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining(`"instanceSha":"${commitSha}"`))
+    expect(rendered.fetchRequest.mock.calls.map(([
+      path,
+    ]) => path)).not.toContain('/api/questions/import')
+    importButton(rendered.container).click()
+    await flushAsyncState()
+    expect(rendered.fetchRequest).toHaveBeenCalledWith('/api/questions/import', expect.objectContaining({
+      query: { confirmedCommitSha: commitSha },
+    }))
+    rendered.app.unmount()
+  })
+
+  it('requires confirmation even without a package SHA when the instance SHA is unknown', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
+    const rendered = await prepareImport(questionPackage, null)
+    importButton(rendered.container).click()
+    await flushAsyncState()
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('confirmQuestionPackageCommitUnknown'))
+    expect(rendered.fetchRequest.mock.calls.map(([
+      path,
+    ]) => path)).not.toContain('/api/questions/import')
+    importButton(rendered.container).click()
+    await flushAsyncState()
+    expect(rendered.fetchRequest).toHaveBeenCalledWith('/api/questions/import', expect.objectContaining({
+      query: { confirmedCommitSha: 'unknown' },
+    }))
+    rendered.app.unmount()
+  })
+
+  it('refreshes metadata after a deployment conflict and requires a new confirmation without retrying', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const rendered = await prepareImport({ ...questionPackage, commitSha: otherSha })
+    let deployedSha = commitSha
+    let importAttempts = 0
+    rendered.fetchRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/admin/build-info') return { commitSha: deployedSha }
+      if (path === '/api/questions/import') {
+        importAttempts += 1
+        if (importAttempts === 1) {
+          deployedSha = 'ef'.repeat(20)
+          throw { code: 'quiz.question_package_commit_confirmation_required' }
+        }
+        return { createdCount: 1, updatedCount: 0 }
+      }
+      return []
+    })
+    importButton(rendered.container).click()
+    await flushAsyncState()
+    expect(importAttempts).toBe(1)
+    expect(confirm).toHaveBeenCalledOnce()
+    importButton(rendered.container).click()
+    await flushAsyncState()
+    expect(confirm).toHaveBeenCalledTimes(2)
+    expect(rendered.fetchRequest).toHaveBeenLastCalledWith('/api/questions/import', expect.objectContaining({
+      query: { confirmedCommitSha: deployedSha },
+    }))
+    rendered.app.unmount()
+  })
+
+  it('does not retain approval across file selections or accept a wrong version', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const rendered = await prepareImport({ ...questionPackage, commitSha: otherSha })
+    importButton(rendered.container).click()
+    await selectQuestionPackage(rendered.container, { ...questionPackage, commitSha: 'ef'.repeat(20) })
+    importButton(rendered.container).click()
+    expect(confirm).toHaveBeenCalledTimes(2)
+    await selectQuestionPackage(rendered.container, { ...questionPackage, version: 2 })
+    expect(importButton(rendered.container).disabled).toBe(true)
+    expect(rendered.fetchRequest.mock.calls.map(([
+      path,
+    ]) => path)).not.toContain('/api/questions/import')
     rendered.app.unmount()
   })
 })

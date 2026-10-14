@@ -63,6 +63,7 @@ jobs:
           package_version="$(jq --raw-output '.version' package.json)"
           test "$RELEASE_TAG_NAME" = "v$package_version"
           echo "version=$package_version" >> "$GITHUB_OUTPUT"
+          echo "commit-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GitHub Container Registry
         # docker/login-action@v4.6.0
@@ -90,6 +91,7 @@ jobs:
         with:
           build-args: |
             STAGE_FLOW_BUILD_VERSION=${{ steps.embedded-version.outputs.version }}
+            STAGE_FLOW_BUILD_COMMIT_SHA=${{ steps.embedded-version.outputs.commit-sha }}
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}

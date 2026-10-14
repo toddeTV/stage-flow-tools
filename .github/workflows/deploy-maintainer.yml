@@ -81,6 +81,7 @@ jobs:
           set -euo pipefail
           docker build \
             --build-arg "STAGE_FLOW_BUILD_VERSION=$DEPLOY_VERSION" \
+            --build-arg "STAGE_FLOW_BUILD_COMMIT_SHA=$DEPLOY_SHA" \
             --label "org.opencontainers.image.revision=$DEPLOY_SHA" \
             --tag "$IMAGE_REF" \
             .

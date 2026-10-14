@@ -72,14 +72,17 @@ function renderWizard(isPreviewReady: boolean, questions: Question[] = []) {
   })
 }
 
-async function selectPackage(wrapper: ReturnType<typeof renderWizard>) {
+async function selectPackage(
+  wrapper: ReturnType<typeof renderWizard>,
+  text = async () => JSON.stringify(questionPackage),
+) {
   const input = wrapper.get<HTMLInputElement>('#question-package-file')
 
   Object.defineProperty(input.element, 'files', {
     configurable: true,
     value: [
       {
-        text: async () => JSON.stringify(questionPackage),
+        text,
       },
     ],
   })
@@ -98,6 +101,29 @@ function importButton(wrapper: ReturnType<typeof renderWizard>) {
 }
 
 describe('question package import wizard', () => {
+  it('keeps the newest file selection when an older read resolves last', async () => {
+    const wrapper = renderWizard(true)
+    let finishRead!: (text: string) => void
+    const oldRead = new Promise<string>((resolve) => { finishRead = resolve })
+    await selectPackage(wrapper, () => oldRead)
+    const latestPackage = { ...questionPackage, commitSha: 'cd'.repeat(20) }
+    await selectPackage(wrapper, async () => JSON.stringify(latestPackage))
+    finishRead(JSON.stringify(questionPackage))
+    await flushPromises()
+    expect(wrapper.emitted('selectionStarted')).toHaveLength(2)
+    expect(wrapper.emitted('packageSelected')).toEqual([
+      [
+        latestPackage,
+      ],
+    ])
+    await importButton(wrapper).trigger('click')
+    expect(wrapper.emitted('confirm')).toEqual([
+      [
+        latestPackage,
+      ],
+    ])
+  })
+
   it('emits the selected package but keeps import disabled without a successful preview', async () => {
     const wrapper = renderWizard(false)
 

@@ -12,8 +12,8 @@ export type QuestionPackageImportPreview = {
   updateCount: number
 }
 
-/** Builds a portable V1 package without answers or runtime lifecycle state. */
-export function createQuestionPackage(questions: Question[]): QuestionPackage {
+/** Builds a portable current-format package without answers or lifecycle state. */
+export function createQuestionPackage(questions: Question[], commitSha: string): QuestionPackage {
   if (questions.length === 0) {
     throw new Error('Question packages require at least one question')
   }
@@ -21,6 +21,7 @@ export function createQuestionPackage(questions: Question[]): QuestionPackage {
   return {
     format: QUESTION_PACKAGE_FORMAT,
     version: QUESTION_PACKAGE_VERSION,
+    commitSha,
     questions: questions.map(question => ({
       key: question.key,
       question_text: question.question_text,

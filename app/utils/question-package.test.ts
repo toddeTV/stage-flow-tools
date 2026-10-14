@@ -6,6 +6,8 @@ import {
   stringifyQuestionPackage,
 } from './question-package'
 
+const commitSha = 'ab'.repeat(20)
+
 function createQuestionFixture(overrides: Partial<Question> = {}): Question {
   return {
     answer_options: [
@@ -28,18 +30,19 @@ function createQuestionFixture(overrides: Partial<Question> = {}): Question {
 
 describe('question packages', () => {
   it('does not create an empty package that import would reject', () => {
-    expect(() => createQuestionPackage([])).toThrow('Question packages require at least one question')
+    expect(() => createQuestionPackage([], commitSha)).toThrow('Question packages require at least one question')
   })
 
   it('exports only portable question configuration in existing queue order', () => {
     const packageValue = createQuestionPackage([
       createQuestionFixture({ key: 'first-question' }),
       createQuestionFixture({ id: 'second-id', key: 'second-question' }),
-    ])
+    ], commitSha)
 
     expect(packageValue).toEqual({
       format: 'stage-flow-tools.question-package',
       version: 1,
+      commitSha,
       questions: [
         {
           answer_options: [
@@ -77,10 +80,11 @@ describe('question packages', () => {
         ],
         question_text: { en: questionText },
       }),
-    ])
+    ], commitSha)
     const reparsed = JSON.parse(stringifyQuestionPackage(packageValue))
 
     expect(reparsed.version).toBe(1)
+    expect(reparsed.commitSha).toBe(commitSha)
     expect(reparsed.questions[0].question_text.en).toBe(questionText)
     expect(reparsed.questions[0].answer_options[0].text.en).toBe(answerText)
   })

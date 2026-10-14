@@ -34,6 +34,7 @@ const {
   getLocalizedText,
   getQueuePosition,
   handleQuestionPackageSelected,
+  resetImportPreview,
   handleSaveQuestion,
   handleQuizResetDialogCancel,
   importError,
@@ -394,6 +395,7 @@ const {
         @back="returnToQuestionChoices"
         @confirm="importQuestionPackage"
         @package-selected="handleQuestionPackageSelected"
+        @selection-started="resetImportPreview"
       />
 
       <form v-else class="flex flex-col gap-5" @submit.prevent="handleSaveQuestion">
@@ -751,6 +753,16 @@ const {
 
 <i18n lang="yaml">
 en:
+  confirmQuestionPackageCommitMismatch: >-
+    The JSON file is intended for commit {packageSha}. This installation uses commit {instanceSha}. The format
+    version matches; the questions will work correctly. Other software features may differ from those available
+    when the JSON file was created. Import anyway?
+  confirmQuestionPackageCommitUnknown: >-
+    The commit SHA of this installation is unavailable, so it cannot be compared with the JSON file’s commit
+    ({packageSha}). The format version matches; the questions will work correctly. Other software features may
+    differ from those available when the JSON file was created. Import anyway?
+  questionPackageCommitNotSpecified: not specified
+  questionPackageExportCommitUnknown: "Cannot export: the commit SHA of this installation is unavailable."
   pageTitle: Admin Dashboard
   currentActiveQuestion: Current Active Question
   refreshButton: Refresh
@@ -821,6 +833,17 @@ en:
   optionPlaceholder: "Option {n} JSON"
   emojiPlaceholder: Emoji
 de:
+  confirmQuestionPackageCommitMismatch: >-
+    Die JSON-Datei ist für Commit {packageSha} vorgesehen. Diese Installation verwendet Commit {instanceSha}.
+    Die Formatversion stimmt überein; die Fragen werden korrekt funktionieren. Andere Software-Funktionen können
+    sich gegenüber dem Erstellungszeitpunkt der JSON-Datei unterscheiden. Trotzdem importieren?
+  confirmQuestionPackageCommitUnknown: >-
+    Die Commit-SHA dieser Installation ist nicht verfügbar. Ein Abgleich mit dem Commit der JSON-Datei
+    ({packageSha}) ist daher nicht möglich. Die Formatversion stimmt überein; die Fragen werden korrekt
+    funktionieren. Andere Software-Funktionen können sich gegenüber dem Erstellungszeitpunkt der JSON-Datei
+    unterscheiden. Trotzdem importieren?
+  questionPackageCommitNotSpecified: nicht angegeben
+  questionPackageExportCommitUnknown: "Export nicht möglich: Die Commit-SHA dieser Installation ist nicht verfügbar."
   pageTitle: Admin-Dashboard
   currentActiveQuestion: Aktuelle aktive Frage
   refreshButton: Aktualisieren
@@ -891,6 +914,17 @@ de:
   optionPlaceholder: "Option {n} als JSON"
   emojiPlaceholder: Emoji
 fr:
+  confirmQuestionPackageCommitMismatch: >-
+    Le fichier JSON est prévu pour le commit {packageSha}. Cette installation utilise le commit {instanceSha}.
+    La version du format correspond ; les questions fonctionneront correctement. D’autres fonctionnalités
+    peuvent différer de celles disponibles lors de la création du fichier JSON. Importer quand même ?
+  confirmQuestionPackageCommitUnknown: >-
+    Le SHA du commit de cette installation est indisponible. Il est impossible de le comparer au commit du
+    fichier JSON ({packageSha}). La version du format correspond ; les questions fonctionneront correctement.
+    D’autres fonctionnalités peuvent différer de celles disponibles lors de la création du fichier JSON.
+    Importer quand même ?
+  questionPackageCommitNotSpecified: non indiqué
+  questionPackageExportCommitUnknown: "Export impossible : le SHA du commit de cette installation est indisponible."
   pageTitle: Tableau de bord d'administration
   currentActiveQuestion: Question active actuelle
   refreshButton: Actualiser
@@ -961,6 +995,14 @@ fr:
   optionPlaceholder: "Option {n} au format JSON"
   emojiPlaceholder: Emoji
 ja:
+  confirmQuestionPackageCommitMismatch: >-
+    この JSON ファイルはコミット {packageSha} 用です。このインストールではコミット {instanceSha} を使用しています。形式のバージョンは一致しており、質問は正しく動作します。その他の機能は
+    JSON ファイル作成時と異なる場合があります。それでもインポートしますか？
+  confirmQuestionPackageCommitUnknown: >-
+    このインストールのコミット SHA を取得できないため、JSON ファイルのコミット（{packageSha}）と比較できません。形式のバージョンは一致しており、質問は正しく動作します。その他の機能は JSON
+    ファイル作成時と異なる場合があります。それでもインポートしますか？
+  questionPackageCommitNotSpecified: 指定なし
+  questionPackageExportCommitUnknown: このインストールのコミット SHA を取得できないため、エクスポートできません。
   pageTitle: 管理ダッシュボード
   currentActiveQuestion: 現在のアクティブな質問
   refreshButton: 更新
