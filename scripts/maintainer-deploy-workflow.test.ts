@@ -36,6 +36,7 @@ describe('maintainer deployment workflow', () => {
     expect(workflow).toContain('deploy_version="$deploy_date-$deploy_short_sha"')
     expect(workflow).toContain('DEPLOY_VERSION=$deploy_version')
     expect(workflow).toContain('--build-arg "STAGE_FLOW_BUILD_VERSION=$DEPLOY_VERSION"')
+    expect(workflow).toContain('--build-arg "STAGE_FLOW_BUILD_COMMIT_SHA=$DEPLOY_SHA"')
     expect(workflow).toContain('/api/questions/active')
   })
 
