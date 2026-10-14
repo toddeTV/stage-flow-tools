@@ -1,4 +1,5 @@
 import { safeParse } from 'valibot';
+import type { BuildInfo } from '#shared/utils/build-info';
 import type {
   InputQuestion,
   LocalizedString,
@@ -98,6 +99,7 @@ export function useAdminQuestions() {
   const isImportingQuestions = ref(false);
   const isPreparingImportPreview = ref(false);
   const isImportPreviewReady = ref(false);
+  const importBuildInfo = ref<BuildInfo>();
   let importPreviewRequestId = 0;
   const questionForm = ref<QuestionForm>(createDefaultQuestionForm());
   const questionFormErrors = ref<Record<string, string>>({});
@@ -148,9 +150,7 @@ export function useAdminQuestions() {
     questionDialogMode.value = 'choice';
     questionForm.value = createDefaultQuestionForm();
     questionFormErrors.value = {};
-    importError.value = undefined;
-    isImportPreviewReady.value = false;
-    importPreviewRequestId += 1;
+    resetImportPreview();
   }
 
   function closeQuestionDialog(force = false) {
@@ -193,10 +193,7 @@ export function useAdminQuestions() {
 
   function returnToQuestionChoices() {
     questionDialogMode.value = 'choice';
-    importError.value = undefined;
-    isPreparingImportPreview.value = false;
-    isImportPreviewReady.value = false;
-    importPreviewRequestId += 1;
+    resetImportPreview();
   }
 
   function parseQuestionFormPayload(): InputQuestion | undefined {
@@ -523,6 +520,14 @@ export function useAdminQuestions() {
     return $fetch<Question[]>('/api/questions');
   }
 
+  function resetImportPreview() {
+    importPreviewRequestId += 1;
+    importBuildInfo.value = undefined;
+    isImportPreviewReady.value = false;
+    isPreparingImportPreview.value = false;
+    importError.value = undefined;
+  }
+
   async function handleQuestionPackageSelected(
     _questionPackage: QuestionPackage,
   ) {
@@ -532,10 +537,17 @@ export function useAdminQuestions() {
     isPreparingImportPreview.value = true;
 
     try {
-      const latestQuestions = await fetchQuestionsForImportPreview();
+      const [
+        latestQuestions,
+        buildInfo,
+      ] = await Promise.all([
+        fetchQuestionsForImportPreview(),
+        $fetch<BuildInfo>('/api/admin/build-info'),
+      ]);
 
       if (requestId === importPreviewRequestId) {
         allQuestions.value = latestQuestions;
+        importBuildInfo.value = buildInfo;
         activeQuestion.value =
           latestQuestions.find((question) => question.is_active) || null;
         isImportPreviewReady.value = true;
@@ -561,6 +573,16 @@ export function useAdminQuestions() {
       return;
     }
 
+    const commitSha = importBuildInfo.value?.commitSha ?? null;
+    const needsConfirmation = !commitSha ||
+      Boolean(questionPackage.commitSha && questionPackage.commitSha !== commitSha);
+    if (needsConfirmation && !window.confirm(t(
+      commitSha ? 'confirmQuestionPackageCommitMismatch' : 'confirmQuestionPackageCommitUnknown',
+      { packageSha: questionPackage.commitSha ?? t('questionPackageCommitNotSpecified'), instanceSha: commitSha },
+    ))) {
+      return;
+    }
+
     importError.value = undefined;
     isImportingQuestions.value = true;
 
@@ -568,11 +590,15 @@ export function useAdminQuestions() {
       await $fetch('/api/questions/import', {
         method: 'POST',
         body: questionPackage,
+        query: needsConfirmation ? { confirmedCommitSha: commitSha ?? 'unknown' } : undefined,
       });
       await loadQuestions();
       closeQuestionDialog(true);
     } catch (error: unknown) {
-      importError.value = getErrorMessage(error);
+      if (getErrorCode(error) === 'quiz.question_package_commit_confirmation_required') {
+        await handleQuestionPackageSelected(questionPackage);
+      }
+      importError.value ??= getErrorMessage(error);
     } finally {
       isImportingQuestions.value = false;
     }
@@ -708,7 +734,18 @@ export function useAdminQuestions() {
     isExportingQuestions.value = true;
 
     try {
-      const questions = await $fetch<Question[]>('/api/questions');
+      const [
+        questions,
+        buildInfo,
+      ] = await Promise.all([
+        $fetch<Question[]>('/api/questions'),
+        $fetch<BuildInfo>('/api/admin/build-info'),
+      ]);
+
+      if (!buildInfo.commitSha) {
+        exportError.value = t('questionPackageExportCommitUnknown');
+        return;
+      }
 
       if (questions.length === 0) {
         exportError.value = t('noQuestionsToExport');
@@ -717,7 +754,7 @@ export function useAdminQuestions() {
 
       const downloadUrl = URL.createObjectURL(
         new Blob([
-          stringifyQuestionPackage(createQuestionPackage(questions)),
+          stringifyQuestionPackage(createQuestionPackage(questions, buildInfo.commitSha)),
         ], {
           type: 'application/json;charset=utf-8',
         }),
@@ -862,6 +899,7 @@ export function useAdminQuestions() {
     getLocalizedText,
     getQueuePosition,
     handleQuestionPackageSelected,
+    resetImportPreview,
     handleSaveQuestion,
     handleQuizResetDialogCancel,
     importError,
