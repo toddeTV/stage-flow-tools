@@ -24,12 +24,14 @@ const emit = defineEmits<{
   back: []
   confirm: [questionPackage: QuestionPackage]
   packageSelected: [questionPackage: QuestionPackage]
+  selectionStarted: []
 }>()
 
 const { t } = useI18n()
 const { getIssueMessage } = useApiError()
 const localError = ref<string>()
 const questionPackage = ref<QuestionPackage>()
+let selectionRequestId = 0
 
 const preview = computed(() => questionPackage.value
   ? getQuestionPackageImportPreview(questionPackage.value, props.questions)
@@ -38,11 +40,13 @@ const preview = computed(() => questionPackage.value
 const displayedError = computed(() => localError.value || props.errorMessage)
 
 async function selectQuestionPackage(event: Event) {
+  const requestId = ++selectionRequestId
   const input = event.target as HTMLInputElement
   const file = Array.from(input.files || [])[0]
 
   questionPackage.value = undefined
   localError.value = undefined
+  emit('selectionStarted')
 
   if (!file) {
     return
@@ -54,7 +58,13 @@ async function selectQuestionPackage(event: Event) {
     value = JSON.parse(await file.text())
   }
   catch {
-    localError.value = t('errors.validation.invalid_json')
+    if (requestId === selectionRequestId) {
+      localError.value = t('errors.validation.invalid_json')
+    }
+    return
+  }
+
+  if (requestId !== selectionRequestId) {
     return
   }
 
@@ -94,6 +104,7 @@ function confirmImport() {
         id="question-package-file"
         accept="application/json,.json"
         class="mt-3 block w-full border-2 border-black bg-white p-3"
+        :disabled="isImporting"
         type="file"
         @change="selectQuestionPackage"
       >
