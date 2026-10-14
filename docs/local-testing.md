@@ -47,10 +47,21 @@ For a direct `docker build`, pass a build argument so Docker's cache cannot
 reuse an image with yesterday's version:
 
 ```bash
-docker build --build-arg "STAGE_FLOW_BUILD_VERSION=$(date -u +%F)-local" -t stage-flow-tools .
+docker build \
+  --build-arg "STAGE_FLOW_BUILD_VERSION=$(date -u +%F)-local" \
+  --build-arg "STAGE_FLOW_BUILD_COMMIT_SHA=$(git rev-parse HEAD)" \
+  -t stage-flow-tools .
 ```
 
 The value is baked into the image and cannot be changed at runtime. An explicit
 `STAGE_FLOW_BUILD_VERSION=<identifier>` build argument still identifies special
 non-release images. GitHub Actions uses the version from Release Please for
 published release images.
+
+The full commit SHA is embedded separately in the server at build time. Local
+Nuxt builds read `git rev-parse HEAD` when `STAGE_FLOW_BUILD_COMMIT_SHA` is not
+supplied. Docker excludes Git metadata, so the build argument is required;
+`docker-build.sh` supplies it automatically. Missing or invalid metadata aborts
+the build. It cannot be changed through runtime environment variables. Admins
+can verify it through `GET /api/admin/build-info`; exports include it as
+`commitSha`, independently of the JSON format's numeric `version`.

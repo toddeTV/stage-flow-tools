@@ -190,3 +190,13 @@ The Docker image uses a multi-stage build. The build stage runs `vp run build`;
 the production stage contains the standalone Nuxt server output and the Drizzle
 migration files needed at startup. The container starts
 `node .output/server/index.mjs` directly.
+
+Every image embeds the checked-out commit's full SHA through the
+`STAGE_FLOW_BUILD_COMMIT_SHA` build argument, available before `nuxt prepare`.
+Release, maintainer-deployment, and smoke-test workflows pass the SHA from the
+actual checkout. Builds fail without a valid 40-character hexadecimal SHA.
+Runtime environment variables cannot override it. The authenticated
+`GET /api/admin/build-info` endpoint exposes that identity; the Docker smoke
+test verifies it and checks that unauthenticated access is rejected. Question
+exports include the SHA, and imports require explicit confirmation when their
+optional SHA differs from the installed commit.
