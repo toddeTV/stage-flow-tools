@@ -6,6 +6,7 @@ import {
   vi,
 } from 'vite-plus/test'
 import { WebSocketChannel } from '~/types'
+import { parseValidatedValue } from '../../utils/api-errors'
 
 const broadcast = vi.fn()
 const cancelPendingResultsUpdate = vi.fn()
@@ -20,6 +21,8 @@ vi.stubGlobal('defineApiHandler', <T>(handler: T) => handler)
 vi.stubGlobal('getResultsForQuestion', getResultsForQuestion)
 vi.stubGlobal('importQuestionPackage', importQuestionPackage)
 vi.stubGlobal('readValidatedRequestBody', readValidatedRequestBody)
+vi.stubGlobal('parseValidatedValue', parseValidatedValue)
+vi.stubGlobal('__STAGE_FLOW_BUILD_COMMIT_SHA__', 'ab'.repeat(20))
 vi.stubGlobal('verifyAdmin', verifyAdmin)
 
 const { default: importQuestions } = await import('./import.post')
