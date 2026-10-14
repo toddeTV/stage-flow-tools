@@ -32,6 +32,7 @@ export interface QuestionPackageQuestion extends Omit<InputQuestion, 'key'> {
 export interface QuestionPackage {
   format: 'stage-flow-tools.question-package'
   version: 1
+  commitSha?: string
   questions: QuestionPackageQuestion[]
 }
 
