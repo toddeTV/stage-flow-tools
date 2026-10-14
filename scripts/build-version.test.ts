@@ -19,10 +19,13 @@ describe('embedded build version contract', () => {
     expect(nuxtConfig).toContain('new Date().toISOString().slice(0, 10)}-local')
     expect(nuxtConfig).toContain('process.env.STAGE_FLOW_BUILD_VERSION?.trim() || defaultBuildVersion')
     expect(nuxtConfig).toContain('__STAGE_FLOW_BUILD_VERSION__: JSON.stringify(buildVersion)')
+    expect(nuxtConfig).toContain('resolveBuildCommitSha(process.env.STAGE_FLOW_BUILD_COMMIT_SHA)')
+    expect(nuxtConfig).toContain('__STAGE_FLOW_BUILD_COMMIT_SHA__: JSON.stringify(buildCommitSha)')
     expect(nuxtConfig).not.toContain('version,')
     expect(viteConfig).toContain("command: 'cross-env NODE_OPTIONS=--max-old-space-size=8192 nuxt build'")
     expect(viteConfig).toContain('cache: { scripts: true, tasks: false }')
     expect(viteConfig).toContain("'STAGE_FLOW_BUILD_VERSION'")
+    expect(viteConfig).toContain("'STAGE_FLOW_BUILD_COMMIT_SHA'")
     expect(footer).toContain('const appVersion = __STAGE_FLOW_BUILD_VERSION__')
     expect(footer).not.toContain('useRuntimeConfig')
     expect(declaration).toContain('declare const __STAGE_FLOW_BUILD_VERSION__: string')
@@ -33,15 +36,20 @@ describe('embedded build version contract', () => {
     const productionStage = dockerfile.slice(dockerfile.indexOf('FROM node:26.8.2-alpine AS production'))
 
     expect(dockerfile).toContain('ARG STAGE_FLOW_BUILD_VERSION')
+    expect(dockerfile.indexOf('ARG STAGE_FLOW_BUILD_COMMIT_SHA')).toBeLessThan(
+      dockerfile.indexOf('RUN vp exec nuxt prepare'),
+    )
     expect(dockerfile.indexOf('ARG STAGE_FLOW_BUILD_VERSION')).toBeLessThan(
       dockerfile.indexOf('RUN vp run build'),
     )
     expect(productionStage).not.toContain('STAGE_FLOW_BUILD_VERSION')
+    expect(productionStage).not.toContain('STAGE_FLOW_BUILD_COMMIT_SHA')
     expect(productionStage).not.toContain('ENV ')
   })
 
   it('includes the Vite task configuration in the Docker build context', () => {
     expect(readFile('.dockerignore')).toContain('!vite.config.ts')
+    expect(readFile('.dockerignore')).toContain('!build-commit-sha.ts')
   })
 
   it('passes a UTC local version into the local Docker build', () => {
@@ -49,6 +57,8 @@ describe('embedded build version contract', () => {
 
     expect(buildScript).toContain('build_version="$(date -u +%F)-local"')
     expect(buildScript).toContain('--build-arg "STAGE_FLOW_BUILD_VERSION=$build_version"')
+    expect(buildScript).toContain('build_commit_sha="$(git rev-parse HEAD)"')
+    expect(buildScript).toContain('--build-arg "STAGE_FLOW_BUILD_COMMIT_SHA=$build_commit_sha"')
   })
 
   it('does not expose a runtime environment override', () => {

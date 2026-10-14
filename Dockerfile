@@ -24,6 +24,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store vp run
 COPY . .
 
 # Build the application for production
+ARG STAGE_FLOW_BUILD_COMMIT_SHA
 RUN vp exec nuxt prepare
 # The install above deliberately skips lifecycle scripts. Rebuild this native
 # dependency before Nitro traces it into the standalone server output.

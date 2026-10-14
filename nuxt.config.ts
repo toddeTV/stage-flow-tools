@@ -1,9 +1,11 @@
 import tailwindcss from '@tailwindcss/vite'
 import type { ConfigLayerMeta, InputConfig } from 'c12'
 import type { NuxtConfig } from 'nuxt/schema'
+import { resolveBuildCommitSha } from './build-commit-sha'
 
 const defaultBuildVersion = `${new Date().toISOString().slice(0, 10)}-local`
 const buildVersion = process.env.STAGE_FLOW_BUILD_VERSION?.trim() || defaultBuildVersion
+const buildCommitSha = resolveBuildCommitSha(process.env.STAGE_FLOW_BUILD_COMMIT_SHA)
 
 const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
   compatibilityDate: '2025-07-15',
@@ -19,6 +21,9 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
   nitro: {
     experimental: {
       websocket: true,
+    },
+    replace: {
+      __STAGE_FLOW_BUILD_COMMIT_SHA__: JSON.stringify(buildCommitSha),
     },
   },
 
