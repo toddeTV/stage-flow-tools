@@ -5,6 +5,7 @@ import type {
 } from '../../app/types'
 import type { ApiErrorCode, ApiErrorIssue } from './api-errors'
 import { isApiErrorCode } from './api-errors'
+import { COMMIT_SHA_PATTERN } from './build-info'
 
 const trimmedStringSchema = v.pipe(
   v.string('validation.invalid_type'),
@@ -57,6 +58,20 @@ const questionInputEntries = {
 
 export const QUESTION_PACKAGE_FORMAT = 'stage-flow-tools.question-package' as const
 export const QUESTION_PACKAGE_VERSION = 1 as const
+
+export const CommitShaSchema = v.pipe(
+  v.string('validation.invalid_commit_sha'),
+  v.trim(),
+  v.regex(COMMIT_SHA_PATTERN, 'validation.invalid_commit_sha'),
+  v.toLowerCase(),
+)
+
+export const QuestionPackageImportQuerySchema = v.strictObject({
+  confirmedCommitSha: v.optional(v.union([
+    CommitShaSchema,
+    v.literal('unknown'),
+  ])),
+})
 
 export const QuestionInputSchema = v.pipe(
   v.object(questionInputEntries, 'validation.invalid_type'),
@@ -143,6 +158,7 @@ export const QuestionPackageSchema = v.pipe(
   v.strictObject({
     format: v.literal(QUESTION_PACKAGE_FORMAT, 'validation.invalid_question_package'),
     version: v.literal(QUESTION_PACKAGE_VERSION, 'validation.unsupported_question_package_version'),
+    commitSha: v.optional(CommitShaSchema),
     questions: v.pipe(
       v.array(QuestionPackageQuestionSchema, 'validation.invalid_question_package'),
       v.minLength(1, 'validation.empty_question_package'),

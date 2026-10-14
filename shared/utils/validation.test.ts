@@ -381,6 +381,54 @@ describe('endpoint schemas', () => {
     }).success).toBe(false)
   })
 
+  it('accepts only the current numeric format version, independently of commit metadata', () => {
+    const basePackage = {
+      format: 'stage-flow-tools.question-package',
+      questions: [
+        {
+          question_text: { en: 'Question' },
+          answer_options: [
+            { text: { en: 'One' } },
+            { text: { en: 'Two' } },
+          ],
+          is_disabled: false,
+        },
+      ],
+      commitSha: 'ab'.repeat(20),
+    }
+    for (const version of [
+      0,
+      2,
+      -1,
+      '1',
+      '1.1.0',
+      undefined,
+      null,
+    ]) {
+      const result = safeParse(QuestionPackageSchema, { ...basePackage, version })
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(getValidationIssues(result.issues)).toContainEqual({
+          code: 'validation.unsupported_question_package_version', path: [
+            'version',
+          ],
+        })
+      }
+    }
+    expect(safeParse(QuestionPackageSchema, basePackage).success).toBe(false)
+    expect(normalizeQuestionPackage({ ...basePackage, version: 1, commitSha: 'AB'.repeat(20) }).commitSha)
+      .toBe('ab'.repeat(20))
+    for (const commitSha of [
+      '',
+      'abcdef0',
+      'z'.repeat(40),
+      null,
+      123,
+    ]) {
+      expect(safeParse(QuestionPackageSchema, { ...basePackage, version: 1, commitSha }).success).toBe(false)
+    }
+  })
+
   it('rejects Studio traversal paths', () => {
     expect(safeParse(StudioAssetPathSchema, 'assets/index.js')).toMatchObject({
       output: 'assets/index.js',
