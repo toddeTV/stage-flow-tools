@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick, reactive, ref } from 'vue'
+import { computed, defineComponent, h, nextTick, reactive, ref } from 'vue'
 import type { Ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import type { PresenterCurrentState, Question } from '~/types'
@@ -98,6 +98,10 @@ beforeEach(() => {
   vi.stubGlobal('useI18n', () => ({ t: (key: string) => key }))
   vi.stubGlobal('useRoute', () => route)
   vi.stubGlobal('useRouter', () => ({ replace: routerReplace }))
+  vi.stubGlobal('useQuestionLanguage', () => ({
+    language: computed(() => typeof route.query.language === 'string' ? route.query.language : 'en'),
+    selectLanguage: (language: string) => routerReplace({ query: { ...route.query, language } }),
+  }))
 })
 
 afterEach(() => {
@@ -214,6 +218,7 @@ describe('presenter page', () => {
     expect((emojiLayer.get('iframe').element as HTMLElement).style.pointerEvents).toBe('none')
     expect(frames[0]?.attributes('src')).toContain('/admin/emojis?scale=0.3&transparency=0.8')
     expect(frames[0]?.attributes('src')).toContain('background=%23112233')
+    expect(frames.every(frame => frame.attributes('src')?.includes('language=en'))).toBe(true)
     expect(frames[1]?.attributes('src')).toContain('/admin/leaderboard?colorMode=dark&padding=8')
     expect(frames[1]?.attributes('src')).toContain('core=')
     expect(frames[1]?.attributes('src')).toContain('showUserId=false')

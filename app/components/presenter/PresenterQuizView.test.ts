@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick } from 'vue'
+import { defineComponent, h, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import type { PresenterCurrentState, Question } from '~/types'
 import { parsePresenterParameters } from '~/utils/presenter-parameters'
@@ -8,6 +8,8 @@ import PresenterQuizNoteDialog from './PresenterQuizNoteDialog.vue'
 import PresenterQuizQuestionPanel from './PresenterQuizQuestionPanel.vue'
 import PresenterQuizResultsPanel from './PresenterQuizResultsPanel.vue'
 import PresenterQuizView from './PresenterQuizView.vue'
+import { useLocalization } from '~/composables/useLocalization'
+import { getLanguageOption } from '~/utils/question-language'
 
 const Icon = defineComponent({
   props: { name: { required: true, type: String } },
@@ -59,6 +61,7 @@ const state: PresenterCurrentState = {
   receivedAnswersPercent: 80,
   totalUsers: 5,
 }
+const selectedLanguage = ref('de')
 const localStorageGetItem = vi.fn()
 const localStorageSetItem = vi.fn()
 
@@ -91,6 +94,17 @@ function render(
 }
 
 beforeEach(() => {
+  selectedLanguage.value = 'de'
+  vi.stubGlobal('useQuestionLanguage', () => ({
+    language: selectedLanguage,
+    availableLanguages: ref([
+      'de',
+      'en',
+      'es',
+      'xx',
+    ].map(getLanguageOption)),
+  }))
+  vi.stubGlobal('useLocalization', useLocalization)
   localStorageGetItem.mockReset()
   localStorageSetItem.mockReset()
   Object.defineProperty(window, 'localStorage', {
@@ -144,22 +158,25 @@ describe('PresenterQuizView', () => {
     wrapper.unmount()
   })
 
-  it('follows later URL language changes and the browser fallback', async () => {
+  it('follows shared language changes and keeps selection when a question lacks that language', async () => {
     const wrapper = render('reveal', { language: 'de' })
     const languagePicker = wrapper.get<HTMLSelectElement>('#presenter-quiz-language')
 
     expect(languagePicker.element.value).toBe('de')
     expect(wrapper.text()).toContain('Frage')
 
-    await wrapper.setProps({ parameters: parsePresenterParameters({ language: 'en' }) })
+    selectedLanguage.value = 'en'
+    await nextTick()
 
     expect(languagePicker.element.value).toBe('en')
     expect(wrapper.text()).toContain('Question')
 
-    await wrapper.setProps({ parameters: parsePresenterParameters({}) })
+    selectedLanguage.value = 'es'
+    await wrapper.setProps({ question: { ...question, question_text: { en: 'Question' } } })
 
-    expect(languagePicker.element.value).toBe('en')
+    expect(languagePicker.element.value).toBe('es')
     expect(wrapper.text()).toContain('Question')
+    expect(wrapper.findAll('option').map(option => option.attributes('value'))).toContain('xx')
     wrapper.unmount()
   })
 

@@ -204,9 +204,10 @@ describe('buildPresenterIframeUrls', () => {
     })
     const urls = buildPresenterIframeUrls(parameters)
 
-    expect(urls.emojiUrl).toBe('/admin/emojis?scale=0.3&transparency=0.8&background=%23abcdef')
+    expect(urls.emojiUrl).toBe('/admin/emojis?scale=0.3&transparency=0.8&background=%23abcdef&language=de-DE')
     expect(urls.leaderboardUrl).toBe(
-      '/admin/leaderboard?colorMode=light&padding=0&refresh=5&scale=1&showUserId=false&core=&background=%23fedcba',
+      '/admin/leaderboard?colorMode=light&padding=0&refresh=5&scale=1&showUserId=false&core='
+      + '&background=%23fedcba&language=de-DE',
     )
     expect(urls.recapUrl).toBe(
       '/admin/recap?colorMode=light&count=2&padding=10&refresh=5&scale=1&core=&background=%23123456&language=de-DE',

@@ -233,7 +233,11 @@ export function buildPresenterIframeUrls(parameters: PresenterParameters) {
   })
   if (parameters.recapCore) recap.set('core', '')
   if (parameters.recapBackground) recap.set('background', parameters.recapBackground)
-  if (parameters.language) recap.set('language', parameters.language)
+  if (parameters.language) {
+    emoji.set('language', parameters.language)
+    leaderboard.set('language', parameters.language)
+    recap.set('language', parameters.language)
+  }
 
   return {
     emojiUrl: `/admin/emojis?${emoji.toString()}`,
