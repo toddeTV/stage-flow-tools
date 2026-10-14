@@ -5,6 +5,7 @@ Use this index to find a product capability, its controls, parameters, limitatio
 | Feature | Purpose | Routes | Access | Guide |
 | --- | --- | --- | --- | --- |
 | Participation | Join, answer questions, and send reactions | `/` | Public; nickname for participation | [Participation](participation.md) |
+| Languages | Select question and UI language from stored translations | All page URLs | Public metadata; page access unchanged | [Languages](languages.md) |
 | Questions | Manage and reset the quiz; import or export question packages | `/admin/questions` | Admin | [Questions](questions.md) |
 | Presenter | Run a selectable quiz sequence, live status, or read-only preview | `/admin/presenter` | Admin | [Presenter](presenter.md) |
 | Results | Display live voting results and control the active question | `/admin/results` | Admin | [Results](results.md) |
