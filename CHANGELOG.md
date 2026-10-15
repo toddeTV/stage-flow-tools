@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.2.0](https://github.com/toddeTV/stage-flow-tools/compare/v1.1.0...v1.2.0) (2026-10-15)
+
+
+### Features (feat)
+
+* add confirmed full quiz reset ([#109](https://github.com/toddeTV/stage-flow-tools/issues/109)) ([ad8bf9f](https://github.com/toddeTV/stage-flow-tools/commit/ad8bf9f2f553ca6028a635c616f60e129eb7a0f3))
+* add scoped presenter controller and display embeds ([#105](https://github.com/toddeTV/stage-flow-tools/issues/105)) ([7a217ee](https://github.com/toddeTV/stage-flow-tools/commit/7a217eeb7909b07bf800ab06bcc5772d5ecc5f46))
+* share question language selection across views ([#112](https://github.com/toddeTV/stage-flow-tools/issues/112)) ([c10719b](https://github.com/toddeTV/stage-flow-tools/commit/c10719b1cb7a18a836d04c99e9d1a49736ce3b86))
+* unify presenter selection and slideshow control ([#108](https://github.com/toddeTV/stage-flow-tools/issues/108)) ([77cc36a](https://github.com/toddeTV/stage-flow-tools/commit/77cc36abad2f086cd2ff35fea542321a71aff1ca))
+* verify build commits in question packages ([#111](https://github.com/toddeTV/stage-flow-tools/issues/111)) ([ba16cf4](https://github.com/toddeTV/stage-flow-tools/commit/ba16cf4103d23eebb65c0ea9217c00d8f36d1204))
+
+
+### Tests (test)
+
+* register reset icon and validate client bundle coverage ([#110](https://github.com/toddeTV/stage-flow-tools/issues/110)) ([dec049c](https://github.com/toddeTV/stage-flow-tools/commit/dec049cbe256ca75e590333c8e641f4b78033da1))
+
+
+### Documentation (docs)
+
+* add feature guides and consolidate workflow references ([#107](https://github.com/toddeTV/stage-flow-tools/issues/107)) ([20eaf4e](https://github.com/toddeTV/stage-flow-tools/commit/20eaf4e366eb8ef87e4454c0d28e9b293e0332d4))
+
 ## [1.1.0](https://github.com/toddeTV/stage-flow-tools/compare/v1.0.0...v1.1.0) (2026-09-21)
 
 
