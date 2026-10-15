@@ -26,9 +26,9 @@ Use `/admin/recap` with [admin access](admin-access.md). Published questions and
 | URL | `background` | Hex color `#RRGGBB` | Existing page background | Replaces page background | Invalid or repeated values preserve the background |
 | URL | `refresh` | Non-negative integer, seconds | `5` | Polls recap data; `0` disables periodic refresh | Empty, negative, fractional, non-finite, or repeated values use `5` |
 | URL | `count` | Single digit `1`–`4` | `4` | Limits available highlight cards | Empty, repeated, or other values use `4` |
-| URL | `language` | Locale string | UI language fallback | Selects question and option content language | Empty or repeated values use fallback; unavailable locales fall through |
+| URL | `language` | Key from the shared language pool | Shared language selection | Selects question, option, and UI language | Empty, repeated, or unavailable keys use the shared selection defaults |
 
-Language resolution tries the requested locale, its base language, the current UI locale and its base, English, then the first stored translation. Encode `#` as `%23` in background URLs.
+Missing field translations fall back directly to English; see [Languages](languages.md) for the shared pool and selection defaults. Encode `#` as `%23` in background URLs.
 
 ## Behavior and limitations
 

@@ -5,11 +5,6 @@ import type { PresenterParameters } from '~/utils/presenter-parameters'
 import type { PresenterQuizPhase } from '~/utils/presenter-quiz-state'
 import type { PresenterQuizAnswer } from '~/components/presenter/presenter-quiz'
 
-interface LocaleOption {
-  code: string
-  label: string
-}
-
 const props = defineProps<{
   busy: boolean
   currentState: PresenterCurrentState | null
@@ -39,66 +34,8 @@ const chartColors = [
 ]
 const { t } = useI18n()
 const isNoteModalOpen = ref(false)
-const selectedLanguage = ref('')
-
-function normalizeLocaleCode(locale?: string | null) {
-  return locale?.trim().toLowerCase() || undefined
-}
-
-function localizedText(value: Record<string, string> | undefined, locale: string) {
-  if (!value) return ''
-  const normalized = normalizeLocaleCode(locale)
-  const base = normalized?.split('-')[0]
-  return (normalized && value[normalized])
-    || (base && value[base])
-    || value.en
-    || Object.values(value).find(Boolean)
-    || ''
-}
-
-function collectLocales(value?: Record<string, string>) {
-  return Object.entries(value ?? {})
-    .filter(([
-      , text,
-    ]) => Boolean(text))
-    .map(([
-      locale,
-    ]) => normalizeLocaleCode(locale))
-    .filter((locale): locale is string => Boolean(locale))
-}
-
-function localeLabel(locale: string) {
-  try {
-    const baseLocale = locale.split('-')[0] ?? locale
-    const displayName = new Intl.DisplayNames([
-      'en',
-    ], { type: 'language' }).of(baseLocale)
-    return displayName ? `${displayName} (${locale.toUpperCase()})` : locale.toUpperCase()
-  }
-  catch {
-    return locale.toUpperCase()
-  }
-}
-
-function availableCandidate(candidate: string | undefined, languages: string[]) {
-  if (!candidate) return undefined
-  if (languages.includes(candidate)) return candidate
-  const base = candidate.split('-')[0] ?? candidate
-  return languages.includes(base) ? base : undefined
-}
-
-const availableLanguages = computed<LocaleOption[]>(() => {
-  const locales = new Set<string>()
-  props.questions.forEach((question) => {
-    collectLocales(question.question_text).forEach(locale => locales.add(locale))
-    collectLocales(question.note).forEach(locale => locales.add(locale))
-    question.answer_options.forEach(option => collectLocales(option.text).forEach(locale => locales.add(locale)))
-  })
-  if (locales.size === 0) locales.add('en')
-  return [
-    ...locales,
-  ].sort().map(code => ({ code, label: localeLabel(code) }))
-})
+const { language: selectedLanguage, availableLanguages } = useQuestionLanguage()
+const { getLocalizedText } = useLocalization()
 
 const currentQuestionMatches = computed(() => props.currentState?.currentQuestion?.key === props.question.key)
 const liveAnswers = computed(() => currentQuestionMatches.value
@@ -110,11 +47,11 @@ const displayAnswers = computed<PresenterQuizAnswer[]>(() => props.question.answ
   emoji: option.emoji ?? liveAnswers.value[index]?.emoji ?? '',
   id: `${props.question.key}-${index}`,
   isCorrect: props.parameters.mode !== 'status' && option.emoji === '⭐',
-  label: localizedText(option.text, selectedLanguage.value),
+  label: getLocalizedText(option.text),
   percent: liveAnswers.value[index]?.percent ?? 0,
 })))
-const questionTitle = computed(() => localizedText(props.question.question_text, selectedLanguage.value))
-const noteText = computed(() => localizedText(props.question.note, selectedLanguage.value))
+const questionTitle = computed(() => getLocalizedText(props.question.question_text))
+const noteText = computed(() => getLocalizedText(props.question.note))
 const isReveal = computed(() => props.phase === 'reveal')
 const showResults = computed(() => props.parameters.mode === 'status' || isReveal.value)
 const isActive = computed(() => currentQuestionMatches.value && props.currentState?.currentQuestion?.is_active === true)
@@ -135,26 +72,6 @@ function selectLanguage(event: Event) {
   selectedLanguage.value = language
   emit('language-change', language)
 }
-
-watch(
-  [
-    availableLanguages,
-    () => props.parameters.language,
-  ],
-  ([
-    options,
-    urlLanguage,
-  ]) => {
-    const languages = options.map(option => option.code)
-    const preferred = [
-      normalizeLocaleCode(urlLanguage),
-      normalizeLocaleCode(navigator.language),
-      'en',
-    ].map(candidate => availableCandidate(candidate, languages)).find(Boolean)
-    selectedLanguage.value = preferred ?? languages[0] ?? 'en'
-  },
-  { immediate: true },
-)
 
 watch([
   isReveal,

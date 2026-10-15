@@ -7,14 +7,14 @@ import {
 } from 'vue'
 import type { Ref } from 'vue'
 import type {
-  LocalizedString,
   QuizRecap,
   QuizRecapHighlight,
 } from '~/types'
 
 /** Owns recap query options, localized display data, and refresh polling. */
 export function useAdminRecap(refreshIntervalMs: Readonly<Ref<number>>) {
-  const { t, locale = ref('en') } = useI18n()
+  const { t } = useI18n()
+  const { getLocalizedText: localizedText } = useLocalization()
   const route = useRoute()
   const isLoading = ref(false)
   const hasError = ref(false)
@@ -33,36 +33,6 @@ export function useAdminRecap(refreshIntervalMs: Readonly<Ref<number>>) {
     if (!value || !/^[1-4]$/.test(value)) return 4
     return Number(value)
   })
-
-  function normalizeLocaleCode(value: string | undefined) {
-    return value?.trim().toLowerCase() || undefined
-  }
-
-  const displayLanguage = computed(() => normalizeLocaleCode(singleQueryValue('language')))
-
-  /** Resolves display copy through presentation language, UI locale, English, then first translation. */
-  function localizedText(text: LocalizedString) {
-    const candidates = [
-      displayLanguage.value,
-      displayLanguage.value?.split('-')[0],
-      normalizeLocaleCode(locale.value),
-      normalizeLocaleCode(locale.value)?.split('-')[0],
-      'en',
-    ]
-
-    for (const candidate of candidates) {
-      if (!candidate) continue
-      const translation = Object.entries(text).find(([
-        key,
-        value,
-      ]) => (
-        normalizeLocaleCode(key) === candidate && value
-      ))?.[1]
-      if (translation) return translation
-    }
-
-    return Object.values(text)[0] ?? ''
-  }
 
   const visibleHighlights = computed(() => recap.value?.highlights.slice(0, highlightCount.value) ?? [])
   const accuracy = computed(() => {

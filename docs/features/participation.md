@@ -14,11 +14,11 @@ Open `/` in a browser with local and session storage available. An admin must pu
 - Select an answer and submit it. Submitting another selection updates the answer for the same participant and question.
 - Changing the nickname attempts to retract the current question's answer and clears the visible selection and saved nickname.
 - Send quick reactions or a custom valid emoji; see [Emojis](emojis.md).
-- Choose the UI language through the page's language switcher.
+- Choose the question and UI language through the page's language switcher; see [Languages](languages.md).
 
 ## Parameters and configuration
 
-The participant page has no feature-specific URL parameters. Reaction cooldown settings are documented in [Emojis](emojis.md#parameters-and-configuration). API and WebSocket base URL configuration belongs to [deployment](../deployment-docker.md) and [`.env.example`](../../.env.example).
+Use `language` to select a language from the shared question pool; see [Languages](languages.md#parameters-and-configuration). Reaction cooldown settings are documented in [Emojis](emojis.md#parameters-and-configuration). API and WebSocket base URL configuration belongs to [deployment](../deployment-docker.md) and [`.env.example`](../../.env.example).
 
 ## Behavior and limitations
 

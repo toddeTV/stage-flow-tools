@@ -20,6 +20,7 @@ import {
 } from 'vite-plus/test'
 import RecapPage from './recap.vue'
 import AdminBackLink from '~/components/admin/AdminBackLink.vue'
+import { useLocalization } from '~/composables/useLocalization'
 
 const route = {
   query: {} as Record<string, unknown>,
@@ -128,6 +129,10 @@ beforeEach(() => {
   vi.stubGlobal('ref', ref)
   vi.stubGlobal('useI18n', () => ({ locale: ref('de'), t: (key: string) => key }))
   vi.stubGlobal('useRoute', () => route)
+  vi.stubGlobal('useLocalization', useLocalization)
+  vi.stubGlobal('useQuestionLanguage', () => ({
+    language: computed(() => typeof route.query.language === 'string' ? route.query.language : 'de'),
+  }))
   vi.stubGlobal('watch', watch)
 })
 

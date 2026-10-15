@@ -1,19 +1,20 @@
 <script setup lang="ts">
-const { locale, locales } = useI18n({ useScope: 'global' })
+const { language, availableLanguages, selectLanguage } = useQuestionLanguage()
 const { t } = useI18n()
-
-const languageMap: Record<string, string> = {
-  en: '🇺🇸',
-  de: '🇩🇪',
-  fr: '🇫🇷',
-  ja: '🇯🇵',
+function onChange(event: Event) {
+  void selectLanguage((event.target as HTMLSelectElement).value)
 }
 </script>
 
 <template>
-  <select v-model="locale" :aria-label="t('selectLanguage')" class="border-2 border-black bg-white px-2 py-1 text-sm">
-    <option v-for="lang in locales" :key="lang.code" :value="lang.code">
-      {{ languageMap[lang.code] }} {{ lang.name }}
+  <select
+    :aria-label="t('selectLanguage')"
+    class="border-2 border-black bg-white px-2 py-1 text-sm"
+    :value="language"
+    @change="onChange"
+  >
+    <option v-for="lang in availableLanguages" :key="lang.code" :value="lang.code">
+      {{ lang.label }}
     </option>
   </select>
 </template>

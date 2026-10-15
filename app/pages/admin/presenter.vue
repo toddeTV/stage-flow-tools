@@ -13,9 +13,12 @@ definePageMeta({
 })
 
 const route = useRoute()
-const router = useRouter()
 const { t } = useI18n()
-const parameters = computed(() => parsePresenterParameters(route.query))
+const { language, selectLanguage } = useQuestionLanguage()
+const parameters = computed(() => ({
+  ...parsePresenterParameters(route.query),
+  language: language.value || undefined,
+}))
 const presenterRefresh = computed(() => parameters.value.presenterRefresh)
 const iframeUrls = computed(() => buildPresenterIframeUrls(parameters.value))
 const presenterStyles = computed<CSSProperties>(() => ({
@@ -71,7 +74,7 @@ function errorMessageKey(kind: PresenterErrorKind) {
 }
 
 function setLanguage(language: string) {
-  void router.replace({ query: { ...route.query, language } })
+  void selectLanguage(language)
 }
 
 function isEditableTarget(target: EventTarget | null) {

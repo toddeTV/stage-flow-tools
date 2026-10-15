@@ -216,6 +216,14 @@ Get all questions (admin only).
 
 **Response:** Array of question objects.
 
+### GET `/api/questions/locales`
+
+Get the combined language keys from all stored questions (public), including disabled questions. Collects populated question text, answer option, and note translations. Keys are trimmed, lowercased, deduplicated, and sorted; regional keys remain separate. Returns no question content or internal fields.
+
+**Response:** Array of language keys, for example `["de", "en", "es", "xx"]`. An empty database returns `[]`.
+
+Clients load the pool once per full page load; see [Languages](features/languages.md).
+
 ### GET `/api/questions/active`
 
 Get the currently active question (public). Returns a simplified version without emojis, admin notes, key, and `alreadyPublished`.
