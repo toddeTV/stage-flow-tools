@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 import type { Question } from '~/types'
+import { safeParse } from 'valibot'
+import { QuestionPackageSchema } from '#shared/utils/validation'
 import {
   createQuestionPackage,
   getQuestionPackageImportPreview,
@@ -16,6 +18,7 @@ function createQuestionFixture(overrides: Partial<Question> = {}): Question {
     ],
     alreadyPublished: true,
     createdAt: '2026-09-04T12:00:00.000Z',
+    authoredAt: null,
     id: 'question-id',
     is_active: true,
     is_disabled: false,
@@ -41,7 +44,7 @@ describe('question packages', () => {
 
     expect(packageValue).toEqual({
       format: 'stage-flow-tools.question-package',
-      version: 1,
+      version: 2,
       commitSha,
       questions: [
         {
@@ -69,6 +72,21 @@ describe('question packages', () => {
     expect(stringifyQuestionPackage(packageValue)).toContain('\n  "format"')
   })
 
+  it('exports only known authored dates and preserves them through JSON', () => {
+    const authoredAt = '2020-02-29T12:00:00.000Z'
+    const exported = createQuestionPackage([
+      createQuestionFixture({ authoredAt }),
+      createQuestionFixture({ key: 'unknown' }),
+    ], commitSha)
+    const reparsed = JSON.parse(stringifyQuestionPackage(exported))
+    expect(reparsed.version).toBe(2)
+    expect(safeParse(QuestionPackageSchema, reparsed).success).toBe(true)
+    expect(safeParse(QuestionPackageSchema, { ...reparsed, version: 1 }).success).toBe(false)
+    expect(reparsed.questions[0].meta).toEqual({ authoredAt })
+    expect(reparsed.questions[1]).not.toHaveProperty('meta')
+    expect(reparsed.questions[0]).not.toHaveProperty('createdAt')
+  })
+
   it('round-trips Markdown source and code-block line breaks', () => {
     const questionText = '**Question**\n\n```ts\nconst value = 1\n```'
     const answerText = '*Answer* with `code`'
@@ -83,19 +101,19 @@ describe('question packages', () => {
     ], commitSha)
     const reparsed = JSON.parse(stringifyQuestionPackage(packageValue))
 
-    expect(reparsed.version).toBe(1)
+    expect(reparsed.version).toBe(2)
     expect(reparsed.commitSha).toBe(commitSha)
     expect(reparsed.questions[0].question_text.en).toBe(questionText)
     expect(reparsed.questions[0].answer_options[0].text.en).toBe(answerText)
   })
 
-  it('counts package keys that will update existing questions', () => {
+  it('identifies package keys that conflict with existing questions', () => {
     const questions = [
       createQuestionFixture({ key: 'existing-question' }),
     ]
     const packageValue = {
       format: 'stage-flow-tools.question-package' as const,
-      version: 1 as const,
+      version: 2 as const,
       questions: [
         {
           answer_options: [
@@ -119,7 +137,9 @@ describe('question packages', () => {
 
     expect(getQuestionPackageImportPreview(packageValue, questions)).toEqual({
       createCount: 1,
-      updateCount: 1,
+      conflictingKeys: [
+        'existing-question',
+      ],
     })
   })
 })

@@ -38,6 +38,7 @@ import {
   publishQuestion,
   resetQuiz,
   QuestionAnswerOptionsResetRequiredError,
+  QuestionKeyConflictError,
   submitAnswer,
   toggleQuestionDisabled,
   toggleQuestionLock,
@@ -75,7 +76,7 @@ function createQuestionPackage(questions: QuestionPackage['questions']): Questio
   return {
     format: 'stage-flow-tools.question-package',
     questions,
-    version: 1,
+    version: 2,
   }
 }
 
@@ -188,104 +189,70 @@ describe('question queue storage', () => {
     expect(testClient.db.select().from(answers).all()).toEqual([])
   })
 
-  it('updates active published package questions without resetting answers or queue state', async () => {
+  it('rejects an existing key without changing questions, answers, or live state', async () => {
     const existing = await createQuestion(createInputQuestion('existing-question'))
-    const preserved = await createQuestion(createInputQuestion('preserved-question'))
-
-    testClient.db.update(questions).set({
-      alreadyPublished: true,
-      isActive: true,
-      isLocked: true,
-    }).where(eq(questions.id, existing.id)).run()
-    testClient.db.insert(answers).values({
-      id: 'answer-id',
-      questionId: existing.id,
-      selectedAnswer: JSON.stringify({ en: 'One' }),
-      timestamp: '2026-09-04T00:00:00.000Z',
-      userId: 'participant-id',
-      userNickname: 'Participant',
-    }).run()
-
-    const result = await importQuestionPackage(createQuestionPackage([
-      {
-        answer_options: [
-          { text: { en: 'Updated one' } },
-          { text: { en: 'Updated two' } },
-        ],
-        is_disabled: true,
-        key: existing.key,
-        note: { en: 'Updated note' },
-        question_text: { en: 'Updated question' },
-      },
-      {
-        answer_options: [
-          { text: { en: 'New one' } },
-          { text: { en: 'New two' } },
-        ],
-        is_disabled: false,
-        key: 'new-question',
-        question_text: { en: 'New question' },
-      },
-      {
-        answer_options: [
-          { text: { en: 'Generated one' } },
-          { text: { en: 'Generated two' } },
-        ],
-        is_disabled: false,
-        question_text: { en: 'Generated question' },
-      },
-    ]))
-
-    expect(result).toMatchObject({
-      activeQuestion: {
-        id: existing.id,
-        is_active: true,
-        is_locked: true,
-        key: existing.key,
-      },
-      createdCount: 2,
-      updatedCount: 1,
+    await publishQuestion(existing.key)
+    await submitAnswer({
+      question_id: existing.id,
+      selected_answer: { en: 'One' },
+      user_id: 'test-participant',
+      user_nickname: 'Test participant',
     })
-    expect((await getQuestions()).map(question => question.key)).toEqual([
-      existing.key,
-      preserved.key,
-      'new-question',
-      expect.any(String),
+    const beforeQuestions = await getQuestions()
+    const beforeAnswers = await getAnswersForQuestion(existing.id)
+
+    await expect(importQuestionPackage(createQuestionPackage([
+      { ...createInputQuestion('new-question'), is_disabled: false },
+      { ...createInputQuestion(existing.key), is_disabled: true },
+    ]))).rejects.toThrow(QuestionKeyConflictError)
+
+    await expect(getQuestions()).resolves.toEqual(beforeQuestions)
+    await expect(getAnswersForQuestion(existing.id)).resolves.toEqual(beforeAnswers)
+  })
+
+  it('imports optional authored dates independently of database creation and preserves them on edits', async () => {
+    const authoredAt = '2020-02-29T12:30:00.000Z'
+    const manual = await createQuestion(createInputQuestion('manual'))
+    expect(manual.authoredAt).toBeNull()
+
+    await expect(importQuestionPackage(createQuestionPackage([
+      { ...createInputQuestion('authored'), is_disabled: true, meta: { authoredAt } },
+      { ...createInputQuestion('unknown'), is_disabled: false },
+      { ...createInputQuestion(''), is_disabled: false, meta: {} },
+    ]))).resolves.toEqual({ createdCount: 3, updatedCount: 0 })
+
+    const imported = await getQuestions()
+    const authored = imported[1]!
+    expect(imported.map(question => question.authoredAt)).toEqual([
+      null,
+      authoredAt,
+      null,
+      null,
     ])
-    expect((await getQuestions())[0]).toMatchObject({
-      answer_options: [
-        { text: { en: 'Updated one' } },
-        { text: { en: 'Updated two' } },
-      ],
-      alreadyPublished: true,
-      id: existing.id,
-      is_active: true,
-      is_disabled: true,
-      is_locked: true,
-      note: { en: 'Updated note' },
-      question_text: { en: 'Updated question' },
-      sortOrder: existing.sortOrder,
+    expect(imported.map(question => question.sortOrder)).toEqual([
+      0,
+      1,
+      2,
+      3,
+    ])
+    expect(authored.createdAt).not.toBe(authoredAt)
+    expect(authored.is_disabled).toBe(true)
+    expect(imported[3]?.key).toBeTruthy()
+    const storedRow = testClient.db.select().from(questions).where(eq(questions.id, authored.id)).get()
+    expect(storedRow?.authoredAt).toBe(authoredAt)
+
+    await expect(updateQuestion(authored.id, createInputQuestion('edited'))).resolves.toMatchObject({
+      question: { authoredAt, createdAt: authored.createdAt },
     })
-    await expect(getAnswersForQuestion(existing.id)).resolves.toEqual([
-      {
-        id: 'answer-id',
-        question_id: existing.id,
-        selected_answer: { en: 'One' },
-        timestamp: '2026-09-04T00:00:00.000Z',
-        user_id: 'participant-id',
-        user_nickname: 'Participant',
-      },
-    ])
   })
 
   it('rolls back every package change when a duplicate key reaches storage', async () => {
-    const existing = await createQuestion(createInputQuestion('existing-question'))
+    await createQuestion(createInputQuestion('existing-question'))
 
     await expect(importQuestionPackage(createQuestionPackage([
       {
-        ...createInputQuestion(existing.key),
+        ...createInputQuestion('new-before-duplicate'),
         is_disabled: false,
-        question_text: { en: 'This must roll back' },
       },
       {
         ...createInputQuestion('duplicate-new-question'),

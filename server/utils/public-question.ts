@@ -5,7 +5,7 @@ import type {
 
 export type PublicQuestion = Omit<
   Question,
-  'note' | 'key' | 'alreadyPublished' | 'answer_options' | 'is_disabled' | 'sortOrder'
+  'note' | 'key' | 'alreadyPublished' | 'answer_options' | 'is_disabled' | 'sortOrder' | 'authoredAt'
 > & {
   answer_options: { text: LocalizedString }[]
 }
@@ -19,6 +19,7 @@ export function serializePublicQuestion(question: Question): PublicQuestion {
     answer_options,
     is_disabled,
     sortOrder,
+    authoredAt,
     ...publicQuestion
   } = question
 

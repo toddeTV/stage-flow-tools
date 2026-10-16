@@ -214,7 +214,10 @@ operator maintains the corresponding database rows directly. See
 
 Get all questions (admin only).
 
-**Response:** Array of question objects.
+**Response:** Array of question objects. Admin question records include nullable
+`authoredAt`, the author-supplied question creation timestamp in UTC. It is independent
+of `createdAt`, which records database creation. Public question responses omit
+`authoredAt`.
 
 ### GET `/api/questions/locales`
 
@@ -280,22 +283,23 @@ blocks scrollable.
 ### POST `/api/questions/import`
 
 Import a current-format question package (admin only). Only the exact numeric
-`version: 1` is supported. Missing versions, other types, and earlier or future
+`version: 2` is supported. Missing versions, other types, and earlier or future
 versions are rejected; there are no compatibility ranges or automatic conversions.
 The full package is validated
-before one SQLite transaction adds new questions and updates questions with a
-matching non-empty `key`. Updated questions keep their answers, technical ID,
-queue position, and lifecycle state. Questions without a key receive a generated
-key. An updated active question is broadcast with recalculated results.
+before one SQLite transaction adds new questions. If a non-empty `key` already
+exists, the entire transaction fails with `409 quiz.question_key_conflict`, including
+keys added after the client preview. No questions or answers change and no events
+are broadcast. Questions without a key receive a generated key.
 
 ```json
 {
   "format": "stage-flow-tools.question-package",
-  "version": 1,
+  "version": 2,
   "commitSha": "0123456789abcdef0123456789abcdef01234567",
   "questions": [
     {
       "key": "round-1-question-1",
+      "meta": { "authoredAt": "2026-10-16T12:00:00Z" },
       "question_text": {
         "en": "**What does this return?**\n\n```ts\nconst value = 1\nreturn value\n```"
       },
@@ -310,8 +314,18 @@ key. An updated active question is broadcast with recalculated results.
 }
 ```
 
-JSON strings encode code-block line breaks as `\n`. Exported Version 1
+JSON strings encode code-block line breaks as `\n`. Exported Version 2
 packages preserve Markdown source and internal line breaks unchanged.
+
+Per-question `meta` and `meta.authoredAt` are optional; an empty `meta` is accepted.
+If supplied, `authoredAt` must be a valid ISO 8601 UTC timestamp ending in `Z`, with
+seconds and optionally one to three fractional second digits. The server normalizes
+it to millisecond precision. Invalid dates, empty strings, `null`, date-only values,
+and timezone offsets are rejected before persistence. Missing values are stored as
+`NULL`, not inferred from the import time or database `createdAt`. Exports include
+`meta.authoredAt` only when known. Version 1 files are rejected, including files
+without metadata. Destination installations must support Version 2; there is no
+automatic conversion.
 
 `commitSha` is optional metadata identifying the intended software commit. When
 present it must contain 40 hexadecimal characters; surrounding whitespace is
@@ -335,6 +349,8 @@ and obtain new confirmation; do not silently retry.
   "updatedCount": 0
 }
 ```
+
+Successful imports always return `updatedCount: 0`; imports never update existing questions.
 
 ### GET `/api/admin/build-info`
 

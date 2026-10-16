@@ -1,3 +1,9 @@
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { applyLocalMigrations, createLocalDatabaseClient } from '../server/database/local-sqlite'
+import { createQuestion, getQuestions, importQuestionPackage as persistQuestionPackage } from '../server/utils/storage'
+import { createQuestionPackage as exportQuestionPackage } from '../app/utils/question-package'
 import { getRequestURL } from 'h3'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
@@ -16,7 +22,7 @@ const broadcast = vi.fn()
 const cancelPendingResultsUpdate = vi.fn()
 const questionPackage = {
   format: 'stage-flow-tools.question-package',
-  version: 1,
+  version: 2,
   questions: [
     {
       question_text: { en: 'Question' },
@@ -137,8 +143,9 @@ describe('question package commit checks at the HTTP boundary', () => {
 
   it.each([
     0,
-    2,
-    '1',
+    1,
+    3,
+    '2',
     undefined,
     null,
   ])('never overrides a wrong or missing version with SHA confirmation: %s', async (version) => {
@@ -170,6 +177,66 @@ describe('question package commit checks at the HTTP boundary', () => {
     'z'.repeat(40),
   ])('rejects malformed package SHA: %s', async (sha) => {
     await expectRejected(await requestImport({ ...questionPackage, commitSha: sha }), 400, 'validation.invalid_request')
+  })
+
+  it('persists author metadata through import/export and rejects keys added after preview', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'stage-flow-package-'))
+    const client = createLocalDatabaseClient(join(directory, 'test.sqlite3'))
+    applyLocalMigrations(client.db)
+    globalThis.__stageFlowToolsLocalDatabaseClient = client
+    importQuestionPackage.mockImplementation(persistQuestionPackage)
+
+    try {
+      const authoredAt = '2020-02-29T12:00:00.000Z'
+      const body = {
+        ...questionPackage,
+        questions: [
+          { ...questionPackage.questions[0], key: 'authored', meta: { authoredAt } },
+        ],
+      }
+      const imported = await requestImport(body)
+      expect(imported.status).toBe(200)
+      const stored = await getQuestions()
+      expect(stored[0]).toMatchObject({ authoredAt })
+      expect(stored[0]?.createdAt).not.toBe(authoredAt)
+      expect(exportQuestionPackage(stored, commitSha).questions[0]?.meta).toEqual({ authoredAt })
+
+      // Another administrator adds the key after the client's preview.
+      await createQuestion({
+        key: 'stale-preview', question_text: { en: 'Existing' },
+        answer_options: [
+          { text: { en: 'One' } },
+          { text: { en: 'Two' } },
+        ],
+      })
+      const before = await getQuestions()
+      const conflict = await requestImport({
+        ...questionPackage,
+        questions: [
+          { ...questionPackage.questions[0], key: 'new-before-conflict' },
+          { ...questionPackage.questions[0], key: 'stale-preview' },
+        ],
+      })
+      expect(conflict.status).toBe(409)
+      await expect(conflict.json()).resolves.toMatchObject({ data: { code: 'quiz.question_key_conflict' } })
+      await expect(getQuestions()).resolves.toEqual(before)
+      expect(broadcast).not.toHaveBeenCalled()
+      expect(cancelPendingResultsUpdate).not.toHaveBeenCalled()
+    }
+    finally {
+      globalThis.__stageFlowToolsLocalDatabaseClient = undefined
+      client.sqlite.close()
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects an invalid author date before storage or broadcasts', async () => {
+    await expectRejected(await requestImport({
+      ...questionPackage,
+      questions: [
+        { ...questionPackage.questions[0], meta: { authoredAt: '2023-02-29T12:00:00Z' } },
+      ],
+    }), 400, 'validation.invalid_request')
   })
 
   it('validates confirmation parameters before writes', async () => {

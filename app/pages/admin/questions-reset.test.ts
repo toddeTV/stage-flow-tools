@@ -12,7 +12,7 @@ const question: Question = {
     { text: { en: 'One' } },
     { text: { en: 'Two' } },
   ],
-  createdAt: '2026-01-01T00:00:00.000Z',
+  createdAt: '2026-01-01T00:00:00.000Z', authoredAt: null,
   id: 'test-question',
   is_active: true,
   is_disabled: true,

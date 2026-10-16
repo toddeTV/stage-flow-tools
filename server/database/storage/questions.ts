@@ -31,8 +31,14 @@ export class QuestionAnswerOptionsResetRequiredError extends Error {
   }
 }
 
+export class QuestionKeyConflictError extends Error {
+  constructor() {
+    super('A question already uses this key')
+    this.name = 'QuestionKeyConflictError'
+  }
+}
+
 export type QuestionPackageImportResult = {
-  activeQuestion?: Question
   createdCount: number
   updatedCount: number
 }
@@ -127,88 +133,40 @@ export async function createQuestion(
   return deserializeQuestion(row)
 }
 
-/** Adds new package questions and updates matching keys in one transaction. */
+/** Adds a package atomically, rejecting keys that already exist. */
 export async function importQuestionPackage(
   questionPackage: QuestionPackage,
 ): Promise<QuestionPackageImportResult> {
   await initStorage()
 
-  const result = getDatabase().transaction((transaction) => {
-    const storedQuestions = transaction
-      .select()
-      .from(questions)
-      .all()
-    const questionsByKey = new Map(storedQuestions.map(question => [
-      question.key,
-      question,
-    ]))
+  return getDatabase().transaction((transaction) => {
+    const storedQuestions = transaction.select().from(questions).all()
+    const storedKeys = new Set(storedQuestions.map(question => question.key))
     let nextSortOrder = Math.max(-1, ...storedQuestions.map(question => question.sortOrder)) + 1
-    let activeQuestionId: string | undefined
-    let createdCount = 0
-    let updatedCount = 0
 
     for (const packageQuestion of questionPackage.questions) {
-      const questionInput: InputQuestion = {
+      if (packageQuestion.key && storedKeys.has(packageQuestion.key)) {
+        throw new QuestionKeyConflictError()
+      }
+
+      const questionRow = createQuestionInsert({
         key: packageQuestion.key ?? '',
         question_text: packageQuestion.question_text,
         answer_options: packageQuestion.answer_options,
         note: packageQuestion.note,
-      }
-      const storedQuestion = questionInput.key
-        ? questionsByKey.get(questionInput.key)
-        : undefined
+      }, {
+        authoredAt: packageQuestion.meta?.authoredAt,
+        isDisabled: packageQuestion.is_disabled,
+        sortOrder: nextSortOrder,
+      })
 
-      if (!storedQuestion) {
-        const questionRow = createQuestionInsert(questionInput, {
-          isDisabled: packageQuestion.is_disabled,
-          sortOrder: nextSortOrder,
-        })
-
-        transaction.insert(questions).values(questionRow).run()
-        nextSortOrder += 1
-        createdCount += 1
-        continue
-      }
-
-      const updatedQuestion = {
-        ...deserializeQuestion(storedQuestion),
-        ...questionInput,
-        is_disabled: packageQuestion.is_disabled,
-      } satisfies Question
-      const updatedRow = createStoredQuestionInsert(updatedQuestion)
-
-      transaction
-        .update(questions)
-        .set({
-          questionText: updatedRow.questionText,
-          answerOptions: updatedRow.answerOptions,
-          note: updatedRow.note,
-          isDisabled: updatedRow.isDisabled,
-        })
-        .where(eq(questions.id, storedQuestion.id))
-        .run()
-
-      if (storedQuestion.isActive) {
-        activeQuestionId = storedQuestion.id
-      }
-
-      updatedCount += 1
+      transaction.insert(questions).values(questionRow).run()
+      storedKeys.add(questionRow.key)
+      nextSortOrder += 1
     }
 
-    return {
-      activeQuestionId,
-      createdCount,
-      updatedCount,
-    }
+    return { createdCount: questionPackage.questions.length, updatedCount: 0 }
   })
-
-  return {
-    activeQuestion: result.activeQuestionId
-      ? getQuestionById(result.activeQuestionId)
-      : undefined,
-    createdCount: result.createdCount,
-    updatedCount: result.updatedCount,
-  }
 }
 
 /** Updates a question and resets submitted answers only when explicitly confirmed. */

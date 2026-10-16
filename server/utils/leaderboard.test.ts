@@ -16,7 +16,7 @@ const publishedQuestion: Question = {
   is_disabled: false,
   is_locked: false,
   sortOrder: 0,
-  createdAt: '2026-09-03T00:00:00.000Z',
+  createdAt: '2026-09-03T00:00:00.000Z', authoredAt: null,
   alreadyPublished: true,
 }
 

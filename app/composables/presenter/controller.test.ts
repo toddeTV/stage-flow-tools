@@ -10,7 +10,7 @@ function setup(options: Partial<PresenterQuizOptions> = {}) {
     'three',
   ].map((key, sortOrder) => ({
     key, id: key, sortOrder, alreadyPublished: false, is_disabled: key === 'disabled',
-    is_locked: false, is_active: false, createdAt: '', question_text: { en: key },
+    is_locked: false, is_active: false, createdAt: '', authoredAt: null, question_text: { en: key },
     answer_options: [
       { text: { en: 'Yes' } },
     ],

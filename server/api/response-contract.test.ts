@@ -118,16 +118,6 @@ describe('POST response contract', () => {
     expect(source).toContain("broadcast('results-update', null, WebSocketChannel.RESULTS)")
   })
 
-  it('broadcasts an active question changed by a package import', async () => {
-    const source = await readSource('server/api/questions/import.post.ts')
-
-    expect(source).toContain('if (result.activeQuestion)')
-    expect(source).toContain('cancelPendingResultsUpdate()')
-    expect(source).toContain("broadcast('new-question', serializePublicQuestion(result.activeQuestion))")
-    expect(source).toContain('const results = await getResultsForQuestion(result.activeQuestion.id)')
-    expect(source).toContain("broadcast('results-update', results, WebSocketChannel.RESULTS)")
-  })
-
   it('cancels buffered results when the active question is unpublished', async () => {
     const source = await readSource('server/api/questions/unpublish-active.post.ts')
 

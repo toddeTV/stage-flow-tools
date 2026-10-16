@@ -17,6 +17,23 @@ const requiredTrimmedStringSchema = v.pipe(
   v.minLength(1, 'validation.required'),
 )
 
+/** Accepts real UTC calendar timestamps, with optional millisecond precision. */
+const authoredAtSchema = v.pipe(
+  v.string('validation.invalid_question_package'),
+  v.check((value) => {
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/.test(value)) {
+      return false
+    }
+
+    const timestamp = Date.parse(value)
+    const canonical = value.replace(/(?:\.(\d{1,3}))?Z$/,
+      (_, fraction: string | undefined) => `.${(fraction ?? '').padEnd(3, '0')}Z`)
+
+    return Number.isFinite(timestamp) && new Date(timestamp).toISOString() === canonical
+  }, 'validation.invalid_question_package'),
+  v.transform(value => new Date(value).toISOString()),
+)
+
 const localizedStringSchema = v.pipe(
   v.record(v.string(), trimmedStringSchema),
   v.check(value => Boolean(value.en), 'validation.required'),
@@ -57,7 +74,7 @@ const questionInputEntries = {
 }
 
 export const QUESTION_PACKAGE_FORMAT = 'stage-flow-tools.question-package' as const
-export const QUESTION_PACKAGE_VERSION = 1 as const
+export const QUESTION_PACKAGE_VERSION = 2 as const
 
 export const CommitShaSchema = v.pipe(
   v.string('validation.invalid_commit_sha'),
@@ -119,6 +136,9 @@ const QuestionPackageQuestionSchema = v.pipe(
   v.strictObject({
     ...questionInputEntries,
     is_disabled: v.boolean('validation.invalid_type'),
+    meta: v.optional(v.strictObject({
+      authoredAt: v.optional(authoredAtSchema),
+    }, 'validation.invalid_question_package')),
   }, 'validation.invalid_question_package'),
   v.forward(
     v.check(value => value.answer_options.length >= 2, 'validation.minimum_answer_options'),

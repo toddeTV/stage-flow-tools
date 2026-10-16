@@ -62,6 +62,7 @@ export function deserializeQuestion(row: QuestionRow): Question {
     is_locked: row.isLocked,
     sortOrder: row.sortOrder,
     createdAt: row.createdAt,
+    authoredAt: row.authoredAt,
     alreadyPublished: row.alreadyPublished,
   }
 }
@@ -93,6 +94,7 @@ export function createQuestionInsert(
   options: {
     alreadyPublished?: boolean
     createdAt?: string
+    authoredAt?: string
     id?: string
     isActive?: boolean
     isDisabled?: boolean
@@ -115,6 +117,7 @@ export function createQuestionInsert(
     alreadyPublished: options.alreadyPublished ?? false,
     sortOrder: options.sortOrder ?? 0,
     createdAt: options.createdAt ?? new Date().toISOString(),
+    authoredAt: options.authoredAt ?? null,
   }
 }
 
@@ -149,6 +152,7 @@ export function createStoredQuestionInsert(question: Question): QuestionRow {
     alreadyPublished: question.alreadyPublished,
     sortOrder: question.sortOrder,
     createdAt: question.createdAt,
+    authoredAt: question.authoredAt,
   }
 }
 

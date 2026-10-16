@@ -8,6 +8,7 @@ import type {
 } from '~/types';
 import {
   createQuestionPackage,
+  getQuestionPackageImportPreview,
   stringifyQuestionPackage,
 } from '~/utils/question-package';
 import {
@@ -573,6 +574,11 @@ export function useAdminQuestions() {
       return;
     }
 
+    if (getQuestionPackageImportPreview(questionPackage, allQuestions.value).conflictingKeys.length > 0) {
+      importError.value = t('errors.quiz.question_key_conflict');
+      return;
+    }
+
     const commitSha = importBuildInfo.value?.commitSha ?? null;
     const needsConfirmation = !commitSha ||
       Boolean(questionPackage.commitSha && questionPackage.commitSha !== commitSha);
@@ -595,7 +601,10 @@ export function useAdminQuestions() {
       await loadQuestions();
       closeQuestionDialog(true);
     } catch (error: unknown) {
-      if (getErrorCode(error) === 'quiz.question_package_commit_confirmation_required') {
+      if ([
+        'quiz.question_package_commit_confirmation_required',
+        'quiz.question_key_conflict',
+      ].includes(getErrorCode(error))) {
         await handleQuestionPackageSelected(questionPackage);
       }
       importError.value ??= getErrorMessage(error);

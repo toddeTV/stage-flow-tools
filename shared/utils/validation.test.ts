@@ -271,10 +271,10 @@ describe('endpoint schemas', () => {
     }).success).toBe(false)
   })
 
-  it('validates strict Version 1 question packages', () => {
+  it('validates strict Version 2 question packages', () => {
     expect(normalizeQuestionPackage({
       format: 'stage-flow-tools.question-package',
-      version: 1,
+      version: 2,
       questions: [
         {
           answer_options: [
@@ -287,7 +287,7 @@ describe('endpoint schemas', () => {
       ],
     })).toEqual({
       format: 'stage-flow-tools.question-package',
-      version: 1,
+      version: 2,
       questions: [
         {
           answer_options: [
@@ -303,7 +303,80 @@ describe('endpoint schemas', () => {
     })
   })
 
-  it('preserves Markdown and internal line breaks in Version 1 question packages', () => {
+  it.each([
+    [
+      undefined,
+      undefined,
+    ],
+    [
+      {},
+      {},
+    ],
+    [
+      { authoredAt: '2024-02-29T12:30:45Z' },
+      { authoredAt: '2024-02-29T12:30:45.000Z' },
+    ],
+    [
+      { authoredAt: '2024-02-29T12:30:45.12Z' },
+      { authoredAt: '2024-02-29T12:30:45.120Z' },
+    ],
+  ])('accepts optional UTC author metadata: %j', (meta, expected) => {
+    const result = normalizeQuestionPackage({
+      format: 'stage-flow-tools.question-package', version: 2,
+      questions: [
+        {
+          question_text: { en: 'Question' },
+          answer_options: [
+            { text: { en: 'One' } },
+            { text: { en: 'Two' } },
+          ],
+          is_disabled: false,
+          ...(meta === undefined ? {} : { meta }),
+        },
+      ],
+    })
+    expect(result.questions[0]?.meta).toEqual(expected)
+  })
+
+  it.each([
+    '2023-02-29T12:30:45Z',
+    '2024-02-30T12:30:45Z',
+    '2024-13-01T12:30:45Z',
+    '2024-01-01T24:00:00Z',
+    '2024-01-01',
+    '2024-01-01T12:30:45',
+    '2024-01-01T12:30:45+00:00',
+    '2024-01-01T12:30:45+02:00',
+    '2024-01-01T12:30:45.1234Z',
+    '',
+    null,
+    123,
+  ])('rejects malformed author timestamps with their field path: %s', (authoredAt) => {
+    const result = safeParse(QuestionPackageSchema, {
+      format: 'stage-flow-tools.question-package', version: 2,
+      questions: [
+        {
+          question_text: { en: 'Question' },
+          answer_options: [
+            { text: { en: 'One' } },
+            { text: { en: 'Two' } },
+          ],
+          is_disabled: false, meta: { authoredAt },
+        },
+      ],
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(getValidationIssues(result.issues)[0]?.path).toEqual([
+        'questions',
+        '0',
+        'meta',
+        'authoredAt',
+      ])
+    }
+  })
+
+  it('preserves Markdown and internal line breaks in Version 2 question packages', () => {
     const questionText = [
       '**What does this return?**',
       '',
@@ -315,7 +388,7 @@ describe('endpoint schemas', () => {
     const answerText = '*One* with `number`'
     const questionPackage = normalizeQuestionPackage({
       format: 'stage-flow-tools.question-package',
-      version: 1,
+      version: 2,
       questions: [
         {
           answer_options: [
@@ -328,7 +401,7 @@ describe('endpoint schemas', () => {
       ],
     })
 
-    expect(questionPackage.version).toBe(1)
+    expect(questionPackage.version).toBe(2)
     expect(questionPackage.questions[0]?.question_text.en).toBe(questionText)
     expect(questionPackage.questions[0]?.answer_options[0]?.text.en).toBe(answerText)
   })
@@ -336,7 +409,7 @@ describe('endpoint schemas', () => {
   it('rejects unsupported packages and duplicate populated keys', () => {
     const basePackage = {
       format: 'stage-flow-tools.question-package',
-      version: 1,
+      version: 2,
       questions: [
         {
           answer_options: [
@@ -352,7 +425,7 @@ describe('endpoint schemas', () => {
 
     expect(safeParse(QuestionPackageSchema, {
       ...basePackage,
-      version: 2,
+      version: 1,
     }).success).toBe(false)
     expect(safeParse(QuestionPackageSchema, {
       ...basePackage,
@@ -398,9 +471,10 @@ describe('endpoint schemas', () => {
     }
     for (const version of [
       0,
-      2,
+      1,
+      3,
       -1,
-      '1',
+      '2',
       '1.1.0',
       undefined,
       null,
@@ -416,7 +490,7 @@ describe('endpoint schemas', () => {
       }
     }
     expect(safeParse(QuestionPackageSchema, basePackage).success).toBe(false)
-    expect(normalizeQuestionPackage({ ...basePackage, version: 1, commitSha: 'AB'.repeat(20) }).commitSha)
+    expect(normalizeQuestionPackage({ ...basePackage, version: 2, commitSha: 'AB'.repeat(20) }).commitSha)
       .toBe('ab'.repeat(20))
     for (const commitSha of [
       '',
@@ -425,7 +499,7 @@ describe('endpoint schemas', () => {
       null,
       123,
     ]) {
-      expect(safeParse(QuestionPackageSchema, { ...basePackage, version: 1, commitSha }).success).toBe(false)
+      expect(safeParse(QuestionPackageSchema, { ...basePackage, version: 2, commitSha }).success).toBe(false)
     }
   })
 

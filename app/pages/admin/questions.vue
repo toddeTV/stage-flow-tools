@@ -329,6 +329,15 @@ const {
                 <table class="mt-3 w-full border-collapse text-left text-sm">
                   <tbody>
                     <tr class="border-b border-gray-300">
+                      <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('authoredAt') }}</th>
+                      <td class="py-2 text-left">
+                        <time v-if="question.authoredAt" :datetime="question.authoredAt">
+                          {{ question.authoredAt }}
+                        </time>
+                        <span v-else>–</span>
+                      </td>
+                    </tr>
+                    <tr class="border-b border-gray-300">
                       <th class="py-2 pr-4 text-left font-bold" scope="row">{{ t('queuePosition') }}</th>
                       <td class="py-2 text-left">{{ getQueuePosition(question, index) }}</td>
                     </tr>
@@ -753,6 +762,7 @@ const {
 
 <i18n lang="yaml">
 en:
+  authoredAt: Authored on (UTC)
   confirmQuestionPackageCommitMismatch: >-
     The JSON file is intended for commit {packageSha}. This installation uses commit {instanceSha}. The format
     version matches; the questions will work correctly. Other software features may differ from those available
@@ -833,6 +843,7 @@ en:
   optionPlaceholder: "Option {n} JSON"
   emojiPlaceholder: Emoji
 de:
+  authoredAt: Verfasst am (UTC)
   confirmQuestionPackageCommitMismatch: >-
     Die JSON-Datei ist für Commit {packageSha} vorgesehen. Diese Installation verwendet Commit {instanceSha}.
     Die Formatversion stimmt überein; die Fragen werden korrekt funktionieren. Andere Software-Funktionen können
@@ -914,6 +925,7 @@ de:
   optionPlaceholder: "Option {n} als JSON"
   emojiPlaceholder: Emoji
 fr:
+  authoredAt: Rédigée le (UTC)
   confirmQuestionPackageCommitMismatch: >-
     Le fichier JSON est prévu pour le commit {packageSha}. Cette installation utilise le commit {instanceSha}.
     La version du format correspond ; les questions fonctionneront correctement. D’autres fonctionnalités
@@ -995,6 +1007,7 @@ fr:
   optionPlaceholder: "Option {n} au format JSON"
   emojiPlaceholder: Emoji
 ja:
+  authoredAt: 作成日時 (UTC)
   confirmQuestionPackageCommitMismatch: >-
     この JSON ファイルはコミット {packageSha} 用です。このインストールではコミット {instanceSha} を使用しています。形式のバージョンは一致しており、質問は正しく動作します。その他の機能は
     JSON ファイル作成時と異なる場合があります。それでもインポートしますか？
