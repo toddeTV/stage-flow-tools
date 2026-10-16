@@ -26,7 +26,7 @@ const initialResults: Results = {
       { text: { en: 'Two' } },
     ],
     alreadyPublished: true,
-    createdAt: '2026-09-05T00:00:00.000Z',
+    createdAt: '2026-09-05T00:00:00.000Z', authoredAt: null,
     id: 'question-id',
     is_active: true,
     is_disabled: false,

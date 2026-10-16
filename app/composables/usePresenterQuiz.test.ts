@@ -8,7 +8,7 @@ function question(key: string, isDisabled = false): Question {
     answer_options: [
       { text: { en: key } },
     ],
-    createdAt: '',
+    createdAt: '', authoredAt: null,
     id: key,
     is_disabled: isDisabled,
     is_locked: false,

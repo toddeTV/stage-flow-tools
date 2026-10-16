@@ -30,7 +30,7 @@ const question: Question = {
     { emoji: '⭐', text: { de: 'Ja', en: 'Yes' } },
     { emoji: '💡', text: { de: 'Nein', en: 'No' } },
   ],
-  createdAt: '',
+  createdAt: '', authoredAt: null,
   id: 'one',
   is_disabled: false,
   is_locked: true,

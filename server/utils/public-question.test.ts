@@ -8,6 +8,7 @@ const question: Question = {
     { emoji: '⭐', text: { en: 'Correct' } },
     { emoji: '❌', text: { en: 'Incorrect' } },
   ],
+  authoredAt: '2020-02-29T12:00:00.000Z',
   createdAt: '2026-09-03T00:00:00.000Z',
   id: 'question-id',
   is_active: true,

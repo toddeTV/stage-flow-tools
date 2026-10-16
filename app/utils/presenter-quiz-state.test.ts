@@ -10,7 +10,7 @@ function question(key: string): Question {
   return {
     alreadyPublished: false,
     answer_options: [],
-    createdAt: '',
+    createdAt: '', authoredAt: null,
     id: key,
     is_disabled: false,
     is_locked: false,

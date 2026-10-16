@@ -17,16 +17,18 @@ export interface Question {
   is_locked: boolean
   sortOrder: number
   createdAt: string
+  authoredAt: string | null
   alreadyPublished: boolean
   note?: LocalizedString
 }
 
 export type InputQuestion = Omit<Question,
-  'id' | 'is_active' | 'is_disabled' | 'is_locked' | 'sortOrder' | 'createdAt' | 'alreadyPublished'>
+  'id' | 'is_active' | 'is_disabled' | 'is_locked' | 'sortOrder' | 'createdAt' | 'authoredAt' | 'alreadyPublished'>
 
 export interface QuestionPackageQuestion extends Omit<InputQuestion, 'key'> {
   key?: string
   is_disabled: boolean
+  meta?: { authoredAt?: string }
 }
 
 export interface QuestionPackage {

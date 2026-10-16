@@ -29,6 +29,7 @@ export const questions = sqliteTable('questions', {
   alreadyPublished: integer('already_published', { mode: 'boolean' }).notNull().default(false),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: text('created_at').notNull().default(nowIsoExpression),
+  authoredAt: text('authored_at'),
 }, table => [
   uniqueIndex('questions_key_unique').on(table.key),
   index('questions_active_idx').on(table.isActive),

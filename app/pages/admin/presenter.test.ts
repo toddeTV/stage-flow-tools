@@ -15,7 +15,7 @@ const pollingIntervalInputs: Array<Readonly<Ref<number>>> = []
 const question: Question = {
   alreadyPublished: true,
   answer_options: [],
-  createdAt: '',
+  createdAt: '', authoredAt: null,
   id: 'one',
   is_disabled: false,
   is_locked: false,
