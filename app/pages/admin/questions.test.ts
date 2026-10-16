@@ -71,6 +71,7 @@ function createQuestion(key: string): Question {
     is_locked: false,
     sortOrder: 0,
     createdAt: '2026-01-01T00:00:00.000Z',
+    authoredAt: null,
     alreadyPublished: false,
   }
 }
@@ -168,6 +169,48 @@ afterEach(() => {
 })
 
 describe('admin question package import preview', () => {
+  it('shows UTC authored dates and a dash for unknown dates', async () => {
+    const authoredAt = '2020-02-29T12:00:00.000Z'
+    const fetchedQuestions = ref<Question[]>([])
+    vi.stubGlobal('useFetch', () => ({
+      data: fetchedQuestions,
+      error: ref(), refresh: vi.fn(),
+    }))
+    const rendered = renderPage()
+    fetchedQuestions.value = [
+      { ...createQuestion('authored'), authoredAt },
+      createQuestion('unknown'),
+    ]
+    await flushAsyncState()
+    const dates = Array.from(rendered.container.querySelectorAll('th'))
+      .filter(header => header.textContent === 'authoredAt')
+      .map(header => header.nextElementSibling)
+    expect(dates.map(cell => cell?.textContent?.trim())).toEqual([
+      authoredAt,
+      '–',
+    ])
+    expect(dates[0]?.querySelector('time')?.dateTime).toBe(authoredAt)
+    rendered.app.unmount()
+  })
+
+  it('blocks an import when refreshed questions contain a conflicting key', async () => {
+    const fetchRequest = vi.fn(async (path: string) => path === '/api/admin/build-info'
+      ? { commitSha } : [
+        createQuestion('question-to-import'),
+      ])
+    vi.stubGlobal('$fetch', fetchRequest)
+    const rendered = renderPage()
+    findButton(rendered.container, 'importQuestions').click()
+    await nextTick()
+    await selectQuestionPackage(rendered.container)
+    expect(importButton(rendered.container).disabled).toBe(true)
+    expect(rendered.container.textContent).toContain('question-to-import')
+    expect(fetchRequest.mock.calls.map(([
+      path,
+    ]) => path)).not.toContain('/api/questions/import')
+    rendered.app.unmount()
+  })
+
   it('keeps import disabled until the installed build metadata is available', async () => {
     const buildInfo = createDeferred<{ commitSha: string }>()
     vi.stubGlobal('$fetch', (path: string) => path === '/api/admin/build-info'
@@ -222,13 +265,15 @@ describe('admin question package import preview', () => {
       createQuestion('question-to-import'),
     ])
     await flushAsyncState()
-    expect(rendered.container.textContent).toContain('questionsToUpdate:1')
+    expect(rendered.container.textContent).toContain('questionPackageKeyConflict')
+    expect(importButton(rendered.container).disabled).toBe(true)
 
     firstRefresh.resolve([
       createQuestion('outdated-question'),
     ])
     await flushAsyncState()
-    expect(rendered.container.textContent).toContain('questionsToUpdate:1')
+    expect(rendered.container.textContent).toContain('questionPackageKeyConflict')
+    expect(importButton(rendered.container).disabled).toBe(true)
 
     rendered.app.unmount()
   })

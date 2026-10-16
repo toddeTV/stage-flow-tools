@@ -31,12 +31,20 @@ Changing a question's answer options through a single-question update after answ
 were submitted requires an explicit reset confirmation. The answers are deleted and
 the option update is stored in the same SQLite transaction.
 
-Question-package imports intentionally use a different rule. An import may replace a
-matching question's text and answer options while retaining its existing answers and
-lifecycle state. Answers whose stored English option label no longer matches an
-imported option remain stored and count toward `totalVotes`, but do not appear in an
-option's displayed count. The import preview warns the admin that changed options can
-make results inconsistent.
+Question-package imports only create new questions. A key already present in the
+database aborts the whole transaction, preserving all questions, answers, and queue
+state. The client preview lists conflicts; the transaction enforces this again.
+
+`questions.authored_at` is a nullable UTC ISO 8601 timestamp supplied by a question's
+author through JSON `meta.authoredAt`. It records when the question was composed.
+`questions.created_at` records when the database entry was created. Missing author
+dates remain `NULL`, including for manually created questions. Normal edits preserve
+the author date, and exports include it only when known. Admin question responses
+expose it as `authoredAt`; public question responses omit it.
+
+The additive author-date migration runs through the normal startup migration path.
+Existing rows keep their content and receive `NULL` for `authored_at`; there is no
+historical date backfill.
 
 ## Initialization
 

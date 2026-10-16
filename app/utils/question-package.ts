@@ -9,7 +9,7 @@ import {
 
 export type QuestionPackageImportPreview = {
   createCount: number
-  updateCount: number
+  conflictingKeys: string[]
 }
 
 /** Builds a portable current-format package without answers or lifecycle state. */
@@ -28,22 +28,23 @@ export function createQuestionPackage(questions: Question[], commitSha: string):
       answer_options: question.answer_options,
       note: question.note,
       is_disabled: question.is_disabled,
+      ...(question.authoredAt ? { meta: { authoredAt: question.authoredAt } } : {}),
     })),
   }
 }
 
-/** Counts package rows that will create a question or update a matching key. */
+/** Counts new questions and lists keys that prevent the entire import. */
 export function getQuestionPackageImportPreview(
   questionPackage: QuestionPackage,
   existingQuestions: Question[],
 ): QuestionPackageImportPreview {
   const existingKeys = new Set(existingQuestions.map(question => question.key))
   let createCount = 0
-  let updateCount = 0
+  const conflictingKeys: string[] = []
 
   for (const question of questionPackage.questions) {
     if (question.key && existingKeys.has(question.key)) {
-      updateCount += 1
+      conflictingKeys.push(question.key)
     }
     else {
       createCount += 1
@@ -52,7 +53,7 @@ export function getQuestionPackageImportPreview(
 
   return {
     createCount,
-    updateCount,
+    conflictingKeys,
   }
 }
 

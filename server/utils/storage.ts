@@ -9,6 +9,7 @@ export {
   getQuestions,
   importQuestionPackage,
   QuestionAnswerOptionsResetRequiredError,
+  QuestionKeyConflictError,
   updateQuestion,
 } from '../database/storage/questions'
 export type { QuestionPackageImportResult } from '../database/storage/questions'

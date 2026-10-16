@@ -1,9 +1,8 @@
 import type { QuestionPackage } from '~/types'
-import { WebSocketChannel } from '~/types'
 import { getQuery } from 'h3'
 import { QuestionPackageImportQuerySchema, QuestionPackageSchema } from '#shared/utils/validation'
 import { getBuildCommitSha } from '../../utils/build-info'
-import { serializePublicQuestion } from '../../utils/public-question'
+import { QuestionKeyConflictError } from '../../utils/storage'
 
 export default defineApiHandler(async (event) => {
   await verifyAdmin(event)
@@ -18,18 +17,13 @@ export default defineApiHandler(async (event) => {
     && confirmedCommitSha !== (commitSha ?? 'unknown')) {
     throwApiError(409, 'quiz.question_package_commit_confirmation_required')
   }
-  const result = await importQuestionPackage(questionPackage)
-
-  if (result.activeQuestion) {
-    cancelPendingResultsUpdate()
-    broadcast('new-question', serializePublicQuestion(result.activeQuestion))
-
-    const results = await getResultsForQuestion(result.activeQuestion.id)
-    broadcast('results-update', results, WebSocketChannel.RESULTS)
+  try {
+    return await importQuestionPackage(questionPackage)
   }
-
-  return {
-    createdCount: result.createdCount,
-    updatedCount: result.updatedCount,
+  catch (error: unknown) {
+    if (error instanceof QuestionKeyConflictError) {
+      throwApiError(409, 'quiz.question_key_conflict')
+    }
+    throw error
   }
 })

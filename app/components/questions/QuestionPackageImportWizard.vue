@@ -37,6 +37,12 @@ const preview = computed(() => questionPackage.value
   ? getQuestionPackageImportPreview(questionPackage.value, props.questions)
   : undefined)
 
+const canImport = computed(() => Boolean(questionPackage.value
+  && props.isPreviewReady
+  && !props.isPreparingPreview
+  && !props.isImporting
+  && !preview.value?.conflictingKeys.length))
+
 const displayedError = computed(() => localError.value || props.errorMessage)
 
 async function selectQuestionPackage(event: Event) {
@@ -83,7 +89,7 @@ async function selectQuestionPackage(event: Event) {
 }
 
 function confirmImport() {
-  if (!questionPackage.value || !props.isPreviewReady || props.isPreparingPreview || props.isImporting) {
+  if (!questionPackage.value || !canImport.value) {
     return
   }
 
@@ -121,17 +127,15 @@ function confirmImport() {
       <p class="mt-3">
         {{ t('questionsToCreate', { count: preview?.createCount ?? 0 }) }}
       </p>
-      <p>
-        {{ t('questionsToUpdate', { count: preview?.updateCount ?? 0 }) }}
-      </p>
-      <p class="mt-3 text-sm">
-        {{ t('questionPackageAnswerWarning') }}
+      <p v-if="preview?.conflictingKeys.length" class="mt-3" role="alert">
+        {{ t('questionPackageKeyConflict') }}
+        <span class="break-all">{{ preview.conflictingKeys.join(', ') }}</span>
       </p>
     </div>
 
     <div class="flex flex-wrap gap-2.5">
       <UiButton
-        :disabled="!questionPackage || !isPreviewReady || isPreparingPreview || isImporting"
+        :disabled="!canImport"
         @click="confirmImport"
       >
         {{ isImporting ? t('importingQuestions') : t('importQuestions') }}
@@ -153,8 +157,7 @@ en:
   questionPackageFileHint: Select a Version 1 JSON question package.
   questionPackageImportSummary: Import summary
   questionsToCreate: "{count} questions will be added."
-  questionsToUpdate: "{count} existing questions will be updated."
-  questionPackageAnswerWarning: Existing answers stay. Changed options can make results inconsistent.
+  questionPackageKeyConflict: "Existing question keys prevent the entire import:"
   importQuestions: Import questions
   importingQuestions: Importing questions...
   backToQuestionChoices: Back
@@ -163,8 +166,7 @@ de:
   questionPackageFileHint: Wähle ein JSON-Fragenpaket der Version 1 aus.
   questionPackageImportSummary: Importübersicht
   questionsToCreate: "{count} Fragen werden hinzugefügt."
-  questionsToUpdate: "{count} vorhandene Fragen werden aktualisiert."
-  questionPackageAnswerWarning: Bestehende Antworten bleiben erhalten. Geänderte Optionen können Ergebnisse verfälschen.
+  questionPackageKeyConflict: "Vorhandene Fragen-Schlüssel verhindern den gesamten Import:"
   importQuestions: Fragen importieren
   importingQuestions: Fragen werden importiert...
   backToQuestionChoices: Zurück
@@ -173,9 +175,7 @@ fr:
   questionPackageFileHint: Sélectionnez un paquet de questions JSON Version 1.
   questionPackageImportSummary: Récapitulatif de l'importation
   questionsToCreate: "{count} questions seront ajoutées."
-  questionsToUpdate: "{count} questions existantes seront mises à jour."
-  questionPackageAnswerWarning: >-
-    Les réponses existantes sont conservées. Des options modifiées peuvent rendre les résultats incohérents.
+  questionPackageKeyConflict: "Des clés de questions existantes empêchent toute l’importation :"
   importQuestions: Importer les questions
   importingQuestions: Importation des questions...
   backToQuestionChoices: Retour
@@ -184,8 +184,7 @@ ja:
   questionPackageFileHint: バージョン 1 の JSON 質問パッケージを選択してください。
   questionPackageImportSummary: インポート概要
   questionsToCreate: "{count} 件の質問が追加されます。"
-  questionsToUpdate: "{count} 件の既存質問が更新されます。"
-  questionPackageAnswerWarning: 既存の回答は保持されます。選択肢を変更すると結果が不整合になる場合があります。
+  questionPackageKeyConflict: 既存の質問キーがあるため、インポート全体を実行できません：
   importQuestions: 質問をインポート
   importingQuestions: 質問をインポート中...
   backToQuestionChoices: 戻る

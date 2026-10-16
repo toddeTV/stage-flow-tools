@@ -152,7 +152,7 @@ describe('question package import wizard', () => {
     ])
   })
 
-  it('shows the update warning when the selected package changes an existing question', async () => {
+  it('shows conflicting keys and prevents confirmation when a question already exists', async () => {
     const wrapper = renderWizard(true, [
       {
         answer_options: [
@@ -161,6 +161,7 @@ describe('question package import wizard', () => {
         ],
         alreadyPublished: true,
         createdAt: '2026-09-04T12:00:00.000Z',
+        authoredAt: null,
         id: 'existing-question-id',
         is_active: true,
         is_disabled: false,
@@ -173,7 +174,10 @@ describe('question package import wizard', () => {
 
     await selectPackage(wrapper)
 
-    expect(wrapper.text()).toContain('questionsToUpdate:1')
-    expect(wrapper.text()).toContain('questionPackageAnswerWarning')
+    expect(wrapper.text()).toContain('questionPackageKeyConflict')
+    expect(wrapper.text()).toContain('existing-question')
+    expect((importButton(wrapper).element as HTMLButtonElement).disabled).toBe(true)
+    await importButton(wrapper).trigger('click')
+    expect(wrapper.emitted('confirm')).toBeUndefined()
   })
 })
