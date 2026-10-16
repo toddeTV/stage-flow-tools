@@ -154,7 +154,7 @@ function confirmImport() {
 <i18n lang="yaml">
 en:
   questionPackageFile: Question package JSON file
-  questionPackageFileHint: Select a Version 1 JSON question package.
+  questionPackageFileHint: Select a Version 2 JSON question package.
   questionPackageImportSummary: Import summary
   questionsToCreate: "{count} questions will be added."
   questionPackageKeyConflict: "Existing question keys prevent the entire import:"
@@ -163,7 +163,7 @@ en:
   backToQuestionChoices: Back
 de:
   questionPackageFile: Fragenpaket als JSON-Datei
-  questionPackageFileHint: Wähle ein JSON-Fragenpaket der Version 1 aus.
+  questionPackageFileHint: Wähle ein JSON-Fragenpaket der Version 2 aus.
   questionPackageImportSummary: Importübersicht
   questionsToCreate: "{count} Fragen werden hinzugefügt."
   questionPackageKeyConflict: "Vorhandene Fragen-Schlüssel verhindern den gesamten Import:"
@@ -172,7 +172,7 @@ de:
   backToQuestionChoices: Zurück
 fr:
   questionPackageFile: Fichier JSON du paquet de questions
-  questionPackageFileHint: Sélectionnez un paquet de questions JSON Version 1.
+  questionPackageFileHint: Sélectionnez un paquet de questions JSON Version 2.
   questionPackageImportSummary: Récapitulatif de l'importation
   questionsToCreate: "{count} questions seront ajoutées."
   questionPackageKeyConflict: "Des clés de questions existantes empêchent toute l’importation :"
@@ -181,7 +181,7 @@ fr:
   backToQuestionChoices: Retour
 ja:
   questionPackageFile: 質問パッケージ JSON ファイル
-  questionPackageFileHint: バージョン 1 の JSON 質問パッケージを選択してください。
+  questionPackageFileHint: バージョン 2 の JSON 質問パッケージを選択してください。
   questionPackageImportSummary: インポート概要
   questionsToCreate: "{count} 件の質問が追加されます。"
   questionPackageKeyConflict: 既存の質問キーがあるため、インポート全体を実行できません：

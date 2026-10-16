@@ -283,7 +283,7 @@ blocks scrollable.
 ### POST `/api/questions/import`
 
 Import a current-format question package (admin only). Only the exact numeric
-`version: 1` is supported. Missing versions, other types, and earlier or future
+`version: 2` is supported. Missing versions, other types, and earlier or future
 versions are rejected; there are no compatibility ranges or automatic conversions.
 The full package is validated
 before one SQLite transaction adds new questions. If a non-empty `key` already
@@ -294,7 +294,7 @@ are broadcast. Questions without a key receive a generated key.
 ```json
 {
   "format": "stage-flow-tools.question-package",
-  "version": 1,
+  "version": 2,
   "commitSha": "0123456789abcdef0123456789abcdef01234567",
   "questions": [
     {
@@ -314,7 +314,7 @@ are broadcast. Questions without a key receive a generated key.
 }
 ```
 
-JSON strings encode code-block line breaks as `\n`. Exported Version 1
+JSON strings encode code-block line breaks as `\n`. Exported Version 2
 packages preserve Markdown source and internal line breaks unchanged.
 
 Per-question `meta` and `meta.authoredAt` are optional; an empty `meta` is accepted.
@@ -323,7 +323,9 @@ seconds and optionally one to three fractional second digits. The server normali
 it to millisecond precision. Invalid dates, empty strings, `null`, date-only values,
 and timezone offsets are rejected before persistence. Missing values are stored as
 `NULL`, not inferred from the import time or database `createdAt`. Exports include
-`meta.authoredAt` only when known. Version 1 files without metadata remain valid.
+`meta.authoredAt` only when known. Version 1 files are rejected, including files
+without metadata. Destination installations must support Version 2; there is no
+automatic conversion.
 
 `commitSha` is optional metadata identifying the intended software commit. When
 present it must contain 40 hexadecimal characters; surrounding whitespace is

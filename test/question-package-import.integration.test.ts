@@ -22,7 +22,7 @@ const broadcast = vi.fn()
 const cancelPendingResultsUpdate = vi.fn()
 const questionPackage = {
   format: 'stage-flow-tools.question-package',
-  version: 1,
+  version: 2,
   questions: [
     {
       question_text: { en: 'Question' },
@@ -143,8 +143,9 @@ describe('question package commit checks at the HTTP boundary', () => {
 
   it.each([
     0,
-    2,
-    '1',
+    1,
+    3,
+    '2',
     undefined,
     null,
   ])('never overrides a wrong or missing version with SHA confirmation: %s', async (version) => {

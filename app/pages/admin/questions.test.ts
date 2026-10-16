@@ -27,7 +27,7 @@ import type {
 
 const questionPackage = {
   format: 'stage-flow-tools.question-package',
-  version: 1,
+  version: 2,
   questions: [
     {
       key: 'question-to-import',
@@ -387,7 +387,7 @@ describe('admin import commit confirmation', () => {
     await selectQuestionPackage(rendered.container, { ...questionPackage, commitSha: 'ef'.repeat(20) })
     importButton(rendered.container).click()
     expect(confirm).toHaveBeenCalledTimes(2)
-    await selectQuestionPackage(rendered.container, { ...questionPackage, version: 2 })
+    await selectQuestionPackage(rendered.container, { ...questionPackage, version: 1 })
     expect(importButton(rendered.container).disabled).toBe(true)
     expect(rendered.fetchRequest.mock.calls.map(([
       path,

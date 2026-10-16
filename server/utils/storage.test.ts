@@ -76,7 +76,7 @@ function createQuestionPackage(questions: QuestionPackage['questions']): Questio
   return {
     format: 'stage-flow-tools.question-package',
     questions,
-    version: 1,
+    version: 2,
   }
 }
 

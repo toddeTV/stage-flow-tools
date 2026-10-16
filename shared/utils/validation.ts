@@ -74,7 +74,7 @@ const questionInputEntries = {
 }
 
 export const QUESTION_PACKAGE_FORMAT = 'stage-flow-tools.question-package' as const
-export const QUESTION_PACKAGE_VERSION = 1 as const
+export const QUESTION_PACKAGE_VERSION = 2 as const
 
 export const CommitShaSchema = v.pipe(
   v.string('validation.invalid_commit_sha'),

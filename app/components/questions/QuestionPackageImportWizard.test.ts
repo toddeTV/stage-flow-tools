@@ -22,7 +22,7 @@ import QuestionPackageImportWizard from './QuestionPackageImportWizard.vue'
 
 const questionPackage = {
   format: 'stage-flow-tools.question-package' as const,
-  version: 1,
+  version: 2,
   questions: [
     {
       answer_options: [

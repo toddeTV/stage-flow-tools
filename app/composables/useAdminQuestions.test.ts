@@ -42,7 +42,7 @@ describe('question package export build metadata', () => {
     await admin.exportQuestions()
     const blob = createObjectURL.mock.calls[0]?.[0] as Blob | undefined
     expect(blob).toBeDefined()
-    expect(JSON.parse(await blob!.text())).toMatchObject({ version: 1, commitSha, questions: [
+    expect(JSON.parse(await blob!.text())).toMatchObject({ version: 2, commitSha, questions: [
       question,
     ] })
     expect(click).toHaveBeenCalledOnce()

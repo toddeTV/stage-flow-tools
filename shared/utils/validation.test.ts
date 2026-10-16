@@ -271,10 +271,10 @@ describe('endpoint schemas', () => {
     }).success).toBe(false)
   })
 
-  it('validates strict Version 1 question packages', () => {
+  it('validates strict Version 2 question packages', () => {
     expect(normalizeQuestionPackage({
       format: 'stage-flow-tools.question-package',
-      version: 1,
+      version: 2,
       questions: [
         {
           answer_options: [
@@ -287,7 +287,7 @@ describe('endpoint schemas', () => {
       ],
     })).toEqual({
       format: 'stage-flow-tools.question-package',
-      version: 1,
+      version: 2,
       questions: [
         {
           answer_options: [
@@ -322,7 +322,7 @@ describe('endpoint schemas', () => {
     ],
   ])('accepts optional UTC author metadata: %j', (meta, expected) => {
     const result = normalizeQuestionPackage({
-      format: 'stage-flow-tools.question-package', version: 1,
+      format: 'stage-flow-tools.question-package', version: 2,
       questions: [
         {
           question_text: { en: 'Question' },
@@ -353,7 +353,7 @@ describe('endpoint schemas', () => {
     123,
   ])('rejects malformed author timestamps with their field path: %s', (authoredAt) => {
     const result = safeParse(QuestionPackageSchema, {
-      format: 'stage-flow-tools.question-package', version: 1,
+      format: 'stage-flow-tools.question-package', version: 2,
       questions: [
         {
           question_text: { en: 'Question' },
@@ -376,7 +376,7 @@ describe('endpoint schemas', () => {
     }
   })
 
-  it('preserves Markdown and internal line breaks in Version 1 question packages', () => {
+  it('preserves Markdown and internal line breaks in Version 2 question packages', () => {
     const questionText = [
       '**What does this return?**',
       '',
@@ -388,7 +388,7 @@ describe('endpoint schemas', () => {
     const answerText = '*One* with `number`'
     const questionPackage = normalizeQuestionPackage({
       format: 'stage-flow-tools.question-package',
-      version: 1,
+      version: 2,
       questions: [
         {
           answer_options: [
@@ -401,7 +401,7 @@ describe('endpoint schemas', () => {
       ],
     })
 
-    expect(questionPackage.version).toBe(1)
+    expect(questionPackage.version).toBe(2)
     expect(questionPackage.questions[0]?.question_text.en).toBe(questionText)
     expect(questionPackage.questions[0]?.answer_options[0]?.text.en).toBe(answerText)
   })
@@ -409,7 +409,7 @@ describe('endpoint schemas', () => {
   it('rejects unsupported packages and duplicate populated keys', () => {
     const basePackage = {
       format: 'stage-flow-tools.question-package',
-      version: 1,
+      version: 2,
       questions: [
         {
           answer_options: [
@@ -425,7 +425,7 @@ describe('endpoint schemas', () => {
 
     expect(safeParse(QuestionPackageSchema, {
       ...basePackage,
-      version: 2,
+      version: 1,
     }).success).toBe(false)
     expect(safeParse(QuestionPackageSchema, {
       ...basePackage,
@@ -471,9 +471,10 @@ describe('endpoint schemas', () => {
     }
     for (const version of [
       0,
-      2,
+      1,
+      3,
       -1,
-      '1',
+      '2',
       '1.1.0',
       undefined,
       null,
@@ -489,7 +490,7 @@ describe('endpoint schemas', () => {
       }
     }
     expect(safeParse(QuestionPackageSchema, basePackage).success).toBe(false)
-    expect(normalizeQuestionPackage({ ...basePackage, version: 1, commitSha: 'AB'.repeat(20) }).commitSha)
+    expect(normalizeQuestionPackage({ ...basePackage, version: 2, commitSha: 'AB'.repeat(20) }).commitSha)
       .toBe('ab'.repeat(20))
     for (const commitSha of [
       '',
@@ -498,7 +499,7 @@ describe('endpoint schemas', () => {
       null,
       123,
     ]) {
-      expect(safeParse(QuestionPackageSchema, { ...basePackage, version: 1, commitSha }).success).toBe(false)
+      expect(safeParse(QuestionPackageSchema, { ...basePackage, version: 2, commitSha }).success).toBe(false)
     }
   })
 

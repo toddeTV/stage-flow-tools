@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 import type { Question } from '~/types'
+import { safeParse } from 'valibot'
+import { QuestionPackageSchema } from '#shared/utils/validation'
 import {
   createQuestionPackage,
   getQuestionPackageImportPreview,
@@ -42,7 +44,7 @@ describe('question packages', () => {
 
     expect(packageValue).toEqual({
       format: 'stage-flow-tools.question-package',
-      version: 1,
+      version: 2,
       commitSha,
       questions: [
         {
@@ -77,6 +79,9 @@ describe('question packages', () => {
       createQuestionFixture({ key: 'unknown' }),
     ], commitSha)
     const reparsed = JSON.parse(stringifyQuestionPackage(exported))
+    expect(reparsed.version).toBe(2)
+    expect(safeParse(QuestionPackageSchema, reparsed).success).toBe(true)
+    expect(safeParse(QuestionPackageSchema, { ...reparsed, version: 1 }).success).toBe(false)
     expect(reparsed.questions[0].meta).toEqual({ authoredAt })
     expect(reparsed.questions[1]).not.toHaveProperty('meta')
     expect(reparsed.questions[0]).not.toHaveProperty('createdAt')
@@ -96,7 +101,7 @@ describe('question packages', () => {
     ], commitSha)
     const reparsed = JSON.parse(stringifyQuestionPackage(packageValue))
 
-    expect(reparsed.version).toBe(1)
+    expect(reparsed.version).toBe(2)
     expect(reparsed.commitSha).toBe(commitSha)
     expect(reparsed.questions[0].question_text.en).toBe(questionText)
     expect(reparsed.questions[0].answer_options[0].text.en).toBe(answerText)
@@ -108,7 +113,7 @@ describe('question packages', () => {
     ]
     const packageValue = {
       format: 'stage-flow-tools.question-package' as const,
-      version: 1 as const,
+      version: 2 as const,
       questions: [
         {
           answer_options: [
