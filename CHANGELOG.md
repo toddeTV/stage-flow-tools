@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/toddeTV/stage-flow-tools/compare/v1.2.0...v1.3.0) (2026-10-17)
+
+
+### Features (feat)
+
+* add version 2 question packages with author dates ([#113](https://github.com/toddeTV/stage-flow-tools/issues/113)) ([49a4bd0](https://github.com/toddeTV/stage-flow-tools/commit/49a4bd0dfe7c72220c74d73000254523829f5110))
+* move authored dates onto package questions ([#115](https://github.com/toddeTV/stage-flow-tools/issues/115)) ([9091a67](https://github.com/toddeTV/stage-flow-tools/commit/9091a67b9e188ce85fc832a292f89f39429c44e7))
+
 ## [1.2.0](https://github.com/toddeTV/stage-flow-tools/compare/v1.1.0...v1.2.0) (2026-10-15)
 
 
