@@ -57,6 +57,18 @@ be a real ISO 8601 UTC date and time ending in `Z`, for example
 normalize timestamps to millisecond precision. Date-only values, timezone offsets,
 and impossible calendar dates are rejected. Export omits unknown timestamps.
 
+Convert local times to UTC before writing `authoredAt`; the import does not convert
+Berlin local time automatically. For `Europe/Berlin`:
+
+| Local date and time | UTC value for `authoredAt` |
+| --- | --- |
+| `2026-07-15 14:00:00` (summer, UTC+02:00) | `2026-07-15T12:00:00Z` |
+| `2026-01-15 14:00:00` (winter, UTC+01:00) | `2026-01-15T13:00:00Z` |
+
+The final `Z` means UTC. Appending it to an unchanged local time records a different
+instant. Values without a timezone or with offsets such as `+01:00` or `+02:00` are
+rejected; convert the time and use `Z`.
+
 This is the date the author composed the question. It is stored separately from the
 database record's `createdAt`. Existing and manually created questions have no known
 author timestamp; normal edits preserve imported dates. The timestamp is read-only

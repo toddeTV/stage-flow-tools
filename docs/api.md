@@ -328,6 +328,9 @@ and timezone offsets are rejected before persistence. Missing values are stored 
 without metadata. Destination installations must support Version 2; there is no
 automatic conversion.
 
+Convert local times to UTC before creating the package; see the
+[Berlin summer and winter examples](features/questions.md#question-packages).
+
 `commitSha` is optional metadata identifying the intended software commit. When
 present it must contain 40 hexadecimal characters; surrounding whitespace is
 trimmed and letters are normalized to lowercase. Missing metadata allows normal
