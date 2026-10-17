@@ -28,7 +28,7 @@ Complete the [Docker Deployment Guide](deployment-docker.md) first. Confirm that
 
 - The public hostname reaches Traefik directly over HTTPS.
 - Traefik serves a valid, unexpired certificate for the hostname.
-- Participant and authenticated results WebSockets connect through `/_ws`.
+- Participant and authenticated results WebSockets connect through `/_ws/default`.
 - The host, Traefik, and application container allow at least 65,536 open files.
 
 Keep the origin IP available during setup. Restricting origin access is the final hardening step.
@@ -49,11 +49,11 @@ Do not use Flexible mode. It leaves the Cloudflare-to-origin connection unencryp
 
 In **Network**, enable WebSockets. Leave Rocket Loader disabled for the quiz hostname and do not enable Argo Smart Routing.
 
-Traefik needs no WebSocket-specific middleware for `/_ws`. Cloudflare forwards the upgrade request through the existing HTTPS router. The Web Application Firewall inspects the initial upgrade request but not messages sent after the WebSocket is established.
+Traefik needs no WebSocket-specific middleware for `/_ws/default`. Cloudflare forwards the upgrade request through the existing HTTPS router. The Web Application Firewall inspects the initial upgrade request but not messages sent after the WebSocket is established.
 
 Avoid tight per-IP limits on these paths:
 
-- `/_ws`
+- `/_ws/default`
 - `/api/answers/submit`
 - `/api/answers/retract`
 - `/api/emojis/submit`

@@ -6,7 +6,7 @@ Real-time communication system documentation.
 
 ### Connection Management
 
-- **Endpoint**: `ws://localhost:3000/_ws`
+- **Endpoint**: `ws://localhost:3000/_ws/default` (use `wss://` over HTTPS)
 - **Protocol**: Native WebSocket
 - **Framework**: Nitro experimental WebSocket
 
@@ -14,7 +14,7 @@ Real-time communication system documentation.
 
 ```javascript
 const ws = new WebSocket(
-  "ws://localhost:3000/_ws?channel=default&userId=abc123",
+  "ws://localhost:3000/_ws/default?channel=default&userId=abc123",
 );
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
