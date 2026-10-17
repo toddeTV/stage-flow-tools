@@ -62,16 +62,16 @@ The command applies local migrations and refuses to overwrite existing questions
 
 ### Reset Data
 
-```bash
-rm -rf .data/
-# Restart the app to recreate the quiz database
-```
+Use the [reset and deletion comparison](storage.md#reset-and-deletion) to choose the
+operation. **Reset Quiz** retains questions and legal documents. Removing `.data`
+also deletes legal documents and requires stopping all database connections and
+making a backup first.
 
 ### Backup Data
 
-```bash
-cp -r .data/ data-backup-$(date +%Y%m%d)
-```
+Follow the [storage backup](storage.md#backup) and [restore](storage.md#restore)
+instructions. Stop the development server and any standalone database tools before
+copying the complete `.data` directory.
 
 ## Troubleshooting
 

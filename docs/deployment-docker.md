@@ -173,16 +173,19 @@ the restart command. A failed command fails the deployment. It does not run a
 remote health check, automatic rollback, or a separate migration command.
 However, application startup automatically applies pending Drizzle migrations
 to the persistent SQLite database. Before deploying a ref with migrations,
-back up `.data` and review forward and rollback compatibility. Do not apply the
-same migrations manually unless a separate supported procedure requires it.
+follow the [storage backup procedure](storage.md#backup) and review forward and
+rollback compatibility. Do not apply the same migrations manually unless a separate
+supported procedure requires it.
 Deployment-file changes remain manual.
 
 ## Operations
 
-View application logs with the Compose command for the private project. Back
-up its persistent `.data` directory before upgrades and before high-risk live
-events. Restarting the container disconnects active WebSocket clients, which
-then reconnect automatically.
+View application logs with the Compose command for the private project. Make a
+[storage backup](storage.md#backup) before upgrades and high-risk live events;
+follow the [restore instructions](storage.md#restore) if recovery is needed. Stop
+the application container and every other database connection before copying the
+host directory mounted at `/app/.data`. Restarting the container disconnects active
+WebSocket clients, which then reconnect automatically.
 
 ## Image Layout
 

@@ -83,15 +83,26 @@ Prefer variant 1 for people, variant 2 for server-to-server API calls, and varia
 
 ## Monitoring
 
-- Check API availability with `/api/questions`.
+- Check public API availability with `GET /api/questions/active`: expect HTTP `200`
+  with the active question or `{ "message": "No active question" }`. No active
+  question is a valid state, not a failed health check.
+- Check the protected question list with `GET /api/questions` using a valid admin
+  session cookie or bearer token: expect HTTP `200`. Without credentials, expect
+  HTTP `401`; this response alone does not indicate an outage. See
+  [authentication](api.md#authentication).
+- Verify realtime delivery separately: open a participant page and an authenticated
+  results page, confirm their `/_ws/default` connections upgrade with HTTP `101`
+  and stay open, then publish a test question and submit an answer. Confirm the
+  participant receives the question and the results page receives the voting update.
+  Run this functional check with test data outside a live quiz; an HTTP check alone
+  does not verify WebSocket delivery.
 - Read container or process logs from stdout.
 - Watch WebSocket connection counts in the admin connection endpoint when needed.
 - Verify `/admin/database` after login if you need database inspection in production.
 
 ## Backup Strategy
 
-Manual backup:
-
-```bash
-tar -czf quiz-backup-$(date +%Y%m%d).tar.gz .data/
-```
+Follow the canonical [backup](storage.md#backup) and [restore](storage.md#restore)
+instructions. Stop the application and all other database connections before copying
+the complete persistent data directory. In Docker, use the host directory mounted
+at `/app/.data`. Keep the application version associated with each backup for restore.

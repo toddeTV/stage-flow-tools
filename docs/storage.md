@@ -17,8 +17,9 @@ Configuration in `nuxt.config.ts`:
 
 - `questions`
 - `answers`
+- `legal_documents` — deployment-specific legal notice and privacy policy
 
-- Admin credentials are read from runtime config and are not stored in SQLite.
+Admin credentials are read from runtime config and are not stored in SQLite.
 
 Question queue position is persisted in `questions.sort_order`. Admin and presenter
 question lists read this order, and `publish-next` selects the next enabled question
@@ -55,19 +56,84 @@ historical date backfill.
 
 ## Maintenance
 
-Backup local storage:
+### Backup
 
-```bash
-cp -r .data/ backups/data-$(date +%Y%m%d)
-```
+Stop the application and every other database connection, including standalone
+Drizzle Studio workers, before copying data. SQLite uses WAL mode; copying files
+while writes continue does not guarantee a consistent backup. Keep all connections
+stopped until the copy finishes. Stop if any command fails.
 
-Reset all stored quiz data:
+Run these commands from the directory containing `.data`. For Docker, copy the
+host directory mounted at `/app/.data`, adjusting the source path if it has a
+different name. Keep the backup destination outside the source directory.
 
-```bash
-rm -rf .data/
-```
+~~~sh
+umask 077
+mkdir -p backups
+backup_dir="$(mktemp -d backups/data-XXXXXXXX)"
+cp -a .data "$backup_dir/data"
+~~~
 
-The next server start recreates the SQLite database file.
+Keep the generated `backup_dir` path and record the application image tag or commit
+that created the database. Copy the entire directory, including any remaining WAL
+files, rather than just the main SQLite file. Backups contain participant IDs,
+nicknames, and answers; restrict access and apply the deployment's retention policy.
+The application can restart once the copy completes.
+
+### Restore
+
+Stop the application and all other database connections as for a backup. Select
+the complete backup and verify that its `data/db/stage-flow-tools.sqlite3` file
+exists before moving anything. Keep the application stopped throughout the restore
+and stop if any command fails.
+
+From the directory that normally contains `.data`, preserve the existing directory
+before restoring. If `.data` does not exist on a fresh target, skip this block:
+
+~~~sh
+umask 077
+mkdir -p backups
+previous_dir="$(mktemp -d backups/before-restore-XXXXXXXX)"
+mv .data "$previous_dir/data"
+~~~
+
+With `.data` absent, restore the selected backup, replacing `<backup-id>` with its
+actual directory name:
+
+~~~sh
+backup_dir="backups/data-<backup-id>"
+cp -a "$backup_dir/data" .data
+~~~
+
+For Docker, use the actual host mount path as the restore destination. Do not copy
+into an existing data directory or mix files from different backups. Verify that
+the runtime user can read and write the restored directory and database; `cp -a`
+preserves source permissions and ownership where permitted.
+
+Start with the application version recorded for the backup. Startup applies pending
+migrations, so do not assume an older image can read a database already migrated by
+a newer one. After starting, check the admin question list, retained answers/results,
+and both public legal pages. Keep the preserved pre-restore directory until these
+checks succeed; it contains participant data and needs the same access and retention
+controls as the backup.
+
+### Reset and deletion
+
+| Operation | Questions | Answers | Queue and question state | Legal documents |
+| --- | --- | --- | --- | --- |
+| [Reset active answers](api.md#post-apianswersreset) | Preserved | Active question's answers deleted | Order and flags preserved | Preserved |
+| [Reset Quiz](features/questions.md#reset-quiz) | Preserved | All deleted | Order preserved; all questions become unpublished, inactive, unlocked, and enabled | Preserved |
+| [Delete all questions](api.md#post-apiquestionsdelete-all) | All deleted | All deleted | Queue removed | Preserved |
+| Remove the entire `.data` directory | All deleted | All deleted | Queue and migration history removed | All deleted |
+
+**Warning:** Removing `.data` permanently deletes the complete database, including
+the legal notice and privacy policy. For another quiz run, use **Reset Quiz** to
+retain questions and legal documents.
+
+Before removing `.data`, stop the application and every other database connection
+and make a [backup](#backup). The next start creates and migrates an empty database;
+configure both legal documents again before public operation. See
+[legal document setup](legal-texts.md).
 
 ## Production Mounts
 
