@@ -179,7 +179,7 @@ describe('question package commit checks at the HTTP boundary', () => {
     await expectRejected(await requestImport({ ...questionPackage, commitSha: sha }), 400, 'validation.invalid_request')
   })
 
-  it('persists author metadata through import/export and rejects keys added after preview', async () => {
+  it('persists authoredAt through import/export and rejects keys added after preview', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'stage-flow-package-'))
     const client = createLocalDatabaseClient(join(directory, 'test.sqlite3'))
     applyLocalMigrations(client.db)
@@ -191,7 +191,8 @@ describe('question package commit checks at the HTTP boundary', () => {
       const body = {
         ...questionPackage,
         questions: [
-          { ...questionPackage.questions[0], key: 'authored', meta: { authoredAt } },
+          { ...questionPackage.questions[0], key: 'authored', authoredAt },
+          { ...questionPackage.questions[0], key: 'unknown' },
         ],
       }
       const imported = await requestImport(body)
@@ -199,7 +200,14 @@ describe('question package commit checks at the HTTP boundary', () => {
       const stored = await getQuestions()
       expect(stored[0]).toMatchObject({ authoredAt })
       expect(stored[0]?.createdAt).not.toBe(authoredAt)
-      expect(exportQuestionPackage(stored, commitSha).questions[0]?.meta).toEqual({ authoredAt })
+      expect(stored[1]?.authoredAt).toBeNull()
+      const exported = exportQuestionPackage(stored, commitSha)
+      expect(exported.version).toBe(2)
+      expect(exported.questions[0]?.authoredAt).toBe(authoredAt)
+      expect(exported.questions[1]).not.toHaveProperty('authoredAt')
+      for (const question of exported.questions) {
+        expect(question).not.toHaveProperty('meta')
+      }
 
       // Another administrator adds the key after the client's preview.
       await createQuestion({
@@ -234,7 +242,20 @@ describe('question package commit checks at the HTTP boundary', () => {
     await expectRejected(await requestImport({
       ...questionPackage,
       questions: [
-        { ...questionPackage.questions[0], meta: { authoredAt: '2023-02-29T12:00:00Z' } },
+        { ...questionPackage.questions[0], authoredAt: '2023-02-29T12:00:00Z' },
+      ],
+    }), 400, 'validation.invalid_request')
+  })
+
+  it.each([
+    { meta: {} },
+    { meta: { authoredAt: '2024-02-29T12:30:45Z' } },
+    { authoredAt: '2024-02-29T12:30:45Z', meta: { authoredAt: '2024-02-29T12:30:45Z' } },
+  ])('rejects removed meta fields before storage or broadcasts: %j', async (fields) => {
+    await expectRejected(await requestImport({
+      ...questionPackage,
+      questions: [
+        { ...questionPackage.questions[0], ...fields },
       ],
     }), 400, 'validation.invalid_request')
   })

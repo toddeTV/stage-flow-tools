@@ -309,18 +309,14 @@ describe('endpoint schemas', () => {
       undefined,
     ],
     [
-      {},
-      {},
+      '2024-02-29T12:30:45Z',
+      '2024-02-29T12:30:45.000Z',
     ],
     [
-      { authoredAt: '2024-02-29T12:30:45Z' },
-      { authoredAt: '2024-02-29T12:30:45.000Z' },
+      '2024-02-29T12:30:45.12Z',
+      '2024-02-29T12:30:45.120Z',
     ],
-    [
-      { authoredAt: '2024-02-29T12:30:45.12Z' },
-      { authoredAt: '2024-02-29T12:30:45.120Z' },
-    ],
-  ])('accepts optional UTC author metadata: %j', (meta, expected) => {
+  ])('accepts optional UTC authoredAt directly on a question: %s', (authoredAt, expected) => {
     const result = normalizeQuestionPackage({
       format: 'stage-flow-tools.question-package', version: 2,
       questions: [
@@ -331,11 +327,43 @@ describe('endpoint schemas', () => {
             { text: { en: 'Two' } },
           ],
           is_disabled: false,
-          ...(meta === undefined ? {} : { meta }),
+          ...(authoredAt === undefined ? {} : { authoredAt }),
         },
       ],
     })
-    expect(result.questions[0]?.meta).toEqual(expected)
+    expect(result.questions[0]?.authoredAt).toBe(expected)
+    expect(result.questions[0]).not.toHaveProperty('meta')
+  })
+
+  it.each([
+    { meta: {} },
+    { meta: { authoredAt: '2024-02-29T12:30:45Z' } },
+    { authoredAt: '2024-02-29T12:30:45Z', meta: { authoredAt: '2024-02-29T12:30:45Z' } },
+  ])('rejects removed meta fields: %j', (fields) => {
+    const result = safeParse(QuestionPackageSchema, {
+      format: 'stage-flow-tools.question-package', version: 2,
+      questions: [
+        {
+          question_text: { en: 'Question' },
+          answer_options: [
+            { text: { en: 'One' } },
+            { text: { en: 'Two' } },
+          ],
+          is_disabled: false,
+          ...fields,
+        },
+      ],
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(getValidationIssues(result.issues)).toContainEqual({
+        code: 'validation.invalid_question_package', path: [
+          'questions',
+          '0',
+          'meta',
+        ],
+      })
+    }
   })
 
   it.each([
@@ -361,7 +389,7 @@ describe('endpoint schemas', () => {
             { text: { en: 'One' } },
             { text: { en: 'Two' } },
           ],
-          is_disabled: false, meta: { authoredAt },
+          is_disabled: false, authoredAt,
         },
       ],
     })
@@ -370,7 +398,6 @@ describe('endpoint schemas', () => {
       expect(getValidationIssues(result.issues)[0]?.path).toEqual([
         'questions',
         '0',
-        'meta',
         'authoredAt',
       ])
     }
