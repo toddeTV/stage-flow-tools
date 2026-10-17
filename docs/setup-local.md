@@ -97,6 +97,32 @@ chmod 755 .data/
 - Verify no firewall blocking
 - Check browser console for errors
 
+## Development Checks
+
+After installing dependencies, run the complete validation sequence from the
+repository root:
+
+```sh
+vp run test
+```
+
+The scripts in [`package.json`](../package.json) run these checks in order and stop
+on the first failure. Run a single script when investigating a failure:
+
+| Command | Check |
+| --- | --- |
+| `vp run test:lint-format` | ESLint code and formatting rules |
+| `vp run test:package-json` | Package metadata formatting |
+| `vp run test:notices` | Generated third-party notices match dependencies |
+| `vp run test:markdown-structure` | Markdown changes preserve existing section boundaries |
+| `vp run test:type` | Nuxt and TypeScript type checks |
+| `vp run test:unit` | Source-adjacent tests and `test/unit/` |
+| `vp run test:integration` | Integration tests under `test/` |
+
+The [validation workflow](../.github/workflows/validation-and-tests.yml) runs the
+same checks as separate CI jobs. A local pass does not replace reviewing CI results.
+For building and running the container locally, see [Local Docker Testing](local-testing.md).
+
 ## Next Steps
 
 - [Architecture Overview](architecture.md) - System design
