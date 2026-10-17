@@ -216,9 +216,9 @@ describe('question queue storage', () => {
     expect(manual.authoredAt).toBeNull()
 
     await expect(importQuestionPackage(createQuestionPackage([
-      { ...createInputQuestion('authored'), is_disabled: true, meta: { authoredAt } },
+      { ...createInputQuestion('authored'), is_disabled: true, authoredAt },
       { ...createInputQuestion('unknown'), is_disabled: false },
-      { ...createInputQuestion(''), is_disabled: false, meta: {} },
+      { ...createInputQuestion(''), is_disabled: false },
     ]))).resolves.toEqual({ createdCount: 3, updatedCount: 0 })
 
     const imported = await getQuestions()

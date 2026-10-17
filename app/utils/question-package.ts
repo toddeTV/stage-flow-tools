@@ -28,7 +28,7 @@ export function createQuestionPackage(questions: Question[], commitSha: string):
       answer_options: question.answer_options,
       note: question.note,
       is_disabled: question.is_disabled,
-      ...(question.authoredAt ? { meta: { authoredAt: question.authoredAt } } : {}),
+      ...(question.authoredAt ? { authoredAt: question.authoredAt } : {}),
     })),
   }
 }

@@ -299,7 +299,7 @@ are broadcast. Questions without a key receive a generated key.
   "questions": [
     {
       "key": "round-1-question-1",
-      "meta": { "authoredAt": "2026-10-16T12:00:00Z" },
+      "authoredAt": "2026-10-16T12:00:00Z",
       "question_text": {
         "en": "**What does this return?**\n\n```ts\nconst value = 1\nreturn value\n```"
       },
@@ -317,13 +317,14 @@ are broadcast. Questions without a key receive a generated key.
 JSON strings encode code-block line breaks as `\n`. Exported Version 2
 packages preserve Markdown source and internal line breaks unchanged.
 
-Per-question `meta` and `meta.authoredAt` are optional; an empty `meta` is accepted.
+Each question may include an optional `authoredAt` field directly on the question
+object. The `meta` field is not supported and is rejected, even when empty.
 If supplied, `authoredAt` must be a valid ISO 8601 UTC timestamp ending in `Z`, with
 seconds and optionally one to three fractional second digits. The server normalizes
 it to millisecond precision. Invalid dates, empty strings, `null`, date-only values,
 and timezone offsets are rejected before persistence. Missing values are stored as
 `NULL`, not inferred from the import time or database `createdAt`. Exports include
-`meta.authoredAt` only when known. Version 1 files are rejected, including files
+`authoredAt` only when known. Version 1 files are rejected, including files
 without metadata. Destination installations must support Version 2; there is no
 automatic conversion.
 

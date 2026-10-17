@@ -40,7 +40,7 @@ See the [reset API](../api.md#post-apiquestionsreset) and
 
 ### Question packages
 
-Export downloads a current-format JSON package from the current server question list. It contains the format marker, numeric format version (`2`), the installed software's full `commitSha`, ordered questions, stable keys, localized text, options, notes, `is_disabled`, and known author timestamps in `meta.authoredAt`. It excludes answers, generated technical IDs, and lifecycle state. Empty lists and installations with unavailable commit metadata cannot be exported.
+Export downloads a current-format JSON package from the current server question list. It contains the format marker, numeric format version (`2`), the installed software's full `commitSha`, ordered questions, stable keys, localized text, options, notes, `is_disabled`, and known author timestamps in `authoredAt` directly on each question. It excludes answers, generated technical IDs, and lifecycle state. Empty lists and installations with unavailable commit metadata cannot be exported.
 
 To import, open the question-creation dialog, choose package import, and select a JSON file. The wizard validates the file, refreshes the existing question list and installed commit metadata, and shows how many rows will be created and lists conflicting keys. Existing keys block confirmation. Confirmation remains disabled until this preview is ready. Selecting another file invalidates the previous preview.
 
@@ -50,7 +50,8 @@ A different commit SHA opens a confirmation warning showing both commits. It exp
 
 New or missing keys append questions to the queue. If a non-empty key already exists, the entire import fails without changes. The server checks again inside the transaction, including when another admin adds a key after the preview. Duplicate non-empty keys within the package and unsupported package versions are also rejected. See the [import API](../api.md#post-apiquestionsimport) for the complete package contract.
 
-`meta` and `meta.authoredAt` are optional for every question. A supplied timestamp must
+`authoredAt` is optional and belongs directly on each question object. The `meta`
+field is rejected, including an empty object. A supplied timestamp must
 be a real ISO 8601 UTC date and time ending in `Z`, for example
 `2026-10-16T12:00:00Z`, optionally with one to three fractional second digits. Imports
 normalize timestamps to millisecond precision. Date-only values, timezone offsets,

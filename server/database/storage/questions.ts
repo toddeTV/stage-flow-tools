@@ -155,7 +155,7 @@ export async function importQuestionPackage(
         answer_options: packageQuestion.answer_options,
         note: packageQuestion.note,
       }, {
-        authoredAt: packageQuestion.meta?.authoredAt,
+        authoredAt: packageQuestion.authoredAt,
         isDisabled: packageQuestion.is_disabled,
         sortOrder: nextSortOrder,
       })

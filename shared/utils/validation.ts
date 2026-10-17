@@ -136,9 +136,7 @@ const QuestionPackageQuestionSchema = v.pipe(
   v.strictObject({
     ...questionInputEntries,
     is_disabled: v.boolean('validation.invalid_type'),
-    meta: v.optional(v.strictObject({
-      authoredAt: v.optional(authoredAtSchema),
-    }, 'validation.invalid_question_package')),
+    authoredAt: v.optional(authoredAtSchema),
   }, 'validation.invalid_question_package'),
   v.forward(
     v.check(value => value.answer_options.length >= 2, 'validation.minimum_answer_options'),

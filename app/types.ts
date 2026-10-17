@@ -28,7 +28,7 @@ export type InputQuestion = Omit<Question,
 export interface QuestionPackageQuestion extends Omit<InputQuestion, 'key'> {
   key?: string
   is_disabled: boolean
-  meta?: { authoredAt?: string }
+  authoredAt?: string
 }
 
 export interface QuestionPackage {

@@ -36,7 +36,7 @@ database aborts the whole transaction, preserving all questions, answers, and qu
 state. The client preview lists conflicts; the transaction enforces this again.
 
 `questions.authored_at` is a nullable UTC ISO 8601 timestamp supplied by a question's
-author through JSON `meta.authoredAt`. It records when the question was composed.
+author through JSON `authoredAt` directly on the question object. It records when the question was composed.
 `questions.created_at` records when the database entry was created. Missing author
 dates remain `NULL`, including for manually created questions. Normal edits preserve
 the author date, and exports include it only when known. Admin question responses
