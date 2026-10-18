@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Question } from '~/types'
 import { useQuizParticipant } from '~/composables/useQuizParticipant'
 
 definePageMeta({
@@ -11,17 +10,8 @@ definePageMeta({
 })
 
 const quiz = useQuizSocket()
-const { activeQuestion, confirmedAnswer, questionVersion, selectedAnswer, updateActiveQuestion } = quiz
-let refreshVersion = 0
-const { refresh: refreshQuestion } = await useAsyncData('participant-active-question', async () => {
-  const version = questionVersion.value
-  const request = ++refreshVersion
-  const question = await $fetch<Question | { message: string }>('/api/questions/active')
-  if (version === questionVersion.value && request === refreshVersion) {
-    updateActiveQuestion('message' in question ? null : question)
-  }
-  return question
-})
+const { activeQuestion, confirmedAnswer, selectedAnswer } = quiz
+const { refresh: refreshQuestion } = await useAsyncData('participant-active-question', quiz.refreshSnapshot)
 const {
   answerError,
   answerPending,

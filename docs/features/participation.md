@@ -27,6 +27,11 @@ The browser keeps the generated participant ID and nickname in local storage. Su
 
 Only one answer per participant and question is stored. Locked voting prevents submissions. A question change restores that question's saved selection; an answer reset clears its saved selection. WebSocket updates deliver question and lock changes and reconnect automatically.
 
+On connection and reconnection, the browser reloads the current question and lock
+state. Refreshing the same question preserves the draft and confirmed answer;
+missed unpublication clears the question. Snapshot retries and ordering are
+documented in [WebSockets](../websocket.md#client-connection).
+
 Answers remain editable during submission. Requests run one at a time per question;
 rapid changes keep only the latest waiting selection. A question change discards
 unsent selections for the previous question. Each request carries its question ID,

@@ -2,14 +2,12 @@ import type { Ref } from 'vue'
 import type { Results } from '~/types'
 
 type UseAdminResultsOptions = {
-  fetchedResults: Ref<Results | null | undefined>
   refreshResults: () => Promise<unknown>
   results: Ref<Results | null>
 }
 
 /** Owns result-display modes, derived values, and administrative result actions. */
 export function useAdminResults({
-  fetchedResults,
   refreshResults,
   results,
 }: UseAdminResultsOptions) {
@@ -37,15 +35,6 @@ export function useAdminResults({
     return option ? getLocalizedText(option.text) : enKey
   }
 
-  watch(fetchedResults, (newResults) => {
-    if (newResults && newResults.question) {
-      results.value = newResults
-    }
-    else {
-      results.value = null
-    }
-  }, { immediate: true })
-
   watch(() => results.value?.question.id, (newId, oldId) => {
     if (!newId || newId === oldId) return
 
@@ -70,7 +59,7 @@ export function useAdminResults({
     }
 
     showEmoji.value = false
-  })
+  }, { immediate: true })
 
   const useShuffledOrder = computed(() =>
     scramble.value === 'hide' || scrambleResults.value,

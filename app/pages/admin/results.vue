@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Results } from '~/types'
 import { useAdminResults } from '~/composables/useAdminResults'
 
 definePageMeta({
@@ -10,12 +9,12 @@ definePageMeta({
   localeSwitcher: true,
 })
 
-const { results } = useQuizSocket('results')
+const { results, refreshSnapshot } = useQuizSocket('results')
 const {
   coreViewStyles,
   isCoreView,
 } = useDisplayParameters()
-const { data: fetchedResults, refresh: refreshResults } = await useFetch<Results>('/api/results/current')
+const { refresh: refreshResults } = await useAsyncData('admin-current-results', refreshSnapshot)
 const {
   displayResults,
   getBarWidth,
@@ -35,7 +34,6 @@ const {
   toggleLock,
   unpublishActiveQuestion,
 } = useAdminResults({
-  fetchedResults,
   refreshResults,
   results,
 })

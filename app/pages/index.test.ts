@@ -9,14 +9,20 @@ import UiButton from '~/components/ui/UiButton.vue'
 import UiRadioOption from '~/components/ui/UiRadioOption.vue'
 import ParticipantPage from './index.vue'
 
-const socket = vi.hoisted(() => ({ data: undefined as undefined | { value: string } }))
+const socket = vi.hoisted(() => ({
+  data: undefined as undefined | { value: string },
+  connect: () => {},
+  disconnect: () => {},
+}))
 vi.mock('@vueuse/core', async () => {
   const { ref } = await import('vue')
   return {
     useLocalStorage: () => ref('participant-id'),
-    useWebSocket: () => {
+    useWebSocket: (_url: unknown, options: { onConnected: () => void, onDisconnected: () => void }) => {
       const data = ref('')
       socket.data = data
+      socket.connect = options.onConnected
+      socket.disconnect = options.onDisconnected
       return { data, status: ref('OPEN'), send: vi.fn(), open: vi.fn(), close: vi.fn() }
     },
   }
@@ -127,6 +133,27 @@ afterEach(() => {
 })
 
 describe('participant answer feedback', () => {
+  it('recovers a missed question and lock after reconnect without a manual refresh', async () => {
+    const page = await renderPage()
+    socket.connect()
+    await flushPromises()
+    socket.disconnect()
+    questionFetch.mockResolvedValueOnce({
+      ...question, id: 'next', question_text: { en: 'Next question' }, is_locked: true,
+    })
+    socket.connect()
+    await flushPromises()
+    expect(page.text()).toContain('Next question')
+    expect(page.text()).toContain('answersLocked')
+    expect(page.get<HTMLInputElement>('input[type="radio"]').element.disabled).toBe(true)
+    socket.disconnect()
+    questionFetch.mockResolvedValueOnce({ message: 'No active question' })
+    socket.connect()
+    await flushPromises()
+    expect(page.text()).toContain('waitingForQuestion')
+    expect(page.find('input[type="radio"]').exists()).toBe(false)
+  })
+
   it('confirms optimistically, replaces success on failure, and retries the selected answer', async () => {
     const first = deferred<unknown>()
     answerFetch.mockReturnValueOnce(first.promise).mockResolvedValueOnce({ success: true })
