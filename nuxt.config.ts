@@ -29,7 +29,7 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
 
   runtimeConfig: {
     // Private keys (only available server-side)
-    adminPassword: '123',
+    adminPassword: '',
     adminToken: '',
     adminUsername: 'admin',
     apiCorsAllowedOrigins: '',
@@ -38,7 +38,7 @@ const configBase: InputConfig<NuxtConfig, ConfigLayerMeta> = {
     emojiBatchMaxSize: 1200,
     emojiBatchTickMs: 150,
     emojiQueueMaxSize: 25000,
-    jwtSecret: 'tryUJ0zQbstPbTOrezme+Fv+KndzDNRx5lmSeelr2ial2/2yV8HqLeQ2felJafqf',
+    jwtSecret: '',
     presenterParentOrigins: '',
 
     // Public keys (available on both client and server)

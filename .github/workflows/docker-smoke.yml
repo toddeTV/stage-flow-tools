@@ -67,9 +67,41 @@ jobs:
           docker run --rm --entrypoint sh --env EXPECTED_VERSION stage-flow-tools:smoke
           -c 'grep -Fq "$EXPECTED_VERSION" .output/public/_nuxt/*.js'
 
+      - name: Reject missing or default auth credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          container_name=stage-flow-tools-invalid-auth
+          trap 'docker rm --force "$container_name" >/dev/null 2>&1 || true' EXIT
+
+          assert_startup_rejected() {
+            local expected_variable="$1"
+            shift
+            docker run --detach --name "$container_name" "$@" stage-flow-tools:smoke >/dev/null
+            for attempt in $(seq 1 15); do
+              if [ "$(docker inspect --format '{{.State.Running}}' "$container_name")" = 'false' ]; then
+                test "$(docker inspect --format '{{.State.ExitCode}}' "$container_name")" -ne 0
+                docker logs "$container_name" 2>&1 | grep -F "Invalid runtime config $expected_variable:"
+                docker rm "$container_name" >/dev/null
+                return 0
+              fi
+              sleep 1
+            done
+            echo "Server did not reject invalid $expected_variable within 15 seconds." >&2
+            return 1
+          }
+
+          assert_startup_rejected NUXT_ADMIN_PASSWORD
+          assert_startup_rejected NUXT_JWT_SECRET \
+            --env NUXT_ADMIN_PASSWORD=smoke-test-admin-password \
+            --env NUXT_JWT_SECRET=tryUJ0zQbstPbTOrezme+Fv+KndzDNRx5lmSeelr2ial2/2yV8HqLeQ2felJafqf
+
       - name: Start image and wait for the public API
         run: |
-          docker run --detach --name stage-flow-tools-smoke --publish 127.0.0.1:3000:3000 --env NUXT_ADMIN_TOKEN=smoke-test-admin-token stage-flow-tools:smoke
+          docker run --detach --name stage-flow-tools-smoke --publish 127.0.0.1:3000:3000 \
+            --env NUXT_ADMIN_PASSWORD=smoke-test-admin-password \
+            --env NUXT_JWT_SECRET=smoke-test-explicit-jwt-secret-with-no-default-fallback \
+            --env NUXT_ADMIN_TOKEN=smoke-test-admin-token stage-flow-tools:smoke
           for attempt in $(seq 1 30); do
             if curl --fail --silent --show-error http://127.0.0.1:3000/api/questions/active >/dev/null; then
               exit 0

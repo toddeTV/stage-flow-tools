@@ -1,3 +1,4 @@
+import { SignJWT } from 'jose'
 import {
   afterEach,
   describe,
@@ -52,6 +53,36 @@ describe('isSameOriginHttpRequest', () => {
 })
 
 describe('verifyAdmin', () => {
+  it('rejects tokens signed with the published default key and accepts the configured key', async () => {
+    const configuredKey = 'test-only-explicit-jwt-key-with-no-default-fallback'
+    vi.stubGlobal('throwApiError', throwApiError)
+    vi.stubGlobal('useRuntimeConfig', () => ({ adminToken: '', jwtSecret: configuredKey }))
+
+    for (const key of [
+      'tryUJ0zQbstPbTOrezme+Fv+KndzDNRx5lmSeelr2ial2/2yV8HqLeQ2felJafqf',
+      configuredKey,
+    ]) {
+      const token = await new SignJWT({ isAdmin: true, username: 'test-admin' })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setExpirationTime('1m')
+        .sign(new TextEncoder().encode(key))
+      const result = verifyAdmin({
+        headers: new Headers({ authorization: `Bearer ${token}` }),
+        method: 'GET',
+      } as never)
+
+      if (key === configuredKey) {
+        await expect(result).resolves.toMatchObject({ isAdmin: true, username: 'test-admin' })
+      }
+      else {
+        await expect(result).rejects.toThrowError(expect.objectContaining({
+          data: { code: 'auth.token_invalid' },
+          statusCode: 401,
+        }))
+      }
+    }
+  })
+
   function configureAdminRequestAuth() {
     vi.stubGlobal('getRequestURL', () => new URL('https://quiz.example/api/questions/delete-all'))
     vi.stubGlobal('throwApiError', throwApiError)

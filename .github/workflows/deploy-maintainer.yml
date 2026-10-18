@@ -91,7 +91,10 @@ jobs:
         run: |
           set -euo pipefail
           container_name=stage-flow-tools-maintainer-smoke
-          docker run --detach --name "$container_name" --publish 127.0.0.1:3000:3000 "$IMAGE_REF"
+          docker run --detach --name "$container_name" --publish 127.0.0.1:3000:3000 \
+            --env NUXT_ADMIN_PASSWORD=smoke-test-admin-password \
+            --env NUXT_JWT_SECRET=smoke-test-explicit-jwt-secret-with-no-default-fallback \
+            "$IMAGE_REF"
 
           for attempt in $(seq 1 30); do
             if curl --fail --silent --show-error http://127.0.0.1:3000/api/questions/active >/dev/null; then
