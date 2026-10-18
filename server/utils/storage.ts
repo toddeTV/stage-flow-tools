@@ -25,6 +25,7 @@ export {
   unpublishActiveQuestion,
 } from '../database/storage/question-queue'
 export {
+  AnswerSubmissionError,
   clearAnswersForQuestion,
   getAnswers,
   getAnswersForQuestion,

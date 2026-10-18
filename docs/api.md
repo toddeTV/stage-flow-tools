@@ -666,10 +666,14 @@ state even when it already matches.
 
 Submit or update a user answer.
 
+Each submission is bound to its question ID. Requests for a question that is no
+longer active are rejected, even when the current question has the same options.
+
 **Request:**
 
 ```json
 {
+  "question_id": "string",
   "user_id": "string",
   "user_nickname": "string",
   "selected_answer": { "en": "string" }
@@ -691,6 +695,11 @@ Submit or update a user answer.
 | 400 | `quiz.invalid_answer` | The English answer does not match an active option. Refresh the active question and submit one of its options. |
 | 403 | `quiz.question_locked` | Voting is locked. Wait for the admin to reopen voting. |
 | 404 | `quiz.no_active_question` | No question is active. Wait for a publication and refresh the active question. |
+| 409 | `quiz.question_changed` | The submitted question is no longer active. Refresh and answer the current question. |
+
+`question_id` is required; missing or empty values return a validation error.
+Deploy the client and server together. Previously opened clients without this
+field must reload before submitting answers.
 
 ### POST `/api/answers/retract`
 

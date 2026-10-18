@@ -35,6 +35,7 @@ describe('POST /api/answers/submit', () => {
     }
     getActiveQuestion.mockResolvedValue(activeQuestion)
     readValidatedRequestBody.mockResolvedValue({
+      question_id: activeQuestion.id,
       selected_answer: { en: 'yes' },
       user_id: 'participant-id',
       user_nickname: 'Participant',
