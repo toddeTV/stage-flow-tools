@@ -1,7 +1,6 @@
 import {
   and,
   eq,
-  or,
 } from 'drizzle-orm'
 import type { Question } from '~/types'
 import {
@@ -18,13 +17,16 @@ import {
   getQuestions,
 } from './questions'
 
-export async function publishQuestion(questionIdentifier: string): Promise<Question | undefined> {
+export async function publishQuestion(
+  questionIdentifier: string,
+  selector: 'key' | 'id',
+): Promise<Question | undefined> {
   await initStorage()
 
   const questionRow = getDatabase()
     .select()
     .from(questions)
-    .where(or(eq(questions.key, questionIdentifier), eq(questions.id, questionIdentifier)))
+    .where(eq(questions[selector], questionIdentifier))
     .get()
 
   if (!questionRow) {

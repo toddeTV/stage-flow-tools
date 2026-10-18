@@ -104,7 +104,7 @@ describe('question queue storage', () => {
   it('closes only the expected active key and preserves votes across close/reopen', async () => {
     const one = await createQuestion(createInputQuestion('one'));
     const two = await createQuestion(createInputQuestion('two'));
-    await publishQuestion('one');
+    await publishQuestion('one', 'key');
     await submitAnswer({
       question_id: one.id,
       user_id: 'synthetic',
@@ -116,12 +116,12 @@ describe('question queue storage', () => {
     expect(
       (await getQuestions()).find((item) => item.id === one.id)?.is_locked,
     ).toBe(true);
-    await publishQuestion('two');
+    await publishQuestion('two', 'key');
     expect(await unpublishActiveQuestion('one')).toBeUndefined();
     expect((await getCurrentResults())?.question.id).toBe(two.id);
     await unpublishActiveQuestion('two');
     expect((await getResultsForQuestion(one.id))?.totalVotes).toBe(1);
-    await publishQuestion('one');
+    await publishQuestion('one', 'key');
     await toggleQuestionLock(one.id, false);
     expect((await getCurrentResults())?.totalVotes).toBe(1);
   });
@@ -158,13 +158,13 @@ describe('question queue storage', () => {
 
     await expect(getNextPublishableQuestion()).resolves.toMatchObject({ id: first.id })
 
-    await publishQuestion(first.id)
+    await publishQuestion(first.id, 'id')
     await expect(getNextPublishableQuestion()).resolves.toMatchObject({ id: third.id })
 
-    await publishQuestion(disabled.id)
+    await publishQuestion(disabled.id, 'id')
     await expect(getNextPublishableQuestion()).resolves.toMatchObject({ id: third.id })
 
-    await publishQuestion(third.id)
+    await publishQuestion(third.id, 'id')
     await expect(getNextPublishableQuestion()).resolves.toBeUndefined()
   })
 
@@ -191,7 +191,7 @@ describe('question queue storage', () => {
 
   it('rejects an existing key without changing questions, answers, or live state', async () => {
     const existing = await createQuestion(createInputQuestion('existing-question'))
-    await publishQuestion(existing.key)
+    await publishQuestion(existing.key, 'key')
     await submitAnswer({
       question_id: existing.id,
       selected_answer: { en: 'One' },
@@ -291,7 +291,7 @@ describe('question queue storage', () => {
     const second = await createQuestion(createInputQuestion('second'))
     const third = await createQuestion(createInputQuestion('third'))
     await moveQuestion(third.id, 'up')
-    await publishQuestion(first.key)
+    await publishQuestion(first.key, 'key')
     await toggleQuestionLock(first.id, true)
     await toggleQuestionDisabled(second.id)
     testClient.db.update(questions)
@@ -342,7 +342,7 @@ describe('question queue storage', () => {
 
   it('rolls back answer deletion when resetting question state fails', async () => {
     const question = await createQuestion(createInputQuestion('rollback'))
-    await publishQuestion(question.key)
+    await publishQuestion(question.key, 'key')
     await submitAnswer({
       question_id: question.id,
       selected_answer: { en: 'One' },
@@ -476,7 +476,7 @@ describe('question queue storage', () => {
 
   it('combines published questions and submitted answers in current results through the storage facade', async () => {
     const question = await createQuestion(createInputQuestion('current-results'))
-    await publishQuestion(question.id)
+    await publishQuestion(question.id, 'id')
     await submitAnswer({
       question_id: question.id,
       selected_answer: { en: 'One' },

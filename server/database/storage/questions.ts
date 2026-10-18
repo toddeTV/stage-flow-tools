@@ -186,6 +186,7 @@ export async function updateQuestion(
   const updatedQuestion = {
     ...question,
     ...updates,
+    key: updates.key?.trim() || question.key.trim() || question.id,
   } satisfies Question
 
   const existingQuestion = getDatabase()
