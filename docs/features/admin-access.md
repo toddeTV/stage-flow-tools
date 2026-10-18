@@ -22,9 +22,9 @@ Admin access protects question controls, presentation surfaces, results, and dat
 | Login URL | `redirect` | Relative path starting with one `/`, without `://` | `/admin` | Selects the page after login | Invalid or repeated values use `/admin` |
 | Admin-page URL | `token` | Single valid admin token | Absent | Establishes the browser session, then is removed | Failed verification redirects to login with a token-free path |
 | Server | `NUXT_ADMIN_USERNAME` | String | `admin` | Login username | Non-matching submitted credentials reject login |
-| Server | `NUXT_ADMIN_PASSWORD` | String | Development-only default; replace in production | Login password | Non-matching submitted credentials reject login |
+| Server | `NUXT_ADMIN_PASSWORD` | Required non-blank string; previous published default rejected | Empty; must be configured in every mode | Login password | Invalid configuration stops server startup; non-matching submitted credentials reject login |
 | Server | `NUXT_ADMIN_TOKEN` | Optional static token | Empty; disabled | Enables static bearer access | Empty disables this path; non-matching tokens require valid JWT verification |
-| Server | `NUXT_JWT_SECRET` | String | Development-only default; replace in production | Signs and verifies sessions | Invalid signatures reject authentication |
+| Server | `NUXT_JWT_SECRET` | Required non-blank string; previous published default rejected | Empty; must be configured in every mode | Signs and verifies sessions | Invalid configuration stops server startup; invalid signatures reject authentication |
 | Cross-origin API | `NUXT_API_CORS_ENABLED` | Boolean | `false` | Enables configured REST CORS | See the deployment configuration contract |
 | Cross-origin API | `NUXT_API_CORS_ALLOWED_ORIGINS` | Comma-separated exact HTTP(S) origins | Empty | Allows configured REST origins | Wildcards, paths, credentials, and invalid origins are rejected |
 

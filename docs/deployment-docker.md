@@ -45,6 +45,12 @@ NUXT_JWT_SECRET=<output-from-openssl>
 `NUXT_ADMIN_TOKEN` is optional. Leave it empty unless external software needs
 bearer-token API access or a tokenized `/admin` page URL.
 
+Every server start validates `NUXT_ADMIN_PASSWORD` and `NUXT_JWT_SECRET` before
+accepting requests. Missing, blank, or previous published default values stop the
+server with an error naming the setting. This applies to Docker, direct Node.js
+execution, and local development, including when a static admin token is set.
+Builds do not require these runtime credentials.
+
 For separately hosted browser clients such as a local Slidev presentation,
 enable CORS only for exact origins:
 
@@ -77,20 +83,6 @@ services:
     environment:
       NUXT_API_CORS_ALLOWED_ORIGINS: "${NUXT_API_CORS_ALLOWED_ORIGINS:-}"
       NUXT_API_CORS_ENABLED: "${NUXT_API_CORS_ENABLED:-false}"
-    # Keep a production guard when using the repository default values in .env.example.
-    command:
-      - /bin/sh
-      - -ec
-      - |
-        if [ -z "$$NUXT_ADMIN_PASSWORD" ] || [ "$$NUXT_ADMIN_PASSWORD" = "123" ]; then
-          echo "NUXT_ADMIN_PASSWORD must be set to a non-default production value." >&2
-          exit 1
-        fi
-        if [ -z "$$NUXT_JWT_SECRET" ] || [ "$$NUXT_JWT_SECRET" = "tryUJ0zQbstPbTOrezme+Fv+KndzDNRx5lmSeelr2ial2/2yV8HqLeQ2felJafqf" ]; then
-          echo "NUXT_JWT_SECRET must be set to a non-default production value." >&2
-          exit 1
-        fi
-        exec node .output/server/index.mjs
     volumes:
       - <persistent-data-path>:/app/.data
     ulimits:

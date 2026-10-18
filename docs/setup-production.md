@@ -67,6 +67,13 @@ Set production values for:
 
 Leave `NUXT_ADMIN_TOKEN` empty if you do not want static admin-token authentication. If you set it, keep it secret and rotate it by updating the environment and redeploying.
 
+`NUXT_ADMIN_PASSWORD` and `NUXT_JWT_SECRET` are mandatory at server startup,
+including when a static admin token is configured. Missing, blank, or previous
+published default values stop the server before it accepts requests. Configure
+both settings before restarting an existing installation. For direct Node.js
+execution, supply them through the process environment; the built server does not
+load a local `.env` file automatically. Builds do not require these values.
+
 Admin authentication variants in production:
 
 1. Human admins log in through `/login` with `NUXT_ADMIN_USERNAME` and `NUXT_ADMIN_PASSWORD`.

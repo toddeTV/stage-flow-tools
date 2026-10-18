@@ -35,13 +35,22 @@ Create `.env` file from template:
 cp .env.example .env
 ```
 
-**Generate a strong JWT secret:**
+Set a private admin password and a separate JWT secret in your `.env` file.
+Generate the password with:
+
+```bash
+openssl rand -hex 32
+```
+
+Use the output for `NUXT_ADMIN_PASSWORD`. Generate the JWT secret separately:
 
 ```bash
 openssl rand -base64 48
 ```
 
-Copy the generated secret and update `NUXT_JWT_SECRET` in your `.env` file.
+Use the output for `NUXT_JWT_SECRET`. Both settings are required in development
+and production. Empty values and the previous published defaults prevent server
+startup. Errors name the setting to fix without displaying its value.
 
 ## Data Management
 
