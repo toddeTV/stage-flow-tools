@@ -5,7 +5,6 @@ import { pathToFileURL } from 'node:url'
 import MarkdownIt from 'markdown-it'
 
 const markdown = new MarkdownIt()
-const ignoredPathPrefix = 'graphify-out/'
 const markdownPathPattern = /\.(?:md|markdown)$/iu
 
 type ChangedPath = {
@@ -202,7 +201,7 @@ function headingTouchesLines(heading: Heading, lines: Set<number>) {
 }
 
 function isEligibleMarkdownPath(path: string) {
-  return !path.startsWith(ignoredPathPrefix) && markdownPathPattern.test(path)
+  return markdownPathPattern.test(path)
 }
 
 function isHeadingRename(
