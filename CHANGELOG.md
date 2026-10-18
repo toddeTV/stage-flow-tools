@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.3.0](https://github.com/toddeTV/stage-flow-tools/compare/v1.2.0...v1.3.0) (2026-10-18)
+
+
+### Features (feat)
+
+* add reliable participant answer feedback ([#119](https://github.com/toddeTV/stage-flow-tools/issues/119)) ([01dfe20](https://github.com/toddeTV/stage-flow-tools/commit/01dfe20ff4836b645f4c438d390c509cc7103877))
+* add version 2 question packages with author dates ([#113](https://github.com/toddeTV/stage-flow-tools/issues/113)) ([49a4bd0](https://github.com/toddeTV/stage-flow-tools/commit/49a4bd0dfe7c72220c74d73000254523829f5110))
+* move authored dates onto package questions ([#115](https://github.com/toddeTV/stage-flow-tools/issues/115)) ([9091a67](https://github.com/toddeTV/stage-flow-tools/commit/9091a67b9e188ce85fc832a292f89f39429c44e7))
+* recover live quiz state after reconnects ([#120](https://github.com/toddeTV/stage-flow-tools/issues/120)) ([6e6d947](https://github.com/toddeTV/stage-flow-tools/commit/6e6d94717f5aa27d55b6a2e8d6ef8ef5d96599dd))
+
+
+### Bug Fixes (fix)
+
+* preserve quiz events and order answer retractions ([#121](https://github.com/toddeTV/stage-flow-tools/issues/121)) ([8bbbee1](https://github.com/toddeTV/stage-flow-tools/commit/8bbbee10ef26d5527ad4c4a9c2334d699646560b))
+* require explicit admin credentials at startup ([#117](https://github.com/toddeTV/stage-flow-tools/issues/117)) ([29f41e0](https://github.com/toddeTV/stage-flow-tools/commit/29f41e0f1d628e7fbd9262edcd6bb7b282bba462))
+* validate question mutations and select publication targets explicitly ([#118](https://github.com/toddeTV/stage-flow-tools/issues/118)) ([b7ef8a6](https://github.com/toddeTV/stage-flow-tools/commit/b7ef8a68e3daa5c1fa582f82aed3d594819f0135))
+
+
+### Documentation (docs)
+
+* clarify quiz protocols, storage recovery, and deployment ([#116](https://github.com/toddeTV/stage-flow-tools/issues/116)) ([c5e7454](https://github.com/toddeTV/stage-flow-tools/commit/c5e745488bfc7ba3c2483f76b085cdc5a0bdc1f8))
+
 ## [1.2.0](https://github.com/toddeTV/stage-flow-tools/compare/v1.1.0...v1.2.0) (2026-10-15)
 
 
