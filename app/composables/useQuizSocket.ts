@@ -153,18 +153,20 @@ export const useQuizSocket = (channel = 'default') => {
     return getWsEndpoint('default', params)
   })
 
-  const { status, data, send, open, close } = useWebSocket(wsEndpoint, {
+  const { status, send, open, close } = useWebSocket(wsEndpoint, {
     autoReconnect: true,
     onConnected: refreshLiveState,
     onDisconnected: invalidateSnapshot,
+    onMessage: (_socket, event) => handleMessage(event.data),
     heartbeat: {
       message: 'ping',
       interval: 30000,
     },
   })
 
-  watch(data, (newMessage) => {
-    if (newMessage === 'pong')
+  /** Processes every frame, including identical consecutive application events. */
+  function handleMessage(newMessage: string) {
+    if (disposed || newMessage === 'pong')
       return
 
     try {
@@ -206,7 +208,7 @@ export const useQuizSocket = (channel = 'default') => {
     catch (error: unknown) {
       logger_error('WebSocket message error:', error)
     }
-  }, { flush: 'sync' })
+  }
 
   return {
     status,
