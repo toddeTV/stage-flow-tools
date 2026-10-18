@@ -63,17 +63,23 @@ function addEmoji(text: string, id: string) {
   emojis.value.push(newEmoji)
 }
 
+let animationFrame: number | undefined
+
 function animateEmojis() {
   emojis.value = emojis.value.map(emoji => ({
     ...emoji,
     y: emoji.y + emoji.speed,
   })).filter(emoji => emoji.y < windowHeight.value + 100) // Remove when off-screen
 
-  requestAnimationFrame(animateEmojis)
+  animationFrame = requestAnimationFrame(animateEmojis)
 }
 
 onMounted(() => {
   animateEmojis()
+})
+
+onBeforeUnmount(() => {
+  if (animationFrame !== undefined) cancelAnimationFrame(animationFrame)
 })
 </script>
 

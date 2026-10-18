@@ -34,6 +34,9 @@ The browser shows a cooldown countdown; the server also enforces the cooldown by
 
 The overlay reconnects its emoji WebSocket automatically. Individual rendered emojis do not accept pointer input. The Presenter makes its complete emoji layer click-through.
 
+The animation loop stops when the overlay component is removed, including navigation
+away from the emoji page within the app. Opening it again starts one new loop.
+
 ## Examples
 
 ```text
