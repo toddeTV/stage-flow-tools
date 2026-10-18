@@ -41,6 +41,10 @@ lock state and reset-cleared answers. Partial events do not start a request when
 no valid snapshot is pending; full question and results events supersede snapshots
 without starting a replacement.
 
+Lock events for another question also replace a pending participant snapshot,
+including when no question is displayed. The current display stays in place until
+a fresh snapshot or full question event supplies the next question.
+
 Snapshot requests retry network failures, HTTP 408, HTTP 429, and HTTP 5xx at most
 twice: after one second, then after another two seconds. Other HTTP 4xx responses,
 including 401 and 403, are not retried. After the last failure, the client retains

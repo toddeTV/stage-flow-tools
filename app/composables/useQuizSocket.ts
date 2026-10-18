@@ -177,13 +177,13 @@ export const useQuizSocket = (channel = 'default') => {
       }
       else if (parsed.event === 'lock-status') {
         const question = activeQuestion.value
-        if (question && question.id === parsed.data.questionId) {
-          applyPartialQuestionUpdate(() => {
+        applyPartialQuestionUpdate(() => {
+          if (question && question.id === parsed.data.questionId) {
             if (channel === 'default') invalidateSnapshot()
             questionVersion.value++
             question.is_locked = parsed.data.is_locked
-          })
-        }
+          }
+        })
       }
       else if (parsed.event === 'answers-reset') {
         if (activeQuestion.value?.id === parsed.data.questionId) {

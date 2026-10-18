@@ -430,6 +430,58 @@ describe('snapshot recovery', () => {
 
 describe('partial question recovery', () => {
   it.each([
+    'first',
+    null,
+  ])('recovers a missed publication and lock with displayed question %s', async (displayedId) => {
+    const state = useQuizSocket()
+    const displayed = displayedId ? question(displayedId) : null
+    state.updateActiveQuestion(displayed)
+    const stale = deferred<Question>()
+    const replacement = deferred<Question>()
+    snapshotFetch.mockReturnValueOnce(stale.promise).mockReturnValueOnce(replacement.promise)
+    socketState.connect()
+    socketState.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'next', is_locked: true } })
+    expect(snapshotFetch).toHaveBeenCalledTimes(2)
+    expect((snapshotFetch.mock.calls[0]![1].signal as AbortSignal).aborted).toBe(true)
+    expect(state.activeQuestion.value).toEqual(displayed)
+    stale.resolve(question('next', false))
+    await flushPromises()
+    expect(state.activeQuestion.value).toEqual(displayed)
+    replacement.resolve(question('next', true))
+    await flushPromises()
+    expect(state.activeQuestion.value?.id).toBe('next')
+    expect(state.activeQuestion.value?.is_locked).toBe(true)
+    expect(logger_error).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    'default',
+    'results',
+  ])('ignores unrelated lock events without pending recovery on %s', (channel) => {
+    const state = useQuizSocket(channel)
+    state.updateActiveQuestion(question())
+    socketState.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'next', is_locked: true } })
+    expect(state.activeQuestion.value?.id).toBe('first')
+    expect(state.activeQuestion.value?.is_locked).toBe(false)
+    expect(snapshotFetch).not.toHaveBeenCalled()
+  })
+
+  it('does not restart disconnected recovery for a lock on another question', async () => {
+    const state = useQuizSocket()
+    state.updateActiveQuestion(question())
+    const stale = deferred<Question>()
+    snapshotFetch.mockReturnValueOnce(stale.promise)
+    const loading = state.refreshSnapshot()
+    socketState.disconnect()
+    socketState.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'next', is_locked: true } })
+    expect(snapshotFetch).toHaveBeenCalledOnce()
+    stale.resolve(question('next'))
+    await loading
+    expect(state.activeQuestion.value?.id).toBe('first')
+    expect(logger_error).not.toHaveBeenCalled()
+  })
+
+  it.each([
     'lock-status',
     'answers-reset',
   ])('recovers an offline edit after %s while preserving its immediate effects', async (event) => {
