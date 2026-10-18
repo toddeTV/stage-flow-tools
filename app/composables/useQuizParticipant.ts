@@ -14,13 +14,19 @@ export function useQuizParticipant(options: UseQuizParticipantOptions) {
   const emojiInput = ref('')
   const emojiError = ref('')
   const nicknameError = ref('')
+  const retractions = new Map<string, Promise<void>>()
   const { t } = useI18n()
   const { getLocalizedText } = useLocalization()
   const {
     getErrorMessage,
     getIssueMessage,
   } = useApiError()
-  const { answerError, answerPending, invalidateAnswers, submitAnswer } = useQuizAnswers(options, userNickname)
+  const {
+    answerError,
+    answerPending,
+    invalidateAnswers,
+    submitAnswer,
+  } = useQuizAnswers(options, userNickname, retractions)
 
   onMounted(() => {
     const savedNickname = localStorage.getItem('quiz-nickname')
@@ -50,10 +56,18 @@ export function useQuizParticipant(options: UseQuizParticipantOptions) {
     if (questionId) {
       clearStoredAnswer(questionId)
     }
+    const retraction = questionId && userId ? queueRetraction(questionId, userId) : undefined
     userNickname.value = ''
     nicknameInput.value = ''
     localStorage.removeItem('quiz-nickname')
-    if (questionId && userId) {
+    await retraction
+  }
+
+  /** Orders repeated retractions and holds replacement submissions until they settle. */
+  async function queueRetraction(questionId: string, userId: string) {
+    const previous = retractions.get(questionId)
+    const request = (async () => {
+      await previous
       try {
         await $fetch('/api/answers/retract', {
           method: 'POST',
@@ -66,6 +80,13 @@ export function useQuizParticipant(options: UseQuizParticipantOptions) {
       catch (error) {
         logger_error('Failed to retract answer:', error)
       }
+    })()
+    retractions.set(questionId, request)
+    try {
+      await request
+    }
+    finally {
+      if (retractions.get(questionId) === request) retractions.delete(questionId)
     }
   }
 

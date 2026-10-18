@@ -14,7 +14,7 @@ function deferred() {
   return { promise, resolve, reject }
 }
 
-function createController() {
+function createController(retractions = new Map<string, Promise<void>>()) {
   const activeQuestion = ref<Question | null>({
     id: 'first',
     is_locked: false,
@@ -31,7 +31,7 @@ function createController() {
   scopes.push(scope)
   const controller = scope.run(() => useQuizAnswers({
     activeQuestion, selectedAnswer, confirmedAnswer, answerReset, refreshQuestion,
-  }, ref('Participant')))!
+  }, ref('Participant'), retractions))!
   return { ...controller, activeQuestion, selectedAnswer, confirmedAnswer, answerReset, refreshQuestion, scope }
 }
 
@@ -56,6 +56,78 @@ afterEach(() => {
 })
 
 describe('optimistic answer submissions', () => {
+  it('keeps only the latest selection while waiting for a question retraction', async () => {
+    const gate = deferred()
+    const retractions = new Map([
+      [
+        'first',
+        gate.promise,
+      ],
+    ])
+    fetch.mockResolvedValue({ success: true })
+    const state = createController(retractions)
+    const request = state.submitAnswer()
+    state.selectedAnswer.value = 1
+    void state.submitAnswer()
+    expect(fetch).not.toHaveBeenCalled()
+    expect(state.answerPending.value).toBe(true)
+
+    retractions.delete('first')
+    gate.resolve()
+    await request
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch.mock.calls[0]![1].body.selected_answer).toEqual({ en: 'Two' })
+    expect(state.confirmedAnswer.value).toBe(1)
+    expect(stored.get('answer-first')).toBe('1')
+  })
+
+  it.each([
+    'reset',
+    'leave',
+    'dispose',
+  ])('does not send a waiting answer after %s', async (change) => {
+    const gate = deferred()
+    const retractions = new Map([
+      [
+        'first',
+        gate.promise,
+      ],
+    ])
+    const state = createController(retractions)
+    const request = state.submitAnswer()
+    if (change === 'reset') state.answerReset.value = { questionId: 'first' }
+    else if (change === 'leave') state.activeQuestion.value = null
+    else state.scope.stop()
+    retractions.delete('first')
+    gate.resolve()
+    await request
+    expect(fetch).not.toHaveBeenCalled()
+    expect(stored.size).toBe(0)
+    expect(state.answerPending.value).toBe(false)
+  })
+
+  it('allows another question to submit while the previous question awaits retraction', async () => {
+    const gate = deferred()
+    const retractions = new Map([
+      [
+        'first',
+        gate.promise,
+      ],
+    ])
+    fetch.mockResolvedValue({ success: true })
+    const state = createController(retractions)
+    const first = state.submitAnswer()
+    state.activeQuestion.value = { ...state.activeQuestion.value!, id: 'second' }
+    await state.submitAnswer()
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch.mock.calls[0]![1].body.question_id).toBe('second')
+    retractions.delete('first')
+    gate.resolve()
+    await first
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(stored.has('answer-first')).toBe(false)
+  })
+
   it('keeps a failed draft and previous confirmation, then retries the same choice', async () => {
     const first = deferred()
     fetch.mockReturnValueOnce(first.promise).mockResolvedValueOnce({ success: true })

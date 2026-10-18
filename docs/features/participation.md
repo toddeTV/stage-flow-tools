@@ -39,6 +39,10 @@ change is marked as unconfirmed. Failed requests are not retried automatically;
 
 Changing the nickname clears local state even if the retract request fails. It does not erase answers to other questions. Public question payloads omit admin notes, stable keys, lifecycle fields, and scoring emoji.
 
+Rejoining and selecting an answer remain available during nickname changes. New
+submissions for that question wait until its pending retractions finish, so an
+older retraction cannot delete a newly confirmed answer.
+
 ## Examples
 
 Open `/`, enter a synthetic nickname, select an option on an open question, and submit. Select another option and submit again to replace the answer. Use the nickname-change control to leave the current nickname and attempt to retract the active answer.
@@ -52,6 +56,7 @@ When no question is active, the page waits for the next publication; reactions r
 - [Quiz socket](../../app/composables/useQuizSocket.ts) and [socket tests](../../app/composables/useQuizSocket.test.ts) cover selection restoration and realtime state.
 - [Storage tests](../../server/utils/storage.test.ts) cover persisted answers.
 - [Answer API integration tests](../../test/answers-submit.integration.test.ts) verify question identity, validation, and rejected writes using SQLite.
+- [Nickname-change integration tests](../../test/participant-answer-ordering.integration.test.ts) verify that delayed retractions finish before replacement answers are stored.
 
 ## Related references
 

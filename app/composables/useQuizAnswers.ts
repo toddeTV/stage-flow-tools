@@ -27,6 +27,7 @@ type AnswerQueue = {
 export function useQuizAnswers(
   { activeQuestion, selectedAnswer, confirmedAnswer, answerReset, refreshQuestion }: QuizAnswerOptions,
   userNickname: Ref<string>,
+  retractions: ReadonlyMap<string, Promise<void>> = new Map(),
 ) {
   const answerError = ref('')
   const answerPending = ref(false)
@@ -67,6 +68,11 @@ export function useQuizAnswers(
   /** Drains only the latest queued selection; each request owns an immutable snapshot. */
   async function drain(queue: AnswerQueue) {
     while (queue.pending && !disposed) {
+      const retraction = retractions.get(queue.pending.question_id)
+      if (retraction) {
+        await retraction
+        continue
+      }
       const submission = queue.pending
       queue.pending = null
       const { question_id, index, ...answer } = submission

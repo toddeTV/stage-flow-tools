@@ -106,6 +106,33 @@ afterEach(() => {
 })
 
 describe('useQuizParticipant', () => {
+  it('releases replacement submissions when retraction fails', async () => {
+    let reject!: (error: unknown) => void
+    const pending = new Promise<void>((_resolve, fail) => { reject = fail })
+    const fetch = vi.fn().mockReturnValueOnce(pending).mockResolvedValue({ success: true })
+    vi.stubGlobal('$fetch', fetch)
+    localValues.set('quiz-user-id', 'participant-id')
+    localValues.set('quiz-nickname', 'Before')
+    const { controller, selectedAnswer, confirmedAnswer } = createController(ref(0))
+    const change = controller.changeNickname()
+    controller.nicknameInput.value = 'After'
+    controller.setNickname()
+    selectedAnswer.value = 1
+    const request = controller.submitAnswer()
+    await Promise.resolve()
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch.mock.calls[0]![0]).toBe('/api/answers/retract')
+    reject(new Error('retraction failed'))
+    await Promise.all([
+      change,
+      request,
+    ])
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(fetch.mock.calls[1]![0]).toBe('/api/answers/submit')
+    expect(confirmedAnswer.value).toBe(1)
+    expect(controller.answerPending.value).toBe(false)
+  })
+
   it('invalidates submissions and clears saved confirmation before changing nickname', async () => {
     let resolve!: () => void
     const pending = new Promise<void>((done) => { resolve = done })
