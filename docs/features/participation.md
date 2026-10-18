@@ -44,6 +44,10 @@ change is marked as unconfirmed. Failed requests are not retried automatically;
 
 Changing the nickname clears local state even if the retract request fails. It does not erase answers to other questions. Public question payloads omit admin notes, stable keys, lifecycle fields, and scoring emoji.
 
+Pending question recovery continues during nickname changes and rejoining. The
+recovered question appears with the usual per-question answer state; a refresh of
+the same question preserves the cleared answer state.
+
 Rejoining and selecting an answer remain available during nickname changes. New
 submissions for that question wait until its pending retractions finish, so an
 older retraction cannot delete a newly confirmed answer.

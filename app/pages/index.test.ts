@@ -6,6 +6,7 @@ import type { Question } from '~/types'
 import { EmojiSchema, getValidationIssues, NicknameSchema } from '#shared/utils/validation'
 import { useQuizSocket } from '~/composables/useQuizSocket'
 import UiButton from '~/components/ui/UiButton.vue'
+import UiInput from '~/components/ui/UiInput.vue'
 import UiRadioOption from '~/components/ui/UiRadioOption.vue'
 import ParticipantPage from './index.vue'
 
@@ -57,7 +58,7 @@ async function renderPage() {
         UiButton,
         UiRadioOption,
         UiPageTitle: { template: '<h1><slot /></h1>' },
-        UiInput: { template: '<input>' },
+        UiInput,
         QuizMarkdownText: defineComponent({
           props: [
             'text',
@@ -97,7 +98,7 @@ beforeEach(() => {
   answerFetch.mockReset()
   questionFetch.mockReset().mockImplementation(async () => structuredClone(question))
   vi.stubGlobal('$fetch', (url: string, options: unknown) => url === '/api/questions/active'
-    ? questionFetch()
+    ? questionFetch(options)
     : answerFetch(url, options))
   vi.stubGlobal('computed', computed)
   vi.stubGlobal('ref', ref)
@@ -152,6 +153,55 @@ describe('participant answer feedback', () => {
     await flushPromises()
     expect(page.text()).toContain('waitingForQuestion')
     expect(page.find('input[type="radio"]').exists()).toBe(false)
+  })
+
+  it.each([
+    'next',
+    'first',
+    null,
+  ])('preserves question %s recovery when changing nickname and rejoining', async (questionId) => {
+    sessionStorage.setItem('answer-first', '0')
+    answerFetch.mockResolvedValue({ success: true })
+    const page = await renderPage()
+    const recovery = deferred<Question | { message: string }>()
+    socket.disconnect()
+    questionFetch.mockReturnValueOnce(recovery.promise)
+    socket.connect()
+    const signal = (questionFetch.mock.calls[1]![0] as { signal: AbortSignal }).signal
+
+    await page.findAll('button').find(button => button.text() === 'changeButton')!.trigger('click')
+    await flushPromises()
+    expect(signal.aborted).toBe(false)
+    expect(localStorage.getItem('quiz-nickname')).toBeNull()
+    expect(sessionStorage.getItem('answer-first')).toBeNull()
+    expect(answerFetch).toHaveBeenCalledExactlyOnceWith('/api/answers/retract', {
+      method: 'POST',
+      body: { question_id: 'first', user_id: 'participant-id' },
+    })
+
+    await page.get('input[placeholder="nicknamePlaceholder"]').setValue('Rejoined')
+    await page.get('form').trigger('submit')
+    expect(localStorage.getItem('quiz-nickname')).toBe('Rejoined')
+    expect(page.find('.answer-banner').exists()).toBe(false)
+    recovery.resolve(questionId
+      ? { ...question, id: questionId, question_text: { en: 'Recovered question' } }
+      : { message: 'No active question' })
+    await flushPromises()
+
+    if (questionId) {
+      expect(page.text()).toContain('Recovered question')
+      expect(page.findAll<HTMLInputElement>('input[type="radio"]').every(input => !input.element.checked)).toBe(true)
+    }
+    else {
+      expect(page.text()).toContain('waitingForQuestion')
+      expect(page.find('input[type="radio"]').exists()).toBe(false)
+    }
+    expect(page.text()).not.toContain('First question')
+    expect(page.find('.answer-banner').exists()).toBe(false)
+    expect(sessionStorage.getItem('answer-first')).toBeNull()
+    expect(localStorage.getItem('quiz-user-id')).toBe('participant-id')
+    expect(questionFetch).toHaveBeenCalledTimes(2)
+    expect(logger_error).not.toHaveBeenCalled()
   })
 
   it('confirms optimistically, replaces success on failure, and retries the selected answer', async () => {

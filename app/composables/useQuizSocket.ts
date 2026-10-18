@@ -99,7 +99,6 @@ export const useQuizSocket = (channel = 'default') => {
   function clearStoredAnswer(questionId: string) {
     answerReset.value = { questionId }
     if (activeQuestion.value?.id === questionId) {
-      if (channel === 'default') invalidateSnapshot()
       questionVersion.value++
       selectedAnswer.value = null
       confirmedAnswer.value = null
