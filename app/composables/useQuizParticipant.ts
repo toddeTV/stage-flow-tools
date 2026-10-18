@@ -1,32 +1,26 @@
 import { safeParse } from 'valibot'
-import type { Ref } from 'vue'
-import type { Question } from '~/types'
+import type { QuizAnswerOptions } from './useQuizAnswers'
+import { useQuizAnswers } from './useQuizAnswers'
 
-type UseQuizParticipantOptions = {
-  activeQuestion: Ref<Question | null>
-  refreshQuestion: () => Promise<unknown>
-  selectedAnswer: Ref<number | null>
+type UseQuizParticipantOptions = QuizAnswerOptions & {
+  clearStoredAnswer: (questionId: string) => void
 }
 
 /** Owns participant identity, answer submission, and emoji-reaction state. */
-export function useQuizParticipant({
-  activeQuestion,
-  refreshQuestion,
-  selectedAnswer,
-}: UseQuizParticipantOptions) {
+export function useQuizParticipant(options: UseQuizParticipantOptions) {
+  const { activeQuestion, clearStoredAnswer } = options
   const userNickname = ref('')
   const nicknameInput = ref('')
   const emojiInput = ref('')
-  const answerError = ref('')
   const emojiError = ref('')
   const nicknameError = ref('')
   const { t } = useI18n()
   const { getLocalizedText } = useLocalization()
   const {
-    getErrorCode,
     getErrorMessage,
     getIssueMessage,
   } = useApiError()
+  const { answerError, answerPending, invalidateAnswers, submitAnswer } = useQuizAnswers(options, userNickname)
 
   onMounted(() => {
     const savedNickname = localStorage.getItem('quiz-nickname')
@@ -50,58 +44,27 @@ export function useQuizParticipant({
   }
 
   async function changeNickname() {
-    if (activeQuestion.value) {
-      const userId = localStorage.getItem('quiz-user-id')
-      if (userId) {
-        try {
-          await $fetch('/api/answers/retract', {
-            method: 'POST',
-            body: {
-              user_id: userId,
-              question_id: activeQuestion.value.id,
-            },
-          })
-        }
-        catch (error) {
-          logger_error('Failed to retract answer:', error)
-        }
-      }
+    const questionId = activeQuestion.value?.id
+    const userId = localStorage.getItem('quiz-user-id')
+    invalidateAnswers()
+    if (questionId) {
+      clearStoredAnswer(questionId)
     }
     userNickname.value = ''
     nicknameInput.value = ''
-    selectedAnswer.value = null
     localStorage.removeItem('quiz-nickname')
-  }
-
-  async function submitAnswer() {
-    if (selectedAnswer.value === null || !activeQuestion.value || activeQuestion.value.is_locked) {
-      return
-    }
-
-    answerError.value = ''
-
-    try {
-      const userId = localStorage.getItem('quiz-user-id')
-      if (!userId) {
-        logger_error('User ID not found')
-        return
+    if (questionId && userId) {
+      try {
+        await $fetch('/api/answers/retract', {
+          method: 'POST',
+          body: {
+            user_id: userId,
+            question_id: questionId,
+          },
+        })
       }
-      await $fetch('/api/answers/submit', {
-        method: 'POST',
-        body: {
-          user_id: userId,
-          user_nickname: userNickname.value,
-          selected_answer: activeQuestion.value.answer_options[selectedAnswer.value]?.text,
-        },
-      })
-
-      sessionStorage.setItem(`answer-${activeQuestion.value.id}`, selectedAnswer.value.toString())
-    }
-    catch (error: unknown) {
-      logger_error('Failed to submit answer:', error)
-      answerError.value = getErrorMessage(error)
-      if (getErrorCode(error) === 'quiz.question_locked') {
-        await refreshQuestion()
+      catch (error) {
+        logger_error('Failed to retract answer:', error)
       }
     }
   }
@@ -183,6 +146,7 @@ export function useQuizParticipant({
 
   return {
     answerError,
+    answerPending,
     changeNickname,
     cooldownTimerInSec,
     emojiError,

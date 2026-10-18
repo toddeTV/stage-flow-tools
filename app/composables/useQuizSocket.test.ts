@@ -54,6 +54,72 @@ beforeEach(() => {
 })
 
 describe('useQuizSocket', () => {
+  it('restores only confirmed choices and preserves a same-question draft', () => {
+    const { updateActiveQuestion, selectedAnswer, confirmedAnswer, questionVersion } = useQuizSocket()
+    const question = { id: 'first', answer_options: [
+      { text: { en: 'One' } },
+      { text: { en: 'Two' } },
+    ] } as Question
+    storedAnswers.set('answer-first', '0')
+    updateActiveQuestion(question)
+    expect(selectedAnswer.value).toBe(0)
+    expect(confirmedAnswer.value).toBe(0)
+    selectedAnswer.value = 1
+    const version = questionVersion.value
+    updateActiveQuestion({ ...question, is_locked: true })
+    expect(selectedAnswer.value).toBe(1)
+    expect(confirmedAnswer.value).toBe(0)
+    expect(questionVersion.value).toBeGreaterThan(version)
+    updateActiveQuestion(null)
+    expect(selectedAnswer.value).toBeNull()
+    expect(confirmedAnswer.value).toBeNull()
+  })
+
+  it.each([
+    '-1',
+    'invalid',
+    '2',
+    '0.5',
+  ])('ignores an invalid saved choice (%s)', (saved) => {
+    const { updateActiveQuestion, selectedAnswer, confirmedAnswer } = useQuizSocket()
+    storedAnswers.set('answer-first', saved)
+    updateActiveQuestion({ id: 'first', answer_options: [
+      { text: { en: 'One' } },
+    ] } as Question)
+    expect(selectedAnswer.value).toBeNull()
+    expect(confirmedAnswer.value).toBeNull()
+  })
+
+  it('clears confirmation and emits each reset, including inactive question resets', async () => {
+    const { activeQuestion, confirmedAnswer, selectedAnswer, answerReset } = useQuizSocket()
+    activeQuestion.value = { id: 'first' } as Question
+    confirmedAnswer.value = 0
+    selectedAnswer.value = 1
+    storedAnswers.set('answer-first', '0')
+    const resets: string[] = []
+    watch(answerReset, reset => reset && resets.push(reset.questionId), { flush: 'sync' })
+    for (const questionId of [
+      'second',
+      'second',
+      'first',
+    ]) {
+      socketState.data!.value = JSON.stringify({ event: 'answers-reset', data: { questionId } })
+      // Ensure identical consecutive reset messages also trigger the socket watcher.
+      await nextTick()
+      socketState.data!.value = 'pong'
+      await nextTick()
+      if (questionId === 'second') expect(confirmedAnswer.value).toBe(0)
+    }
+    expect(resets).toEqual([
+      'second',
+      'second',
+      'first',
+    ])
+    expect(confirmedAnswer.value).toBeNull()
+    expect(selectedAnswer.value).toBeNull()
+    expect(storedAnswers.has('answer-first')).toBe(false)
+  })
+
   it('clears active and inactive cached answers before restarting the same quiz', async () => {
     const { activeQuestion, selectedAnswer, results } = useQuizSocket()
     activeQuestion.value = { id: 'first-question' } as Question

@@ -33,6 +33,7 @@ export default defineI18nConfig(() => ({
             'The installed commit changed or cannot be verified. Review the refreshed preview and ' +
             'confirm the import again.',
           no_active_question: 'No active question is available.',
+          question_changed: 'The active question changed. Please answer the current question.',
           question_locked: 'This question is locked.',
           invalid_answer: 'That answer is not available for this question.',
           question_not_found: 'Question not found.',
@@ -105,6 +106,7 @@ export default defineI18nConfig(() => ({
             'Der installierte Commit hat sich geändert oder kann nicht geprüft werden. Prüfe die ' +
             'aktualisierte Vorschau und bestätige den Import erneut.',
           no_active_question: 'Keine aktive Frage verfügbar.',
+          question_changed: 'Die aktive Frage hat sich geändert. Bitte beantworte die aktuelle Frage.',
           question_locked: 'Diese Frage ist gesperrt.',
           invalid_answer: 'Diese Antwort gehört nicht zu dieser Frage.',
           question_not_found: 'Frage nicht gefunden.',
@@ -177,6 +179,7 @@ export default defineI18nConfig(() => ({
             'Le commit installé a changé ou ne peut pas être vérifié. Vérifiez le nouvel aperçu et ' +
             'confirmez à nouveau l’importation.',
           no_active_question: "Aucune question active n'est disponible.",
+          question_changed: 'La question active a changé. Veuillez répondre à la question actuelle.',
           question_locked: 'Cette question est verrouillée.',
           invalid_answer: "Cette réponse n'est pas disponible pour cette question.",
           question_not_found: 'Question introuvable.',
@@ -247,6 +250,7 @@ export default defineI18nConfig(() => ({
         quiz: {
           question_package_commit_confirmation_required: 'インストール済みコミットが変更されたか、確認できません。更新されたプレビューを確認し、インポートを再度承認してください。',
           no_active_question: 'アクティブな質問はありません。',
+          question_changed: '有効な質問が変わりました。現在の質問に回答してください。',
           question_locked: 'この質問はロックされています。',
           invalid_answer: 'この回答は質問の選択肢にありません。',
           question_not_found: '質問が見つかりません。',

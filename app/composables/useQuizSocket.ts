@@ -5,13 +5,19 @@ import type { Question, Results } from '~/types'
 export const useQuizSocket = (channel = 'default') => {
   const activeQuestion = ref<Question | null>(null)
   const selectedAnswer = ref<number | null>(null)
+  const confirmedAnswer = ref<number | null>(null)
+  const answerReset = ref<{ questionId: string } | null>(null)
+  const questionVersion = ref(0)
   const results = ref<Results | null>(null)
   const userId = useLocalStorage<string | null>('quiz-user-id', null)
 
-  /** Removes a client-side stored answer and optionally clears the visible selection. */
-  function clearStoredAnswer(questionId: string, clearVisibleSelection = true) {
-    if (clearVisibleSelection) {
+  /** Invalidates outstanding local submissions and clears a question's saved confirmation. */
+  function clearStoredAnswer(questionId: string) {
+    answerReset.value = { questionId }
+    if (activeQuestion.value?.id === questionId) {
+      questionVersion.value++
       selectedAnswer.value = null
+      confirmedAnswer.value = null
     }
 
     if (typeof sessionStorage !== 'undefined') {
@@ -21,21 +27,35 @@ export const useQuizSocket = (channel = 'default') => {
 
   /**
    * Restore a stored answer for a question on the client and fall back to `null` when invalid.
-   * @param questionId Question identifier used for the session storage key.
+   * @param question Question whose answer options bound the saved selection.
    * @returns void
    */
-  function restoreStoredAnswer(questionId: string) {
-    if (!import.meta.client) {
-      selectedAnswer.value = null
-      return
-    }
-
-    const savedAnswer = sessionStorage.getItem(`answer-${questionId}`)
+  function restoreStoredAnswer(question: Question) {
+    const savedAnswer = typeof sessionStorage === 'undefined'
+      ? null
+      : sessionStorage.getItem(`answer-${question.id}`)
     const parsedAnswer = savedAnswer === null ? Number.NaN : Number(savedAnswer)
 
-    selectedAnswer.value = Number.isInteger(parsedAnswer) && parsedAnswer >= 0
+    const valid = Number.isInteger(parsedAnswer) && parsedAnswer >= 0 && parsedAnswer < question.answer_options.length
+    confirmedAnswer.value = valid
       ? parsedAnswer
       : null
+    selectedAnswer.value = confirmedAnswer.value
+  }
+
+  /** Applies HTTP and socket question updates without overwriting same-question drafts. */
+  function updateActiveQuestion(question: Question | null) {
+    questionVersion.value++
+    if (activeQuestion.value?.id !== question?.id) {
+      if (question) {
+        restoreStoredAnswer(question)
+      }
+      else {
+        selectedAnswer.value = null
+        confirmedAnswer.value = null
+      }
+    }
+    activeQuestion.value = question
   }
 
   const wsEndpoint = computed(() => {
@@ -65,26 +85,16 @@ export const useQuizSocket = (channel = 'default') => {
       const parsed = JSON.parse(newMessage)
 
       if (parsed.event === 'new-question') {
-        const previousQuestionId = activeQuestion.value?.id
-        activeQuestion.value = parsed.data
-
-        if (!parsed.data) {
-          selectedAnswer.value = null
-        }
-        else if (previousQuestionId !== parsed.data.id) {
-          restoreStoredAnswer(parsed.data.id)
-        }
+        updateActiveQuestion(parsed.data)
       }
       else if (parsed.event === 'lock-status') {
         if (activeQuestion.value && activeQuestion.value.id === parsed.data.questionId) {
+          questionVersion.value++
           activeQuestion.value.is_locked = parsed.data.is_locked
         }
       }
       else if (parsed.event === 'answers-reset') {
-        clearStoredAnswer(
-          parsed.data.questionId,
-          activeQuestion.value?.id === parsed.data.questionId,
-        )
+        clearStoredAnswer(parsed.data.questionId)
       }
       else if (parsed.event === 'results-update') {
         results.value = parsed.data
@@ -104,7 +114,12 @@ export const useQuizSocket = (channel = 'default') => {
   return {
     status,
     activeQuestion,
+    answerReset,
+    clearStoredAnswer,
+    confirmedAnswer,
+    questionVersion,
     selectedAnswer,
+    updateActiveQuestion,
     results,
     send,
     open,

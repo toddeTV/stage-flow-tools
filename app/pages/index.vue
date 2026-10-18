@@ -10,30 +10,21 @@ definePageMeta({
   localeSwitcher: true,
 })
 
-const { activeQuestion, selectedAnswer } = useQuizSocket()
-const { data: _question, refresh: refreshQuestion } = await useFetch<Question>('/api/questions/active', {
-  onResponse({ response }) {
-    const questionData = response._data
-    if (questionData && !('message' in questionData)) {
-      activeQuestion.value = questionData
-
-      const savedAnswer = sessionStorage.getItem(`answer-${questionData.id}`)
-      if (savedAnswer) {
-        selectedAnswer.value = parseInt(savedAnswer, 10)
-      }
-    }
-    else {
-      activeQuestion.value = null
-      selectedAnswer.value = null
-    }
-  },
-  onResponseError() {
-    activeQuestion.value = null
-    selectedAnswer.value = null
-  },
+const quiz = useQuizSocket()
+const { activeQuestion, confirmedAnswer, questionVersion, selectedAnswer, updateActiveQuestion } = quiz
+let refreshVersion = 0
+const { refresh: refreshQuestion } = await useAsyncData('participant-active-question', async () => {
+  const version = questionVersion.value
+  const request = ++refreshVersion
+  const question = await $fetch<Question | { message: string }>('/api/questions/active')
+  if (version === questionVersion.value && request === refreshVersion) {
+    updateActiveQuestion('message' in question ? null : question)
+  }
+  return question
 })
 const {
   answerError,
+  answerPending,
   changeNickname,
   cooldownTimerInSec,
   emojiError,
@@ -50,9 +41,8 @@ const {
   t,
   userNickname,
 } = useQuizParticipant({
-  activeQuestion,
+  ...quiz,
   refreshQuestion,
-  selectedAnswer,
 })
 </script>
 
@@ -137,7 +127,7 @@ const {
       <!-- Active Question -->
       <div v-if="activeQuestion" class="min-w-0 border-4 border-black bg-white p-8">
         <div class="mb-4 flex items-center justify-between">
-          <UiButton size="small" variant="secondary" @click="refreshQuestion">
+          <UiButton size="small" variant="secondary" @click="refreshQuestion()">
             🔄 {{ t('refreshButton') }}
           </UiButton>
           <div
@@ -167,18 +157,34 @@ const {
           </UiRadioOption>
         </div>
 
-        <div v-if="selectedAnswer !== null && !activeQuestion.is_locked" class="answer-banner">
+        <div v-if="selectedAnswer !== null && !answerError && !activeQuestion.is_locked" class="answer-banner">
           ✓ {{ t('answerSubmitted') }}
         </div>
 
         <p v-if="answerError" class="mt-4" role="alert">
           {{ answerError }}
         </p>
+        <UiButton
+          v-if="answerError && selectedAnswer !== null"
+          :disabled="activeQuestion.is_locked || answerPending"
+          @click="submitAnswer"
+        >
+          {{ t('retryAnswer') }}
+        </UiButton>
 
-        <div v-if="selectedAnswer !== null && activeQuestion.is_locked" class="answer-banner">
+        <p
+          v-if="activeQuestion.is_locked && selectedAnswer !== null
+            && (answerPending || selectedAnswer !== confirmedAnswer)"
+          class="mt-4"
+          role="status"
+        >
+          {{ t('answerUnconfirmed') }}
+        </p>
+
+        <div v-if="confirmedAnswer !== null && activeQuestion.is_locked" class="answer-banner">
           {{ t('yourAnswer') }}
           <strong class="mt-1 block min-w-0 font-bold">
-            <QuizMarkdownText :text="getLocalizedText(activeQuestion.answer_options[selectedAnswer]?.text)" />
+            <QuizMarkdownText :text="getLocalizedText(activeQuestion.answer_options[confirmedAnswer]?.text)" />
           </strong>
         </div>
       </div>
@@ -214,6 +220,8 @@ en:
   refreshButton: Refresh
   answersLocked: Answers Locked
   answerSubmitted: Your answer has been submitted. You can change it until the question is locked.
+  answerUnconfirmed: Your latest selection has not been confirmed.
+  retryAnswer: Try again
   yourAnswer: "Your answer:"
   waitingForQuestion: Waiting for Question
   presenterWillStart: The presenter will start a question soon...
@@ -229,6 +237,8 @@ de:
   refreshButton: Aktualisieren
   answersLocked: Antworten gesperrt
   answerSubmitted: "Deine Antwort wurde übermittelt. Du kannst sie ändern, bis die Frage gesperrt wird."
+  answerUnconfirmed: Deine letzte Auswahl wurde nicht bestätigt.
+  retryAnswer: Erneut versuchen
   yourAnswer: "Deine Antwort:"
   waitingForQuestion: Warten auf Frage
   presenterWillStart: Der Moderator wird bald eine Frage starten...
@@ -244,6 +254,8 @@ fr:
   refreshButton: Actualiser
   answersLocked: Réponses verrouillées
   answerSubmitted: Votre réponse a été envoyée. Vous pouvez la modifier jusqu'au verrouillage de la question.
+  answerUnconfirmed: Votre dernière sélection n'a pas été confirmée.
+  retryAnswer: Réessayer
   yourAnswer: "Votre réponse :"
   waitingForQuestion: En attente d'une question
   presenterWillStart: Le présentateur lancera bientôt une question...
@@ -259,6 +271,8 @@ ja:
   refreshButton: 更新
   answersLocked: 回答はロックされています
   answerSubmitted: 回答が送信されました。質問がロックされるまで変更できます。
+  answerUnconfirmed: 最後の選択はまだ確認されていません。
+  retryAnswer: 再試行
   yourAnswer: あなたの答え：
   waitingForQuestion: 質問を待っています
   presenterWillStart: プレゼンターがまもなく質問を開始します...
