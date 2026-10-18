@@ -15,6 +15,14 @@ import {
 } from './core'
 import { getQuestionById } from './questions'
 
+/** Expected submission failures that HTTP handlers can expose safely. */
+export class AnswerSubmissionError extends Error {
+  constructor(public readonly reason: 'question_changed' | 'question_locked' | 'invalid_answer') {
+    super(reason)
+    this.name = 'AnswerSubmissionError'
+  }
+}
+
 export async function getAnswers(): Promise<Answer[]> {
   await initStorage()
 
@@ -30,20 +38,16 @@ export async function submitAnswer(answerData: Omit<Answer, 'id' | 'timestamp'>)
   await initStorage()
   const question = getQuestionById(answerData.question_id)
 
-  if (!question) {
-    throw new Error('Question not found')
-  }
-
-  if (!question.is_active) {
-    throw new Error('Question is not active')
+  if (!question?.is_active) {
+    throw new AnswerSubmissionError('question_changed')
   }
 
   if (question.is_locked) {
-    throw new Error('Question is locked')
+    throw new AnswerSubmissionError('question_locked')
   }
 
   if (!question.answer_options.some(option => option.text.en === answerData.selected_answer.en)) {
-    throw new Error('Invalid answer option')
+    throw new AnswerSubmissionError('invalid_answer')
   }
 
   const timestamp = new Date().toISOString()

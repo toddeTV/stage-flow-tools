@@ -19,6 +19,7 @@ export const API_ERROR_CODES = [
   'auth.token_invalid',
   'auth.origin_invalid',
   'quiz.no_active_question',
+  'quiz.question_changed',
   'quiz.question_locked',
   'quiz.invalid_answer',
   'quiz.question_not_found',

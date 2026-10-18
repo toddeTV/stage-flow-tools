@@ -1,12 +1,15 @@
 import type { LocalizedString } from '~/types'
 import { AnswerSubmitSchema } from '#shared/utils/validation'
+import { AnswerSubmissionError } from '../../utils/storage'
 
 export default defineApiHandler(async (event) => {
   const {
+    question_id,
     selected_answer,
     user_id,
     user_nickname,
   } = await readValidatedRequestBody<{
+    question_id: string
     selected_answer: LocalizedString
     user_id: string
     user_nickname: string
@@ -17,6 +20,10 @@ export default defineApiHandler(async (event) => {
 
   if (!activeQuestion) {
     throwApiError(404, 'quiz.no_active_question')
+  }
+
+  if (activeQuestion.id !== question_id) {
+    throwApiError(409, 'quiz.question_changed')
   }
 
   if (activeQuestion.is_locked) {
@@ -39,12 +46,21 @@ export default defineApiHandler(async (event) => {
   )
 
   // Submit answer
-  await submitAnswer({
-    question_id: activeQuestion.id,
-    user_id,
-    user_nickname,
-    selected_answer: originalAnswer ? originalAnswer.text : selected_answer,
-  })
+  try {
+    await submitAnswer({
+      question_id,
+      user_id,
+      user_nickname,
+      selected_answer: originalAnswer ? originalAnswer.text : selected_answer,
+    })
+  }
+  catch (error: unknown) {
+    if (error instanceof AnswerSubmissionError) {
+      const status = error.reason === 'question_changed' ? 409 : error.reason === 'question_locked' ? 403 : 400
+      throwApiError(status, `quiz.${error.reason}`)
+    }
+    throw error
+  }
 
   requestResultsUpdate()
 

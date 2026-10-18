@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import {
   afterEach,
   beforeEach,
@@ -37,16 +37,29 @@ const activeQuestion: Question = {
 }
 
 function createController(selectedAnswer = ref<number | null>(null)) {
-  const question = ref<Question | null>(activeQuestion)
+  const question = ref<Question | null>(structuredClone(activeQuestion))
+  const confirmedAnswer = ref<number | null>(null)
+  const answerReset = ref<{ questionId: string } | null>(null)
+  const clearStoredAnswer = vi.fn((questionId: string) => {
+    answerReset.value = { questionId }
+    selectedAnswer.value = null
+    confirmedAnswer.value = null
+    sessionValues.delete(`answer-${questionId}`)
+  })
   const refreshQuestion = vi.fn().mockResolvedValue(undefined)
   const controller = useQuizParticipant({
     activeQuestion: question,
     refreshQuestion,
     selectedAnswer,
+    confirmedAnswer,
+    answerReset,
+    clearStoredAnswer,
   })
 
   return {
     controller,
+    confirmedAnswer,
+    clearStoredAnswer,
     question,
     refreshQuestion,
     selectedAnswer,
@@ -59,6 +72,8 @@ beforeEach(() => {
   pause.mockClear()
   resume.mockClear()
   vi.stubGlobal('ref', ref)
+  vi.stubGlobal('watch', watch)
+  vi.stubGlobal('onScopeDispose', vi.fn())
   vi.stubGlobal('onMounted', (callback: () => void) => callback())
   vi.stubGlobal('useApiError', () => ({
     getErrorCode: () => undefined,
@@ -91,6 +106,64 @@ afterEach(() => {
 })
 
 describe('useQuizParticipant', () => {
+  it('releases replacement submissions when retraction fails', async () => {
+    let reject!: (error: unknown) => void
+    const pending = new Promise<void>((_resolve, fail) => { reject = fail })
+    const fetch = vi.fn().mockReturnValueOnce(pending).mockResolvedValue({ success: true })
+    vi.stubGlobal('$fetch', fetch)
+    localValues.set('quiz-user-id', 'participant-id')
+    localValues.set('quiz-nickname', 'Before')
+    const { controller, selectedAnswer, confirmedAnswer } = createController(ref(0))
+    const change = controller.changeNickname()
+    controller.nicknameInput.value = 'After'
+    controller.setNickname()
+    selectedAnswer.value = 1
+    const request = controller.submitAnswer()
+    await Promise.resolve()
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch.mock.calls[0]![0]).toBe('/api/answers/retract')
+    reject(new Error('retraction failed'))
+    await Promise.all([
+      change,
+      request,
+    ])
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(fetch.mock.calls[1]![0]).toBe('/api/answers/submit')
+    expect(confirmedAnswer.value).toBe(1)
+    expect(controller.answerPending.value).toBe(false)
+  })
+
+  it('invalidates submissions and clears saved confirmation before changing nickname', async () => {
+    let resolve!: () => void
+    const pending = new Promise<void>((done) => { resolve = done })
+    const fetch = vi.fn().mockReturnValueOnce(pending).mockResolvedValue(undefined)
+    vi.stubGlobal('$fetch', fetch)
+    localValues.set('quiz-user-id', 'participant-id')
+    localValues.set('quiz-nickname', 'Participant')
+    sessionValues.set('answer-question-id', '1')
+    const { controller, selectedAnswer, confirmedAnswer, clearStoredAnswer } = createController(ref(0))
+    confirmedAnswer.value = 1
+    const request = controller.submitAnswer()
+    selectedAnswer.value = 1
+    void controller.submitAnswer()
+    const change = controller.changeNickname()
+
+    expect(controller.userNickname.value).toBe('')
+    expect(clearStoredAnswer).toHaveBeenCalledWith('question-id')
+    expect(selectedAnswer.value).toBeNull()
+    expect(confirmedAnswer.value).toBeNull()
+    expect(sessionValues.has('answer-question-id')).toBe(false)
+    resolve()
+    await Promise.all([
+      request,
+      change,
+    ])
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(sessionValues.has('answer-question-id')).toBe(false)
+    expect(confirmedAnswer.value).toBeNull()
+    expect(controller.answerError.value).toBe('')
+  })
+
   it('stores a nickname and submits the selected answer', async () => {
     const fetch = vi.fn().mockResolvedValue(undefined)
     vi.stubGlobal('$fetch', fetch)
@@ -106,6 +179,7 @@ describe('useQuizParticipant', () => {
     expect(fetch).toHaveBeenCalledWith('/api/answers/submit', {
       method: 'POST',
       body: {
+        question_id: 'question-id',
         selected_answer: { en: 'One' },
         user_id: 'participant-id',
         user_nickname: 'Alice',

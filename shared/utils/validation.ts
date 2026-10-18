@@ -180,6 +180,7 @@ export const EmojiSchema = v.pipe(
 )
 
 export const AnswerSubmitSchema = v.object({
+  question_id: requiredTrimmedStringSchema,
   selected_answer: localizedStringSchema,
   user_id: requiredTrimmedStringSchema,
   user_nickname: requiredTrimmedStringSchema,

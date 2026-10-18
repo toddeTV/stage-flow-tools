@@ -2,6 +2,7 @@ import { safeParse } from 'valibot'
 import { describe, expect, it } from 'vite-plus/test'
 
 import {
+  AnswerSubmitSchema,
   EmptyRequestSchema,
   DeleteQuestionSchema,
   EmojiSubmitSchema,
@@ -19,6 +20,22 @@ import {
   WebSocketQuerySchema,
   ToggleQuestionDisabledSchema,
 } from './validation'
+
+describe('AnswerSubmitSchema', () => {
+  it('requires and trims the question ID alongside the answer', () => {
+    const body = { selected_answer: { en: 'One' }, user_id: 'participant-id', user_nickname: 'Participant' }
+    for (const question_id of [
+      undefined,
+      '',
+      '   ',
+    ]) {
+      expect(safeParse(AnswerSubmitSchema, { ...body, question_id }).success).toBe(false)
+    }
+    const result = safeParse(AnswerSubmitSchema, { ...body, question_id: ' question-id ' })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.output.question_id).toBe('question-id')
+  })
+})
 
 describe('normalizeQuestionInput', () => {
   it('trims values and removes empty note locales', () => {
