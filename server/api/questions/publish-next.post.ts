@@ -10,7 +10,7 @@ export default defineApiHandler(async (event) => {
     throwApiError(404, 'quiz.no_enabled_question')
   }
 
-  const question = await publishQuestion(nextQuestion.id)
+  const question = await publishQuestion(nextQuestion.id, 'id')
 
   if (!question) {
     throwApiError(500, 'quiz.publish_next_failed')

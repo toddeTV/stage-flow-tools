@@ -7,7 +7,7 @@ export default defineApiHandler(async (event) => {
 
   const { key } = await readValidatedRequestBody<{ key: string }>(event, PublishQuestionSchema)
 
-  const question = await publishQuestion(key)
+  const question = await publishQuestion(key, 'key')
 
   if (!question) {
     throwApiError(404, 'quiz.question_not_found')
