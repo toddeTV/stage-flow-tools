@@ -28,6 +28,11 @@ Get the quiz application running in minutes.
    cp .env.example .env
    ```
 
+   Set `NUXT_ADMIN_PASSWORD` and `NUXT_JWT_SECRET` to separate private values in
+   your `.env` file. Generate them with `openssl rand -hex 32` and
+   `openssl rand -hex 48`, respectively. Both are required even for development;
+   empty values and the previous published defaults prevent server startup.
+
 4. **Start development server**
    ```bash
    vp run dev
@@ -41,10 +46,10 @@ Get the quiz application running in minutes.
 - **Leaderboard**: http://localhost:3000/admin/leaderboard
 - **Database Admin**: http://localhost:3000/admin/database
 
-## Default Credentials
+## Login Credentials
 
 - **Username**: admin
-- **Password**: 123
+- **Password**: Your configured `NUXT_ADMIN_PASSWORD` value
 
 ## Next Steps
 

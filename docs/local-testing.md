@@ -22,7 +22,10 @@ Before running the container, make sure you have a `.env` file in your project r
 cp .env.example .env
 ```
 
-Ensure the `NUXT_JWT_SECRET` and other variables are set correctly in this file.
+Set `NUXT_ADMIN_PASSWORD` and `NUXT_JWT_SECRET` to separate private values in this
+file before starting the container. Generate them with `openssl rand -hex 32`
+and `openssl rand -hex 48`, respectively. Missing, blank, or previous published
+default values prevent server startup.
 
 ### Command
 
