@@ -93,7 +93,7 @@ describe('maintainer deployment workflow', () => {
   })
 
   it('transports restart commands containing shell operators as one SSH argument', () => {
-    const restartCommand = 'cd /srv/stage-flow-tools && ./bin.py stop && ./bin.py start'
+    const restartCommand = 'cd /srv/example && docker compose up --detach --force-recreate'
     const restartCommandBase64 = Buffer.from(restartCommand).toString('base64')
     const workflow = readFile(workflowPath)
 
