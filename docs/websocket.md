@@ -23,6 +23,36 @@ ws.onmessage = (event) => {
 };
 ```
 
+The quiz and admin results clients load a current HTTP snapshot on every successful
+connection, including the first connection and reconnections. Participants use
+`/api/questions/active`; the results view uses `/api/results/current`, which requires
+admin authentication. The server does not replay missed events on connection.
+
+Initial loads, manual refreshes, and connection recovery share the same snapshot
+handling. Newer requests and relevant live events supersede pending snapshots, so a
+delayed response cannot replace newer state. A same-question refresh preserves the
+participant's draft and confirmed answer. A snapshot reporting no active question
+clears the corresponding display.
+
+A lock or answer-reset event for the displayed question applies immediately. If a
+participant snapshot is pending, the client replaces it with a fresh request so
+missed question edits are still recovered. The replacement preserves the latest
+lock state and reset-cleared answers. Partial events do not start a request when
+no valid snapshot is pending; full question and results events supersede snapshots
+without starting a replacement.
+
+Lock events for another question also replace a pending participant snapshot,
+including when no question is displayed. The current display stays in place until
+a fresh snapshot or full question event supplies the next question.
+
+Snapshot requests retry network failures, HTTP 408, HTTP 429, and HTTP 5xx at most
+twice: after one second, then after another two seconds. Other HTTP 4xx responses,
+including 401 and 403, are not retried. After the last failure, the client retains
+its last state; another connection or manual refresh can try again. Superseded
+requests, disconnects, and component disposal abort pending snapshots and cancel
+retry waits. This recovery does not synchronize answer resets missed while offline;
+see [`answers-reset`](#answers-reset).
+
 ### Query Parameters
 
 - **`channel`** - WebSocket channel: `default`, `results`, or `emojis`. The

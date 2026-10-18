@@ -43,11 +43,9 @@ const initialResults: Results = {
   totalVotes: 3,
 }
 
-function createController(fetchedResults = ref<Results | null>(initialResults)) {
-  const results = ref<Results | null>(null)
+function createController(results = ref<Results | null>(initialResults)) {
   const refreshResults = vi.fn().mockResolvedValue(undefined)
   const controller = useAdminResults({
-    fetchedResults,
     refreshResults,
     results,
   })
@@ -78,7 +76,7 @@ afterEach(() => {
 })
 
 describe('useAdminResults', () => {
-  it('hydrates results and derives result-bar values', () => {
+  it('derives result-bar values from the shared result state', () => {
     const { controller, results } = createController()
 
     expect(results.value).toEqual(initialResults)

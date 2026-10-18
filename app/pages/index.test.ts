@@ -6,17 +6,24 @@ import type { Question } from '~/types'
 import { EmojiSchema, getValidationIssues, NicknameSchema } from '#shared/utils/validation'
 import { useQuizSocket } from '~/composables/useQuizSocket'
 import UiButton from '~/components/ui/UiButton.vue'
+import UiInput from '~/components/ui/UiInput.vue'
 import UiRadioOption from '~/components/ui/UiRadioOption.vue'
 import ParticipantPage from './index.vue'
 
-const socket = vi.hoisted(() => ({ data: undefined as undefined | { value: string } }))
+const socket = vi.hoisted(() => ({
+  data: undefined as undefined | { value: string },
+  connect: () => {},
+  disconnect: () => {},
+}))
 vi.mock('@vueuse/core', async () => {
   const { ref } = await import('vue')
   return {
     useLocalStorage: () => ref('participant-id'),
-    useWebSocket: () => {
+    useWebSocket: (_url: unknown, options: { onConnected: () => void, onDisconnected: () => void }) => {
       const data = ref('')
       socket.data = data
+      socket.connect = options.onConnected
+      socket.disconnect = options.onDisconnected
       return { data, status: ref('OPEN'), send: vi.fn(), open: vi.fn(), close: vi.fn() }
     },
   }
@@ -51,7 +58,7 @@ async function renderPage() {
         UiButton,
         UiRadioOption,
         UiPageTitle: { template: '<h1><slot /></h1>' },
-        UiInput: { template: '<input>' },
+        UiInput,
         QuizMarkdownText: defineComponent({
           props: [
             'text',
@@ -91,7 +98,7 @@ beforeEach(() => {
   answerFetch.mockReset()
   questionFetch.mockReset().mockImplementation(async () => structuredClone(question))
   vi.stubGlobal('$fetch', (url: string, options: unknown) => url === '/api/questions/active'
-    ? questionFetch()
+    ? questionFetch(options)
     : answerFetch(url, options))
   vi.stubGlobal('computed', computed)
   vi.stubGlobal('ref', ref)
@@ -127,6 +134,76 @@ afterEach(() => {
 })
 
 describe('participant answer feedback', () => {
+  it('recovers a missed question and lock after reconnect without a manual refresh', async () => {
+    const page = await renderPage()
+    socket.connect()
+    await flushPromises()
+    socket.disconnect()
+    questionFetch.mockResolvedValueOnce({
+      ...question, id: 'next', question_text: { en: 'Next question' }, is_locked: true,
+    })
+    socket.connect()
+    await flushPromises()
+    expect(page.text()).toContain('Next question')
+    expect(page.text()).toContain('answersLocked')
+    expect(page.get<HTMLInputElement>('input[type="radio"]').element.disabled).toBe(true)
+    socket.disconnect()
+    questionFetch.mockResolvedValueOnce({ message: 'No active question' })
+    socket.connect()
+    await flushPromises()
+    expect(page.text()).toContain('waitingForQuestion')
+    expect(page.find('input[type="radio"]').exists()).toBe(false)
+  })
+
+  it.each([
+    'next',
+    'first',
+    null,
+  ])('preserves question %s recovery when changing nickname and rejoining', async (questionId) => {
+    sessionStorage.setItem('answer-first', '0')
+    answerFetch.mockResolvedValue({ success: true })
+    const page = await renderPage()
+    const recovery = deferred<Question | { message: string }>()
+    socket.disconnect()
+    questionFetch.mockReturnValueOnce(recovery.promise)
+    socket.connect()
+    const signal = (questionFetch.mock.calls[1]![0] as { signal: AbortSignal }).signal
+
+    await page.findAll('button').find(button => button.text() === 'changeButton')!.trigger('click')
+    await flushPromises()
+    expect(signal.aborted).toBe(false)
+    expect(localStorage.getItem('quiz-nickname')).toBeNull()
+    expect(sessionStorage.getItem('answer-first')).toBeNull()
+    expect(answerFetch).toHaveBeenCalledExactlyOnceWith('/api/answers/retract', {
+      method: 'POST',
+      body: { question_id: 'first', user_id: 'participant-id' },
+    })
+
+    await page.get('input[placeholder="nicknamePlaceholder"]').setValue('Rejoined')
+    await page.get('form').trigger('submit')
+    expect(localStorage.getItem('quiz-nickname')).toBe('Rejoined')
+    expect(page.find('.answer-banner').exists()).toBe(false)
+    recovery.resolve(questionId
+      ? { ...question, id: questionId, question_text: { en: 'Recovered question' } }
+      : { message: 'No active question' })
+    await flushPromises()
+
+    if (questionId) {
+      expect(page.text()).toContain('Recovered question')
+      expect(page.findAll<HTMLInputElement>('input[type="radio"]').every(input => !input.element.checked)).toBe(true)
+    }
+    else {
+      expect(page.text()).toContain('waitingForQuestion')
+      expect(page.find('input[type="radio"]').exists()).toBe(false)
+    }
+    expect(page.text()).not.toContain('First question')
+    expect(page.find('.answer-banner').exists()).toBe(false)
+    expect(sessionStorage.getItem('answer-first')).toBeNull()
+    expect(localStorage.getItem('quiz-user-id')).toBe('participant-id')
+    expect(questionFetch).toHaveBeenCalledTimes(2)
+    expect(logger_error).not.toHaveBeenCalled()
+  })
+
   it('confirms optimistically, replaces success on failure, and retries the selected answer', async () => {
     const first = deferred<unknown>()
     answerFetch.mockReturnValueOnce(first.promise).mockResolvedValueOnce({ success: true })
@@ -225,13 +302,19 @@ describe('participant answer feedback', () => {
 
   it('does not let a delayed HTTP refresh reopen a socket-locked question', async () => {
     const refresh = deferred<Question>()
+    const replacement = deferred<Question>()
     const page = await renderPage()
-    questionFetch.mockReturnValueOnce(refresh.promise)
+    questionFetch.mockReturnValueOnce(refresh.promise).mockReturnValueOnce(replacement.promise)
     await page.findAll('button').find(button => button.text().includes('refreshButton'))!.trigger('click')
     socket.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } })
     await flushPromises()
     refresh.resolve(question)
     await flushPromises()
     expect(page.get<HTMLInputElement>('input[type="radio"]').element.disabled).toBe(true)
+    replacement.resolve({ ...question, is_locked: true, question_text: { en: 'Edited while offline' } })
+    await flushPromises()
+    expect(page.get<HTMLInputElement>('input[type="radio"]').element.disabled).toBe(true)
+    expect(page.text()).toContain('Edited while offline')
+    expect(questionFetch).toHaveBeenCalledTimes(3)
   })
 })

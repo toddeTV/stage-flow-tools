@@ -31,6 +31,12 @@ Use `/admin/results` with [admin access](admin-access.md). For a display that ca
 
 Results load over HTTP and update through the protected results WebSocket channel. This page does not consume `refresh`, `colorMode`, or `background`, even though the shared display parser understands them.
 
+Every connection and reconnection reloads the current results, including changes
+missed during an interruption. No active question clears the display. Initial
+loads and manual refreshes use the same ordering protection, so older HTTP responses
+cannot replace newer live results. See [WebSockets](../websocket.md#client-connection)
+for snapshot retries and cancellation.
+
 Hiding results masks counts and bars. Scrambling masks option text and shuffles option order while leaving visible counts and bars available. Option emoji have an independent visibility control, initially off. When both hiding and scrambling are active, both sets of masking apply. The note appears only when neither hiding nor scrambling is active.
 
 New questions reset option emoji visibility. Manual display controls do not alter submitted answers or lock voting. Resetting answers deletes the active question's answers; unpublishing retains them. Random-winner delivery fails if the selected participant is no longer connected.
