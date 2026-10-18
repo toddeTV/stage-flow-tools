@@ -21,6 +21,7 @@ type AnswerQueue = {
   version: number
   pending: Submission | null
   running: Promise<void> | null
+  inFlight: Promise<unknown> | null
 }
 
 /** Serializes optimistic writes per question and keeps stale responses out of visible state. */
@@ -65,6 +66,16 @@ export function useQuizAnswers(
     invalidate()
   }, true)
 
+  /** Waits only for the current HTTP write, never for work blocked by a retraction. */
+  async function waitForInFlightSubmission(questionId: string): Promise<void> {
+    try {
+      await queues.get(questionId)?.inFlight
+    }
+    catch {
+      // Submission errors belong to drain; a failed write must still allow retraction.
+    }
+  }
+
   /** Drains only the latest queued selection; each request owns an immutable snapshot. */
   async function drain(queue: AnswerQueue) {
     while (queue.pending && !disposed) {
@@ -86,10 +97,11 @@ export function useQuizAnswers(
       }
 
       try {
-        await $fetch('/api/answers/submit', {
+        queue.inFlight = $fetch('/api/answers/submit', {
           method: 'POST',
           body: { question_id, ...answer },
         })
+        await queue.inFlight
         if (disposed || queue.version !== version) continue
         sessionStorage.setItem(`answer-${question_id}`, index.toString())
         if (activeQuestion.value?.id === question_id) confirmedAnswer.value = index
@@ -110,6 +122,7 @@ export function useQuizAnswers(
         }
       }
       finally {
+        queue.inFlight = null
         if (!disposed && queue.version === version && activeQuestion.value?.id === question_id && !queue.pending) {
           answerPending.value = false
         }
@@ -131,7 +144,7 @@ export function useQuizAnswers(
 
     let queue = queues.get(question.id)
     if (!queue) {
-      queue = { version: 0, pending: null, running: null }
+      queue = { version: 0, pending: null, running: null, inFlight: null }
       queues.set(question.id, queue)
     }
     queue.pending = {
@@ -151,5 +164,5 @@ export function useQuizAnswers(
     return currentQueue.running
   }
 
-  return { answerError, answerPending, invalidateAnswers: invalidate, submitAnswer }
+  return { answerError, answerPending, invalidateAnswers: invalidate, submitAnswer, waitForInFlightSubmission }
 }

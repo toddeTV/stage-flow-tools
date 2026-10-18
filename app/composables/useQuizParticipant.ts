@@ -26,6 +26,7 @@ export function useQuizParticipant(options: UseQuizParticipantOptions) {
     answerPending,
     invalidateAnswers,
     submitAnswer,
+    waitForInFlightSubmission,
   } = useQuizAnswers(options, userNickname, retractions)
 
   onMounted(() => {
@@ -66,8 +67,12 @@ export function useQuizParticipant(options: UseQuizParticipantOptions) {
   /** Orders repeated retractions and holds replacement submissions until they settle. */
   async function queueRetraction(questionId: string, userId: string) {
     const previous = retractions.get(questionId)
+    const submission = waitForInFlightSubmission(questionId)
     const request = (async () => {
-      await previous
+      await Promise.all([
+        previous,
+        submission,
+      ])
       try {
         await $fetch('/api/answers/retract', {
           method: 'POST',

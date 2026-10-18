@@ -10,7 +10,7 @@ import { flushPromises } from '@vue/test-utils'
 import type { Question, Results } from '~/types'
 
 const socketState = vi.hoisted(() => ({
-  data: undefined as undefined | { value: string },
+  receive: (_data: string) => {},
   connect: () => {},
   disconnect: () => {},
 }))
@@ -19,13 +19,16 @@ vi.mock('@vueuse/core', async () => {
   const { ref } = await import('vue')
   return {
     useLocalStorage: () => ref<string | null>(null),
-    useWebSocket: (_url: unknown, options: { onConnected: () => void, onDisconnected: () => void }) => {
-      const data = ref('')
+    useWebSocket: (_url: unknown, options: {
+      onConnected: () => void
+      onDisconnected: () => void
+      onMessage: (socket: unknown, event: { data: string }) => void
+    }) => {
       const status = ref('CLOSED')
-      socketState.data = data
+      socketState.receive = data => options.onMessage(undefined, { data })
       socketState.connect = () => { status.value = 'OPEN'; options.onConnected() }
       socketState.disconnect = () => { status.value = 'CLOSED'; options.onDisconnected() }
-      return { close: vi.fn(), data, open: vi.fn(), send: vi.fn(), status }
+      return { close: vi.fn(), open: vi.fn(), send: vi.fn(), status }
     },
   }
 })
@@ -142,10 +145,7 @@ describe('useQuizSocket', () => {
       'second',
       'first',
     ]) {
-      socketState.data!.value = JSON.stringify({ event: 'answers-reset', data: { questionId } })
-      // Ensure identical consecutive reset messages also trigger the socket watcher.
-      await nextTick()
-      socketState.data!.value = 'pong'
+      socketState.receive(JSON.stringify({ event: 'answers-reset', data: { questionId } }))
       await nextTick()
       if (questionId === 'second') expect(confirmedAnswer.value).toBe(0)
     }
@@ -171,12 +171,12 @@ describe('useQuizSocket', () => {
       'first-question',
       'second-question',
     ]) {
-      socketState.data!.value = JSON.stringify({ data: { questionId }, event: 'answers-reset' })
+      socketState.receive(JSON.stringify({ data: { questionId }, event: 'answers-reset' }))
       await nextTick()
     }
-    socketState.data!.value = JSON.stringify({ data: null, event: 'new-question' })
+    socketState.receive(JSON.stringify({ data: null, event: 'new-question' }))
     await nextTick()
-    socketState.data!.value = JSON.stringify({ data: null, event: 'results-update' })
+    socketState.receive(JSON.stringify({ data: null, event: 'results-update' }))
     await nextTick()
 
     expect(activeQuestion.value).toBeNull()
@@ -189,7 +189,7 @@ describe('useQuizSocket', () => {
       ],
     ]))
 
-    socketState.data!.value = JSON.stringify({ data: { id: 'first-question' }, event: 'new-question' })
+    socketState.receive(JSON.stringify({ data: { id: 'first-question' }, event: 'new-question' }))
     await nextTick()
     expect(activeQuestion.value?.id).toBe('first-question')
     expect(selectedAnswer.value).toBeNull()
@@ -201,10 +201,10 @@ describe('useQuizSocket', () => {
     selectedAnswer.value = 1
     storedAnswers.set('answer-inactive-question', '0')
 
-    socketState.data!.value = JSON.stringify({
+    socketState.receive(JSON.stringify({
       data: { questionId: 'inactive-question' },
       event: 'answers-reset',
-    })
+    }))
     await nextTick()
 
     expect(storedAnswers.has('answer-inactive-question')).toBe(false)
@@ -272,7 +272,7 @@ describe('snapshot recovery', () => {
     snapshotFetch.mockReturnValueOnce(stale.promise)
     const loading = state.refreshSnapshot()
     const signal = snapshotFetch.mock.calls[0]![1].signal as AbortSignal
-    socketState.data!.value = JSON.stringify({ event: 'new-question', data: question('new') })
+    socketState.receive(JSON.stringify({ event: 'new-question', data: question('new') }))
     stale.resolve(question())
     await loading
     expect(signal.aborted).toBe(true)
@@ -288,7 +288,7 @@ describe('snapshot recovery', () => {
     const stale = deferred<Results>()
     snapshotFetch.mockReturnValueOnce(stale.promise)
     const loading = state.refreshSnapshot()
-    socketState.data!.value = JSON.stringify({ event: 'results-update', data: liveResults })
+    socketState.receive(JSON.stringify({ event: 'results-update', data: liveResults }))
     stale.resolve(result())
     await loading
     expect(state.results.value).toEqual(liveResults)
@@ -396,7 +396,7 @@ describe('snapshot recovery', () => {
     expect(vi.getTimerCount()).toBe(1)
     if (action === 'disconnect') socketState.disconnect()
     if (action === 'dispose') scopes[0]!.stop()
-    if (action === 'event') socketState.data!.value = JSON.stringify({ event: 'new-question', data: question('live') })
+    if (action === 'event') socketState.receive(JSON.stringify({ event: 'new-question', data: question('live') }))
     if (action === 'refresh') await state.refreshSnapshot()
     await loading
     expect(vi.getTimerCount()).toBe(0)
@@ -440,7 +440,7 @@ describe('partial question recovery', () => {
     const replacement = deferred<Question>()
     snapshotFetch.mockReturnValueOnce(stale.promise).mockReturnValueOnce(replacement.promise)
     socketState.connect()
-    socketState.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'next', is_locked: true } })
+    socketState.receive(JSON.stringify({ event: 'lock-status', data: { questionId: 'next', is_locked: true } }))
     expect(snapshotFetch).toHaveBeenCalledTimes(2)
     expect((snapshotFetch.mock.calls[0]![1].signal as AbortSignal).aborted).toBe(true)
     expect(state.activeQuestion.value).toEqual(displayed)
@@ -460,7 +460,7 @@ describe('partial question recovery', () => {
   ])('ignores unrelated lock events without pending recovery on %s', (channel) => {
     const state = useQuizSocket(channel)
     state.updateActiveQuestion(question())
-    socketState.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'next', is_locked: true } })
+    socketState.receive(JSON.stringify({ event: 'lock-status', data: { questionId: 'next', is_locked: true } }))
     expect(state.activeQuestion.value?.id).toBe('first')
     expect(state.activeQuestion.value?.is_locked).toBe(false)
     expect(snapshotFetch).not.toHaveBeenCalled()
@@ -473,7 +473,7 @@ describe('partial question recovery', () => {
     snapshotFetch.mockReturnValueOnce(stale.promise)
     const loading = state.refreshSnapshot()
     socketState.disconnect()
-    socketState.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'next', is_locked: true } })
+    socketState.receive(JSON.stringify({ event: 'lock-status', data: { questionId: 'next', is_locked: true } }))
     expect(snapshotFetch).toHaveBeenCalledOnce()
     stale.resolve(question('next'))
     await loading
@@ -495,7 +495,7 @@ describe('partial question recovery', () => {
     snapshotFetch.mockReturnValueOnce(stale.promise).mockReturnValueOnce(replacement.promise)
     const loading = state.refreshSnapshot()
     const signal = snapshotFetch.mock.calls[0]![1].signal as AbortSignal
-    socketState.data!.value = JSON.stringify({ event, data: { questionId: 'first', is_locked: true } })
+    socketState.receive(JSON.stringify({ event, data: { questionId: 'first', is_locked: true } }))
     expect(signal.aborted).toBe(true)
     expect(snapshotFetch).toHaveBeenCalledTimes(2)
     if (event === 'lock-status') {
@@ -536,7 +536,7 @@ describe('partial question recovery', () => {
     const state = useQuizSocket()
     state.updateActiveQuestion(question())
     state.selectedAnswer.value = 1
-    socketState.data!.value = JSON.stringify({ event, data: { questionId: 'first', is_locked: true } })
+    socketState.receive(JSON.stringify({ event, data: { questionId: 'first', is_locked: true } }))
     expect(snapshotFetch).not.toHaveBeenCalled()
     if (event === 'lock-status') expect(state.activeQuestion.value?.is_locked).toBe(true)
     else expect(state.selectedAnswer.value).toBeNull()
@@ -552,7 +552,7 @@ describe('partial question recovery', () => {
     snapshotFetch.mockReturnValueOnce(snapshot.promise)
     const loading = state.refreshSnapshot()
     const signal = snapshotFetch.mock.calls[0]![1].signal as AbortSignal
-    socketState.data!.value = JSON.stringify({ event, data: { questionId: 'first', is_locked: true } })
+    socketState.receive(JSON.stringify({ event, data: { questionId: 'first', is_locked: true } }))
     expect(signal.aborted).toBe(false)
     expect(snapshotFetch).toHaveBeenCalledOnce()
     snapshot.resolve(result(7))
@@ -572,7 +572,7 @@ describe('partial question recovery', () => {
     const replacement = deferred<Question>()
     snapshotFetch.mockReturnValueOnce(stale.promise).mockReturnValueOnce(replacement.promise)
     const loading = state.refreshSnapshot()
-    socketState.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } })
+    socketState.receive(JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } }))
     expect(snapshotFetch).toHaveBeenCalledTimes(2)
     const signal = snapshotFetch.mock.calls[1]![1].signal as AbortSignal
     if (action === 'disconnect') socketState.disconnect()
@@ -582,7 +582,7 @@ describe('partial question recovery', () => {
       await state.refreshSnapshot()
     }
     if (action === 'new-question') {
-      socketState.data!.value = JSON.stringify({ event: 'new-question', data: question('latest') })
+      socketState.receive(JSON.stringify({ event: 'new-question', data: question('latest') }))
     }
     expect(signal.aborted).toBe(true)
     replacement.resolve(question('stale-replacement'))
@@ -601,7 +601,7 @@ describe('partial question recovery', () => {
     const stale = deferred<Question>()
     snapshotFetch.mockReturnValueOnce(stale.promise).mockRejectedValue(new TypeError('offline'))
     const loading = state.refreshSnapshot()
-    socketState.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } })
+    socketState.receive(JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } }))
     await vi.advanceTimersByTimeAsync(1000)
     expect(snapshotFetch).toHaveBeenCalledTimes(3)
     expect(vi.getTimerCount()).toBe(1)

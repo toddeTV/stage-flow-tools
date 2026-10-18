@@ -1,4 +1,5 @@
 import { effectScope, onScopeDispose, ref, watch } from 'vue'
+import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { useQuizParticipant } from '../app/composables/useQuizParticipant'
 import { EmojiSchema, getValidationIssues, NicknameSchema } from '../shared/utils/validation'
@@ -73,6 +74,105 @@ afterEach(() => {
 })
 
 describe('nickname-change answer ordering', () => {
+  it.each([
+    { changes: 1, rejoin: false, fail: false },
+    { changes: 1, rejoin: true, fail: false },
+    { changes: 2, rejoin: true, fail: false },
+    { changes: 1, rejoin: true, fail: true },
+  ])('orders writes ($changes changes, rejoin=$rejoin, fail=$fail)', async ({ changes, rejoin, fail }) => {
+    const question = await createQuestion({
+      key: 'delayed-submission',
+      question_text: { en: 'Question' },
+      answer_options: [
+        { text: { en: 'One' } },
+        { text: { en: 'Two' } },
+      ],
+    })
+    await publishQuestion(question.id, 'id')
+    const selectedAnswer = ref<number | null>(0)
+    const confirmedAnswer = ref<number | null>(null)
+    const answerReset = ref<{ questionId: string } | null>(null)
+    const gate = deferred()
+    const operations: string[] = []
+    const retract = vi.fn(async (body: { user_id: string, question_id: string }) => {
+      operations.push('retract')
+      await retractAnswer(body.user_id, body.question_id)
+    })
+    const send = vi.fn(async (body: Parameters<typeof submitAnswer>[0]) => {
+      if (body.user_nickname === 'Before') {
+        await gate.promise
+        if (fail) throw new Error('submission failed')
+      }
+      operations.push(body.user_nickname)
+      await submitAnswer(body)
+    })
+    vi.stubGlobal('$fetch', async (path: string, { body }: { body: Parameters<typeof submitAnswer>[0] }) => {
+      if (path === '/api/answers/retract') await retract(body)
+      else await send(body)
+      return { success: true }
+    })
+    const controller = scope.run(() => useQuizParticipant({
+      activeQuestion: ref(question), selectedAnswer, confirmedAnswer, answerReset,
+      refreshQuestion: async () => {},
+      clearStoredAnswer: (questionId) => {
+        answerReset.value = { questionId }
+        selectedAnswer.value = null
+        confirmedAnswer.value = null
+        session.delete(`answer-${questionId}`)
+      },
+    }))!
+    const firstSubmission = controller.submitAnswer()
+    // This unsent old selection must be discarded on nickname change.
+    selectedAnswer.value = 1
+    void controller.submitAnswer()
+    const pendingChanges: Promise<void>[] = []
+    let replacement: Promise<void> | undefined
+    for (let index = 0; index < changes; index++) {
+      pendingChanges.push(controller.changeNickname())
+      if (rejoin) {
+        controller.nicknameInput.value = `After ${index + 1}`
+        controller.setNickname()
+        selectedAnswer.value = 1
+        replacement = controller.submitAnswer()
+      }
+    }
+    try {
+      await flushPromises()
+      expect(retract).not.toHaveBeenCalled()
+      expect(send).toHaveBeenCalledOnce()
+      expect(confirmedAnswer.value).toBeNull()
+      expect(session.has(`answer-${question.id}`)).toBe(false)
+    }
+    finally {
+      gate.resolve()
+      await Promise.all([
+        firstSubmission,
+        replacement,
+        ...pendingChanges,
+      ])
+    }
+
+    expect(operations).toEqual([
+      ...(fail ? [] : [
+        'Before',
+      ]),
+      ...Array.from({ length: changes }, () => 'retract'),
+      ...(rejoin ? [
+        `After ${changes}`,
+      ] : []),
+    ])
+    expect(send).toHaveBeenCalledTimes(rejoin ? 2 : 1)
+    await expect(getAnswersForQuestion(question.id)).resolves.toEqual(rejoin
+      ? [
+        expect.objectContaining({ selected_answer: { en: 'Two' }, user_nickname: `After ${changes}` }),
+      ]
+      : [])
+    expect(confirmedAnswer.value).toBe(rejoin ? 1 : null)
+    expect(session.get(`answer-${question.id}`)).toBe(rejoin ? '1' : undefined)
+    expect(controller.answerPending.value).toBe(false)
+    expect(controller.answerError.value).toBe('')
+  })
+
   it.each([
     1,
     2,

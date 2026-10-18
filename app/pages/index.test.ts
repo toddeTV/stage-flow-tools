@@ -11,7 +11,7 @@ import UiRadioOption from '~/components/ui/UiRadioOption.vue'
 import ParticipantPage from './index.vue'
 
 const socket = vi.hoisted(() => ({
-  data: undefined as undefined | { value: string },
+  receive: (_data: string) => {},
   connect: () => {},
   disconnect: () => {},
 }))
@@ -19,12 +19,15 @@ vi.mock('@vueuse/core', async () => {
   const { ref } = await import('vue')
   return {
     useLocalStorage: () => ref('participant-id'),
-    useWebSocket: (_url: unknown, options: { onConnected: () => void, onDisconnected: () => void }) => {
-      const data = ref('')
-      socket.data = data
+    useWebSocket: (_url: unknown, options: {
+      onConnected: () => void
+      onDisconnected: () => void
+      onMessage: (socket: unknown, event: { data: string }) => void
+    }) => {
+      socket.receive = data => options.onMessage(undefined, { data })
       socket.connect = options.onConnected
       socket.disconnect = options.onDisconnected
-      return { data, status: ref('OPEN'), send: vi.fn(), open: vi.fn(), close: vi.fn() }
+      return { status: ref('OPEN'), send: vi.fn(), open: vi.fn(), close: vi.fn() }
     },
   }
 })
@@ -237,7 +240,7 @@ describe('participant answer feedback', () => {
     await flushPromises()
     await page.get('input[type="radio"][value="1"]').setValue()
     await flushPromises()
-    socket.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } })
+    socket.receive(JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } }))
     await flushPromises()
 
     expect(page.get('.answer-banner').text()).toContain('One')
@@ -253,7 +256,7 @@ describe('participant answer feedback', () => {
     answerFetch.mockReturnValueOnce(answer.promise)
     const page = await renderPage()
     await page.get('input[type="radio"][value="0"]').setValue()
-    socket.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } })
+    socket.receive(JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } }))
     await flushPromises()
     expect(page.find('.answer-banner').exists()).toBe(false)
     expect(page.get('[role="status"]').text()).toBe('answerUnconfirmed')
@@ -286,10 +289,10 @@ describe('participant answer feedback', () => {
     await flushPromises()
     expect(questionFetch).toHaveBeenCalledTimes(2)
 
-    socket.data!.value = JSON.stringify({
+    socket.receive(JSON.stringify({
       event: 'new-question',
       data: { ...question, id: 'second', question_text: { en: 'Second question' } },
-    })
+    }))
     await flushPromises()
     refresh.resolve(question)
     await flushPromises()
@@ -306,7 +309,7 @@ describe('participant answer feedback', () => {
     const page = await renderPage()
     questionFetch.mockReturnValueOnce(refresh.promise).mockReturnValueOnce(replacement.promise)
     await page.findAll('button').find(button => button.text().includes('refreshButton'))!.trigger('click')
-    socket.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } })
+    socket.receive(JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } }))
     await flushPromises()
     refresh.resolve(question)
     await flushPromises()

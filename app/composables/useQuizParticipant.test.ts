@@ -1,4 +1,5 @@
 import { ref, watch } from 'vue'
+import { flushPromises } from '@vue/test-utils'
 import {
   afterEach,
   beforeEach,
@@ -119,7 +120,7 @@ describe('useQuizParticipant', () => {
     controller.setNickname()
     selectedAnswer.value = 1
     const request = controller.submitAnswer()
-    await Promise.resolve()
+    await flushPromises()
     expect(fetch).toHaveBeenCalledOnce()
     expect(fetch.mock.calls[0]![0]).toBe('/api/answers/retract')
     reject(new Error('retraction failed'))

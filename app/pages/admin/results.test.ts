@@ -8,7 +8,7 @@ import UiButton from '~/components/ui/UiButton.vue'
 import ResultsPage from './results.vue'
 
 const socket = vi.hoisted(() => ({
-  data: undefined as undefined | { value: string },
+  receive: (_data: string) => {},
   connect: () => {},
   disconnect: () => {},
 }))
@@ -16,12 +16,15 @@ vi.mock('@vueuse/core', async () => {
   const { ref } = await import('vue')
   return {
     useLocalStorage: () => ref('participant-id'),
-    useWebSocket: (_url: unknown, options: { onConnected: () => void, onDisconnected: () => void }) => {
-      const data = ref('')
-      socket.data = data
+    useWebSocket: (_url: unknown, options: {
+      onConnected: () => void
+      onDisconnected: () => void
+      onMessage: (socket: unknown, event: { data: string }) => void
+    }) => {
+      socket.receive = data => options.onMessage(undefined, { data })
       socket.connect = options.onConnected
       socket.disconnect = options.onDisconnected
-      return { data, status: ref('OPEN'), send: vi.fn(), open: vi.fn(), close: vi.fn() }
+      return { status: ref('OPEN'), send: vi.fn(), open: vi.fn(), close: vi.fn() }
     },
   }
 })
@@ -119,7 +122,7 @@ describe('results snapshot recovery', () => {
     let resolve!: (value: Results) => void
     snapshotFetch.mockReturnValueOnce(new Promise<Results>((done) => { resolve = done }))
     await page.findAll('button').find(button => button.text().includes('refreshButton'))!.trigger('click')
-    socket.data!.value = JSON.stringify({ event: 'results-update', data: null })
+    socket.receive(JSON.stringify({ event: 'results-update', data: null }))
     resolve(initialResults)
     await flushPromises()
     expect(page.text()).toContain('noActiveQuestion')
