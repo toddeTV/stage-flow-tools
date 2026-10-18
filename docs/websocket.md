@@ -6,7 +6,7 @@ Real-time communication system documentation.
 
 ### Connection Management
 
-- **Endpoint**: `ws://localhost:3000/_ws`
+- **Endpoint**: `ws://localhost:3000/_ws/default` (use `wss://` over HTTPS)
 - **Protocol**: Native WebSocket
 - **Framework**: Nitro experimental WebSocket
 
@@ -14,9 +14,10 @@ Real-time communication system documentation.
 
 ```javascript
 const ws = new WebSocket(
-  "ws://localhost:3000/_ws?channel=default&userId=abc123",
+  "ws://localhost:3000/_ws/default?channel=default&userId=abc123",
 );
 ws.onmessage = (event) => {
+  if (event.data === "pong") return;
   const data = JSON.parse(event.data);
   // Handle message
 };
@@ -29,24 +30,60 @@ ws.onmessage = (event) => {
   and a matching browser origin.
 - **`userId`** - Optional non-empty user identifier for tracking
 
-The server validates the connection query with the shared Valibot schema before adding a peer. An invalid query closes the handshake with close code `1008` and reason `validation.invalid_websocket_query`.
+The server validates the connection query with the shared Valibot schema before adding a peer. An invalid query closes the connection with close code `1008` and reason `validation.invalid_websocket_query`.
 
 ## Event Types
 
 ### Server-to-Client Events
 
+Application events use JSON envelopes with `event` and `data`. Heartbeat replies
+are raw text. All example data below is synthetic.
+
+| Event | Delivery | Trigger |
+| --- | --- | --- |
+| `new-question` | All channels | Publish, edit the active question, or replace the active state with `null` |
+| `lock-status` | All channels | Toggle or explicitly set a question's lock |
+| `results-update` | `results` | Answer/retraction/lock changes after the buffer window, or an immediate admin state replacement |
+| `answers-reset` | `default` | Reset active answers, confirm an answered option change, or reset the entire quiz |
+| `emojis` | `emojis` | Flush queued reactions in a batch |
+| `winner-selected` | Winning participant's matching `default` connections | Successful random-winner selection |
+| `pong` | Connection that sent `ping` | Accepted raw-text heartbeat |
+
 #### `new-question`
 
-Broadcast when a question is published, the active question is edited or updated by
-an import, or all questions are cleared. The payload uses the public question shape:
-it excludes the admin note, key, lifecycle and queue fields, and answer-option emoji.
-When all questions are cleared, `data` is `null`.
+Broadcast when a question is published or the active question is edited. The payload
+uses the public question shape: it excludes the admin note, key, author timestamp,
+disabled/published flags, queue position, and answer-option emoji. It retains
+`is_active` and `is_locked`.
+
+Unpublishing or deleting the active question, deleting all questions, and resetting
+the quiz send `data: null`. Deleting an inactive question does not replace the active
+state. A successful question-package import only creates new questions and sends no
+WebSocket events.
 
 ```json
 {
   "event": "new-question",
   "data": {
-    /* question object */
+    "id": "example-question",
+    "question_text": {
+      "en": "Choose an option."
+    },
+    "is_active": true,
+    "is_locked": false,
+    "createdAt": "2026-10-17T12:00:00.000Z",
+    "answer_options": [
+      {
+        "text": {
+          "en": "Option A"
+        }
+      },
+      {
+        "text": {
+          "en": "Option B"
+        }
+      }
+    ]
   }
 }
 ```
@@ -60,26 +97,68 @@ Question lock state change
   "event": "lock-status",
   "data": {
     "questionId": "string",
-    "is_locked": "boolean"
+    "is_locked": true
   }
 }
 ```
 
 #### `results-update`
 
-Bundled voting results (batched every 2 seconds)
+Voting results for the current question, with the full admin question shape. The
+first answer, retraction, or lock change starts a two-second buffer window; further
+changes within that window share one calculation and broadcast. This is not a
+periodic broadcast when no changes occur.
 
 ```json
 {
   "event": "results-update",
   "data": {
-    /* results object */
+    "question": {
+      "id": "example-question",
+      "key": "round-1-question-1",
+      "question_text": {
+        "en": "Choose an option."
+      },
+      "answer_options": [
+        {
+          "text": {
+            "en": "Option A"
+          },
+          "emoji": "⭐"
+        },
+        {
+          "text": {
+            "en": "Option B"
+          }
+        }
+      ],
+      "is_active": true,
+      "is_disabled": false,
+      "is_locked": false,
+      "sortOrder": 0,
+      "createdAt": "2026-10-17T12:00:00.000Z",
+      "authoredAt": null,
+      "alreadyPublished": true
+    },
+    "results": {
+      "Option A": {
+        "count": 10,
+        "emoji": "⭐"
+      },
+      "Option B": {
+        "count": 5
+      }
+    },
+    "totalVotes": 15,
+    "totalConnections": 42
   }
 }
 ```
 
-`results-update` may be sent immediately for explicit admin actions such as answer reset
-or editing the active question.
+Publication, active-question edits, and resetting active answers cancel buffered
+updates and send fresh results immediately. Unpublishing or deleting the active
+question, deleting all questions, and resetting the quiz cancel buffered updates
+and send `data: null`. An expected-key unpublish mismatch sends no events.
 
 #### `answers-reset`
 
@@ -120,7 +199,9 @@ Emoji reaction batch
 
 #### `winner-selected`
 
-Sent to a specific user when they are picked as a random winner (via `/api/results/pick-random-user`). Only delivered to the winning user's WebSocket connection.
+Sent when a participant is picked as a random winner via
+`/api/results/pick-random-user`. Delivered only to `default` channel connections
+registered with the winning participant's user ID.
 
 ```json
 {
@@ -136,16 +217,22 @@ Sent to a specific user when they are picked as a random winner (via `/api/resul
 
 #### `pong`
 
-Server response to client `ping` keep-alive.
+Raw-text server response to the client heartbeat. It is not a JSON envelope or a
+JSON-encoded string; handle it before parsing application events.
+
+```text
+pong
+```
 
 ### Client-to-Server
 
 #### `ping`
 
-Keep-alive message
+Send the literal text `ping`, for example with `ws.send("ping")`. Do not send
+`JSON.stringify("ping")`, which adds quotation marks to the transmitted text.
 
-```json
-"ping"
+```text
+ping
 ```
 
 This is the only accepted client-to-server message. Invalid messages are ignored and never broadcast or logged as application errors.
@@ -161,20 +248,17 @@ This is the only accepted client-to-server message. Invalid messages are ignored
 
 ### Reconnection Logic
 
-```javascript
-// Auto-reconnect after 3 seconds
-ws.onclose = () => {
-  setTimeout(() => {
-    setupWebSocket();
-  }, 3000);
-};
-```
+The participant/results composable and emoji overlay use VueUse `useWebSocket`
+with `autoReconnect: true`. The current dependency defaults retry unexpected
+disconnects after one second, without a fixed attempt limit or exponential backoff.
+An explicit client `close()` stops reconnection; `open()` starts a connection again.
 
 ### Keep-Alive
 
-- **Interval**: 30 seconds
-- **Message**: Simple "ping"
-- **Purpose**: Prevent idle disconnect
+- **Participant/results interval**: 30 seconds through the shared quiz socket
+- **Message**: Raw `ping`, answered with raw `pong`
+- **Purpose**: Keep the connection active and detect missing heartbeat responses
+- **Emoji overlay**: Automatic reconnect is enabled, but no heartbeat is configured
 
 ## Broadcasting Strategy
 
@@ -183,22 +267,24 @@ ws.onclose = () => {
 - New question published
 - Lock status changed
 - Answer reset
+- Fresh results after publication, active-question edits, or active-answer reset
+- Empty question/results state after unpublish, active deletion, delete-all, or quiz reset
 
 ### Bundled Events
 
-- Results updates (every 2 seconds)
-- Reduces network traffic
-- Smooths UI updates
-- Emoji reactions (every `NUXT_EMOJI_BATCH_TICK_MS` milliseconds, up to
-  `NUXT_EMOJI_BATCH_MAX_SIZE` reactions per batch)
+- Result changes share a two-second buffer window before calculation and delivery
+- Emoji reactions flush after `NUXT_EMOJI_BATCH_TICK_MS` milliseconds while queued,
+  up to `NUXT_EMOJI_BATCH_MAX_SIZE` reactions per batch
 
 ## Error Handling
 
 ### Connection Errors
 
-- Automatic reconnection
-- Exponential backoff
-- Maximum retry limit
+- Unexpected disconnects use the [automatic reconnect behavior](#reconnection-logic).
+- Explicit client closure stops automatic reconnection.
+- A rejected query closes with `1008` and `validation.invalid_websocket_query`.
+- The protected results channel closes with `1008` and `auth.origin_invalid` for a
+  missing or mismatched origin, or `auth.token_required` when authentication fails.
 
 ### Message Errors
 

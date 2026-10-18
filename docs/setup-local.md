@@ -62,16 +62,16 @@ The command applies local migrations and refuses to overwrite existing questions
 
 ### Reset Data
 
-```bash
-rm -rf .data/
-# Restart the app to recreate the quiz database
-```
+Use the [reset and deletion comparison](storage.md#reset-and-deletion) to choose the
+operation. **Reset Quiz** retains questions and legal documents. Removing `.data`
+also deletes legal documents and requires stopping all database connections and
+making a backup first.
 
 ### Backup Data
 
-```bash
-cp -r .data/ data-backup-$(date +%Y%m%d)
-```
+Follow the [storage backup](storage.md#backup) and [restore](storage.md#restore)
+instructions. Stop the development server and any standalone database tools before
+copying the complete `.data` directory.
 
 ## Troubleshooting
 
@@ -96,6 +96,32 @@ chmod 755 .data/
 - Check if port 3000 is accessible
 - Verify no firewall blocking
 - Check browser console for errors
+
+## Development Checks
+
+After installing dependencies, run the complete validation sequence from the
+repository root:
+
+```sh
+vp run test
+```
+
+The scripts in [`package.json`](../package.json) run these checks in order and stop
+on the first failure. Run a single script when investigating a failure:
+
+| Command | Check |
+| --- | --- |
+| `vp run test:lint-format` | ESLint code and formatting rules |
+| `vp run test:package-json` | Package metadata formatting |
+| `vp run test:notices` | Generated third-party notices match dependencies |
+| `vp run test:markdown-structure` | Markdown changes preserve existing section boundaries |
+| `vp run test:type` | Nuxt and TypeScript type checks |
+| `vp run test:unit` | Source-adjacent tests and `test/unit/` |
+| `vp run test:integration` | Integration tests under `test/` |
+
+The [validation workflow](../.github/workflows/validation-and-tests.yml) runs the
+same checks as separate CI jobs. A local pass does not replace reviewing CI results.
+For building and running the container locally, see [Local Docker Testing](local-testing.md).
 
 ## Next Steps
 

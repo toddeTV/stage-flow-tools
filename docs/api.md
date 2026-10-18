@@ -1,6 +1,8 @@
 # API Reference
 
-REST API endpoints documentation.
+REST API endpoints documentation. [Common errors](#validation-and-error-responses)
+apply where the endpoint validates input or requires admin authentication. Additional
+endpoint-specific errors are listed below; successful empty states remain successful.
 
 ## Authentication
 
@@ -27,6 +29,12 @@ This endpoint is for browser-style admin login with username and password. It se
 
 **Response:**
 Sets `admin_token` HTTP-only cookie and returns success.
+
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 401 | `auth.credentials_invalid` | Username or password does not match. Ask the operator to correct the credentials. |
 
 ### POST `/api/auth/logout`
 
@@ -60,10 +68,15 @@ Verify authentication token (admin only).
 {
   "valid": true,
   "user": {
-    /* decoded JWT payload or static-token admin payload */
+    "authMethod": "static-token",
+    "isAdmin": true,
+    "username": "admin-token"
   }
 }
 ```
+
+The verification response above shows static-token authentication. Browser-login JWT
+payloads contain `username`, `isAdmin`, and `exp` instead of `authMethod`.
 
 **Static token example:**
 
@@ -89,9 +102,27 @@ Query tokens in URLs can leak through browser history, server logs, and referrer
 
 Load the authenticated Drizzle Studio shell used by `/admin/database`.
 
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 502 | `studio.shell_unavailable` | Upstream shell fetch failed. Check upstream reachability before reloading Studio. |
+| 502 | `studio.shell_load_failed` | Upstream returned an unsuccessful shell response. Check upstream availability. |
+| 504 | `studio.shell_timeout` | Shell fetch reported an abort. Check connectivity before reloading Studio. |
+
 ### GET `/api/admin/drizzle-studio/app/<asset>`
 
 Load Drizzle Studio static assets through the authenticated proxy. Asset paths must be non-empty relative paths and cannot contain `.` or `..` segments.
+
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 400 | `studio.asset_path_invalid` | Asset path violates the allowed relative-path rules. Correct the path. |
+| 404 | `studio.asset_not_found` | No asset path was provided. Request an asset through the Studio shell. |
+| 502 | `studio.asset_unavailable` | Upstream asset fetch failed. Check upstream reachability. |
+| 504 | `studio.asset_timeout` | Asset fetch reported an abort. Check connectivity before reloading Studio. |
+| Upstream error status | `studio.asset_load_failed` | Upstream rejected the asset request; its status is preserved. Check the requested asset and upstream availability. |
 
 ### GET `/api/admin/presenter/overview`
 
@@ -182,9 +213,28 @@ This endpoint is meant for polling, such as once per second from presenter slide
 }
 ```
 
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 404 | `quiz.question_not_found` | The supplied key is unknown or disabled. Refresh the question list and choose an enabled key. |
+
 ### POST `/`
 
 Internal admin-only Drizzle Studio RPC compatibility endpoint used by the embedded frame. Treat this as internal transport, not a public integration API. Its opaque Drizzle RPC payload is intentionally passed through without application-level schema validation.
+
+After startup succeeds, upstream RPC status and body are forwarded unchanged.
+Those responses need not use the application error envelope; check database state
+before repeating a write whose outcome is uncertain.
+
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 500 | `studio.invalid_internal_port` | Configured Studio port is invalid. Correct the server configuration. |
+| 502 | `studio.start_failed` | The internal Studio worker did not become ready. Check worker startup and the private port. |
+| 502 | `studio.proxy_unavailable` | The internal RPC fetch failed. Check the worker before repeating the request. |
+| 504 | `studio.proxy_timeout` | The RPC fetch reported an abort. Check the worker and inspect database state before repeating a write. |
 
 ## Legal Documents
 
@@ -203,7 +253,8 @@ required. `key` must be `legal-notice` or `privacy-policy`.
 }
 ```
 
-Unknown keys and documents that have not been configured return no content.
+Unknown keys and documents that have not been configured return a successful empty
+response, not a `404` error.
 The application has no public or admin API for writing legal documents; an
 operator maintains the corresponding database rows directly. See
 [Deployment-Specific Legal Documents](legal-texts.md).
@@ -280,6 +331,12 @@ blocks scrollable.
 }
 ```
 
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 409 | `quiz.question_key_conflict` | The key already exists. Choose another key or edit the existing question. |
+
 ### POST `/api/questions/import`
 
 Import a current-format question package (admin only). Only the exact numeric
@@ -328,6 +385,9 @@ and timezone offsets are rejected before persistence. Missing values are stored 
 without metadata. Destination installations must support Version 2; there is no
 automatic conversion.
 
+Convert local times to UTC before creating the package; see the
+[Berlin summer and winter examples](features/questions.md#question-packages).
+
 `commitSha` is optional metadata identifying the intended software commit. When
 present it must contain 40 hexadecimal characters; surrounding whitespace is
 trimmed and letters are normalized to lowercase. Missing metadata allows normal
@@ -352,11 +412,21 @@ and obtain new confirmation; do not silently retry.
 ```
 
 Successful imports always return `updatedCount: 0`; imports never update existing questions.
+Package validation failures use HTTP `400` with `validation.invalid_request`; inspect
+`data.issues` for details such as `validation.unsupported_question_package_version`,
+`validation.duplicate_question_key`, or `validation.invalid_question_package`.
+
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 409 | `quiz.question_key_conflict` | A package key already exists. Resolve the conflicting keys before importing again. |
+| 409 | `quiz.question_package_commit_confirmation_required` | Installed build metadata is unknown or differs from the package. Refresh the preview and obtain explicit confirmation for the installed build. |
 
 ### GET `/api/admin/build-info`
 
 Returns the immutable build commit SHA (admin only), normalized to lowercase.
-Missing or corrupt runtime metadata returns `null`. The import preview and
+Missing or corrupt runtime metadata returns `commitSha: null` successfully. The import preview and
 export read this endpoint from the currently installed server, rather than
 relying on browser bundle metadata.
 
@@ -396,6 +466,14 @@ delete the answers and update the question in one transaction.
 
 **Response:** Updated question object.
 
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 404 | `quiz.question_not_found` | The question ID does not exist. Refresh the question list. |
+| 409 | `quiz.question_key_conflict` | Another question already uses the key. Choose a unique key. |
+| 409 | `quiz.question_answers_reset_required` | Answered options would change. Obtain confirmation before resubmitting with `resetAnswers: true`. |
+
 ### POST `/api/questions/publish`
 
 Publish question as active by key (admin only). Preserves submitted answers and lock state, and broadcasts to all WebSocket clients.
@@ -408,6 +486,12 @@ Publish question as active by key (admin only). Preserves submitted answers and 
 }
 ```
 
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 404 | `quiz.question_not_found` | No question matches the key. Refresh the question list before selecting a key. |
+
 ### POST `/api/questions/publish-next`
 
 Publish the next enabled question after the active question in queue order (admin only). Previously published questions can be published again. Without an active question, it selects the first enabled question. It does not wrap after the last enabled question and broadcasts the selected question to all WebSocket clients.
@@ -416,9 +500,16 @@ Publish the next enabled question after the active question in queue order (admi
 
 **Response:** The published question object, or 404 with `quiz.no_enabled_question` if no enabled question can be selected.
 
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 404 | `quiz.no_enabled_question` | No next enabled question is available. Review queue position and disabled questions. |
+| 500 | `quiz.publish_next_failed` | The selected question could not be published. Refresh state and investigate before trying again. |
+
 ### POST `/api/questions/move`
 
-Move a question one position in the persistent queue (admin only). Published and disabled questions remain visible and can also be reordered.
+Move a question one position in the persistent queue (admin only). Published and disabled questions remain visible and can also be reordered. Moving beyond either queue boundary succeeds without changing the order.
 
 **Request:**
 
@@ -430,6 +521,12 @@ Move a question one position in the persistent queue (admin only). Published and
 ```
 
 **Response:** Updated question object.
+
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 404 | `quiz.question_not_found` | The question ID does not exist. Refresh the queue. |
 
 ### POST `/api/questions/toggle-disabled`
 
@@ -444,6 +541,12 @@ Toggle whether a question is skipped by `publish-next` (admin only). Direct publ
 ```
 
 **Response:** Updated question object.
+
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 404 | `quiz.question_not_found` | The question ID does not exist. Refresh the question list. |
 
 ### POST `/api/questions/delete`
 
@@ -466,11 +569,17 @@ Permanently delete a question and every submitted answer for it (admin only). De
 }
 ```
 
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 404 | `quiz.question_not_found` | The question ID does not exist. Refresh the list; do not assume the question still needs deletion. |
+
 ### POST `/api/questions/delete-all`
 
 Permanently delete every question and submitted answer (admin only). The route
 uses one transaction, clears pending result updates, and broadcasts an empty
-question and results state.
+question and results state. An empty database succeeds with `deletedQuestionCount: 0`.
 
 **Request:** No body required.
 
@@ -539,6 +648,12 @@ optional `locked: boolean`. Broadcasts lock status via WebSocket.
 Omitting `locked` toggles the current state. Supplying `true` or `false` sets that
 state even when it already matches.
 
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 404 | `quiz.question_not_found` | The question ID does not exist. Refresh the question list before changing voting state. |
+
 ## Answers
 
 ### POST `/api/answers/submit`
@@ -563,9 +678,18 @@ Submit or update a user answer.
 }
 ```
 
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 400 | `quiz.invalid_answer` | The English answer does not match an active option. Refresh the active question and submit one of its options. |
+| 403 | `quiz.question_locked` | Voting is locked. Wait for the admin to reopen voting. |
+| 404 | `quiz.no_active_question` | No question is active. Wait for a publication and refresh the active question. |
+
 ### POST `/api/answers/retract`
 
-Retract a user's answer.
+Retract a user's answer. If no answer matches the participant/question pair, the
+request still succeeds; it does not return a not-found error.
 
 **Request:**
 
@@ -599,9 +723,11 @@ This endpoint derives target question from current active question. Request body
 }
 ```
 
-**Error cases:**
+**Additional errors:**
 
-- `404` - no active question
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 404 | `quiz.no_active_question` | There is no active question to reset. Refresh state and select the intended question first. |
 
 ## Emojis
 
@@ -618,6 +744,12 @@ Submit an emoji reaction. The server queues reactions for batched delivery to cl
 }
 ```
 
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 429 | `emoji.cooldown` | The participant is still within the reaction cooldown. Wait for the configured cooldown before submitting again. |
+
 ## Results
 
 ### GET `/api/results/current`
@@ -625,17 +757,48 @@ Submit an emoji reaction. The server queues reactions for batched delivery to cl
 Get current question results (admin only).
 
 `totalConnections` counts only participant connections on the default WebSocket channel.
+With no active question, the endpoint returns HTTP `200` and
+`{ "message": "No active question" }` instead of a results object.
 
 **Response:**
 
 ```json
 {
   "question": {
-    /* question object */
+    "id": "example-question",
+    "key": "round-1-question-1",
+    "question_text": {
+      "en": "Choose an option."
+    },
+    "answer_options": [
+      {
+        "text": {
+          "en": "Option A"
+        },
+        "emoji": "⭐"
+      },
+      {
+        "text": {
+          "en": "Option B"
+        }
+      }
+    ],
+    "is_active": true,
+    "is_disabled": false,
+    "is_locked": false,
+    "sortOrder": 0,
+    "createdAt": "2026-10-17T12:00:00.000Z",
+    "authoredAt": null,
+    "alreadyPublished": true
   },
   "results": {
-    "Option A": { "count": 10, "emoji": "optional" },
-    "Option B": { "count": 5 }
+    "Option A": {
+      "count": 10,
+      "emoji": "⭐"
+    },
+    "Option B": {
+      "count": 5
+    }
   },
   "totalVotes": 15,
   "totalConnections": 42
@@ -655,7 +818,16 @@ Pick a random user who voted for a specific option (admin only). Sends a `winner
 }
 ```
 
-**Response:** `204 No Content` on success. Returns 404 if no answers or no users found for the option. Returns 503 if the winner is not currently connected.
+**Response:** `204 No Content` on success. See the error codes below when no winner
+notification can be delivered.
+
+**Additional errors:**
+
+| HTTP status | `data.code` | Condition and client action |
+| --- | --- | --- |
+| 404 | `answer.no_answers_for_question` | The question has no stored answers. Wait for answers or select another question. |
+| 404 | `answer.no_users_for_option` | No stored answer matches the selected English option label. Refresh results and select an answered option. |
+| 503 | `websocket.winner_not_connected` | The randomly selected participant has no matching connected default-channel peer. No notification was delivered; choose whether to draw again. |
 
 ### GET `/api/results/leaderboard`
 
@@ -757,6 +929,30 @@ Errors use stable machine-readable codes. This is a breaking change from prose `
 `issues` is present only for schema failures. Each issue contains a stable code and a field path; array indexes are serialized as strings. Unexpected failures are logged server-side and return only `server.internal_error`.
 
 The supported code namespaces are `validation.*`, `auth.*`, `quiz.*`, `emoji.cooldown`, `answer.*`, `websocket.*`, `studio.*`, `route.not_found`, and `server.internal_error`. HTTP status codes retain their existing meanings.
+
+Common errors below are added to the endpoint-specific errors. Admin authentication
+is checked before request validation on protected endpoints. Login and logout do not
+require an existing admin session; logout still succeeds when no session exists.
+
+| HTTP status | `data.code` | Applies when / client action |
+| --- | --- | --- |
+| 400 | `validation.invalid_request` | A validated body or query is invalid, or the body cannot be read. Correct the input using `data.issues` when present. |
+| 401 | `auth.token_required` | An admin-only endpoint receives no token. Sign in or supply a valid bearer token. |
+| 401 | `auth.token_invalid` | Admin verification rejects the token, including an expired JWT. Sign in again or correct the bearer token. |
+| 403 | `auth.origin_invalid` | An admin mutation authenticates through a cookie without a matching Stage Flow `Origin`. Use the Stage Flow page or the documented bearer-header integration; CORS does not relax this check. |
+| 500 | `server.internal_error` | An unexpected handler failure occurred. Retain the current UI state and investigate; refresh server state before repeating a mutation. |
+
+Validation issue codes are field-level details, not necessarily the top-level
+`data.code`. For example, a malformed question package returns
+`validation.invalid_request` with package-specific codes under `data.issues`.
+The Studio asset proxy uses `studio.asset_path_invalid` as its top-level validation
+code instead. The Presenter embed-config endpoint also returns
+`400 validation.invalid_request` if its configured parent origins fail validation;
+the operator must correct the configuration rather than change the browser request.
+
+An empty active-question response, missing build metadata, an empty quiz reset,
+and an expected-key unpublish mismatch are successful states. Do not convert them
+into generic not-found errors or silently retry confirmation-required actions.
 
 ## Parent-managed Presenter
 

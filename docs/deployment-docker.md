@@ -151,12 +151,11 @@ the Compose file, `.env`, `.data`, or migration state to the server.
 
 Prepare the server once before the first workflow run:
 
-1. Place the private Compose file, `.env`, persistent `.data` directory, and
-   `bin.py` wrapper in the project directory.
-1. Configure the private Compose service to use `stage-flow-tools:latest`.
-1. Ensure `bin.py start` starts that image without building, pulling, or
-   rewriting project files.
-1. Validate the private Compose configuration with `docker compose config --quiet`.
+1. Prepare the deployment-specific Compose file, `.env`, and persistent data directory.
+1. Configure the Compose service to use `stage-flow-tools:latest`.
+1. Choose a restart command that recreates the service from the loaded image
+   without building, pulling, or rewriting deployment files.
+1. Validate the Compose configuration with `docker compose config --quiet`.
 
 Configure these GitHub repository variables and secret as documented in
 [`.env.example`](../.env.example):
@@ -164,8 +163,8 @@ Configure these GitHub repository variables and secret as documented in
 - `MAINTAINER_DEPLOY_SSH_HOST`
 - `MAINTAINER_DEPLOY_SSH_USER`
 - `MAINTAINER_DEPLOY_SSH_KNOWN_HOSTS`
-- `MAINTAINER_DEPLOY_RESTART_COMMAND`, for example
-  `cd <absolute-project-directory> && ./bin.py stop && ./bin.py start`
+- `MAINTAINER_DEPLOY_RESTART_COMMAND`, using the absolute deployment directory
+  and the restart command prepared above
 - `MAINTAINER_DEPLOY_SSH_PRIVATE_KEY` as a repository secret
 
 The workflow verifies the loaded image ID and source revision before executing
@@ -173,16 +172,19 @@ the restart command. A failed command fails the deployment. It does not run a
 remote health check, automatic rollback, or a separate migration command.
 However, application startup automatically applies pending Drizzle migrations
 to the persistent SQLite database. Before deploying a ref with migrations,
-back up `.data` and review forward and rollback compatibility. Do not apply the
-same migrations manually unless a separate supported procedure requires it.
+follow the [storage backup procedure](storage.md#backup) and review forward and
+rollback compatibility. Do not apply the same migrations manually unless a separate
+supported procedure requires it.
 Deployment-file changes remain manual.
 
 ## Operations
 
-View application logs with the Compose command for the private project. Back
-up its persistent `.data` directory before upgrades and before high-risk live
-events. Restarting the container disconnects active WebSocket clients, which
-then reconnect automatically.
+View application logs with the Compose command for the private project. Make a
+[storage backup](storage.md#backup) before upgrades and high-risk live events;
+follow the [restore instructions](storage.md#restore) if recovery is needed. Stop
+the application container and every other database connection before copying the
+host directory mounted at `/app/.data`. Restarting the container disconnects active
+WebSocket clients, which then reconnect automatically.
 
 ## Image Layout
 
