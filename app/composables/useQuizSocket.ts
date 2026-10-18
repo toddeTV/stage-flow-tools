@@ -76,6 +76,20 @@ export const useQuizSocket = (channel = 'default') => {
     }
   }
 
+  function refreshLiveState() {
+    void refreshSnapshot().catch(() => {
+      logger_error('Failed to refresh live state')
+    })
+  }
+
+  /** Applies a partial event without abandoning an outstanding full question refresh. */
+  function applyPartialQuestionUpdate(update: () => void) {
+    const needsSnapshot = channel === 'default' && !disposed
+      && pendingSnapshot !== undefined && !pendingSnapshot.signal.aborted
+    update()
+    if (needsSnapshot) refreshLiveState()
+  }
+
   onScopeDispose(() => {
     disposed = true
     invalidateSnapshot()
@@ -142,11 +156,7 @@ export const useQuizSocket = (channel = 'default') => {
 
   const { status, data, send, open, close } = useWebSocket(wsEndpoint, {
     autoReconnect: true,
-    onConnected: () => {
-      void refreshSnapshot().catch(() => {
-        logger_error('Failed to refresh live state')
-      })
-    },
+    onConnected: refreshLiveState,
     onDisconnected: invalidateSnapshot,
     heartbeat: {
       message: 'ping',
@@ -166,14 +176,22 @@ export const useQuizSocket = (channel = 'default') => {
         updateActiveQuestion(parsed.data)
       }
       else if (parsed.event === 'lock-status') {
-        if (activeQuestion.value && activeQuestion.value.id === parsed.data.questionId) {
-          if (channel === 'default') invalidateSnapshot()
-          questionVersion.value++
-          activeQuestion.value.is_locked = parsed.data.is_locked
+        const question = activeQuestion.value
+        if (question && question.id === parsed.data.questionId) {
+          applyPartialQuestionUpdate(() => {
+            if (channel === 'default') invalidateSnapshot()
+            questionVersion.value++
+            question.is_locked = parsed.data.is_locked
+          })
         }
       }
       else if (parsed.event === 'answers-reset') {
-        clearStoredAnswer(parsed.data.questionId)
+        if (activeQuestion.value?.id === parsed.data.questionId) {
+          applyPartialQuestionUpdate(() => clearStoredAnswer(parsed.data.questionId))
+        }
+        else {
+          clearStoredAnswer(parsed.data.questionId)
+        }
       }
       else if (parsed.event === 'results-update') {
         if (channel === 'results') invalidateSnapshot()

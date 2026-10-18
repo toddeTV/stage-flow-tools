@@ -263,11 +263,7 @@ describe('snapshot recovery', () => {
     expect(snapshotFetch).not.toHaveBeenCalled()
   })
 
-  it.each([
-    'new-question',
-    'lock-status',
-    'answers-reset',
-  ])('keeps %s ahead of an older HTTP response', async (event) => {
+  it('keeps a full question event ahead of an older HTTP response without refetching', async () => {
     const state = useQuizSocket()
     state.updateActiveQuestion(question())
     state.confirmedAnswer.value = 0
@@ -276,15 +272,12 @@ describe('snapshot recovery', () => {
     snapshotFetch.mockReturnValueOnce(stale.promise)
     const loading = state.refreshSnapshot()
     const signal = snapshotFetch.mock.calls[0]![1].signal as AbortSignal
-    socketState.data!.value = JSON.stringify({ event, data: event === 'new-question'
-      ? question('new')
-      : { questionId: 'first', is_locked: true } })
+    socketState.data!.value = JSON.stringify({ event: 'new-question', data: question('new') })
     stale.resolve(question())
     await loading
     expect(signal.aborted).toBe(true)
-    if (event === 'new-question') expect(state.activeQuestion.value?.id).toBe('new')
-    if (event === 'lock-status') expect(state.activeQuestion.value?.is_locked).toBe(true)
-    if (event === 'answers-reset') expect(state.confirmedAnswer.value).toBeNull()
+    expect(state.activeQuestion.value?.id).toBe('new')
+    expect(snapshotFetch).toHaveBeenCalledOnce()
   })
 
   it.each([
@@ -432,5 +425,141 @@ describe('snapshot recovery', () => {
       await state.refreshSnapshot()
       expect(snapshotFetch).toHaveBeenCalledOnce()
     }
+  })
+})
+
+describe('partial question recovery', () => {
+  it.each([
+    'lock-status',
+    'answers-reset',
+  ])('recovers an offline edit after %s while preserving its immediate effects', async (event) => {
+    const state = useQuizSocket()
+    state.updateActiveQuestion({ ...question(), question_text: { en: 'Old text' } })
+    state.confirmedAnswer.value = 0
+    state.selectedAnswer.value = 1
+    storedAnswers.set('answer-first', '0')
+    const stale = deferred<Question>()
+    const replacement = deferred<Question>()
+    snapshotFetch.mockReturnValueOnce(stale.promise).mockReturnValueOnce(replacement.promise)
+    const loading = state.refreshSnapshot()
+    const signal = snapshotFetch.mock.calls[0]![1].signal as AbortSignal
+    socketState.data!.value = JSON.stringify({ event, data: { questionId: 'first', is_locked: true } })
+    expect(signal.aborted).toBe(true)
+    expect(snapshotFetch).toHaveBeenCalledTimes(2)
+    if (event === 'lock-status') {
+      expect(state.activeQuestion.value?.is_locked).toBe(true)
+      expect(state.selectedAnswer.value).toBe(1)
+      expect(state.confirmedAnswer.value).toBe(0)
+    }
+    else {
+      expect(state.selectedAnswer.value).toBeNull()
+      expect(state.confirmedAnswer.value).toBeNull()
+      expect(storedAnswers.has('answer-first')).toBe(false)
+    }
+    const edited = {
+      ...question(), question_text: { en: 'Edited while offline' },
+      answer_options: [
+        { text: { en: 'Edited option' } },
+        { text: { en: 'Other option' } },
+      ],
+    }
+    stale.resolve(edited)
+    await loading
+    expect(state.activeQuestion.value?.question_text.en).toBe('Old text')
+    replacement.resolve({ ...edited, is_locked: event === 'lock-status' })
+    await flushPromises()
+    expect(state.activeQuestion.value?.question_text.en).toBe('Edited while offline')
+    expect(state.activeQuestion.value?.answer_options).toEqual(edited.answer_options)
+    expect(state.activeQuestion.value?.is_locked).toBe(event === 'lock-status')
+    expect(state.selectedAnswer.value).toBe(event === 'lock-status' ? 1 : null)
+    expect(state.confirmedAnswer.value).toBe(event === 'lock-status' ? 0 : null)
+    expect(storedAnswers.has('answer-first')).toBe(event === 'lock-status')
+    expect(logger_error).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    'lock-status',
+    'answers-reset',
+  ])('applies %s without fetching when no snapshot is pending', (event) => {
+    const state = useQuizSocket()
+    state.updateActiveQuestion(question())
+    state.selectedAnswer.value = 1
+    socketState.data!.value = JSON.stringify({ event, data: { questionId: 'first', is_locked: true } })
+    expect(snapshotFetch).not.toHaveBeenCalled()
+    if (event === 'lock-status') expect(state.activeQuestion.value?.is_locked).toBe(true)
+    else expect(state.selectedAnswer.value).toBeNull()
+  })
+
+  it.each([
+    'lock-status',
+    'answers-reset',
+  ])('does not cancel or restart a results snapshot for %s', async (event) => {
+    const state = useQuizSocket('results')
+    state.updateActiveQuestion(question())
+    const snapshot = deferred<Results>()
+    snapshotFetch.mockReturnValueOnce(snapshot.promise)
+    const loading = state.refreshSnapshot()
+    const signal = snapshotFetch.mock.calls[0]![1].signal as AbortSignal
+    socketState.data!.value = JSON.stringify({ event, data: { questionId: 'first', is_locked: true } })
+    expect(signal.aborted).toBe(false)
+    expect(snapshotFetch).toHaveBeenCalledOnce()
+    snapshot.resolve(result(7))
+    await loading
+    expect(state.results.value?.totalVotes).toBe(7)
+  })
+
+  it.each([
+    'disconnect',
+    'dispose',
+    'refresh',
+    'new-question',
+  ])('cancels a replacement snapshot on %s', async (action) => {
+    const state = useQuizSocket()
+    state.updateActiveQuestion(question())
+    const stale = deferred<Question>()
+    const replacement = deferred<Question>()
+    snapshotFetch.mockReturnValueOnce(stale.promise).mockReturnValueOnce(replacement.promise)
+    const loading = state.refreshSnapshot()
+    socketState.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } })
+    expect(snapshotFetch).toHaveBeenCalledTimes(2)
+    const signal = snapshotFetch.mock.calls[1]![1].signal as AbortSignal
+    if (action === 'disconnect') socketState.disconnect()
+    if (action === 'dispose') scopes[0]!.stop()
+    if (action === 'refresh') {
+      snapshotFetch.mockResolvedValueOnce(question('latest'))
+      await state.refreshSnapshot()
+    }
+    if (action === 'new-question') {
+      socketState.data!.value = JSON.stringify({ event: 'new-question', data: question('latest') })
+    }
+    expect(signal.aborted).toBe(true)
+    replacement.resolve(question('stale-replacement'))
+    stale.resolve(question('stale-initial'))
+    await loading
+    await flushPromises()
+    expect(state.activeQuestion.value?.id).toBe(action === 'refresh' || action === 'new-question' ? 'latest' : 'first')
+    expect(snapshotFetch).toHaveBeenCalledTimes(action === 'refresh' ? 3 : 2)
+    expect(logger_error).not.toHaveBeenCalled()
+  })
+
+  it('keeps replacement retries bounded and cancels their wait on disconnect', async () => {
+    vi.useFakeTimers()
+    const state = useQuizSocket()
+    state.updateActiveQuestion(question())
+    const stale = deferred<Question>()
+    snapshotFetch.mockReturnValueOnce(stale.promise).mockRejectedValue(new TypeError('offline'))
+    const loading = state.refreshSnapshot()
+    socketState.data!.value = JSON.stringify({ event: 'lock-status', data: { questionId: 'first', is_locked: true } })
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(snapshotFetch).toHaveBeenCalledTimes(3)
+    expect(vi.getTimerCount()).toBe(1)
+    socketState.disconnect()
+    stale.resolve(question())
+    await loading
+    await vi.runAllTimersAsync()
+    expect(snapshotFetch).toHaveBeenCalledTimes(3)
+    expect(vi.getTimerCount()).toBe(0)
+    expect(state.activeQuestion.value?.is_locked).toBe(true)
+    expect(logger_error).not.toHaveBeenCalled()
   })
 })
