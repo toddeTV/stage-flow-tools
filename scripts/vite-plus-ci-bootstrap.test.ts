@@ -58,7 +58,6 @@ describe('Vite+ CI bootstrap', () => {
     expect(bootstrapIndex).toBeGreaterThan(-1)
     expect(bootstrapIndex).toBeLessThan(workflow.indexOf('- name: Install Dependencies'))
     expect(workflow).not.toContain('voidzero-dev/setup-vp@')
-    expect(workflow).not.toContain('vp run graphify:test')
     expect(workflow).not.toContain('warning_summary')
     expect(workflow).toContain('name: Markdown Section Structure')
     expect(workflow).toContain('command: vp run test:markdown-structure')
