@@ -441,7 +441,12 @@ relying on browser bundle metadata.
 Update an existing question (admin only). Localized question and answer text may use any locale key; their non-empty English (`en`) value is required. Updating the active question broadcasts the updated question and a freshly calculated results update to connected participants.
 
 Editable fields are `key`, `question_text`, `answer_options`, and `note`.
-English `answer_options[].text.en` values must be unique. Matching is case-insensitive.
+An omitted, empty, or whitespace-only `key` preserves the existing key. If the stored
+key is also blank, the question ID is used instead, subject to the same uniqueness
+check. An explicit non-empty replacement key is trimmed before checking uniqueness.
+At least two answer options are required. English `answer_options[].text.en` values
+must be unique after trimming and case-insensitive matching. Invalid options are
+rejected before any question changes or answer deletion, even with `resetAnswers: true`.
 When submitted answers exist, changing `answer_options` requires `resetAnswers: true`.
 The API otherwise returns `409 quiz.question_answers_reset_required`; confirmed updates
 delete the answers and update the question in one transaction.
@@ -477,6 +482,7 @@ delete the answers and update the question in one transaction.
 ### POST `/api/questions/publish`
 
 Publish question as active by key (admin only). Preserves submitted answers and lock state, and broadcasts to all WebSocket clients.
+Only the question key is matched; an ID is accepted only when it is also a stored key.
 
 **Request:**
 

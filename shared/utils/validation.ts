@@ -63,13 +63,39 @@ const optionalEmojiSchema = v.pipe(
   v.check(value => value === undefined || isValidEmoji(value), 'validation.invalid_emoji'),
 )
 
-const questionInputEntries = {
-  key: v.optional(trimmedStringSchema, ''),
-  question_text: localizedStringSchema,
-  answer_options: v.array(v.object({
+const answerOptionsSchema = v.pipe(
+  v.array(v.object({
     emoji: optionalEmojiSchema,
     text: localizedStringSchema,
   }), 'validation.invalid_type'),
+  v.minLength(2, 'validation.minimum_answer_options'),
+  v.check((options) => {
+    const normalizedLabels = new Set<string>()
+
+    for (const option of options) {
+      const englishLabel = option.text.en
+
+      if (!englishLabel) {
+        return false
+      }
+
+      const normalizedLabel = englishLabel.toLowerCase()
+
+      if (normalizedLabels.has(normalizedLabel)) {
+        return false
+      }
+
+      normalizedLabels.add(normalizedLabel)
+    }
+
+    return true
+  }, 'validation.duplicate_answer_option'),
+)
+
+const questionInputEntries = {
+  key: v.optional(trimmedStringSchema, ''),
+  question_text: localizedStringSchema,
+  answer_options: answerOptionsSchema,
   note: optionalLocalizedStringSchema,
 }
 
@@ -90,41 +116,7 @@ export const QuestionPackageImportQuerySchema = v.strictObject({
   ])),
 })
 
-export const QuestionInputSchema = v.pipe(
-  v.object(questionInputEntries, 'validation.invalid_type'),
-  v.forward(
-    v.check(value => value.answer_options.length >= 2, 'validation.minimum_answer_options'),
-    [
-      'answer_options',
-    ],
-  ),
-  v.forward(
-    v.check((value) => {
-      const normalizedLabels = new Set<string>()
-
-      for (const option of value.answer_options) {
-        const englishLabel = option.text.en
-
-        if (!englishLabel) {
-          return false
-        }
-
-        const normalizedLabel = englishLabel.toLowerCase()
-
-        if (normalizedLabels.has(normalizedLabel)) {
-          return false
-        }
-
-        normalizedLabels.add(normalizedLabel)
-      }
-
-      return true
-    }, 'validation.duplicate_answer_option'),
-    [
-      'answer_options',
-    ],
-  ),
-)
+export const QuestionInputSchema = v.object(questionInputEntries, 'validation.invalid_type')
 
 export const QuestionUpdateSchema = v.object({
   questionId: requiredTrimmedStringSchema,
@@ -132,45 +124,11 @@ export const QuestionUpdateSchema = v.object({
   ...questionInputEntries,
 }, 'validation.invalid_type')
 
-const QuestionPackageQuestionSchema = v.pipe(
-  v.strictObject({
-    ...questionInputEntries,
-    is_disabled: v.boolean('validation.invalid_type'),
-    authoredAt: v.optional(authoredAtSchema),
-  }, 'validation.invalid_question_package'),
-  v.forward(
-    v.check(value => value.answer_options.length >= 2, 'validation.minimum_answer_options'),
-    [
-      'answer_options',
-    ],
-  ),
-  v.forward(
-    v.check((value) => {
-      const normalizedLabels = new Set<string>()
-
-      for (const option of value.answer_options) {
-        const englishLabel = option.text.en
-
-        if (!englishLabel) {
-          return false
-        }
-
-        const normalizedLabel = englishLabel.toLowerCase()
-
-        if (normalizedLabels.has(normalizedLabel)) {
-          return false
-        }
-
-        normalizedLabels.add(normalizedLabel)
-      }
-
-      return true
-    }, 'validation.duplicate_answer_option'),
-    [
-      'answer_options',
-    ],
-  ),
-)
+const QuestionPackageQuestionSchema = v.strictObject({
+  ...questionInputEntries,
+  is_disabled: v.boolean('validation.invalid_type'),
+  authoredAt: v.optional(authoredAtSchema),
+}, 'validation.invalid_question_package')
 
 export const QuestionPackageSchema = v.pipe(
   v.strictObject({

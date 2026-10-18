@@ -175,6 +175,109 @@ describe('normalizeQuestionInput', () => {
 })
 
 describe('endpoint schemas', () => {
+  it.each([
+    { labels: [], code: 'validation.minimum_answer_options' },
+    { labels: [
+      'One',
+    ], code: 'validation.minimum_answer_options' },
+    { labels: [
+      'One',
+      'One',
+    ], code: 'validation.duplicate_answer_option' },
+    { labels: [
+      'One',
+      'oNe',
+    ], code: 'validation.duplicate_answer_option' },
+    { labels: [
+      ' One ',
+      'one ',
+    ], code: 'validation.duplicate_answer_option' },
+  ])('rejects invalid options across create, update and package schemas: $labels', ({ labels, code }) => {
+    const question = {
+      answer_options: labels.map(en => ({ text: { en } })),
+      question_text: { en: 'Question' },
+    }
+    const cases = [
+      { result: safeParse(QuestionInputSchema, question), path: [
+        'answer_options',
+      ] },
+      {
+        result: safeParse(QuestionUpdateSchema, { ...question, questionId: 'question-id', resetAnswers: true }),
+        path: [
+          'answer_options',
+        ],
+      },
+      {
+        result: safeParse(QuestionPackageSchema, {
+          format: 'stage-flow-tools.question-package',
+          version: 2,
+          questions: [
+            { ...question, is_disabled: false },
+          ],
+        }),
+        path: [
+          'questions',
+          '0',
+          'answer_options',
+        ],
+      },
+    ]
+
+    for (const { result, path } of cases) {
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(getValidationIssues(result.issues)).toContainEqual({ code, path })
+      }
+    }
+  })
+
+  it.each([
+    { option: { emoji: 'not an emoji', text: { en: 'Two' } }, field: 'emoji', code: 'validation.invalid_emoji' },
+    { option: { text: { de: 'Zwei' } }, field: 'text', code: 'validation.required' },
+    { option: { text: { en: '   ' } }, field: 'text', code: 'validation.required' },
+  ])('retains nested option issue paths on updates and package imports: $code $option', ({ option, field, code }) => {
+    const question = {
+      answer_options: [
+        { text: { en: 'One' } },
+        option,
+      ],
+      question_text: { en: 'Question' },
+    }
+    const cases = [
+      {
+        result: safeParse(QuestionUpdateSchema, { ...question, questionId: 'question-id' }),
+        path: [
+          'answer_options',
+          '1',
+          field,
+        ],
+      },
+      {
+        result: safeParse(QuestionPackageSchema, {
+          format: 'stage-flow-tools.question-package',
+          version: 2,
+          questions: [
+            { ...question, is_disabled: false },
+          ],
+        }),
+        path: [
+          'questions',
+          '0',
+          'answer_options',
+          '1',
+          field,
+        ],
+      },
+    ]
+
+    for (const { result, path } of cases) {
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(getValidationIssues(result.issues)).toContainEqual({ code, path })
+      }
+    }
+  })
+
   it('preserves password whitespace while trimming the username', () => {
     expect(safeParse(LoginRequestSchema, {
       password: ' secret ',
